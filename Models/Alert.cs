@@ -11,4 +11,5 @@ public class Alert
     public DateTime CreatedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public bool IsActive { get; set; }
+    public string? UserIdentifier { get; set; }
 }

@@ -187,6 +187,35 @@ public class AlertServiceTests
     }
 
     [Fact]
+    public async Task GetActiveAlerts_ShouldFilterByUserIdentifier()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new AlertService(context, _dataProtectionProvider);
+        var userId1 = "user1";
+        var userId2 = "user2";
+
+        context.Alerts.Add(new Alert
+        {
+            Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true,
+            UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+        });
+        context.Alerts.Add(new Alert
+        {
+            Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true,
+            UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+        });
+        await context.SaveChangesAsync();
+
+        // Act
+        var results = await service.GetActiveAlertsAsync(userId1);
+
+        // Assert
+        Assert.Single(results);
+        Assert.Equal(userId1, results[0].UserIdentifier);
+    }
+
+    [Fact]
     public async Task CreateAlert_ShouldCapRadiusAt160_9()
     {
         // Arrange

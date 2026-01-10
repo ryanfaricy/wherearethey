@@ -1,10 +1,12 @@
 @page "/heatmap"
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject LocationService LocationService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 @implements IDisposable
 
 <PageTitle>ARE THEY HERE? - Heat Map</PageTitle>
@@ -101,20 +103,45 @@
             objRef = DotNetObjectReference.Create(this);
             double initialLat = 0;
             double initialLng = 0;
+            double? initialRadius = null;
 
-            try
+            // Check query parameters
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat))
             {
-                var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-                initialLat = position.Coords.Latitude;
-                initialLng = position.Coords.Longitude;
+                initialLat = lat;
             }
-            catch (Exception)
+            if (query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, out var lng))
             {
-                // Fallback
+                initialLng = lng;
+            }
+            if (query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, out var radius))
+            {
+                initialRadius = radius;
+            }
+
+            if (initialLat == 0 && initialLng == 0)
+            {
+                try
+                {
+                    var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                    initialLat = position.Coords.Latitude;
+                    initialLng = position.Coords.Longitude;
+                }
+                catch (Exception)
+                {
+                    // Fallback
+                }
             }
 
             await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef);
             mapInitialized = true;
+
+            if (initialRadius.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
+            }
         }
     }
 

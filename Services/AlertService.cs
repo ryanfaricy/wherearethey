@@ -44,11 +44,17 @@ public class AlertService
         }
     }
 
-    public virtual async Task<List<Alert>> GetActiveAlertsAsync()
+    public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
     {
-        return await _context.Alerts
-            .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
-            .ToListAsync();
+        var query = _context.Alerts
+            .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
+
+        if (!string.IsNullOrEmpty(userIdentifier))
+        {
+            query = query.Where(a => a.UserIdentifier == userIdentifier);
+        }
+
+        return await query.ToListAsync();
     }
 
     public virtual async Task<bool> DeactivateAlertAsync(int id)

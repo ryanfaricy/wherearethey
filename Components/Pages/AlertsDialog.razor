@@ -3,6 +3,7 @@
 @inject AlertService AlertService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Distance-Based Alerts</RadzenText>
@@ -64,8 +65,12 @@
                                         <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
-                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
-                                                  Click="@(() => DeactivateAlert(alert.Id))" />
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                      Click="@(() => ShowOnMap(alert))" ToolTip="Show on Map" />
+                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                      Click="@(() => DeactivateAlert(alert.Id))" ToolTip="Deactivate" />
+                                    </RadzenStack>
                                 </RadzenStack>
                             </RadzenCard>
                         </Template>
@@ -93,14 +98,20 @@
     private string email = "";
     private List<Alert> activeAlerts = new();
     private bool isSubmitting = false;
+    private string? userIdentifier;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (InitialLat.HasValue) newAlert.Latitude = InitialLat.Value;
-        if (InitialLng.HasValue) newAlert.Longitude = InitialLng.Value;
-        if (InitialRadius.HasValue) newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
-        
-        await LoadAlerts();
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            if (InitialLat.HasValue) newAlert.Latitude = InitialLat.Value;
+            if (InitialLng.HasValue) newAlert.Longitude = InitialLng.Value;
+            if (InitialRadius.HasValue) newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+            
+            await LoadAlerts();
+            StateHasChanged();
+        }
     }
 
     private async Task CreateAlert()
@@ -114,10 +125,11 @@
         isSubmitting = true;
         try
         {
+            newAlert.UserIdentifier = userIdentifier;
             await AlertService.CreateAlertAsync(newAlert, email);
             NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
             
-            newAlert = new Alert { RadiusKm = 5.0 };
+            newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = userIdentifier };
             email = "";
             await LoadAlerts();
         }
@@ -145,9 +157,14 @@
         }
     }
 
+    private void ShowOnMap(Alert alert)
+    {
+        DialogService.Close(alert);
+    }
+
     private async Task LoadAlerts()
     {
-        activeAlerts = await AlertService.GetActiveAlertsAsync();
+        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier);
     }
 
     private string MaskEmail(string? email)

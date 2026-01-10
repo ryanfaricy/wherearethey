@@ -99,3 +99,21 @@ window.getMapState = function() {
         radiusKm: radiusKm
     };
 };
+
+window.setMapView = function (lat, lng, radiusKm) {
+    if (!map) return;
+    
+    // Zoom level 13 is a good default (~5km radius area)
+    // If radius is provided, we can try to fit it
+    if (radiusKm) {
+        // Approximate zoom level based on radius
+        // radius 5km -> zoom 13
+        // radius 10km -> zoom 12
+        // radius 20km -> zoom 11
+        // radius 40km -> zoom 10
+        const zoom = Math.max(2, Math.min(18, 15 - Math.log2(radiusKm)));
+        map.setView([lat, lng], Math.round(zoom));
+    } else {
+        map.setView([lat, lng], 13);
+    }
+};

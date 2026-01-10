@@ -15,3 +15,12 @@ window.getLocation = function () {
         }
     });
 };
+
+window.getUserIdentifier = function () {
+    let id = localStorage.getItem('user-identifier');
+    if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem('user-identifier', id);
+    }
+    return id;
+};

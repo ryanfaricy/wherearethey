@@ -3,6 +3,8 @@
 @using WhereAreThey.Services
 @inject AlertService AlertService
 @inject NotificationService NotificationService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 <PageTitle>Alerts - WhereAreThey</PageTitle>
 
@@ -99,9 +101,14 @@
                                     </RadzenText>
                                 }
                             </RadzenStack>
-                            <RadzenButton Text="Deactivate" Icon="block" 
-                                          Click="@(() => DeactivateAlert(alert.Id))" 
-                                          ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" />
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <RadzenButton Text="Map" Icon="travel_explore" 
+                                              Click="@(() => ShowOnMap(alert))" 
+                                              ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" />
+                                <RadzenButton Text="Deactivate" Icon="block" 
+                                              Click="@(() => DeactivateAlert(alert.Id))" 
+                                              ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" />
+                            </RadzenStack>
                         </RadzenStack>
                     </RadzenCard>
                 </Template>
@@ -121,10 +128,16 @@
     private string email = "";
     private List<Alert> activeAlerts = new();
     private bool isSubmitting = false;
+    private string? userIdentifier;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await LoadAlerts();
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            await LoadAlerts();
+            StateHasChanged();
+        }
     }
 
     private async Task CreateAlert()
@@ -138,10 +151,11 @@
         isSubmitting = true;
         try
         {
+            newAlert.UserIdentifier = userIdentifier;
             await AlertService.CreateAlertAsync(newAlert, email);
             NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
             
-            newAlert = new Alert { RadiusKm = 5.0 };
+            newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = userIdentifier };
             email = "";
             await LoadAlerts();
         }
@@ -169,9 +183,15 @@
         }
     }
 
+    private void ShowOnMap(Alert alert)
+    {
+        // For the standalone page, we might just redirect to home with parameters
+        NavigationManager.NavigateTo($"/?lat={alert.Latitude}&lng={alert.Longitude}&radius={alert.RadiusKm}");
+    }
+
     private async Task LoadAlerts()
     {
-        activeAlerts = await AlertService.GetActiveAlertsAsync();
+        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier);
     }
 
     private string MaskEmail(string? email)

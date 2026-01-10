@@ -1,6 +1,7 @@
 @page "/"
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.AspNetCore.WebUtilities
 @inject LocationService LocationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -73,27 +74,52 @@
             
             double initialLat = 0;
             double initialLng = 0;
+            double? initialRadius = null;
 
-            try
+            // Check query parameters
+            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+            var query = QueryHelpers.ParseQuery(uri.Query);
+            if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat))
             {
-                isGettingLocation = true;
-                StateHasChanged();
-                var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-                initialLat = position.Coords.Latitude;
-                initialLng = position.Coords.Longitude;
+                initialLat = lat;
             }
-            catch (Exception)
+            if (query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, out var lng))
             {
-                // Fallback to (0,0) if location access denied or fails
+                initialLng = lng;
             }
-            finally
+            if (query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, out var radius))
             {
-                isGettingLocation = false;
-                StateHasChanged();
+                initialRadius = radius;
+            }
+
+            if (initialLat == 0 && initialLng == 0)
+            {
+                try
+                {
+                    isGettingLocation = true;
+                    StateHasChanged();
+                    var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                    initialLat = position.Coords.Latitude;
+                    initialLng = position.Coords.Longitude;
+                }
+                catch (Exception)
+                {
+                    // Fallback to (0,0) if location access denied or fails
+                }
+                finally
+                {
+                    isGettingLocation = false;
+                    StateHasChanged();
+                }
             }
 
             await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef);
             mapInitialized = true;
+
+            if (initialRadius.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
+            }
         }
     }
 
@@ -137,9 +163,14 @@
             // Ignore if map state cannot be retrieved
         }
 
-        await DialogService.OpenAsync<AlertsDialog>("ALERTS",
+        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS",
             parameters,
             new DialogOptions { Width = "350px" });
+
+        if (result is Alert alert)
+        {
+            await JSRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
+        }
     }
 
     private async Task OnDonateClick()

@@ -57,7 +57,12 @@
             // Ignore if map state cannot be retrieved
         }
 
-        await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, new DialogOptions { Width = "350px" });
+        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, new DialogOptions { Width = "350px" });
+
+        if (result is Alert alert)
+        {
+            NavigationManager.NavigateTo($"/?lat={alert.Latitude}&lng={alert.Longitude}&radius={alert.RadiusKm}", forceLoad: true);
+        }
     }
 
     private async Task OnDonateClick()
