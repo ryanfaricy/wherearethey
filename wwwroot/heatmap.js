@@ -1,5 +1,6 @@
 let map;
 let heatLayer;
+let tileLayer;
 
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper) {
     if (map) {
@@ -9,12 +10,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
     const hasInitialLocation = initialLat !== 0 || initialLng !== 0;
     map = L.map(elementId).setView([initialLat, initialLng], hasInitialLocation ? 13 : 2);
 
-    // Use a more muted, high-contrast base map (CartoDB Positron) to make the heatmap pop
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
-    }).addTo(map);
+    updateMapTheme();
 
     map.on('dblclick', function(e) {
         if (dotNetHelper) {
@@ -24,6 +20,30 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
     map.doubleClickZoom.disable();
 
     updateHeatMap(reports, !hasInitialLocation);
+};
+
+window.updateMapTheme = function (theme) {
+    if (!map) return;
+
+    if (tileLayer) {
+        map.removeLayer(tileLayer);
+    }
+
+    // Determine theme if not provided
+    if (!theme) {
+        theme = document.documentElement.getAttribute('data-theme') || 'light';
+    }
+
+    const isDark = theme === 'dark';
+    const baseUrl = isDark 
+        ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+        : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+
+    tileLayer = L.tileLayer(baseUrl, {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+    }).addTo(map);
 };
 
 window.updateHeatMap = function (reports, shouldFitBounds = true) {

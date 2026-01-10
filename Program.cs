@@ -29,6 +29,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<LocationService>();
 builder.Services.AddScoped<AlertService>();
 builder.Services.AddScoped<DonationService>();
+builder.Services.AddScoped<AppThemeService>();
 
 // Configure for high concurrency
 builder.WebHost.ConfigureKestrel(serverOptions =>

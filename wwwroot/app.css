@@ -63,7 +63,15 @@ h1:focus {
     background-color: var(--rz-danger-lighter) !important;
 }
 
+[data-theme="dark"] .report-emergency {
+    background-color: rgba(255, 69, 58, 0.2) !important;
+}
+
 .report-normal {
     border-left: 5px solid var(--rz-info) !important;
     background-color: var(--rz-info-lighter) !important;
+}
+
+[data-theme="dark"] .report-normal {
+    background-color: rgba(10, 132, 255, 0.2) !important;
 }

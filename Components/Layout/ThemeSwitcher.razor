@@ -1,0 +1,37 @@
+@using WhereAreThey.Services
+@inject AppThemeService ThemeService
+@inject IJSRuntime JSRuntime
+
+<RadzenSelectBar @bind-Value="@CurrentTheme" TValue="AppTheme" Change="@OnThemeChanged" Size="ButtonSize.Small" Variant="Variant.Flat">
+    <Items>
+        <RadzenSelectBarItem Icon="light_mode" Value="AppTheme.Light" />
+        <RadzenSelectBarItem Icon="dark_mode" Value="AppTheme.Dark" />
+        <RadzenSelectBarItem Icon="settings_brightness" Value="AppTheme.System" />
+    </Items>
+</RadzenSelectBar>
+
+@code {
+    private AppTheme CurrentTheme
+    {
+        get => ThemeService.CurrentTheme;
+        set => ThemeService.SetTheme(value);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var stored = await JSRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
+            if (Enum.TryParse<AppTheme>(stored, out var theme))
+            {
+                ThemeService.SetTheme(theme);
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task OnThemeChanged(AppTheme theme)
+    {
+        await JSRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
+    }
+}

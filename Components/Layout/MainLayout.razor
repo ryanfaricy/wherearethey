@@ -1,12 +1,16 @@
-﻿@inherits LayoutComponentBase
+﻿@inject IJSRuntime JSRuntime
+@inherits LayoutComponentBase
 
 <RadzenLayout>
     <RadzenHeader>
         <div class="container-fluid">
             <div class="row align-items-center">
-                <div class="col">
+                <div class="col d-flex align-items-center">
                     <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
                     <RadzenLabel Text="WhereAreThey" Style="margin-left: 1rem; font-size: 1.5rem; font-weight: bold;" />
+                </div>
+                <div class="col-auto">
+                    <ThemeSwitcher />
                 </div>
             </div>
         </div>
@@ -29,4 +33,12 @@
 
 @code {
     bool sidebarExpanded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("themeManager.init");
+        }
+    }
 }
