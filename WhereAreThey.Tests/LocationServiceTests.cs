@@ -232,4 +232,56 @@ public class LocationServiceTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task AddLocationReport_Integration_ShouldSendEmailToAlertSubscribers()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
+        var alertService = new AlertService(context, dataProtectionProvider);
+        var emailServiceMock = new Mock<IEmailService>();
+        
+        var services = new ServiceCollection();
+        services.AddSingleton(alertService);
+        services.AddSingleton(emailServiceMock.Object);
+        var serviceProvider = services.BuildServiceProvider();
+
+        var service = new LocationService(context, serviceProvider, _loggerMock.Object);
+        
+        // User B sets up an alert
+        var userBEmail = "userB@example.com";
+        var alert = new Alert 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            RadiusKm = 10.0, 
+            IsActive = true,
+            UserIdentifier = "UserB",
+            Message = "UserB's Area"
+        };
+        await alertService.CreateAlertAsync(alert, userBEmail);
+
+        // User A reports something nearby (roughly 1.1km away)
+        var report = new LocationReport 
+        { 
+            Latitude = 40.01, 
+            Longitude = -74.0,
+            ReporterIdentifier = "UserA",
+            Message = "Alert trigger message",
+            IsEmergency = true
+        };
+
+        // Act
+        await service.AddLocationReportAsync(report);
+
+        // Wait for background task
+        await Task.Delay(500);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == userBEmail),
+            It.Is<string>(s => s.Contains("EMERGENCY")),
+            It.Is<string>(b => b.Contains("Alert trigger message"))), Times.Once);
+    }
 }

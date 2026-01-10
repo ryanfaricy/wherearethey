@@ -135,15 +135,16 @@ dotnet test --verbosity normal
 ```
 
 ### Test Coverage
-- ✅ Location report creation and time-range filtering (7 tests)
+- ✅ Location report creation and time-range filtering (8 tests)
 - ✅ Geographic radius queries and accuracy (3 tests)
 - ✅ Alert creation, management, and expiration (7 tests)
+- ✅ Cross-user alert integration (User A reports, User B alerted)
 - ✅ Donation recording and status updates (3 tests)
 - ✅ Theme state and event management (3 tests)
 - ✅ Email service fallback and error resilience (1 test)
 - ✅ Radius limit enforcement (160.9km)
 - ✅ Encrypted email at rest verification
-- ✅ 100% Pass Rate (24 tests total)
+- ✅ 100% Pass Rate (25 tests total)
 
 ## 🛠️ Development
 
