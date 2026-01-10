@@ -18,6 +18,7 @@
         <RadzenButton Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         <RadzenButton Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         <RadzenButton Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
     </div>
 
@@ -138,6 +139,13 @@
             hoursBack = (int)result;
             await LoadReports();
         }
+    }
+
+    private async Task OnHelpClick()
+    {
+        await DialogService.OpenAsync<HelpDialog>("HELP",
+            null,
+            new DialogOptions { Width = "350px" });
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();

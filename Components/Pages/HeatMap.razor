@@ -22,6 +22,7 @@
 
         <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Wrap="FlexWrap.Wrap">
             <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Large" />
+            <RadzenButton Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Large" />
             <RadzenButton Text="REFRESH" Icon="refresh" Click="@LoadReports" 
                           ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Large" 
                           Style="font-weight: bold;" />
@@ -269,5 +270,12 @@
             hoursBack = (int)result;
             await LoadReports();
         }
+    }
+
+    private async Task OnHelpClick()
+    {
+        await DialogService.OpenAsync<HelpDialog>("HELP",
+            null,
+            new DialogOptions { Width = "350px" });
     }
 }
