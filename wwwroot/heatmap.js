@@ -18,12 +18,13 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
         }
     });
 
-    map.on('dblclick', function(e) {
+    map.on('contextmenu', function(e) {
         if (dotNetHelper) {
-            dotNetHelper.invokeMethodAsync('OnMapDoubleClick', e.latlng.lat, e.latlng.lng);
+            dotNetHelper.invokeMethodAsync('OnMapContextMenu', e.latlng.lat, e.latlng.lng);
         }
     });
-    map.doubleClickZoom.disable();
+    // Re-enable double click zoom if we are not using dblclick for custom actions
+    map.doubleClickZoom.enable();
 
     updateHeatMap(reports, !hasInitialLocation);
 };

@@ -210,6 +210,17 @@
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng)
     {
+        var report = new LocationReport
+        {
+            Latitude = lat,
+            Longitude = lng
+        };
+        await ShowReportDialog(report);
+    }
+
+    [JSInvokable]
+    public async Task OnMapContextMenu(double lat, double lng)
+    {
         // Find reports within a certain radius (e.g. 5km)
         double searchRadiusKm = 5.0; 
 
@@ -224,17 +235,10 @@
                 new Dictionary<string, object> { { "Reports", nearbyReports } },
                 new DialogOptions { Width = "350px" });
         }
-    }
-
-    [JSInvokable]
-    public async Task OnMapDoubleClick(double lat, double lng)
-    {
-        var report = new LocationReport
+        else
         {
-            Latitude = lat,
-            Longitude = lng
-        };
-        await ShowReportDialog(report);
+            NotificationService.Notify(NotificationSeverity.Info, "No reports in this area");
+        }
     }
 
     private async Task ShowReportDialog(LocationReport report)
