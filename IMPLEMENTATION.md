@@ -9,7 +9,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Latest-and-greatest Blazor Server app (.NET 10)
 - [x] 100% mobile-first design (Radical simplicity)
 - [x] Radzen Blazor Components integration
-- [x] Test-driven development with xUnit (7 tests passing)
+- [x] Test-driven development with xUnit (24 tests passing)
 - [x] Entity Framework Core with SQLite
 - [x] Lightweight architecture
 - [x] High-concurrency support (10,000+ connections)
@@ -20,8 +20,8 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 
 ### 📊 Technical Metrics
-- **Lines of Code**: ~2,000 (excluding vendor libraries)
-- **Test Coverage**: 7 comprehensive unit tests (100% pass rate)
+- **Lines of Code**: ~2,500 (excluding vendor libraries)
+- **Test Coverage**: 24 comprehensive unit and integration tests (100% pass rate)
 - **Build Status**: ✅ Success (0 warnings, 0 errors)
 - **Dependencies**: 5 NuGet packages (all secure, latest stable versions)
 - **Database**: SQLite with automatic migrations
@@ -41,8 +41,12 @@ WhereAreThey/
 └── wwwroot/           # Static assets & JavaScript
 
 WhereAreThey.Tests/
-├── LocationServiceTests.cs   # 3 tests
-└── AlertServiceTests.cs      # 4 tests
+├── LocationServiceTests.cs   # 7 tests
+├── AlertServiceTests.cs      # 7 tests
+├── GeoUtilsTests.cs         # 3 tests
+├── DonationServiceTests.cs  # 3 tests
+├── AppThemeServiceTests.cs   # 3 tests
+└── SmtpEmailServiceTests.cs  # 1 test
 ```
 
 #### Technology Stack
@@ -113,12 +117,19 @@ WhereAreThey.Tests/
 cd WhereAreThey.Tests
 dotnet test
 ```
-**Result**: 7/7 tests passing
-- Location report CRUD operations
-- Time-range filtering
-- Geographic radius queries
-- Alert lifecycle management
-- Alert expiration handling
+**Result**: 24/24 tests passing
+- Location report CRUD operations (7 tests)
+- Time-range filtering and edge cases
+- Geographic radius queries (Haversine & Bounding Box)
+- Alert lifecycle management (7 tests)
+- Alert expiration and user filtering
+- Donation recording and status updates (3 tests)
+- Theme state management (3 tests)
+- GeoUtils accuracy (3 tests)
+- Email service fallback logic (1 test)
+- Background task error resilience
+- Radius limit enforcement (160.9km)
+- Encrypted email at rest verification
 
 ### 🚀 Running the Application
 ```bash

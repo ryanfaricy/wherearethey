@@ -81,6 +81,22 @@ public class LocationServiceTests
     }
 
     [Fact]
+    public async Task GetRecentReports_ShouldReturnEmptyIfFutureCutoff()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        context.LocationReports.Add(new LocationReport { Timestamp = DateTime.UtcNow });
+        await context.SaveChangesAsync();
+
+        // Act
+        var results = await service.GetRecentReportsAsync(-1); // hours = -1
+
+        // Assert
+        Assert.Empty(results);
+    }
+
+    [Fact]
     public async Task GetReportsInRadius_ShouldReturnNearbyReports()
     {
         // Arrange
@@ -115,6 +131,33 @@ public class LocationServiceTests
         // Assert
         Assert.Single(results);
         Assert.Equal(nearReport.Latitude, results[0].Latitude);
+    }
+
+    [Fact]
+    public async Task GetReportsInRadius_EdgeCases()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        var centerLat = 40.0;
+        var centerLon = -74.0;
+        var radiusKm = 10.0;
+
+        // Point inside roughly 10km north
+        // 1 degree lat approx 111km -> 10km is ~0.09 degrees
+        var insideRadius = new LocationReport { Latitude = 40.0 + (9.9 / 111.0), Longitude = -74.0 };
+        var justOutsideRadius = new LocationReport { Latitude = 40.0 + (10.2 / 111.0), Longitude = -74.0 };
+
+        context.LocationReports.Add(insideRadius);
+        context.LocationReports.Add(justOutsideRadius);
+        await context.SaveChangesAsync();
+
+        // Act
+        var results = await service.GetReportsInRadiusAsync(centerLat, centerLon, radiusKm);
+
+        // Assert
+        Assert.Single(results);
+        Assert.Equal(insideRadius.Latitude, results[0].Latitude);
     }
 
     [Fact]
@@ -153,5 +196,40 @@ public class LocationServiceTests
             It.Is<string>(s => s == "test@example.com"),
             It.IsAny<string>(),
             It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddLocationReport_ShouldNotCrashOnAlertError()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        
+        var scopeMock = new Mock<IServiceScope>();
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+        
+        // This will cause a NullReferenceException or similar when trying to resolve services from scope
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Throws(new Exception("Mock error"));
+
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
+
+        // Act & Assert
+        var exception = await Record.ExceptionAsync(() => service.AddLocationReportAsync(report));
+        Assert.Null(exception); // Should not throw
+
+        // Wait for background task to finish and log error
+        await Task.Delay(200);
+
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Error,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing alerts")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 }

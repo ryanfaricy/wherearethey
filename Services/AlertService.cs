@@ -5,11 +5,11 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public sealed class AlertService(ApplicationDbContext context, IDataProtectionProvider provider)
+public class AlertService(ApplicationDbContext context, IDataProtectionProvider provider)
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
-    public async Task<Alert> CreateAlertAsync(Alert alert, string email)
+    public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         if (alert.RadiusKm > 160.9)
         {
@@ -24,7 +24,7 @@ public sealed class AlertService(ApplicationDbContext context, IDataProtectionPr
         return alert;
     }
 
-    public string? DecryptEmail(string? encryptedEmail)
+    public virtual string? DecryptEmail(string? encryptedEmail)
     {
         if (string.IsNullOrEmpty(encryptedEmail)) return null;
         try
@@ -37,7 +37,7 @@ public sealed class AlertService(ApplicationDbContext context, IDataProtectionPr
         }
     }
 
-    public async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
+    public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
     {
         var query = context.Alerts
             .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
@@ -50,7 +50,7 @@ public sealed class AlertService(ApplicationDbContext context, IDataProtectionPr
         return await query.ToListAsync();
     }
 
-    public async Task<bool> DeactivateAlertAsync(int id)
+    public virtual async Task<bool> DeactivateAlertAsync(int id)
     {
         var alert = await context.Alerts.FindAsync(id);
         if (alert == null) return false;
@@ -60,7 +60,7 @@ public sealed class AlertService(ApplicationDbContext context, IDataProtectionPr
         return true;
     }
 
-    public async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
+    public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
     {
         // For performance, we could use a bounding box first if we had thousands of alerts
         // But for now, we'll fetch active ones and filter in memory as the number of active alerts is likely manageable
