@@ -141,12 +141,20 @@ dotnet test --verbosity normal
 
 ### Database Migrations
 
-The application uses automatic database creation. To manually manage migrations:
+The application uses EF Core Migrations for schema management. Migrations are automatically applied on startup.
 
+**To add a new migration after model changes:**
 ```bash
-dotnet ef migrations add InitialCreate
+dotnet ef migrations add <MigrationName>
+```
+
+**To apply migrations manually:**
+```bash
 dotnet ef database update
 ```
+
+**Cloud Deployment:**
+For high-concurrency cloud deployments, it is recommended to switch the database provider from SQLite to a managed service like Azure SQL or PostgreSQL. This ensures data persistence and better performance under heavy write loads.
 
 ### Adding New Features
 
