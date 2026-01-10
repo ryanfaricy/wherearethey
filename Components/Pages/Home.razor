@@ -13,17 +13,12 @@
 
 <div class="d-flex flex-column" style="height: calc(100vh - 56px);">
     <!-- Toolbar -->
-    <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
-        <div class="d-flex align-items-center gap-2">
-            <RadzenButton Text="REPORT" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
-            <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-            <RadzenButton Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        </div>
-        
-        <div class="d-flex align-items-center gap-2">
-            <RadzenButton Text="ALERTS" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-            <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        </div>
+    <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+        <RadzenButton Text="REPORT" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
+        <RadzenButton Text="ALERTS" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
     </div>
 
     <!-- Map Container -->
