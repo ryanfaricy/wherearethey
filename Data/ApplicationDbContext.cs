@@ -3,13 +3,8 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Data;
 
-public class ApplicationDbContext : DbContext
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
 {
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options)
-    {
-    }
-
     public DbSet<LocationReport> LocationReports { get; set; }
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<Donation> Donations { get; set; }

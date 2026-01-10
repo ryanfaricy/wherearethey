@@ -4,26 +4,15 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class LocationService
+public class LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<LocationService> _logger;
-
     public event Action? OnReportAdded;
-
-    public LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
-    {
-        _context = context;
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
         report.Timestamp = DateTime.UtcNow;
-        _context.LocationReports.Add(report);
-        await _context.SaveChangesAsync();
+        context.LocationReports.Add(report);
+        await context.SaveChangesAsync();
 
         OnReportAdded?.Invoke();
 
@@ -37,7 +26,7 @@ public class LocationService
     {
         try
         {
-            using var scope = _serviceProvider.CreateScope();
+            using var scope = serviceProvider.CreateScope();
             var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
@@ -65,14 +54,14 @@ public class LocationService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
+            logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
         }
     }
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
     {
         var cutoff = DateTime.UtcNow.AddHours(-hours);
-        return await _context.LocationReports
+        return await context.LocationReports
             .Where(r => r.Timestamp >= cutoff)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
@@ -89,7 +78,7 @@ public class LocationService
         var minLon = longitude - lonDelta;
         var maxLon = longitude + lonDelta;
 
-        var reports = await _context.LocationReports
+        var reports = await context.LocationReports
             .Where(r => r.Latitude >= minLat && r.Latitude <= maxLat &&
                        r.Longitude >= minLon && r.Longitude <= maxLon)
             .ToListAsync();

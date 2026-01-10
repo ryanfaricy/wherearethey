@@ -15,33 +15,24 @@ public class EmailOptions
     public bool EnableSsl { get; set; } = true;
 }
 
-public class SmtpEmailService : IEmailService
+public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailService> logger) : IEmailService
 {
-    private readonly EmailOptions _options;
-    private readonly ILogger<SmtpEmailService> _logger;
-
-    public SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailService> logger)
-    {
-        _options = options.Value;
-        _logger = logger;
-    }
+    private readonly EmailOptions _options = options.Value;
 
     public async Task SendEmailAsync(string to, string subject, string body)
     {
         if (string.IsNullOrEmpty(_options.SmtpServer))
         {
-            _logger.LogWarning("SMTP Server not configured. Email to {To} not sent. Subject: {Subject}", to, subject);
-            _logger.LogInformation("EMAIL CONTENT: {Body}", body);
+            logger.LogWarning("SMTP Server not configured. Email to {To} not sent. Subject: {Subject}", to, subject);
+            logger.LogInformation("EMAIL CONTENT: {Body}", body);
             return;
         }
 
         try
         {
-            using var client = new SmtpClient(_options.SmtpServer, _options.SmtpPort)
-            {
-                Credentials = new NetworkCredential(_options.SmtpUser, _options.SmtpPass),
-                EnableSsl = _options.EnableSsl
-            };
+            using var client = new SmtpClient(_options.SmtpServer, _options.SmtpPort);
+            client.Credentials = new NetworkCredential(_options.SmtpUser, _options.SmtpPass);
+            client.EnableSsl = _options.EnableSsl;
 
             var mailMessage = new MailMessage
             {
@@ -53,11 +44,11 @@ public class SmtpEmailService : IEmailService
             mailMessage.To.Add(to);
 
             await client.SendMailAsync(mailMessage);
-            _logger.LogInformation("Email sent to {To} with subject {Subject}", to, subject);
+            logger.LogInformation("Email sent to {To} with subject {Subject}", to, subject);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send email to {To}", to);
+            logger.LogError(ex, "Failed to send email to {To}", to);
             throw;
         }
     }

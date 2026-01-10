@@ -5,18 +5,11 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class AlertService
+public sealed class AlertService(ApplicationDbContext context, IDataProtectionProvider provider)
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IDataProtector _protector;
+    private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
-    public AlertService(ApplicationDbContext context, IDataProtectionProvider provider)
-    {
-        _context = context;
-        _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
-    }
-
-    public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
+    public async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         if (alert.RadiusKm > 160.9)
         {
@@ -26,12 +19,12 @@ public class AlertService
         alert.EncryptedEmail = _protector.Protect(email);
         alert.CreatedAt = DateTime.UtcNow;
         alert.IsActive = true;
-        _context.Alerts.Add(alert);
-        await _context.SaveChangesAsync();
+        context.Alerts.Add(alert);
+        await context.SaveChangesAsync();
         return alert;
     }
 
-    public virtual string? DecryptEmail(string? encryptedEmail)
+    public string? DecryptEmail(string? encryptedEmail)
     {
         if (string.IsNullOrEmpty(encryptedEmail)) return null;
         try
@@ -44,9 +37,9 @@ public class AlertService
         }
     }
 
-    public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
+    public async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
     {
-        var query = _context.Alerts
+        var query = context.Alerts
             .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
 
         if (!string.IsNullOrEmpty(userIdentifier))
@@ -57,17 +50,17 @@ public class AlertService
         return await query.ToListAsync();
     }
 
-    public virtual async Task<bool> DeactivateAlertAsync(int id)
+    public async Task<bool> DeactivateAlertAsync(int id)
     {
-        var alert = await _context.Alerts.FindAsync(id);
+        var alert = await context.Alerts.FindAsync(id);
         if (alert == null) return false;
 
         alert.IsActive = false;
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 
-    public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
+    public async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
     {
         // For performance, we could use a bounding box first if we had thousands of alerts
         // But for now, we'll fetch active ones and filter in memory as the number of active alerts is likely manageable
