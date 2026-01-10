@@ -1,0 +1,57 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject LocationService LocationService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenText TextStyle="TextStyle.Subtitle1">Report coordinates: <b>@report.Latitude.ToString("F6"), @report.Longitude.ToString("F6")</b></RadzenText>
+        
+        <RadzenFormField Text="Message (Optional)" Variant="Variant.Outlined">
+            <RadzenTextArea @bind-Value="@report.Message" Rows="3" 
+                            Style="width: 100%;" MaxLength="500" />
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenCheckBox @bind-Value="@report.IsEmergency" TValue="bool" Name="IsEmergency" />
+            <RadzenLabel Text="This is an emergency" Component="IsEmergency" />
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="mt-3" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SUBMIT REPORT" 
+                          Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
+                          Disabled="@isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public LocationReport report { get; set; } = new();
+    private bool isSubmitting = false;
+
+    private async Task SubmitReport()
+    {
+        isSubmitting = true;
+        try
+        {
+            if (string.IsNullOrEmpty(report.ReporterIdentifier))
+            {
+                report.ReporterIdentifier = Guid.NewGuid().ToString();
+            }
+
+            await LocationService.AddLocationReportAsync(report);
+            NotificationService.Notify(NotificationSeverity.Success, "Location reported successfully");
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to submit report", ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}
