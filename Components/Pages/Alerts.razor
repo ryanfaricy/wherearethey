@@ -1,0 +1,158 @@
+@page "/alerts"
+@rendermode InteractiveServer
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject AlertService AlertService
+@inject NotificationService NotificationService
+
+<PageTitle>Alerts - WhereAreThey</PageTitle>
+
+<div class="container-fluid">
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Distance-Based Alerts</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
+            Create alerts for specific geographic areas. You'll be notified when reports are made within the specified radius.
+        </RadzenText>
+
+        <RadzenTemplateForm Data="@newAlert" Submit="@((Alert args) => CreateAlert())">
+            <RadzenStack Gap="1rem">
+                <div class="row">
+                    <div class="col-md-6">
+                        <RadzenFormField Text="Latitude" Variant="Variant.Outlined">
+                            <RadzenNumeric @bind-Value="@newAlert.Latitude" TValue="double" 
+                                           ShowUpDown="false" Style="width: 100%;" />
+                        </RadzenFormField>
+                    </div>
+                    <div class="col-md-6">
+                        <RadzenFormField Text="Longitude" Variant="Variant.Outlined">
+                            <RadzenNumeric @bind-Value="@newAlert.Longitude" TValue="double" 
+                                           ShowUpDown="false" Style="width: 100%;" />
+                        </RadzenFormField>
+                    </div>
+                </div>
+
+                <RadzenFormField Text="Radius (km)" Variant="Variant.Outlined">
+                    <RadzenNumeric @bind-Value="@newAlert.RadiusKm" TValue="double" 
+                                   Min="0.1m" Max="100m" ShowUpDown="true" 
+                                   Step="0.5m" Style="width: 100%;" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Alert Message" Variant="Variant.Outlined">
+                    <RadzenTextBox @bind-Value="@newAlert.Message" Style="width: 100%;" 
+                                   Placeholder="e.g., Alert me of reports near my home" />
+                </RadzenFormField>
+
+                <RadzenFormField Text="Expires At (Optional)" Variant="Variant.Outlined">
+                    <RadzenDatePicker @bind-Value="@newAlert.ExpiresAt" TValue="DateTime?" 
+                                      ShowTime="true" Style="width: 100%;" />
+                </RadzenFormField>
+
+                <RadzenButton ButtonType="ButtonType.Submit" Text="Create Alert" 
+                              Icon="add_alert" ButtonStyle="ButtonStyle.Primary" 
+                              Style="width: 100%;" Disabled="@isSubmitting" />
+            </RadzenStack>
+        </RadzenTemplateForm>
+    </RadzenCard>
+
+    <RadzenCard Class="mt-4">
+        <RadzenText TextStyle="TextStyle.H5" Class="mb-3">Active Alerts</RadzenText>
+        
+        @if (activeAlerts.Any())
+        {
+            <RadzenDataList Data="@activeAlerts" TItem="Alert" AllowPaging="true" PageSize="10">
+                <Template Context="alert">
+                    <RadzenCard Style="margin-bottom: 1rem;">
+                        <RadzenStack Orientation="Orientation.Horizontal" 
+                                     JustifyContent="JustifyContent.SpaceBetween" 
+                                     AlignItems="AlignItems.Start" Gap="1rem">
+                            <RadzenStack Orientation="Orientation.Vertical" Gap="0.5rem" Style="flex: 1;">
+                                <RadzenText TextStyle="TextStyle.H6">@alert.Message</RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">
+                                    <strong>Location:</strong> @alert.Latitude.ToString("F6"), @alert.Longitude.ToString("F6")
+                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">
+                                    <strong>Radius:</strong> @alert.RadiusKm km
+                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Body2">
+                                    <strong>Created:</strong> @alert.CreatedAt.ToString("g")
+                                </RadzenText>
+                                @if (alert.ExpiresAt.HasValue)
+                                {
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        <strong>Expires:</strong> @alert.ExpiresAt.Value.ToString("g")
+                                    </RadzenText>
+                                }
+                                else
+                                {
+                                    <RadzenText TextStyle="TextStyle.Body2">
+                                        <strong>Expires:</strong> Never
+                                    </RadzenText>
+                                }
+                            </RadzenStack>
+                            <RadzenButton Text="Deactivate" Icon="block" 
+                                          Click="@(() => DeactivateAlert(alert.Id))" 
+                                          ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" />
+                        </RadzenStack>
+                    </RadzenCard>
+                </Template>
+            </RadzenDataList>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.Body1">
+                No active alerts. Create one to get started!
+            </RadzenText>
+        }
+    </RadzenCard>
+</div>
+
+@code {
+    private Alert newAlert = new Alert { RadiusKm = 5.0 };
+    private List<Alert> activeAlerts = new();
+    private bool isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAlerts();
+    }
+
+    private async Task CreateAlert()
+    {
+        isSubmitting = true;
+        try
+        {
+            await AlertService.CreateAlertAsync(newAlert);
+            NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
+            
+            newAlert = new Alert { RadiusKm = 5.0 };
+            await LoadAlerts();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task DeactivateAlert(int id)
+    {
+        try
+        {
+            await AlertService.DeactivateAlertAsync(id);
+            NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
+            await LoadAlerts();
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", ex.Message);
+        }
+    }
+
+    private async Task LoadAlerts()
+    {
+        activeAlerts = await AlertService.GetActiveAlertsAsync();
+    }
+}

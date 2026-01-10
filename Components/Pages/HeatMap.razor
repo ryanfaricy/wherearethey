@@ -1,0 +1,94 @@
+@page "/heatmap"
+@rendermode InteractiveServer
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject LocationService LocationService
+
+<PageTitle>Heat Map - WhereAreThey</PageTitle>
+
+<div class="container-fluid">
+    <RadzenCard>
+        <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Location Heat Map</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
+            View all reported locations from the last 24 hours. Red markers indicate emergency reports.
+        </RadzenText>
+
+        <RadzenStack Gap="1rem">
+            <RadzenFormField Text="Time Range (Hours)" Variant="Variant.Outlined">
+                <RadzenNumeric @bind-Value="@hoursBack" TValue="int" Min="1" Max="168" 
+                               ShowUpDown="true" Style="width: 200px;" />
+            </RadzenFormField>
+            <RadzenButton Text="Refresh" Icon="refresh" Click="@LoadReports" 
+                          ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
+    </RadzenCard>
+
+    <RadzenCard Class="mt-4">
+        <RadzenText TextStyle="TextStyle.H5" Class="mb-3">
+            Reports (@reports.Count total, @emergencyReports emergency)
+        </RadzenText>
+        
+        @if (reports.Any())
+        {
+            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 400px;">
+                <RadzenText TextStyle="TextStyle.Body1" Class="mb-3">
+                    <strong>Map Visualization</strong>
+                </RadzenText>
+                <RadzenText TextStyle="TextStyle.Body2" Class="mb-3">
+                    Note: Full interactive map would be implemented with a mapping library like Leaflet or Google Maps.
+                    Below is a simplified representation of the data.
+                </RadzenText>
+
+                <RadzenDataGrid Data="@reports" TItem="LocationReport" 
+                                AllowPaging="true" PageSize="20" 
+                                AllowSorting="true" AllowFiltering="true"
+                                Style="width: 100%;">
+                    <Columns>
+                        <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" 
+                                              Title="Time" FormatString="{0:g}" Width="150px" />
+                        <RadzenDataGridColumn TItem="LocationReport" Property="Latitude" 
+                                              Title="Lat" FormatString="{0:F6}" Width="110px" />
+                        <RadzenDataGridColumn TItem="LocationReport" Property="Longitude" 
+                                              Title="Lon" FormatString="{0:F6}" Width="110px" />
+                        <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
+                        <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" 
+                                              Title="Emergency" Width="100px">
+                            <Template Context="data">
+                                @if (data.IsEmergency)
+                                {
+                                    <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" />
+                                }
+                                else
+                                {
+                                    <RadzenBadge Text="Normal" BadgeStyle="BadgeStyle.Info" />
+                                }
+                            </Template>
+                        </RadzenDataGridColumn>
+                    </Columns>
+                </RadzenDataGrid>
+            </div>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.Body1">
+                No reports found for the selected time range.
+            </RadzenText>
+        }
+    </RadzenCard>
+</div>
+
+@code {
+    private List<LocationReport> reports = new();
+    private int hoursBack = 24;
+    private int emergencyReports => reports.Count(r => r.IsEmergency);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReports();
+    }
+
+    private async Task LoadReports()
+    {
+        reports = await LocationService.GetRecentReportsAsync(hoursBack);
+    }
+}
