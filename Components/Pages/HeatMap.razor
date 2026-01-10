@@ -148,6 +148,32 @@
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng)
     {
+        // Find reports within a certain radius (e.g. 5km)
+        double searchRadiusKm = 5.0; 
+
+        var nearbyReports = reports
+            .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
+            .OrderByDescending(r => r.Timestamp)
+            .ToList();
+
+        if (nearbyReports.Any())
+        {
+            // Tapping on a blob reveals report details
+            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
+                new Dictionary<string, object> { { "Reports", nearbyReports } },
+                new DialogOptions { Width = "350px" });
+        }
+        else
+        {
+            // Tapping on a non-blob area opens create alert
+            await ShowAlertsDialog(lat, lng);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMapContextMenu(double lat, double lng)
+    {
+        // Long-press/right click reveals create report
         var report = new LocationReport
         {
             Latitude = lat,
@@ -164,24 +190,45 @@
         }
     }
 
-    [JSInvokable]
-    public async Task OnMapContextMenu(double lat, double lng)
+    private async Task ShowAlertsDialog(double? lat = null, double? lng = null)
     {
-        double searchRadiusKm = 5.0; 
-        var nearbyReports = reports
-            .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
-            .OrderByDescending(r => r.Timestamp)
-            .ToList();
-
-        if (nearbyReports.Any())
+        var parameters = new Dictionary<string, object>();
+        try
         {
-            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
-                new Dictionary<string, object> { { "Reports", nearbyReports } },
-                new DialogOptions { Width = "350px" });
+            if (lat.HasValue && lng.HasValue)
+            {
+                parameters.Add("InitialLat", lat.Value);
+                parameters.Add("InitialLng", lng.Value);
+                
+                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                if (mapState != null)
+                {
+                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                }
+            }
+            else
+            {
+                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                if (mapState != null)
+                {
+                    parameters.Add("InitialLat", mapState.Lat);
+                    parameters.Add("InitialLng", mapState.Lng);
+                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                }
+            }
         }
-        else
+        catch (Exception)
         {
-            NotificationService.Notify(NotificationSeverity.Info, "No reports in this area");
+            // Ignore if map state cannot be retrieved
+        }
+
+        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS",
+            parameters,
+            new DialogOptions { Width = "350px" });
+
+        if (result is Alert alert)
+        {
+            await JSRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
         }
     }
 
