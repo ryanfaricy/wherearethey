@@ -9,8 +9,11 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
     const hasInitialLocation = initialLat !== 0 || initialLng !== 0;
     map = L.map(elementId).setView([initialLat, initialLng], hasInitialLocation ? 13 : 2);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // Use a more muted, high-contrast base map (CartoDB Positron) to make the heatmap pop
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
     }).addTo(map);
 
     map.on('dblclick', function(e) {
@@ -30,12 +33,25 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
         map.removeLayer(heatLayer);
     }
 
-    const heatData = reports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.5]);
+    // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
+    const heatData = reports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
+    
+    // High-contrast configuration:
+    // - Increased radius and reduced blur for sharper hotspots
+    // - Higher minOpacity to ensure faint reports are visible
+    // - More aggressive gradient starting earlier
     heatLayer = L.heatLayer(heatData, {
-        radius: 25,
-        blur: 15,
+        radius: 30,
+        blur: 10,
         maxZoom: 17,
-        gradient: { 0.4: 'blue', 0.65: 'lime', 1: 'red' }
+        minOpacity: 0.5,
+        gradient: {
+            0.2: 'blue',
+            0.4: 'cyan',
+            0.6: 'lime',
+            0.8: 'yellow',
+            1.0: 'red'
+        }
     }).addTo(map);
 
     if (shouldFitBounds && reports.length > 0) {
