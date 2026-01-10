@@ -1,58 +1,47 @@
 @page "/donate"
-@rendermode InteractiveServer
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject DonationService DonationService
 @inject NotificationService NotificationService
 
-<PageTitle>Donate - WhereAreThey</PageTitle>
+<PageTitle>Support WhereAreThey - Donation</PageTitle>
 
-<div class="container-fluid">
+<div class="container-fluid py-4">
     <div class="row">
-        <div class="col-lg-8 mx-auto">
-            <RadzenCard>
-                <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Support WhereAreThey</RadzenText>
+        <div class="col-12">
+            <RadzenCard Class="rz-shadow-10 rz-border-radius-6 mb-4" Style="border-top: 8px solid var(--rz-success);">
+                <RadzenText TextStyle="TextStyle.H4" Class="mb-3" Style="font-weight: bold; color: var(--rz-success-darker);">
+                    SUPPORT US
+                </RadzenText>
                 <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
                     Your donation helps keep this life-saving service online and accessible to everyone who needs it.
-                    Every contribution makes a difference.
+                    <strong>People's lives depend on it.</strong>
                 </RadzenText>
 
-                <RadzenCard Style="background-color: #f8f9fa;" Class="mb-4">
-                    <RadzenText TextStyle="TextStyle.H6" Class="mb-2">Why Donate?</RadzenText>
-                    <ul class="mb-0">
-                        <li>Keep servers running 24/7 for emergency situations</li>
-                        <li>Support infrastructure costs for handling thousands of connections</li>
-                        <li>Enable continued development of life-saving features</li>
-                        <li>Ensure the platform remains free for everyone</li>
-                    </ul>
-                </RadzenCard>
-
                 <RadzenTemplateForm Data="@donation" Submit="@((Donation args) => ProcessDonation())">
-                    <RadzenStack Gap="1rem">
-                        <RadzenFormField Text="Donation Amount" Variant="Variant.Outlined">
+                    <RadzenStack Gap="1.5rem">
+                        <RadzenFormField Text="Amount" Variant="Variant.Outlined">
                             <RadzenNumeric @bind-Value="@donation.Amount" TValue="decimal" 
                                            Min="1" Max="10000" ShowUpDown="false" 
-                                           Format="c" Style="width: 100%;" />
+                                           Format="c" Style="width: 100%; font-size: 1.5rem; font-weight: bold;" />
                         </RadzenFormField>
 
-                        <div class="row">
-                            <div class="col-6">
+                        <div class="row g-2">
+                            <div class="col-3">
                                 <RadzenButton Text="$5" Click="@(() => donation.Amount = 5)" 
-                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                                              ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" />
                             </div>
-                            <div class="col-6">
+                            <div class="col-3">
                                 <RadzenButton Text="$10" Click="@(() => donation.Amount = 10)" 
-                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                                              ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" />
                             </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-6">
+                            <div class="col-3">
                                 <RadzenButton Text="$25" Click="@(() => donation.Amount = 25)" 
-                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                                              ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" />
                             </div>
-                            <div class="col-6">
+                            <div class="col-3">
                                 <RadzenButton Text="$50" Click="@(() => donation.Amount = 50)" 
-                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                                              ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" />
                             </div>
                         </div>
 
@@ -62,50 +51,35 @@
                                            Style="width: 100%;" />
                         </RadzenFormField>
 
-                        <RadzenFormField Text="Name (Optional)" Variant="Variant.Outlined">
-                            <RadzenTextBox @bind-Value="@donation.DonorName" 
-                                           Placeholder="Your name" 
-                                           Style="width: 100%;" />
-                        </RadzenFormField>
-
-                        <RadzenText TextStyle="TextStyle.Caption" Class="text-muted">
-                            Note: In a production environment, this would integrate with Stripe's Payment Element
-                            for secure credit card processing. For now, this is a demonstration.
-                        </RadzenText>
-
                         <RadzenButton ButtonType="ButtonType.Submit" 
-                                      Text="@($"Donate ${donation.Amount:F2}")" 
+                                      Text="@($"DONATE ${donation.Amount:F2}")" 
                                       Icon="volunteer_activism" 
-                                      ButtonStyle="ButtonStyle.Primary" 
-                                      Style="width: 100%;" 
+                                      ButtonStyle="ButtonStyle.Success" 
+                                      Size="ButtonSize.Large"
+                                      Style="width: 100%; font-weight: bold;" 
                                       Disabled="@isProcessing" />
+                        
+                        <RadzenText TextStyle="TextStyle.Caption" Class="text-center opacity-75">
+                            Secure payment processing via Stripe.<br />
+                            Thank you for your support.
+                        </RadzenText>
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenCard>
 
             @if (recentDonations.Any())
             {
-                <RadzenCard Class="mt-4">
-                    <RadzenText TextStyle="TextStyle.H5" Class="mb-3">Recent Donations</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Class="mb-3">
-                        Thank you to our generous supporters!
-                    </RadzenText>
-                    <RadzenDataList Data="@recentDonations" TItem="DonationDisplay" 
-                                    AllowPaging="true" PageSize="5">
+                <RadzenCard Class="rz-shadow-5 rz-border-radius-4">
+                    <RadzenText TextStyle="TextStyle.H6" Class="mb-3">Recent Supporters</RadzenText>
+                    <RadzenDataList Data="@recentDonations" TItem="DonationDisplay" PageSize="3" ShowPagingSummary="false">
                         <Template Context="d">
-                            <RadzenCard Style="margin-bottom: 0.5rem;">
-                                <RadzenStack Orientation="Orientation.Horizontal" 
-                                             JustifyContent="JustifyContent.SpaceBetween">
-                                    <RadzenText TextStyle="TextStyle.Body1">
-                                        <strong>@d.DisplayName</strong>
-                                    </RadzenText>
-                                    <RadzenBadge Text="@($"${d.Amount:F2}")" 
-                                                 BadgeStyle="BadgeStyle.Success" />
-                                </RadzenStack>
-                                <RadzenText TextStyle="TextStyle.Caption">
-                                    @d.TimeAgo
-                                </RadzenText>
-                            </RadzenCard>
+                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rz-border-radius-2" style="background-color: var(--rz-success-lighter);">
+                                <div>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; margin-bottom: 0;">@d.DisplayName</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Caption" Style="margin-bottom: 0;">@d.TimeAgo</RadzenText>
+                                </div>
+                                <RadzenBadge Text="@($"${d.Amount:F0}")" BadgeStyle="BadgeStyle.Success" />
+                            </div>
                         </Template>
                     </RadzenDataList>
                 </RadzenCard>

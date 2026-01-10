@@ -4,13 +4,13 @@ A critical, mobile-first Blazor Server application for anonymous location report
 
 ## 🚨 Mission-Critical Features
 
-- **Anonymous Location Reporting**: Report locations without revealing personal information
-- **Real-Time Heat Maps**: Visualize reported locations to identify areas of concern
-- **Distance-Based Alerts**: Create alerts for specific geographic areas
-- **Donation Integration**: Support the service through Stripe payments
-- **Mobile-First Design**: Optimized for emergency situations on any device
-- **High Concurrency**: Configured to handle thousands of simultaneous connections
-- **Test-Driven Development**: Comprehensive test coverage with xUnit
+- **ARE THEY HERE?**: Instant heat map visualization of recent reports
+- **THEY ARE HERE!**: One-tap anonymous location reporting
+- **Distance-Based Alerts**: Sign up with encrypted email for location-specific notifications
+- **Donation Integration**: Support the service through simplified Stripe payments
+- **Mobile-First Design**: Radical simple UI optimized for phone use in emergencies
+- **High Concurrency**: Configured to handle 10,000+ simultaneous connections
+- **Data Privacy**: Emails are stored encrypted at rest using AES-256 (via Data Protection API)
 
 ## 🏗️ Architecture
 
@@ -81,23 +81,23 @@ WhereAreThey.Tests/
 
 ## 📱 Features
 
-### 1. Location Reporting
-- Anonymous submission of GPS coordinates
+### 1. THEY ARE HERE! (Location Reporting)
+- Radical simple submission of GPS coordinates
 - Optional emergency flag for critical situations
 - Automatic timestamp recording
 - Uses browser geolocation API
 
-### 2. Heat Map Visualization
+### 2. ARE THEY HERE? (Heat Map Visualization)
 - View all reports from the last 24 hours (configurable)
-- Filter by emergency status
+- Mobile-first list view of recent reports
 - See geographic distribution of reports
-- Export data for analysis
+- Color-coded urgency indicators
 
 ### 3. Distance-Based Alerts
-- Create alerts for specific locations
+- Create alerts with your email (encrypted at rest)
 - Set radius (in kilometers) for monitoring
 - Optional expiration dates
-- Manage active alerts
+- Masked email display for privacy
 
 ### 4. Donation System
 - Stripe integration for secure payments

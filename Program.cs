@@ -10,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add Data Protection for encrypted emails at rest
+builder.Services.AddDataProtection();
+
 // Add Radzen services
 builder.Services.AddRadzenComponents();
 

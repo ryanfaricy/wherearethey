@@ -1,18 +1,19 @@
 @page "/report"
-@rendermode InteractiveServer
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject LocationService LocationService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
 
-<PageTitle>Report Location - WhereAreThey</PageTitle>
+<PageTitle>THEY ARE HERE - Report Location</PageTitle>
 
-<div class="container-fluid">
-    <RadzenCard>
-        <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Report Location</RadzenText>
+<div class="container-fluid py-4">
+    <RadzenCard Class="rz-shadow-10 rz-border-radius-6 mb-4" Style="border-top: 8px solid var(--rz-danger);">
+        <RadzenText TextStyle="TextStyle.H4" Class="mb-3" Style="font-weight: bold; color: var(--rz-danger-darker);">
+            THEY ARE HERE!
+        </RadzenText>
         <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
-            Report your location or the location of someone in need. All reports are anonymous.
+            Report their location immediately. Your report is <strong>100% anonymous</strong> and will appear on the heat map.
         </RadzenText>
 
         <RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
@@ -40,9 +41,10 @@
                 <RadzenLabel Text="This is an emergency" Component="IsEmergency" Style="margin-left: 0.5rem;" />
 
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="mt-3">
-                    <RadzenButton ButtonType="ButtonType.Submit" Text="Submit Report" 
-                                  Icon="send" ButtonStyle="ButtonStyle.Primary" 
-                                  Style="width: 100%;" Disabled="@isSubmitting" />
+                    <RadzenButton ButtonType="ButtonType.Submit" Text="SUBMIT REPORT" 
+                                  Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
+                                  Size="ButtonSize.Large"
+                                  Style="width: 100%; font-weight: bold;" Disabled="@isSubmitting" />
                 </RadzenStack>
             </RadzenStack>
         </RadzenTemplateForm>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -8,6 +9,8 @@ namespace WhereAreThey.Tests;
 
 public class AlertServiceTests
 {
+    private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -17,11 +20,12 @@ public class AlertServiceTests
     }
 
     [Fact]
-    public async Task CreateAlert_ShouldCreateActiveAlert()
+    public async Task CreateAlert_ShouldCreateActiveAlertAndEncryptEmail()
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AlertService(context);
+        var service = new AlertService(context, _dataProtectionProvider);
+        var email = "test@example.com";
         var alert = new Alert
         {
             Latitude = 40.7128,
@@ -31,12 +35,14 @@ public class AlertServiceTests
         };
 
         // Act
-        var result = await service.CreateAlertAsync(alert);
+        var result = await service.CreateAlertAsync(alert, email);
 
         // Assert
         Assert.NotEqual(0, result.Id);
         Assert.True(result.IsActive);
-        Assert.True(result.CreatedAt <= DateTime.UtcNow);
+        Assert.NotNull(result.EncryptedEmail);
+        Assert.NotEqual(email, result.EncryptedEmail);
+        Assert.Equal(email, service.DecryptEmail(result.EncryptedEmail));
     }
 
     [Fact]
@@ -44,7 +50,7 @@ public class AlertServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AlertService(context);
+        var service = new AlertService(context, _dataProtectionProvider);
         
         var activeAlert = new Alert
         {
@@ -52,7 +58,8 @@ public class AlertServiceTests
             Longitude = -74.0,
             RadiusKm = 5.0,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            EncryptedEmail = "encrypted"
         };
         
         var inactiveAlert = new Alert
@@ -61,7 +68,8 @@ public class AlertServiceTests
             Longitude = -75.0,
             RadiusKm = 5.0,
             IsActive = false,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            EncryptedEmail = "encrypted"
         };
 
         context.Alerts.Add(activeAlert);
@@ -81,7 +89,7 @@ public class AlertServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AlertService(context);
+        var service = new AlertService(context, _dataProtectionProvider);
         
         var alert = new Alert
         {
@@ -89,7 +97,8 @@ public class AlertServiceTests
             Longitude = -74.0,
             RadiusKm = 5.0,
             IsActive = true,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            EncryptedEmail = "encrypted"
         };
 
         context.Alerts.Add(alert);
@@ -109,7 +118,7 @@ public class AlertServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new AlertService(context);
+        var service = new AlertService(context, _dataProtectionProvider);
         
         var expiredAlert = new Alert
         {
@@ -118,7 +127,8 @@ public class AlertServiceTests
             RadiusKm = 5.0,
             IsActive = true,
             CreatedAt = DateTime.UtcNow.AddHours(-2),
-            ExpiresAt = DateTime.UtcNow.AddHours(-1)
+            ExpiresAt = DateTime.UtcNow.AddHours(-1),
+            EncryptedEmail = "encrypted"
         };
         
         var validAlert = new Alert
@@ -128,7 +138,8 @@ public class AlertServiceTests
             RadiusKm = 5.0,
             IsActive = true,
             CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(1)
+            ExpiresAt = DateTime.UtcNow.AddHours(1),
+            EncryptedEmail = "encrypted"
         };
 
         context.Alerts.Add(expiredAlert);

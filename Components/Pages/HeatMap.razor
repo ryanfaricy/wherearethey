@@ -1,77 +1,68 @@
 @page "/heatmap"
-@rendermode InteractiveServer
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject LocationService LocationService
 
-<PageTitle>Heat Map - WhereAreThey</PageTitle>
+<PageTitle>ARE THEY HERE? - Heat Map</PageTitle>
 
-<div class="container-fluid">
-    <RadzenCard>
-        <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Location Heat Map</RadzenText>
+<div class="container-fluid py-4">
+    <RadzenCard Class="rz-shadow-10 rz-border-radius-6 mb-4" Style="border-top: 8px solid var(--rz-info);">
+        <RadzenText TextStyle="TextStyle.H4" Class="mb-3" Style="font-weight: bold; color: var(--rz-info-darker);">
+            ARE THEY HERE?
+        </RadzenText>
         <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
             View all reported locations from the last 24 hours. Red markers indicate emergency reports.
         </RadzenText>
 
-        <RadzenStack Gap="1rem">
-            <RadzenFormField Text="Time Range (Hours)" Variant="Variant.Outlined">
+        <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Wrap="FlexWrap.Wrap">
+            <RadzenFormField Text="Time Range (Hours)" Variant="Variant.Outlined" Style="flex: 1; min-width: 150px;">
                 <RadzenNumeric @bind-Value="@hoursBack" TValue="int" Min="1" Max="168" 
-                               ShowUpDown="true" Style="width: 200px;" />
+                               ShowUpDown="true" Style="width: 100%;" />
             </RadzenFormField>
-            <RadzenButton Text="Refresh" Icon="refresh" Click="@LoadReports" 
-                          ButtonStyle="ButtonStyle.Primary" />
+            <RadzenButton Text="REFRESH" Icon="refresh" Click="@LoadReports" 
+                          ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Large" 
+                          Style="font-weight: bold;" />
         </RadzenStack>
     </RadzenCard>
 
-    <RadzenCard Class="mt-4">
+    <RadzenCard Class="rz-shadow-5 rz-border-radius-4">
         <RadzenText TextStyle="TextStyle.H5" Class="mb-3">
-            Reports (@reports.Count total, @emergencyReports emergency)
+            Reports (@reports.Count total)
         </RadzenText>
         
         @if (reports.Any())
         {
-            <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 400px;">
-                <RadzenText TextStyle="TextStyle.Body1" Class="mb-3">
-                    <strong>Map Visualization</strong>
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body2" Class="mb-3">
-                    Note: Full interactive map would be implemented with a mapping library like Leaflet or Google Maps.
-                    Below is a simplified representation of the data.
-                </RadzenText>
-
-                <RadzenDataGrid Data="@reports" TItem="LocationReport" 
-                                AllowPaging="true" PageSize="20" 
-                                AllowSorting="true" AllowFiltering="true"
-                                Style="width: 100%;">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" 
-                                              Title="Time" FormatString="{0:g}" Width="150px" />
-                        <RadzenDataGridColumn TItem="LocationReport" Property="Latitude" 
-                                              Title="Lat" FormatString="{0:F6}" Width="110px" />
-                        <RadzenDataGridColumn TItem="LocationReport" Property="Longitude" 
-                                              Title="Lon" FormatString="{0:F6}" Width="110px" />
-                        <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
-                        <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" 
-                                              Title="Emergency" Width="100px">
-                            <Template Context="data">
-                                @if (data.IsEmergency)
-                                {
-                                    <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" />
-                                }
-                                else
-                                {
-                                    <RadzenBadge Text="Normal" BadgeStyle="BadgeStyle.Info" />
-                                }
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
-            </div>
+            <RadzenDataList Data="@reports" TItem="LocationReport" AllowPaging="true" PageSize="10">
+                <Template Context="r">
+                    <div class="rz-card mb-2 p-3 @(r.IsEmergency ? "report-emergency" : "report-normal")">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenStack Gap="0">
+                                <RadzenText TextStyle="TextStyle.H6" Style="margin-bottom: 0;">
+                                    @r.Latitude.ToString("F4"), @r.Longitude.ToString("F4")
+                                </RadzenText>
+                                <RadzenText TextStyle="TextStyle.Caption">
+                                    @r.Timestamp.ToLocalTime().ToString("g")
+                                </RadzenText>
+                            </RadzenStack>
+                            @if (r.IsEmergency)
+                            {
+                                <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" />
+                            }
+                        </RadzenStack>
+                        @if (!string.IsNullOrEmpty(r.Message))
+                        {
+                            <RadzenText TextStyle="TextStyle.Body2" Class="mt-2">
+                                @r.Message
+                            </RadzenText>
+                        }
+                    </div>
+                </Template>
+            </RadzenDataList>
         }
         else
         {
-            <RadzenText TextStyle="TextStyle.Body1">
-                No reports found for the selected time range.
+            <RadzenText TextStyle="TextStyle.Body1" Class="text-center py-5 opacity-75">
+                No reports found for this time range.
             </RadzenText>
         }
     </RadzenCard>
@@ -80,7 +71,6 @@
 @code {
     private List<LocationReport> reports = new();
     private int hoursBack = 24;
-    private int emergencyReports => reports.Count(r => r.IsEmergency);
 
     protected override async Task OnInitializedAsync()
     {

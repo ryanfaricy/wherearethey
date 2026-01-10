@@ -1,92 +1,74 @@
 ﻿@page "/"
-@rendermode InteractiveServer
 
-<PageTitle>WhereAreThey - Emergency Location Tracking</PageTitle>
+<PageTitle>WhereAreThey - Emergency Tracking</PageTitle>
 
-<div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col-12">
-            <RadzenCard>
-                <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="mb-3">
-                    WhereAreThey - Emergency Location Tracking
-                </RadzenText>
-                <RadzenText TextStyle="TextStyle.Body1">
-                    A critical, mobile-first platform for anonymous location reporting and emergency alerts.
-                    People's safety depends on accurate, real-time information.
-                </RadzenText>
-            </RadzenCard>
+<div class="container-fluid py-4">
+    <div class="row mb-5">
+        <div class="col-12 text-center">
+            <RadzenText TextStyle="TextStyle.H3" TagName="TagName.H1" Class="rz-color-primary" Style="font-weight: 900; letter-spacing: -1px;">
+                WhereAreThey
+            </RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle1">
+                Emergency Location Tracking
+            </RadzenText>
         </div>
     </div>
 
-    <div class="row g-3">
-        <div class="col-12 col-md-6 col-lg-3">
-            <RadzenCard Style="height: 100%">
-                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenIcon Icon="my_location" Style="font-size: 3rem; color: var(--rz-primary);" />
-                    <RadzenText TextStyle="TextStyle.H6" Class="text-center">Report Location</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Class="text-center">
-                        Anonymously report your location or the location of someone in need.
+    <div class="row g-4 mb-5">
+        <!-- ARE THEY HERE? -->
+        <div class="col-12">
+            <RadzenCard @onclick="@(() => NavigationManager.NavigateTo("/heatmap"))" 
+                        Class="rz-shadow-10 rz-border-radius-6 text-center py-5" 
+                        Style="cursor: pointer; background-color: var(--rz-info-lighter); border: 2px solid var(--rz-info);">
+                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1.5rem">
+                    <RadzenIcon Icon="visibility" Style="font-size: 5rem; color: var(--rz-info);" />
+                    <RadzenText TextStyle="TextStyle.H2" Style="font-weight: bold; color: var(--rz-info-darker);">
+                        ARE THEY HERE?
                     </RadzenText>
-                    <RadzenButton Text="Report Now" Click="@(() => NavigationManager.NavigateTo("/report"))" 
-                                  ButtonStyle="ButtonStyle.Primary" Style="width: 100%;" />
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-color-info-dark">
+                        View the Heat Map
+                    </RadzenText>
                 </RadzenStack>
             </RadzenCard>
         </div>
 
-        <div class="col-12 col-md-6 col-lg-3">
-            <RadzenCard Style="height: 100%">
-                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenIcon Icon="map" Style="font-size: 3rem; color: var(--rz-success);" />
-                    <RadzenText TextStyle="TextStyle.H6" Class="text-center">Heat Map</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Class="text-center">
-                        Visualize reported locations and identify areas of concern.
+        <!-- THEY ARE HERE! -->
+        <div class="col-12">
+            <RadzenCard @onclick="@(() => NavigationManager.NavigateTo("/report"))" 
+                        Class="rz-shadow-10 rz-border-radius-6 text-center py-5" 
+                        Style="cursor: pointer; background-color: var(--rz-danger-lighter); border: 2px solid var(--rz-danger);">
+                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1.5rem">
+                    <RadzenIcon Icon="report_problem" Style="font-size: 5rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H2" Style="font-weight: bold; color: var(--rz-danger-darker);">
+                        THEY ARE HERE!
                     </RadzenText>
-                    <RadzenButton Text="View Map" Click="@(() => NavigationManager.NavigateTo("/heatmap"))" 
-                                  ButtonStyle="ButtonStyle.Success" Style="width: 100%;" />
-                </RadzenStack>
-            </RadzenCard>
-        </div>
-
-        <div class="col-12 col-md-6 col-lg-3">
-            <RadzenCard Style="height: 100%">
-                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenIcon Icon="notifications" Style="font-size: 3rem; color: var(--rz-warning);" />
-                    <RadzenText TextStyle="TextStyle.H6" Class="text-center">Alerts</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Class="text-center">
-                        Create and manage distance-based emergency alerts.
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-color-danger-dark">
+                        Report a Location
                     </RadzenText>
-                    <RadzenButton Text="Manage Alerts" Click="@(() => NavigationManager.NavigateTo("/alerts"))" 
-                                  ButtonStyle="ButtonStyle.Warning" Style="width: 100%;" />
-                </RadzenStack>
-            </RadzenCard>
-        </div>
-
-        <div class="col-12 col-md-6 col-lg-3">
-            <RadzenCard Style="height: 100%">
-                <RadzenStack Orientation="Orientation.Vertical" AlignItems="AlignItems.Center" Gap="1rem">
-                    <RadzenIcon Icon="volunteer_activism" Style="font-size: 3rem; color: var(--rz-danger);" />
-                    <RadzenText TextStyle="TextStyle.H6" Class="text-center">Support Us</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Body2" Class="text-center">
-                        Help keep this critical service running with a donation.
-                    </RadzenText>
-                    <RadzenButton Text="Donate" Click="@(() => NavigationManager.NavigateTo("/donate"))" 
-                                  ButtonStyle="ButtonStyle.Danger" Style="width: 100%;" />
                 </RadzenStack>
             </RadzenCard>
         </div>
     </div>
 
-    <div class="row mt-4">
-        <div class="col-12">
-            <RadzenCard>
-                <RadzenText TextStyle="TextStyle.H5" Class="mb-3">Why WhereAreThey?</RadzenText>
-                <ul>
-                    <li><strong>Anonymous & Safe:</strong> No personal data required for location reporting.</li>
-                    <li><strong>Real-Time Alerts:</strong> Get notified when events occur near you.</li>
-                    <li><strong>Mobile-First:</strong> Designed for use in emergency situations on any device.</li>
-                    <li><strong>Life-Saving:</strong> Critical information when every second counts.</li>
-                </ul>
-            </RadzenCard>
+    <div class="row g-4">
+        <div class="col-6">
+            <RadzenButton Text="Alerts" Icon="notifications" Click="@(() => NavigationManager.NavigateTo("/alerts"))" 
+                          ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Large" 
+                          Style="width: 100%; font-weight: bold;" />
+        </div>
+        <div class="col-6">
+            <RadzenButton Text="Donate" Icon="volunteer_activism" Click="@(() => NavigationManager.NavigateTo("/donate"))" 
+                          ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Large" 
+                          Style="width: 100%; font-weight: bold;" />
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center opacity-75">
+            <RadzenText TextStyle="TextStyle.Body2">
+                Anonymous. Critical. Real-time.<br />
+                <strong>People's lives depend on it.</strong>
+            </RadzenText>
         </div>
     </div>
 </div>

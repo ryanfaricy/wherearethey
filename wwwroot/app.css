@@ -58,3 +58,12 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+.report-emergency {
+    border-left: 5px solid var(--rz-danger) !important;
+    background-color: var(--rz-danger-lighter) !important;
+}
+
+.report-normal {
+    border-left: 5px solid var(--rz-info) !important;
+    background-color: var(--rz-info-lighter) !important;
+}

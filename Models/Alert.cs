@@ -7,6 +7,7 @@ public class Alert
     public double Longitude { get; set; }
     public double RadiusKm { get; set; }
     public string? Message { get; set; }
+    public string? EncryptedEmail { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public bool IsActive { get; set; }
