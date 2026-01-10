@@ -18,4 +18,11 @@
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="WhereAreThey.Tests/**" />
+    <Content Remove="WhereAreThey.Tests/**" />
+    <EmbeddedResource Remove="WhereAreThey.Tests/**" />
+    <None Remove="WhereAreThey.Tests/**" />
+  </ItemGroup>
+
 </Project>
