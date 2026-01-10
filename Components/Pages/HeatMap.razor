@@ -19,10 +19,7 @@
         </RadzenText>
 
         <RadzenStack Gap="1rem" Orientation="Orientation.Horizontal" AlignItems="AlignItems.End" Wrap="FlexWrap.Wrap">
-            <RadzenFormField Text="Time Range (Hours)" Variant="Variant.Outlined" Style="flex: 1; min-width: 150px;">
-                <RadzenNumeric @bind-Value="@hoursBack" TValue="int" Min="1" Max="168" 
-                               ShowUpDown="true" Style="width: 100%;" />
-            </RadzenFormField>
+            <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Large" />
             <RadzenButton Text="REFRESH" Icon="refresh" Click="@LoadReports" 
                           ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Large" 
                           Style="font-weight: bold;" />
@@ -85,6 +82,16 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadReports();
+        LocationService.OnReportAdded += HandleReportAdded;
+    }
+
+    private void HandleReportAdded()
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadReports();
+            StateHasChanged();
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -149,6 +156,7 @@
 
     public void Dispose()
     {
+        LocationService.OnReportAdded -= HandleReportAdded;
         objRef?.Dispose();
     }
 
@@ -169,6 +177,19 @@
         if (mapInitialized)
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+        }
+    }
+
+    private async Task OnSettingsClick()
+    {
+        var result = await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
+            new Dictionary<string, object> { { "HoursBack", hoursBack } },
+            new DialogOptions { Width = "300px" });
+
+        if (result != null)
+        {
+            hoursBack = (int)result;
+            await LoadReports();
         }
     }
 }

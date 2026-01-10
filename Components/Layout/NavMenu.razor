@@ -1,9 +1,62 @@
-﻿@inject NavigationManager NavigationManager
+﻿@using WhereAreThey.Components.Pages
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject NavigationManager NavigationManager
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject LocationService LocationService
 
 <RadzenPanelMenu Style="height: 100%">
     <RadzenPanelMenuItem Text="ARE THEY HERE?" Icon="visibility" Path="/" />
-    <RadzenPanelMenuItem Text="THEY ARE HERE!" Icon="report_problem" Path="/report" />
-    <RadzenPanelMenuItem Text="Alerts" Icon="notifications" Path="/alerts" />
-    <RadzenPanelMenuItem Text="Donate" Icon="volunteer_activism" Path="/donate" />
+    <RadzenPanelMenuItem Text="THEY ARE HERE!" Icon="report_problem" Click="@OnReportClick" />
+    <RadzenPanelMenuItem Text="Alerts" Icon="notifications" Click="@OnAlertsClick" />
+    <RadzenPanelMenuItem Text="Donate" Icon="volunteer_activism" Click="@OnDonateClick" />
     <RadzenPanelMenuItem Text="Old Home" Icon="history" Path="/home-old" />
 </RadzenPanelMenu>
+
+@code {
+    private async Task OnReportClick()
+    {
+        try
+        {
+            var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+            var report = new LocationReport
+            {
+                Latitude = position.Coords.Latitude,
+                Longitude = position.Coords.Longitude
+            };
+            
+            await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
+                new Dictionary<string, object> { { "report", report } },
+                new DialogOptions { Width = "350px" });
+        }
+        catch (Exception)
+        {
+            // If location fails, still open dialog but with empty coordinates
+            await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
+                new Dictionary<string, object> { { "report", new LocationReport() } },
+                new DialogOptions { Width = "350px" });
+        }
+    }
+
+    private async Task OnAlertsClick()
+    {
+        await DialogService.OpenAsync<AlertsDialog>("ALERTS", null, new DialogOptions { Width = "350px" });
+    }
+
+    private async Task OnDonateClick()
+    {
+        await DialogService.OpenAsync<DonateDialog>("DONATE", null, new DialogOptions { Width = "350px" });
+    }
+
+    public class GeolocationPosition
+    {
+        public GeolocationCoordinates Coords { get; set; } = new();
+    }
+
+    public class GeolocationCoordinates
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+}

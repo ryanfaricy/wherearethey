@@ -15,14 +15,13 @@
     <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center justify-content-between flex-wrap gap-2" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
         <div class="d-flex align-items-center gap-2">
             <RadzenButton Text="REPORT" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
-            <RadzenNumeric @bind-Value="@hoursBack" TValue="int" Min="1" Max="168" Style="width: 80px;" Change="@LoadReports" />
-            <RadzenText TextStyle="TextStyle.Caption" Class="rz-m-0">hrs</RadzenText>
+            <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
             <RadzenButton Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         </div>
         
         <div class="d-flex align-items-center gap-2">
-            <RadzenButton Text="ALERTS" Icon="notifications" Click="@(() => NavigationManager.NavigateTo("/alerts"))" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-            <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@(() => NavigationManager.NavigateTo("/donate"))" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+            <RadzenButton Text="ALERTS" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+            <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         </div>
     </div>
 
@@ -54,6 +53,16 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadReports();
+        LocationService.OnReportAdded += HandleReportAdded;
+    }
+
+    private void HandleReportAdded()
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadReports();
+            StateHasChanged();
+        });
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -95,6 +104,33 @@
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
         }
+    }
+
+    private async Task OnSettingsClick()
+    {
+        var result = await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
+            new Dictionary<string, object> { { "HoursBack", hoursBack } },
+            new DialogOptions { Width = "300px" });
+
+        if (result != null)
+        {
+            hoursBack = (int)result;
+            await LoadReports();
+        }
+    }
+
+    private async Task OnAlertsClick()
+    {
+        await DialogService.OpenAsync<AlertsDialog>("ALERTS",
+            null,
+            new DialogOptions { Width = "350px" });
+    }
+
+    private async Task OnDonateClick()
+    {
+        await DialogService.OpenAsync<DonateDialog>("DONATE",
+            null,
+            new DialogOptions { Width = "350px" });
     }
 
     private async Task OnReportClick()
@@ -168,6 +204,7 @@
 
     public void Dispose()
     {
+        LocationService.OnReportAdded -= HandleReportAdded;
         objRef?.Dispose();
     }
 

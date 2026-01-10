@@ -1,0 +1,21 @@
+@inject DialogService DialogService
+
+<RadzenStack Gap="1.5rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Map Settings</RadzenText>
+    
+    <RadzenFormField Text="Time Range (Last X Hours)" Variant="Variant.Outlined">
+        <RadzenNumeric @bind-Value="@HoursBack" TValue="int" Min="1" Max="168" ShowUpDown="true" Style="width: 100%;" />
+        <RadzenText TextStyle="TextStyle.Caption" Class="mt-1">
+            Show reports from the last @HoursBack hours.
+        </RadzenText>
+    </RadzenFormField>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+        <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="APPLY" Click="@(() => DialogService.Close(HoursBack))" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public int HoursBack { get; set; } = 24;
+}

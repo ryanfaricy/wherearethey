@@ -10,6 +10,8 @@ public class LocationService
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<LocationService> _logger;
 
+    public event Action? OnReportAdded;
+
     public LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
     {
         _context = context;
@@ -22,6 +24,8 @@ public class LocationService
         report.Timestamp = DateTime.UtcNow;
         _context.LocationReports.Add(report);
         await _context.SaveChangesAsync();
+
+        OnReportAdded?.Invoke();
 
         // Process alerts in the background to not block the reporter
         _ = Task.Run(async () => await ProcessAlertsForReport(report));
