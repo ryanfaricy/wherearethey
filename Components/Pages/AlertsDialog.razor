@@ -29,7 +29,7 @@
 
                         <RadzenFormField Text="Radius (km)" Variant="Variant.Outlined">
                             <RadzenNumeric @bind-Value="@newAlert.RadiusKm" TValue="double" 
-                                           Min="0.1m" Max="100m" ShowUpDown="true" 
+                                           Min="0.1m" Max="160.9m" ShowUpDown="true" 
                                            Step="0.5m" Style="width: 100%;" />
                         </RadzenFormField>
 
@@ -85,6 +85,10 @@
 </RadzenStack>
 
 @code {
+    [Parameter] public double? InitialLat { get; set; }
+    [Parameter] public double? InitialLng { get; set; }
+    [Parameter] public double? InitialRadius { get; set; }
+
     private Alert newAlert = new Alert { RadiusKm = 5.0 };
     private string email = "";
     private List<Alert> activeAlerts = new();
@@ -92,6 +96,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (InitialLat.HasValue) newAlert.Latitude = InitialLat.Value;
+        if (InitialLng.HasValue) newAlert.Longitude = InitialLng.Value;
+        if (InitialRadius.HasValue) newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+        
         await LoadAlerts();
     }
 

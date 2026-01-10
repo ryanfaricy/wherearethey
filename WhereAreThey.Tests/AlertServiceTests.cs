@@ -185,4 +185,28 @@ public class AlertServiceTests
         Assert.Single(matchesNear);
         Assert.Empty(matchesFar);
     }
+
+    [Fact]
+    public async Task CreateAlert_ShouldCapRadiusAt160_9()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new AlertService(context, _dataProtectionProvider);
+        var email = "test@example.com";
+        var alert = new Alert
+        {
+            Latitude = 40.0,
+            Longitude = -74.0,
+            RadiusKm = 200.0,
+            Message = "Too big radius"
+        };
+
+        // Act
+        var result = await service.CreateAlertAsync(alert, email);
+
+        // Assert
+        Assert.Equal(160.9, result.RadiusKm);
+        var savedAlert = await context.Alerts.FindAsync(result.Id);
+        Assert.Equal(160.9, savedAlert!.RadiusKm);
+    }
 }

@@ -41,7 +41,23 @@
 
     private async Task OnAlertsClick()
     {
-        await DialogService.OpenAsync<AlertsDialog>("ALERTS", null, new DialogOptions { Width = "350px" });
+        var parameters = new Dictionary<string, object>();
+        try
+        {
+            var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+            if (mapState != null)
+            {
+                parameters.Add("InitialLat", mapState.Lat);
+                parameters.Add("InitialLng", mapState.Lng);
+                parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+            }
+        }
+        catch (Exception)
+        {
+            // Ignore if map state cannot be retrieved
+        }
+
+        await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, new DialogOptions { Width = "350px" });
     }
 
     private async Task OnDonateClick()

@@ -18,6 +18,11 @@ public class AlertService
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
+        if (alert.RadiusKm > 160.9)
+        {
+            alert.RadiusKm = 160.9;
+        }
+        
         alert.EncryptedEmail = _protector.Protect(email);
         alert.CreatedAt = DateTime.UtcNow;
         alert.IsActive = true;

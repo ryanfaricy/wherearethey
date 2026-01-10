@@ -85,3 +85,17 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
     }
 };
+
+window.getMapState = function() {
+    if (!map) return null;
+    const center = map.getCenter();
+    const bounds = map.getBounds();
+    // Calculate radius in km from center to corner (diagonal)
+    // This gives a good default coverage for the visible area
+    const radiusKm = center.distanceTo(bounds.getNorthEast()) / 1000;
+    return {
+        lat: center.lat,
+        lng: center.lng,
+        radiusKm: radiusKm
+    };
+};
