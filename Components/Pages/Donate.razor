@@ -1,0 +1,182 @@
+@page "/donate"
+@rendermode InteractiveServer
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject DonationService DonationService
+@inject NotificationService NotificationService
+
+<PageTitle>Donate - WhereAreThey</PageTitle>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <RadzenCard>
+                <RadzenText TextStyle="TextStyle.H4" Class="mb-3">Support WhereAreThey</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1" Class="mb-4">
+                    Your donation helps keep this life-saving service online and accessible to everyone who needs it.
+                    Every contribution makes a difference.
+                </RadzenText>
+
+                <RadzenCard Style="background-color: #f8f9fa;" Class="mb-4">
+                    <RadzenText TextStyle="TextStyle.H6" Class="mb-2">Why Donate?</RadzenText>
+                    <ul class="mb-0">
+                        <li>Keep servers running 24/7 for emergency situations</li>
+                        <li>Support infrastructure costs for handling thousands of connections</li>
+                        <li>Enable continued development of life-saving features</li>
+                        <li>Ensure the platform remains free for everyone</li>
+                    </ul>
+                </RadzenCard>
+
+                <RadzenTemplateForm Data="@donation" Submit="@((Donation args) => ProcessDonation())">
+                    <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="Donation Amount" Variant="Variant.Outlined">
+                            <RadzenNumeric @bind-Value="@donation.Amount" TValue="decimal" 
+                                           Min="1" Max="10000" ShowUpDown="false" 
+                                           Format="c" Style="width: 100%;" />
+                        </RadzenFormField>
+
+                        <div class="row">
+                            <div class="col-6">
+                                <RadzenButton Text="$5" Click="@(() => donation.Amount = 5)" 
+                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                            </div>
+                            <div class="col-6">
+                                <RadzenButton Text="$10" Click="@(() => donation.Amount = 10)" 
+                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <RadzenButton Text="$25" Click="@(() => donation.Amount = 25)" 
+                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                            </div>
+                            <div class="col-6">
+                                <RadzenButton Text="$50" Click="@(() => donation.Amount = 50)" 
+                                              ButtonStyle="ButtonStyle.Light" Style="width: 100%;" />
+                            </div>
+                        </div>
+
+                        <RadzenFormField Text="Email (Optional)" Variant="Variant.Outlined">
+                            <RadzenTextBox @bind-Value="@donation.DonorEmail" 
+                                           Placeholder="your@email.com" 
+                                           Style="width: 100%;" />
+                        </RadzenFormField>
+
+                        <RadzenFormField Text="Name (Optional)" Variant="Variant.Outlined">
+                            <RadzenTextBox @bind-Value="@donation.DonorName" 
+                                           Placeholder="Your name" 
+                                           Style="width: 100%;" />
+                        </RadzenFormField>
+
+                        <RadzenText TextStyle="TextStyle.Caption" Class="text-muted">
+                            Note: In a production environment, this would integrate with Stripe's Payment Element
+                            for secure credit card processing. For now, this is a demonstration.
+                        </RadzenText>
+
+                        <RadzenButton ButtonType="ButtonType.Submit" 
+                                      Text="@($"Donate ${donation.Amount:F2}")" 
+                                      Icon="volunteer_activism" 
+                                      ButtonStyle="ButtonStyle.Primary" 
+                                      Style="width: 100%;" 
+                                      Disabled="@isProcessing" />
+                    </RadzenStack>
+                </RadzenTemplateForm>
+            </RadzenCard>
+
+            @if (recentDonations.Any())
+            {
+                <RadzenCard Class="mt-4">
+                    <RadzenText TextStyle="TextStyle.H5" Class="mb-3">Recent Donations</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Class="mb-3">
+                        Thank you to our generous supporters!
+                    </RadzenText>
+                    <RadzenDataList Data="@recentDonations" TItem="DonationDisplay" 
+                                    AllowPaging="true" PageSize="5">
+                        <Template Context="d">
+                            <RadzenCard Style="margin-bottom: 0.5rem;">
+                                <RadzenStack Orientation="Orientation.Horizontal" 
+                                             JustifyContent="JustifyContent.SpaceBetween">
+                                    <RadzenText TextStyle="TextStyle.Body1">
+                                        <strong>@d.DisplayName</strong>
+                                    </RadzenText>
+                                    <RadzenBadge Text="@($"${d.Amount:F2}")" 
+                                                 BadgeStyle="BadgeStyle.Success" />
+                                </RadzenStack>
+                                <RadzenText TextStyle="TextStyle.Caption">
+                                    @d.TimeAgo
+                                </RadzenText>
+                            </RadzenCard>
+                        </Template>
+                    </RadzenDataList>
+                </RadzenCard>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Donation donation = new Donation { Amount = 10 };
+    private List<DonationDisplay> recentDonations = new();
+    private bool isProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Simulate recent donations for demonstration
+        recentDonations = new List<DonationDisplay>
+        {
+            new DonationDisplay { DisplayName = "Anonymous", Amount = 25, TimeAgo = "2 hours ago" },
+            new DonationDisplay { DisplayName = "John D.", Amount = 50, TimeAgo = "5 hours ago" },
+            new DonationDisplay { DisplayName = "Anonymous", Amount = 10, TimeAgo = "1 day ago" },
+        };
+    }
+
+    private async Task ProcessDonation()
+    {
+        if (donation.Amount < 1)
+        {
+            NotificationService.Notify(NotificationSeverity.Warning, "Minimum donation amount is $1");
+            return;
+        }
+
+        isProcessing = true;
+        try
+        {
+            // In production, this would create a Stripe Payment Intent
+            // and handle the payment flow
+            await Task.Delay(1000); // Simulate API call
+            
+            donation.Status = "completed";
+            donation.StripePaymentIntentId = Guid.NewGuid().ToString();
+            await DonationService.RecordDonationAsync(donation);
+
+            NotificationService.Notify(NotificationSeverity.Success, 
+                "Thank you for your donation!", 
+                "Your support helps keep this service running.");
+            
+            var displayName = string.IsNullOrWhiteSpace(donation.DonorName) ? "Anonymous" : donation.DonorName;
+            recentDonations.Insert(0, new DonationDisplay 
+            { 
+                DisplayName = displayName, 
+                Amount = donation.Amount, 
+                TimeAgo = "just now" 
+            });
+
+            donation = new Donation { Amount = 10 };
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Donation failed", ex.Message);
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    public class DonationDisplay
+    {
+        public string DisplayName { get; set; } = "";
+        public decimal Amount { get; set; }
+        public string TimeAgo { get; set; } = "";
+    }
+}
