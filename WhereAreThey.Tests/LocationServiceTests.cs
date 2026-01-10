@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -9,6 +13,9 @@ namespace WhereAreThey.Tests;
 
 public class LocationServiceTests
 {
+    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
+    private readonly Mock<ILogger<LocationService>> _loggerMock = new();
+
     private ApplicationDbContext CreateInMemoryContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -22,7 +29,7 @@ public class LocationServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LocationService(context);
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
         var report = new LocationReport
         {
             Latitude = 40.7128,
@@ -45,7 +52,7 @@ public class LocationServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LocationService(context);
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
         
         var oldReport = new LocationReport
         {
@@ -78,7 +85,7 @@ public class LocationServiceTests
     {
         // Arrange
         using var context = CreateInMemoryContext();
-        var service = new LocationService(context);
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
         
         // New York City coordinates
         var centerLat = 40.7128;
@@ -108,5 +115,43 @@ public class LocationServiceTests
         // Assert
         Assert.Single(results);
         Assert.Equal(nearReport.Latitude, results[0].Latitude);
+    }
+
+    [Fact]
+    public async Task AddLocationReport_ShouldTriggerAlerts()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        
+        var alertServiceMock = new Mock<AlertService>(context, new Moq.Mock<IDataProtectionProvider>().Object);
+        var emailServiceMock = new Mock<IEmailService>();
+        var scopeMock = new Mock<IServiceScope>();
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
+
+        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
+        var matchingAlert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "test" };
+
+        alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
+            .ReturnsAsync(new List<Alert> { matchingAlert });
+        alertServiceMock.Setup(x => x.DecryptEmail(It.IsAny<string>())).Returns("test@example.com");
+
+        // Act
+        await service.AddLocationReportAsync(report);
+
+        // Wait a bit for the background task
+        await Task.Delay(200);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == "test@example.com"),
+            It.IsAny<string>(),
+            It.IsAny<string>()), Times.Once);
     }
 }

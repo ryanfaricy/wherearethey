@@ -7,10 +7,14 @@ namespace WhereAreThey.Services;
 public class LocationService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<LocationService> _logger;
 
-    public LocationService(ApplicationDbContext context)
+    public LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
     {
         _context = context;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
     }
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
@@ -18,7 +22,47 @@ public class LocationService
         report.Timestamp = DateTime.UtcNow;
         _context.LocationReports.Add(report);
         await _context.SaveChangesAsync();
+
+        // Process alerts in the background to not block the reporter
+        _ = Task.Run(async () => await ProcessAlertsForReport(report));
+
         return report;
+    }
+
+    private async Task ProcessAlertsForReport(LocationReport report)
+    {
+        try
+        {
+            using var scope = _serviceProvider.CreateScope();
+            var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
+            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+
+            var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
+            
+            foreach (var alert in matchingAlerts)
+            {
+                var email = alertService.DecryptEmail(alert.EncryptedEmail);
+                if (!string.IsNullOrEmpty(email))
+                {
+                    var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
+                    var body = $@"
+                        <h3>New report near your alert area</h3>
+                        <p><strong>Location:</strong> {report.Latitude:F4}, {report.Longitude:F4}</p>
+                        <p><strong>Time:</strong> {report.Timestamp:g} UTC</p>
+                        {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
+                        {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
+                        <hr/>
+                        <p><a href='https://wherearethey.com/heatmap'>View on Heat Map</a></p>
+                        <small>You received this because you set up an alert on WhereAreThey.</small>";
+
+                    await emailService.SendEmailAsync(email, subject, body);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
+        }
     }
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
@@ -47,21 +91,7 @@ public class LocationService
             .ToListAsync();
 
         // Filter by actual distance using Haversine formula
-        return reports.Where(r => CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
+        return reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
             .ToList();
-    }
-
-    private static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
-    {
-        const double R = 6371; // Earth's radius in kilometers
-        var dLat = (lat2 - lat1) * Math.PI / 180.0;
-        var dLon = (lon2 - lon1) * Math.PI / 180.0;
-
-        var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
-                Math.Cos(lat1 * Math.PI / 180.0) * Math.Cos(lat2 * Math.PI / 180.0) *
-                Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
-
-        var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
-        return R * c;
     }
 }

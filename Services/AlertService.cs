@@ -16,7 +16,7 @@ public class AlertService
         _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
     }
 
-    public async Task<Alert> CreateAlertAsync(Alert alert, string email)
+    public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         alert.EncryptedEmail = _protector.Protect(email);
         alert.CreatedAt = DateTime.UtcNow;
@@ -26,7 +26,7 @@ public class AlertService
         return alert;
     }
 
-    public string? DecryptEmail(string? encryptedEmail)
+    public virtual string? DecryptEmail(string? encryptedEmail)
     {
         if (string.IsNullOrEmpty(encryptedEmail)) return null;
         try
@@ -39,14 +39,14 @@ public class AlertService
         }
     }
 
-    public async Task<List<Alert>> GetActiveAlertsAsync()
+    public virtual async Task<List<Alert>> GetActiveAlertsAsync()
     {
         return await _context.Alerts
             .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
             .ToListAsync();
     }
 
-    public async Task<bool> DeactivateAlertAsync(int id)
+    public virtual async Task<bool> DeactivateAlertAsync(int id)
     {
         var alert = await _context.Alerts.FindAsync(id);
         if (alert == null) return false;
@@ -54,5 +54,16 @@ public class AlertService
         alert.IsActive = false;
         await _context.SaveChangesAsync();
         return true;
+    }
+
+    public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
+    {
+        // For performance, we could use a bounding box first if we had thousands of alerts
+        // But for now, we'll fetch active ones and filter in memory as the number of active alerts is likely manageable
+        var activeAlerts = await GetActiveAlertsAsync();
+        
+        return activeAlerts
+            .Where(a => GeoUtils.CalculateDistance(latitude, longitude, a.Latitude, a.Longitude) <= a.RadiusKm)
+            .ToList();
     }
 }

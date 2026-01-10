@@ -16,6 +16,10 @@ builder.Services.AddDataProtection();
 // Add Radzen services
 builder.Services.AddRadzenComponents();
 
+// Add Email services
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+
 // Add DbContext with SQLite
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 

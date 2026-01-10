@@ -153,4 +153,36 @@ public class AlertServiceTests
         Assert.Single(results);
         Assert.Equal(validAlert.Id, results[0].Id);
     }
+
+    [Fact]
+    public async Task GetMatchingAlerts_ShouldReturnAlertsWithinRadius()
+    {
+        // Arrange
+        using var context = CreateInMemoryContext();
+        var service = new AlertService(context, _dataProtectionProvider);
+        
+        // Alert at (40, -74) with 10km radius
+        var alert = new Alert
+        {
+            Latitude = 40.0,
+            Longitude = -74.0,
+            RadiusKm = 10.0,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            EncryptedEmail = "encrypted"
+        };
+        context.Alerts.Add(alert);
+        await context.SaveChangesAsync();
+
+        // Act
+        // Point at (40.01, -74.01) is ~1.4km away
+        var matchesNear = await service.GetMatchingAlertsAsync(40.01, -74.01);
+        
+        // Point at (41.0, -75.0) is ~140km away
+        var matchesFar = await service.GetMatchingAlertsAsync(41.0, -75.0);
+
+        // Assert
+        Assert.Single(matchesNear);
+        Assert.Empty(matchesFar);
+    }
 }
