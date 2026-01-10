@@ -87,10 +87,34 @@
     {
         if (firstRender)
         {
-            // Initial center (0,0), updateHeatMap will fit bounds if reports exist
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", 0, 0, reports);
+            double initialLat = 0;
+            double initialLng = 0;
+
+            try
+            {
+                var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                initialLat = position.Coords.Latitude;
+                initialLng = position.Coords.Longitude;
+            }
+            catch (Exception)
+            {
+                // Fallback
+            }
+
+            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports);
             mapInitialized = true;
         }
+    }
+
+    public class GeolocationPosition
+    {
+        public GeolocationCoordinates Coords { get; set; } = new();
+    }
+
+    public class GeolocationCoordinates
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
     }
 
     private async Task LoadReports()
