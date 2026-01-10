@@ -12,6 +12,12 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
 
     updateMapTheme();
 
+    map.on('click', function(e) {
+        if (dotNetHelper) {
+            dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng);
+        }
+    });
+
     map.on('dblclick', function(e) {
         if (dotNetHelper) {
             dotNetHelper.invokeMethodAsync('OnMapDoubleClick', e.latlng.lat, e.latlng.lng);

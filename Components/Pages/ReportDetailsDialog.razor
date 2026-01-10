@@ -1,0 +1,77 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject DialogService DialogService
+
+<RadzenStack Gap="1rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Report Summary</RadzenText>
+    
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+        <RadzenText TextStyle="TextStyle.Body1">Reports in this area:</RadzenText>
+        <RadzenBadge Text="@Reports.Count.ToString()" BadgeStyle="BadgeStyle.Primary" />
+    </RadzenStack>
+
+    @if (EmergencyCount > 0)
+    {
+        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="false">
+            <b>@EmergencyCount</b> emergency reports detected!
+        </RadzenAlert>
+    }
+
+    <RadzenText TextStyle="TextStyle.Body2">
+        <strong>Most recent:</strong> @MostRecentTimestamp.ToLocalTime().ToString("g") 
+        <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
+    </RadzenText>
+
+    <div style="max-height: 300px; overflow-y: auto;">
+        <RadzenDataList Data="@Reports.Take(10)" TItem="LocationReport">
+            <Template Context="r">
+                <RadzenCard Class="rz-p-2 mb-1" Style="@(GetReportStyle(r))">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                        <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
+                        @if (r.IsEmergency)
+                        {
+                            <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
+                        }
+                    </RadzenStack>
+                    @if (!string.IsNullOrEmpty(r.Message))
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                    }
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    </div>
+
+    @if (Reports.Count > 10)
+    {
+        <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 10) more reports</RadzenText>
+    }
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-3">
+        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    [Parameter] public List<LocationReport> Reports { get; set; } = new();
+
+    private int EmergencyCount => Reports.Count(r => r.IsEmergency);
+    private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
+
+    private string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalSeconds < 30) return "just now";
+        if (span.TotalMinutes < 1) return "less than a minute ago";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    private string GetReportStyle(LocationReport r)
+    {
+        return r.IsEmergency 
+            ? "border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);" 
+            : "border-left: 4px solid var(--rz-info);";
+    }
+}

@@ -2,7 +2,10 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject LocationService LocationService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
+@implements IDisposable
 
 <PageTitle>ARE THEY HERE? - Heat Map</PageTitle>
 
@@ -77,6 +80,7 @@
     private List<LocationReport> reports = new();
     private int hoursBack = 24;
     private bool mapInitialized = false;
+    private DotNetObjectReference<HeatMap>? objRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,6 +91,7 @@
     {
         if (firstRender)
         {
+            objRef = DotNetObjectReference.Create(this);
             double initialLat = 0;
             double initialLng = 0;
 
@@ -101,9 +106,50 @@
                 // Fallback
             }
 
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports);
+            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef);
             mapInitialized = true;
         }
+    }
+
+    [JSInvokable]
+    public async Task OnMapClick(double lat, double lng)
+    {
+        double searchRadiusKm = 5.0; 
+        var nearbyReports = reports
+            .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
+            .OrderByDescending(r => r.Timestamp)
+            .ToList();
+
+        if (nearbyReports.Any())
+        {
+            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
+                new Dictionary<string, object> { { "Reports", nearbyReports } },
+                new DialogOptions { Width = "350px" });
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnMapDoubleClick(double lat, double lng)
+    {
+        var report = new LocationReport
+        {
+            Latitude = lat,
+            Longitude = lng
+        };
+        
+        var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
+            new Dictionary<string, object> { { "report", report } },
+            new DialogOptions { Width = "350px", Resizable = false, Draggable = true });
+
+        if (result == true)
+        {
+            await LoadReports();
+        }
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
     }
 
     public class GeolocationPosition

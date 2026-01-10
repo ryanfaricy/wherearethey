@@ -125,6 +125,25 @@
     }
 
     [JSInvokable]
+    public async Task OnMapClick(double lat, double lng)
+    {
+        // Find reports within a certain radius (e.g. 5km)
+        double searchRadiusKm = 5.0; 
+
+        var nearbyReports = reports
+            .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
+            .OrderByDescending(r => r.Timestamp)
+            .ToList();
+
+        if (nearbyReports.Any())
+        {
+            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
+                new Dictionary<string, object> { { "Reports", nearbyReports } },
+                new DialogOptions { Width = "350px" });
+        }
+    }
+
+    [JSInvokable]
     public async Task OnMapDoubleClick(double lat, double lng)
     {
         var report = new LocationReport
