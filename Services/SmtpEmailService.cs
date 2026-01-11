@@ -10,8 +10,8 @@ public class EmailOptions
     public int SmtpPort { get; set; } = 587;
     public string SmtpUser { get; set; } = "";
     public string SmtpPass { get; set; } = "";
-    public string FromEmail { get; set; } = "alerts@wherearethey.com";
-    public string FromName { get; set; } = "WhereAreThey Alerts";
+    public string FromEmail { get; set; } = "alerts@aretheyhere.com";
+    public string FromName { get; set; } = "AreTheyHere Alerts";
     public bool EnableSsl { get; set; } = true;
 }
 

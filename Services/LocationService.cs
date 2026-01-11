@@ -45,8 +45,8 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
                         <hr/>
-                        <p><a href='https://wherearethey.com/heatmap'>View on Heat Map</a></p>
-                        <small>You received this because you set up an alert on WhereAreThey.</small>";
+                        <p><a href='https://aretheyhere.com/heatmap'>View on Heat Map</a></p>
+                        <small>You received this because you set up an alert on AreTheyHere.</small>";
 
                     await emailService.SendEmailAsync(email, subject, body);
                 }
