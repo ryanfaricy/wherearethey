@@ -25,7 +25,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - **Lines of Code**: ~2,500 (excluding vendor libraries)
 - **Test Coverage**: 25 comprehensive unit and integration tests (100% pass rate)
 - **Build Status**: ✅ Success (0 warnings, 0 errors)
-- **Dependencies**: 5 NuGet packages (all secure, latest stable versions)
+- **Dependencies**: 6 NuGet packages (all secure, latest stable versions)
 - **Database**: SQLite with automatic migrations
 - **Performance**: Configured for 10,000 concurrent connections
 
@@ -55,7 +55,8 @@ WhereAreThey.Tests/
 | Component | Technology | Version |
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
-| UI Library | Radzen Blazor | 5.7.6 |
+| UI Library | Radzen Blazor | 8.5.1 |
+| Email Service | MailKit | 4.14.1 |
 | Database | PostgreSQL + EF Core | 9.0.0 |
 | Concurrency | IDbContextFactory | 9.0.0 |
 | Deployment | Docker / Railway | - |
@@ -184,7 +185,8 @@ Access at: `https://localhost:5001` or `http://localhost:5000`
 
 ### 📦 Dependencies
 All dependencies are secure and up-to-date:
-- ✅ Radzen.Blazor 5.7.6
+- ✅ Radzen.Blazor 8.5.1
+- ✅ MailKit 4.14.1 (Replaced System.Net.Mail for reliability)
 - ✅ Microsoft.EntityFrameworkCore 9.0.0
 - ✅ Stripe.net 47.4.0
 - ✅ System.Linq.Dynamic.Core 1.7.1 (vulnerability fixed)
