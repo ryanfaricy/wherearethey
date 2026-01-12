@@ -69,6 +69,7 @@ WhereAreThey.Tests/
    dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
    dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
    dotnet user-secrets set "Email:SmtpServer" "your-smtp-server"
+   dotnet user-secrets set "Email:SmtpPort" "465"
    dotnet user-secrets set "Email:SmtpUser" "your-smtp-user"
    dotnet user-secrets set "Email:SmtpPass" "your-smtp-password"
    ```
@@ -304,9 +305,10 @@ dotnet ef database update
 
 ### SMTP Email Timeouts on Railway
 If you experience `System.TimeoutException` when sending emails on Railway:
-1.  **Check Port**: While port 587 is standard, some environments block it. Try using port **465** with `Email:EnableSsl` set to `true`.
+1.  **Default Port**: The application now defaults to port **465** with SSL/TLS, which is more reliable in most cloud environments than 587.
 2.  **Verify Secrets**: Ensure `Email:SmtpUser` and `Email:SmtpPass` are correctly set in Railway environment variables.
-3.  **Resilience**: The application is configured to disable CRL checks and uses a 30s timeout to mitigate common cloud networking delays.
+3.  **Resilience**: The application is configured to disable CRL checks and uses a 60s timeout to mitigate common cloud networking delays.
+4.  **Alternatives**: If 465 is also problematic, try port **587** or **2525** (if supported by your provider) and set `Email:EnableSsl` to `true`.
 
 ## 📞 Support
 

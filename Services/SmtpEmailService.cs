@@ -8,7 +8,7 @@ namespace WhereAreThey.Services;
 public class EmailOptions
 {
     public string SmtpServer { get; set; } = "";
-    public int SmtpPort { get; set; } = 587;
+    public int SmtpPort { get; set; } = 465;
     public string SmtpUser { get; set; } = "";
     public string SmtpPass { get; set; } = "";
     public string FromEmail { get; set; } = "alerts@aretheyhere.com";
@@ -42,8 +42,8 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
             using var client = new SmtpClient();
             
             // Set a timeout to prevent hanging forever
-            // Increased to 30s as some cloud environments (like Railway) can have slow handshakes
-            client.Timeout = 30000; 
+            // Increased to 60s as some cloud environments (like Railway) can have very slow handshakes
+            client.Timeout = 60000; 
             
             // Disable CRL checks to avoid timeouts in restricted network environments
             client.CheckCertificateRevocation = false;
