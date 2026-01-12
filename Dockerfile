@@ -10,7 +10,7 @@ RUN dotnet restore
 COPY . ./
 
 # Publish the application
-RUN dotnet publish -c Release -o out
+RUN dotnet publish WhereAreThey.csproj -c Release -o out
 
 # Use the ASP.NET runtime image for the final stage
 FROM mcr.microsoft.com/dotnet/aspnet:10.0

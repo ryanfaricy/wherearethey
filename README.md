@@ -131,24 +131,43 @@ WhereAreThey.Tests/
 
 ## 🐳 Docker & Cloud Deployment
 
-The application is dockerized and optimized for deployment to services like **Railway**.
+The application is fully dockerized for both local development and cloud deployment (e.g., Railway).
 
-### Deployment to Railway
+### ⚡ Quick Start (Docker Compose)
+The fastest way to get everything running locally with PostgreSQL:
 
-1.  **Railway PostgreSQL**: Add a PostgreSQL plugin to your Railway project.
-2.  **Environment Variables**:
-    *   `DATABASE_URL`: Automatically provided by Railway.
+1.  **Start the stack**:
+    ```bash
+    docker-compose up -d
+    ```
+    This starts the application at `http://localhost:8080` and a PostgreSQL database at `localhost:5432`.
+
+2.  **Configure Secrets (Optional)**:
+    Copy `.env.example` to `.env` and fill in your Stripe and SMTP keys. Docker Compose will automatically pick them up.
+    ```bash
+    cp .env.example .env
+    ```
+
+### 💻 Local Development (Hybrid)
+If you want to debug in your IDE while using the Docker-managed database:
+
+1.  **Start only the database**:
+    ```bash
+    docker-compose up -d db
+    ```
+2.  **Run the app normally**:
+    ```bash
+    dotnet run
+    ```
+    The app will connect to the PostgreSQL instance running in Docker because the port `5432` is exposed to your host.
+
+### 🚆 Deployment to Railway
+Railway will automatically detect the `Dockerfile` and deploy the application.
+
+1.  **Add PostgreSQL**: Add the PostgreSQL plugin to your Railway project. Railway provides the `DATABASE_URL` automatically.
+2.  **Configuration**:
     *   `PORT`: Automatically handled by Railway.
-    *   `Stripe__SecretKey`: Your Stripe secret key.
-    *   `Email__SmtpPass`: Your email service password.
-3.  **Deployment**: Railway will automatically detect the `Dockerfile` and deploy the application.
-
-### Local Docker Run
-
-```bash
-docker build -t wherearethey .
-docker run -p 8080:8080 -e DATABASE_URL="postgres://user:pass@host:5432/db" wherearethey
-```
+    *   **Secrets**: Add your `Stripe__SecretKey`, `Email__SmtpPass`, etc., as environment variables in the Railway dashboard.
 
 ## 🧪 Testing
 

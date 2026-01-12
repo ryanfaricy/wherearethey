@@ -110,9 +110,12 @@ WhereAreThey.Tests/
 - **Auto-Migration**: The application automatically applies any pending migrations on startup via `db.Database.Migrate()` in `Program.cs`.
 
 ### 🐳 Docker & Railway Deployment
-- **Dockerfile**: Multi-stage build optimized for .NET 10.
+- **Dockerfile**: Multi-stage build optimized for .NET 10. Explicitly targets `WhereAreThey.csproj` to avoid building tests or solution-level output issues.
+- **railway.json**: Added to explicitly configure Railway to use the `Dockerfile` build strategy.
+- **Docker Compose**: Added `docker-compose.yml` for "no-nonsense" local setup including PostgreSQL.
+- **.dockerignore**: Optimized build context to exclude tests and IDE artifacts.
 - **Railway Ready**: Configured to listen on `PORT` and parse `DATABASE_URL` automatically.
-- **Persistence**: Using a managed PostgreSQL database ensures data persistence across deployments.
+- **Hybrid Debugging**: Exposes PostgreSQL on port 5432 to allow `dotnet run` from host while DB runs in container.
 
 ### 🧪 Testing
 ```bash
