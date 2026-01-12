@@ -8,6 +8,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 {
     public DbSet<LocationReport> LocationReports { get; set; }
     public DbSet<Alert> Alerts { get; set; }
+    public DbSet<EmailVerification> EmailVerifications { get; set; }
     public DbSet<Donation> Donations { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
@@ -28,6 +29,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.UserIdentifier);
+            entity.HasIndex(e => e.EmailHash);
+            entity.HasIndex(e => e.IsVerified);
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
         });
@@ -37,6 +40,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.CreatedAt);
             entity.Property(e => e.Amount).HasPrecision(18, 2);
+        });
+
+        modelBuilder.Entity<EmailVerification>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.EmailHash).IsUnique();
+            entity.HasIndex(e => e.Token).IsUnique();
         });
     }
 }

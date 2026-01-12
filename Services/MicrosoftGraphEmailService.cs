@@ -38,6 +38,7 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
                     {
                         new { emailAddress = new { address = to } }
                     },
+                    from = new { emailAddress = new { name = _options.FromName, address = _options.FromEmail } },
                 },
                 saveToSentItems = false
             };

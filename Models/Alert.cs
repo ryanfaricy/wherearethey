@@ -8,6 +8,8 @@ public class Alert
     public double RadiusKm { get; set; }
     public string? Message { get; set; }
     public string? EncryptedEmail { get; set; }
+    public string? EmailHash { get; set; }
+    public bool IsVerified { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? ExpiresAt { get; set; }
     public bool IsActive { get; set; }

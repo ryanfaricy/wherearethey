@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -11,6 +13,9 @@ namespace WhereAreThey.Tests;
 public class AlertServiceTests
 {
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
+    private readonly Mock<IEmailService> _emailServiceMock = new();
+    private readonly Mock<IConfiguration> _configurationMock = new();
+    private readonly Mock<ILogger<AlertService>> _loggerMock = new();
 
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -29,13 +34,18 @@ public class AlertServiceTests
         return mock.Object;
     }
 
+    private AlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object);
+    }
+
     [Fact]
     public async Task CreateAlert_ShouldCreateActiveAlertAndEncryptEmail()
     {
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         var email = "test@example.com";
         var alert = new Alert
         {
@@ -51,9 +61,16 @@ public class AlertServiceTests
         // Assert
         Assert.NotEqual(0, result.Id);
         Assert.True(result.IsActive);
+        Assert.False(result.IsVerified); // New alerts are not verified by default
         Assert.NotNull(result.EncryptedEmail);
         Assert.NotEqual(email, result.EncryptedEmail);
         Assert.Equal(email, service.DecryptEmail(result.EncryptedEmail));
+        
+        // Verify verification email was sent
+        _emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == email),
+            It.Is<string>(s => s.Contains("Verify")),
+            It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -62,7 +79,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -72,6 +89,7 @@ public class AlertServiceTests
                 Longitude = -74.0,
                 RadiusKm = 5.0,
                 IsActive = true,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted"
             };
@@ -82,6 +100,7 @@ public class AlertServiceTests
                 Longitude = -75.0,
                 RadiusKm = 5.0,
                 IsActive = false,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted"
             };
@@ -100,12 +119,75 @@ public class AlertServiceTests
     }
 
     [Fact]
+    public async Task GetActiveAlerts_ShouldNotReturnUnverifiedAlertsByDefault()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        
+        using (var context = new ApplicationDbContext(options))
+        {
+            context.Alerts.Add(new Alert
+            {
+                Latitude = 40.0, Longitude = -74.0, RadiusKm = 5.0, IsActive = true, IsVerified = false,
+                CreatedAt = DateTime.UtcNow, EncryptedEmail = "encrypted"
+            });
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var resultsDefault = await service.GetActiveAlertsAsync();
+        var resultsAll = await service.GetActiveAlertsAsync(onlyVerified: false);
+
+        // Assert
+        Assert.Empty(resultsDefault);
+        Assert.Single(resultsAll);
+    }
+
+    [Fact]
+    public async Task VerifyEmail_ShouldMarkAlertsAsVerified()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var email = "verify@example.com";
+        
+        var alert = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5 }, email);
+        Assert.False(alert.IsVerified);
+
+        string? token;
+        using (var context = new ApplicationDbContext(options))
+        {
+            var verification = await context.EmailVerifications.FirstAsync();
+            token = verification.Token;
+        }
+
+        // Act
+        var result1 = await service.VerifyEmailAsync(token);
+        var result2 = await service.VerifyEmailAsync(token);
+
+        // Assert
+        Assert.True(result1);
+        Assert.True(result2); // Should still return true if already verified
+        using (var context = new ApplicationDbContext(options))
+        {
+            var updatedAlert = await context.Alerts.FindAsync(alert.Id);
+            Assert.True(updatedAlert!.IsVerified);
+            
+            var verification = await context.EmailVerifications.FirstAsync();
+            Assert.NotNull(verification.VerifiedAt);
+        }
+    }
+
+    [Fact]
     public async Task DeactivateAlert_ShouldSetIsActiveToFalse()
     {
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         
         int alertId;
         using (var context = new ApplicationDbContext(options))
@@ -143,7 +225,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         
         var validAlertId = 0;
         using (var context = new ApplicationDbContext(options))
@@ -154,6 +236,7 @@ public class AlertServiceTests
                 Longitude = -74.0,
                 RadiusKm = 5.0,
                 IsActive = true,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
                 EncryptedEmail = "encrypted"
@@ -165,6 +248,7 @@ public class AlertServiceTests
                 Longitude = -75.0,
                 RadiusKm = 5.0,
                 IsActive = true,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddHours(1),
                 EncryptedEmail = "encrypted"
@@ -190,7 +274,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -200,6 +284,7 @@ public class AlertServiceTests
                 Longitude = -74.0,
                 RadiusKm = 10.0,
                 IsActive = true,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted"
             };
@@ -225,7 +310,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         var userId1 = "user1";
         var userId2 = "user2";
 
@@ -233,12 +318,12 @@ public class AlertServiceTests
         {
             context.Alerts.Add(new Alert
             {
-                Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true,
+                Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true, IsVerified = true,
                 UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
             });
             context.Alerts.Add(new Alert
             {
-                Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true,
+                Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true, IsVerified = true,
                 UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
             });
             await context.SaveChangesAsync();
@@ -258,7 +343,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         
         // Act
         var result = service.DecryptEmail("invalid-encrypted-data");
@@ -273,7 +358,7 @@ public class AlertServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new AlertService(factory, _dataProtectionProvider);
+        var service = CreateService(factory);
         var email = "test@example.com";
         var alert = new Alert
         {

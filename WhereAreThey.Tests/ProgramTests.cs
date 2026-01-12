@@ -35,7 +35,8 @@ public class ProgramTests
 
         // Act
         var app = builder.Build();
-        var emailService = app.Services.GetRequiredService<IEmailService>();
+        using var scope = app.Services.CreateScope();
+        var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
 
         // Assert
         Assert.IsType<FallbackEmailService>(emailService);

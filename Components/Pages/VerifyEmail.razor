@@ -1,0 +1,82 @@
+@page "/verify-email"
+@using WhereAreThey.Services
+@inject AlertService AlertService
+@inject NavigationManager NavigationManager
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <RadzenCard>
+                @if (isVerifying)
+                {
+                    <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                    <RadzenText TextStyle="TextStyle.H6" Class="mt-3">Verifying your email...</RadzenText>
+                }
+                else if (isVerified)
+                {
+                    <RadzenIcon Icon="check_circle" Style="font-size: 4rem; color: var(--rz-success);" />
+                    <RadzenText TextStyle="TextStyle.H5" Class="mt-3" Style="font-weight: bold;">Email Verified!</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Class="mt-2">Your email has been successfully verified. You will now receive alerts for your signed-up areas.</RadzenText>
+                    <RadzenButton Text="GO TO HEAT MAP" Click="@(() => NavigationManager.NavigateTo("/"))" ButtonStyle="ButtonStyle.Primary" Class="mt-4" />
+                }
+                else if (isError)
+                {
+                    <RadzenIcon Icon="error" Style="font-size: 4rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H5" Class="mt-3" Style="font-weight: bold;">Verification Failed</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Class="mt-2">The verification link is invalid, expired, or has already been used.</RadzenText>
+                    <RadzenButton Text="GO TO HOME" Click="@(() => NavigationManager.NavigateTo("/"))" ButtonStyle="ButtonStyle.Light" Class="mt-4" />
+                }
+                else
+                {
+                    <RadzenIcon Icon="mark_email_read" Style="font-size: 4rem; color: var(--rz-info);" />
+                    <RadzenText TextStyle="TextStyle.H5" Class="mt-3" Style="font-weight: bold;">Confirm Email Verification</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1" Class="mt-2">Please click the button below to confirm your email address and activate your alerts.</RadzenText>
+                    <RadzenButton Text="CONFIRM VERIFICATION" Click="@PerformVerification" ButtonStyle="ButtonStyle.Primary" Class="mt-4" Size="ButtonSize.Large" />
+                }
+            </RadzenCard>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Token { get; set; }
+
+    private bool isVerifying = false;
+    private bool isVerified = false;
+    private bool isError = false;
+
+    protected override void OnInitialized()
+    {
+        if (string.IsNullOrEmpty(Token))
+        {
+            isError = true;
+        }
+    }
+
+    private async Task PerformVerification()
+    {
+        if (string.IsNullOrEmpty(Token)) return;
+
+        isVerifying = true;
+        isError = false;
+        
+        try
+        {
+            isVerified = await AlertService.VerifyEmailAsync(Token);
+            if (!isVerified)
+            {
+                isError = true;
+            }
+        }
+        catch
+        {
+            isVerified = false;
+            isError = true;
+        }
+        finally
+        {
+            isVerifying = false;
+        }
+    }
+}

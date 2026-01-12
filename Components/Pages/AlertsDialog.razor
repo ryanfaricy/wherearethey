@@ -61,7 +61,13 @@
                             <RadzenCard Class="rz-mb-2 rz-p-2">
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                                     <RadzenStack Gap="0">
-                                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@alert.Message</RadzenText>
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@alert.Message</RadzenText>
+                                            @if (!alert.IsVerified)
+                                            {
+                                                <RadzenBadge Text="Pending Verification" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
+                                            }
+                                        </RadzenStack>
                                         <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
@@ -164,7 +170,7 @@
 
     private async Task LoadAlerts()
     {
-        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier);
+        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
     }
 
     private string MaskEmail(string? email)

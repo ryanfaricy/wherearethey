@@ -15,6 +15,8 @@ public class LocationServiceTests
 {
     private readonly Mock<IServiceProvider> _serviceProviderMock = new();
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
+    private readonly Mock<IConfiguration> _configurationMock = new();
+    private readonly Mock<ILogger<AlertService>> _alertLoggerMock = new();
 
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -194,7 +196,12 @@ public class LocationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         
-        var alertServiceMock = new Mock<AlertService>(factory, new Moq.Mock<IDataProtectionProvider>().Object);
+        var alertServiceMock = new Mock<AlertService>(
+            factory, 
+            new Mock<IDataProtectionProvider>().Object,
+            new Mock<IEmailService>().Object,
+            _configurationMock.Object,
+            _alertLoggerMock.Object);
         var emailServiceMock = new Mock<IEmailService>();
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -269,8 +276,8 @@ public class LocationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
-        var alertService = new AlertService(factory, dataProtectionProvider);
         var emailServiceMock = new Mock<IEmailService>();
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
@@ -291,6 +298,14 @@ public class LocationServiceTests
             Message = "UserB's Area"
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
+
+        // Manually verify the alert for the test
+        using (var context = new ApplicationDbContext(options))
+        {
+            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB");
+            savedAlert.IsVerified = true;
+            await context.SaveChangesAsync();
+        }
 
         // User A reports something nearby (roughly 1.1km away)
         var report = new LocationReport 
@@ -322,8 +337,8 @@ public class LocationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
-        var alertService = new AlertService(factory, dataProtectionProvider);
         var emailServiceMock = new Mock<IEmailService>();
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
@@ -344,6 +359,14 @@ public class LocationServiceTests
             Message = alertMessage
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
+
+        // Manually verify the alert for the test
+        using (var context = new ApplicationDbContext(options))
+        {
+            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB");
+            savedAlert.IsVerified = true;
+            await context.SaveChangesAsync();
+        }
 
         var report = new LocationReport 
         { 
@@ -374,7 +397,12 @@ public class LocationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         
-        var alertServiceMock = new Mock<AlertService>(factory, new Moq.Mock<IDataProtectionProvider>().Object);
+        var alertServiceMock = new Mock<AlertService>(
+            factory, 
+            new Mock<IDataProtectionProvider>().Object,
+            new Mock<IEmailService>().Object,
+            _configurationMock.Object,
+            _alertLoggerMock.Object);
         var emailServiceMock = new Mock<IEmailService>();
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
