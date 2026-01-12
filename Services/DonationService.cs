@@ -5,20 +5,13 @@ using Stripe;
 
 namespace WhereAreThey.Services;
 
-public class DonationService
+public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IConfiguration _configuration;
-
-    public DonationService(ApplicationDbContext context, IConfiguration configuration)
-    {
-        _context = context;
-        _configuration = configuration;
-        StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
-    }
+    private readonly IConfiguration _configuration = configuration;
 
     public async Task<string> CreatePaymentIntentAsync(decimal amount, string currency = "usd")
     {
+        StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
         var options = new PaymentIntentCreateOptions
         {
             Amount = (long)(amount * 100), // Stripe expects amount in cents
@@ -36,21 +29,23 @@ public class DonationService
 
     public async Task<Donation> RecordDonationAsync(Donation donation)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
         donation.CreatedAt = DateTime.UtcNow;
-        _context.Donations.Add(donation);
-        await _context.SaveChangesAsync();
+        context.Donations.Add(donation);
+        await context.SaveChangesAsync();
         return donation;
     }
 
     public async Task<bool> UpdateDonationStatusAsync(string paymentIntentId, string status)
     {
-        var donation = await _context.Donations
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var donation = await context.Donations
             .FirstOrDefaultAsync(d => d.StripePaymentIntentId == paymentIntentId);
         
         if (donation == null) return false;
 
         donation.Status = status;
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
         return true;
     }
 }

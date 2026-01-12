@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -11,20 +12,30 @@ public class AlertServiceTests
 {
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
 
-    private ApplicationDbContext CreateInMemoryContext()
+    private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        return new ApplicationDbContext(options);
+    }
+
+    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContextAsync(default))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        mock.Setup(f => f.CreateDbContext())
+            .Returns(() => new ApplicationDbContext(options));
+        return mock.Object;
     }
 
     [Fact]
     public async Task CreateAlert_ShouldCreateActiveAlertAndEncryptEmail()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var email = "test@example.com";
         var alert = new Alert
         {
@@ -49,32 +60,36 @@ public class AlertServiceTests
     public async Task GetActiveAlerts_ShouldOnlyReturnActiveAlerts()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
-        var activeAlert = new Alert
+        using (var context = new ApplicationDbContext(options))
         {
-            Latitude = 40.0,
-            Longitude = -74.0,
-            RadiusKm = 5.0,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            EncryptedEmail = "encrypted"
-        };
-        
-        var inactiveAlert = new Alert
-        {
-            Latitude = 41.0,
-            Longitude = -75.0,
-            RadiusKm = 5.0,
-            IsActive = false,
-            CreatedAt = DateTime.UtcNow,
-            EncryptedEmail = "encrypted"
-        };
+            var activeAlert = new Alert
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                RadiusKm = 5.0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EncryptedEmail = "encrypted"
+            };
+            
+            var inactiveAlert = new Alert
+            {
+                Latitude = 41.0,
+                Longitude = -75.0,
+                RadiusKm = 5.0,
+                IsActive = false,
+                CreatedAt = DateTime.UtcNow,
+                EncryptedEmail = "encrypted"
+            };
 
-        context.Alerts.Add(activeAlert);
-        context.Alerts.Add(inactiveAlert);
-        await context.SaveChangesAsync();
+            context.Alerts.Add(activeAlert);
+            context.Alerts.Add(inactiveAlert);
+            await context.SaveChangesAsync();
+        }
 
         // Act
         var results = await service.GetActiveAlertsAsync();
@@ -88,91 +103,109 @@ public class AlertServiceTests
     public async Task DeactivateAlert_ShouldSetIsActiveToFalse()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
-        var alert = new Alert
+        int alertId;
+        using (var context = new ApplicationDbContext(options))
         {
-            Latitude = 40.0,
-            Longitude = -74.0,
-            RadiusKm = 5.0,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            EncryptedEmail = "encrypted"
-        };
+            var alert = new Alert
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                RadiusKm = 5.0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EncryptedEmail = "encrypted"
+            };
 
-        context.Alerts.Add(alert);
-        await context.SaveChangesAsync();
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+            alertId = alert.Id;
+        }
 
         // Act
-        var result = await service.DeactivateAlertAsync(alert.Id);
+        var result = await service.DeactivateAlertAsync(alertId);
 
         // Assert
         Assert.True(result);
-        var deactivatedAlert = await context.Alerts.FindAsync(alert.Id);
-        Assert.False(deactivatedAlert!.IsActive);
+        using (var context = new ApplicationDbContext(options))
+        {
+            var deactivatedAlert = await context.Alerts.FindAsync(alertId);
+            Assert.False(deactivatedAlert!.IsActive);
+        }
     }
 
     [Fact]
     public async Task GetActiveAlerts_ShouldNotReturnExpiredAlerts()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
-        var expiredAlert = new Alert
+        var validAlertId = 0;
+        using (var context = new ApplicationDbContext(options))
         {
-            Latitude = 40.0,
-            Longitude = -74.0,
-            RadiusKm = 5.0,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow.AddHours(-2),
-            ExpiresAt = DateTime.UtcNow.AddHours(-1),
-            EncryptedEmail = "encrypted"
-        };
-        
-        var validAlert = new Alert
-        {
-            Latitude = 41.0,
-            Longitude = -75.0,
-            RadiusKm = 5.0,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddHours(1),
-            EncryptedEmail = "encrypted"
-        };
+            var expiredAlert = new Alert
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                RadiusKm = 5.0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow.AddHours(-2),
+                ExpiresAt = DateTime.UtcNow.AddHours(-1),
+                EncryptedEmail = "encrypted"
+            };
+            
+            var validAlert = new Alert
+            {
+                Latitude = 41.0,
+                Longitude = -75.0,
+                RadiusKm = 5.0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddHours(1),
+                EncryptedEmail = "encrypted"
+            };
 
-        context.Alerts.Add(expiredAlert);
-        context.Alerts.Add(validAlert);
-        await context.SaveChangesAsync();
+            context.Alerts.Add(expiredAlert);
+            context.Alerts.Add(validAlert);
+            await context.SaveChangesAsync();
+            validAlertId = validAlert.Id;
+        }
 
         // Act
         var results = await service.GetActiveAlertsAsync();
 
         // Assert
         Assert.Single(results);
-        Assert.Equal(validAlert.Id, results[0].Id);
+        Assert.Equal(validAlertId, results[0].Id);
     }
 
     [Fact]
     public async Task GetMatchingAlerts_ShouldReturnAlertsWithinRadius()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
-        // Alert at (40, -74) with 10km radius
-        var alert = new Alert
+        using (var context = new ApplicationDbContext(options))
         {
-            Latitude = 40.0,
-            Longitude = -74.0,
-            RadiusKm = 10.0,
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
-            EncryptedEmail = "encrypted"
-        };
-        context.Alerts.Add(alert);
-        await context.SaveChangesAsync();
+            var alert = new Alert
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                RadiusKm = 10.0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                EncryptedEmail = "encrypted"
+            };
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+        }
 
         // Act
         // Point at (40.01, -74.01) is ~1.4km away
@@ -190,22 +223,26 @@ public class AlertServiceTests
     public async Task GetActiveAlerts_ShouldFilterByUserIdentifier()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var userId1 = "user1";
         var userId2 = "user2";
 
-        context.Alerts.Add(new Alert
+        using (var context = new ApplicationDbContext(options))
         {
-            Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true,
-            UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
-        });
-        context.Alerts.Add(new Alert
-        {
-            Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true,
-            UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
-        });
-        await context.SaveChangesAsync();
+            context.Alerts.Add(new Alert
+            {
+                Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true,
+                UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+            });
+            context.Alerts.Add(new Alert
+            {
+                Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true,
+                UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+            });
+            await context.SaveChangesAsync();
+        }
 
         // Act
         var results = await service.GetActiveAlertsAsync(userId1);
@@ -219,8 +256,9 @@ public class AlertServiceTests
     public async Task CreateAlert_ShouldCapRadiusAt160_9()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var email = "test@example.com";
         var alert = new Alert
         {
@@ -235,7 +273,10 @@ public class AlertServiceTests
 
         // Assert
         Assert.Equal(160.9, result.RadiusKm);
-        var savedAlert = await context.Alerts.FindAsync(result.Id);
-        Assert.Equal(160.9, savedAlert!.RadiusKm);
+        using (var context = new ApplicationDbContext(options))
+        {
+            var savedAlert = await context.Alerts.FindAsync(result.Id);
+            Assert.Equal(160.9, savedAlert!.RadiusKm);
+        }
     }
 }

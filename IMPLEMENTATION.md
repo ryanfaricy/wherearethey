@@ -10,8 +10,9 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] 100% mobile-first design (Radical simplicity)
 - [x] Radzen Blazor Components integration
 - [x] Test-driven development with xUnit (25 tests passing)
-- [x] Entity Framework Core with SQLite
-- [x] Lightweight architecture
+- [x] Entity Framework Core with PostgreSQL
+- [x] Concurrency-safe architecture with `IDbContextFactory`
+- [x] Dockerization for Railway deployment
 - [x] High-concurrency support (10,000+ connections)
 - [x] "THEY ARE HERE!" anonymous location reporting
 - [x] "ARE THEY HERE?" heat map visualization (mobile-first list)
@@ -55,7 +56,9 @@ WhereAreThey.Tests/
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
 | UI Library | Radzen Blazor | 5.7.6 |
-| Database | SQLite + EF Core | 9.0.0 |
+| Database | PostgreSQL + EF Core | 9.0.0 |
+| Concurrency | IDbContextFactory | 9.0.0 |
+| Deployment | Docker / Railway | - |
 | Payments | Stripe.net | 47.4.0 |
 | Testing | xUnit | 2.9.3 |
 
@@ -94,24 +97,22 @@ WhereAreThey.Tests/
 - Dependency vulnerability scanning completed
 
 ### ⚡ Performance & Scalability
-- **Kestrel Configuration**: MaxConcurrentConnections = 10,000
+- **Kestrel Configuration**: MaxConcurrentConnections = 10,000, handles PORT env var
+- **PostgreSQL**: Production-grade database provider
+- **IDbContextFactory**: Resolves "a second operation started on this instance" errors in Blazor
 - **Database Indexing**: Optimized queries on Timestamp, IsActive
 - **Geographic Calculations**: Haversine formula for accuracy
-- **Lightweight Storage**: SQLite for minimal overhead
 - **Server-Side Rendering**: Efficient real-time updates
 
 ### 🗄️ Database & Migrations
-- **EF Core Migrations**: Successfully transitioned from `EnsureCreated()` to full EF Core Migrations. This allows for seamless schema updates as the application evolves.
+- **PostgreSQL**: Fully migrated from SQLite to PostgreSQL for production reliability.
+- **EF Core Migrations**: Fresh PostgreSQL migrations generated.
 - **Auto-Migration**: The application automatically applies any pending migrations on startup via `db.Database.Migrate()` in `Program.cs`.
 
-### ☁️ Cloud Deployment Considerations
-- **SQLite Suitability**: While SQLite is excellent for development and low-traffic environments, for a production cloud deployment (e.g., Azure App Service, AWS Elastic Beanstalk) expecting "thousands of connections," switching to a managed database provider is recommended:
-    - **Persistence**: Cloud containers/instances are often ephemeral. A local `.db` file would be lost on restart unless persistent storage (like Azure Files or AWS EFS) is configured.
-    - **Concurrency**: Managed SQL databases (SQL Server, PostgreSQL) handle high write concurrency much better than SQLite's file-locking mechanism.
-- **Easy Transition**: Thanks to EF Core and Migrations, switching to SQL Server or PostgreSQL is as simple as:
-    1. Installing the relevant NuGet provider (e.g., `Microsoft.EntityFrameworkCore.SqlServer`).
-    2. Updating the `UseSqlite` call in `Program.cs` to the new provider.
-    3. Updating the connection string in `appsettings.json`.
+### 🐳 Docker & Railway Deployment
+- **Dockerfile**: Multi-stage build optimized for .NET 10.
+- **Railway Ready**: Configured to listen on `PORT` and parse `DATABASE_URL` automatically.
+- **Persistence**: Using a managed PostgreSQL database ensures data persistence across deployments.
 
 ### 🧪 Testing
 ```bash

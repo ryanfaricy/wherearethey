@@ -10,12 +10,21 @@ namespace WhereAreThey.Tests;
 
 public class DonationServiceTests
 {
-    private ApplicationDbContext CreateInMemoryContext()
+    private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-        return new ApplicationDbContext(options);
+    }
+
+    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContextAsync(default))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        mock.Setup(f => f.CreateDbContext())
+            .Returns(() => new ApplicationDbContext(options));
+        return mock.Object;
     }
 
     private IConfiguration CreateMockConfiguration()
@@ -29,8 +38,9 @@ public class DonationServiceTests
     public async Task RecordDonation_ShouldSaveDonation()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -46,6 +56,7 @@ public class DonationServiceTests
         Assert.Equal(25.00m, result.Amount);
         Assert.True(result.CreatedAt <= DateTime.UtcNow);
         
+        using var context = new ApplicationDbContext(options);
         var saved = await context.Donations.FindAsync(result.Id);
         Assert.NotNull(saved);
         Assert.Equal("Test Donor", saved.DonorName);
@@ -55,32 +66,41 @@ public class DonationServiceTests
     public async Task UpdateDonationStatus_ShouldUpdateStatus()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
         var piId = "pi_123";
-        context.Donations.Add(new Donation
+        
+        using (var context = new ApplicationDbContext(options))
         {
-            Amount = 10,
-            StripePaymentIntentId = piId,
-            Status = "pending"
-        });
-        await context.SaveChangesAsync();
+            context.Donations.Add(new Donation
+            {
+                Amount = 10,
+                StripePaymentIntentId = piId,
+                Status = "pending"
+            });
+            await context.SaveChangesAsync();
+        }
 
         // Act
         var result = await service.UpdateDonationStatusAsync(piId, "completed");
 
         // Assert
         Assert.True(result);
-        var updated = await context.Donations.FirstAsync(d => d.StripePaymentIntentId == piId);
-        Assert.Equal("completed", updated.Status);
+        using (var context = new ApplicationDbContext(options))
+        {
+            var updated = await context.Donations.FirstAsync(d => d.StripePaymentIntentId == piId);
+            Assert.Equal("completed", updated.Status);
+        }
     }
 
     [Fact]
     public async Task UpdateDonationStatus_ShouldReturnFalseIfNotFound()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");

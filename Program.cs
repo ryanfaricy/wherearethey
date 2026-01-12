@@ -20,10 +20,30 @@ builder.Services.AddRadzenComponents();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
-// Add DbContext with SQLite
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=wherearethey.db"));
+// Add DbContextFactory with PostgreSQL
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+// Railway specific: handle DATABASE_URL if DefaultConnection is not set
+if (string.IsNullOrEmpty(connectionString))
+{
+    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrEmpty(databaseUrl))
+    {
+        try
+        {
+            var uri = new Uri(databaseUrl);
+            var userInfo = uri.UserInfo.Split(':');
+            connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Prefer;Trust Server Certificate=true";
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+        }
+    }
+}
+
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"));
 
 // Add application services
 builder.Services.AddScoped<LocationService>();
@@ -34,6 +54,12 @@ builder.Services.AddScoped<AppThemeService>();
 // Configure for high concurrency
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
+    var port = Environment.GetEnvironmentVariable("PORT");
+    if (!string.IsNullOrEmpty(port) && int.TryParse(port, out var portNumber))
+    {
+        serverOptions.ListenAnyIP(portNumber);
+    }
+    
     serverOptions.Limits.MaxConcurrentConnections = 10000;
     serverOptions.Limits.MaxConcurrentUpgradedConnections = 10000;
 });
@@ -43,7 +69,8 @@ var app = builder.Build();
 // Apply any pending migrations
 using (var scope = app.Services.CreateScope())
 {
-    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+    using var db = factory.CreateDbContext();
     db.Database.Migrate();
 }
 

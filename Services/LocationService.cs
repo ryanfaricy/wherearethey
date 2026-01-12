@@ -4,12 +4,13 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
+public class LocationService(IDbContextFactory<ApplicationDbContext> contextFactory, IServiceProvider serviceProvider, ILogger<LocationService> logger)
 {
     public event Action? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
         report.Timestamp = DateTime.UtcNow;
         context.LocationReports.Add(report);
         await context.SaveChangesAsync();
@@ -60,6 +61,7 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
         var cutoff = DateTime.UtcNow.AddHours(-hours);
         return await context.LocationReports
             .Where(r => r.Timestamp >= cutoff)
@@ -69,6 +71,7 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
 
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
+        await using var context = await contextFactory.CreateDbContextAsync();
         // Simple bounding box calculation (approximation)
         var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km
         var lonDelta = radiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));

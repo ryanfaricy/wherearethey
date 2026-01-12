@@ -17,9 +17,11 @@ A critical, mobile-first Blazor Server application for anonymous location report
 ### Technology Stack
 - **Framework**: .NET 10.0 (Blazor Server with Interactive rendering)
 - **UI Components**: Radzen Blazor Components 5.7.6 (Material Design)
-- **Database**: SQLite with Entity Framework Core 9.0
+- **Database**: PostgreSQL with Entity Framework Core 9.0
+- **Concurrency**: IDbContextFactory for high-traffic stability
 - **Payment Processing**: Stripe.net 47.4.0
 - **Testing**: xUnit with EF Core InMemory provider
+- **Deployment**: Docker-ready (Railway optimized)
 
 ### Project Structure
 ```
@@ -121,10 +123,32 @@ WhereAreThey.Tests/
 ## ⚡ Performance & Scalability
 
 - **High Concurrency Configuration**: Handles 10,000+ concurrent connections
-- **Lightweight Database**: SQLite for minimal overhead
+- **PostgreSQL**: Production-grade database for robust data handling
+- **DbContextFactory**: Efficiently manages database operations in Blazor Server
 - **Server-Side Rendering**: Blazor Server for efficient updates
 - **Indexed Database Queries**: Optimized for fast lookups
 - **Geographic Distance Calculations**: Haversine formula for accurate radius searches
+
+## 🐳 Docker & Cloud Deployment
+
+The application is dockerized and optimized for deployment to services like **Railway**.
+
+### Deployment to Railway
+
+1.  **Railway PostgreSQL**: Add a PostgreSQL plugin to your Railway project.
+2.  **Environment Variables**:
+    *   `DATABASE_URL`: Automatically provided by Railway.
+    *   `PORT`: Automatically handled by Railway.
+    *   `Stripe__SecretKey`: Your Stripe secret key.
+    *   `Email__SmtpPass`: Your email service password.
+3.  **Deployment**: Railway will automatically detect the `Dockerfile` and deploy the application.
+
+### Local Docker Run
+
+```bash
+docker build -t wherearethey .
+docker run -p 8080:8080 -e DATABASE_URL="postgres://user:pass@host:5432/db" wherearethey
+```
 
 ## 🧪 Testing
 
@@ -221,7 +245,7 @@ dotnet user-secrets set "Stripe:SecretKey" "sk_test_..."
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Data Source=wherearethey.db"
+    "DefaultConnection": "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"
   }
 }
 ```
@@ -246,6 +270,17 @@ Contributions are welcome! Please ensure:
 2. New features include tests
 3. Code follows existing patterns
 4. Security vulnerabilities are reported privately
+
+## 🛠️ Troubleshooting
+
+### PostgreSQL Migration Issues
+If you encounter an error like `relation "Alerts" already exists` during startup, it means your database schema is out of sync with the migration history. 
+
+For development environments, you can reset the database using:
+```bash
+dotnet ef database drop -f
+dotnet ef database update
+```
 
 ## 📞 Support
 
