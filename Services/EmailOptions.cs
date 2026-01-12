@@ -3,7 +3,7 @@ namespace WhereAreThey.Services;
 public class EmailOptions
 {
     // Common
-    public string FromEmail { get; set; } = "alerts@aretheyhere.com";
+    public string FromEmail { get; set; } = "alert@aretheyhere.com";
     public string FromName { get; set; } = "AreTheyHere Alerts";
 
     // Brevo (Primary)

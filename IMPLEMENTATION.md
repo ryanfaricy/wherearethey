@@ -20,11 +20,12 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
 - [x] Decryption failure resilience
-- [x] **Multi-Provider Email Fallback**: Implemented a resilient email delivery system that tries multiple providers (Brevo, Mailjet, SendGrid, Microsoft Graph, and SMTP) in sequence. This ensures critical alerts are delivered even if a provider is down or has reached its rate limit.
+- [x] **Multi-Provider Email Fallback**: Implemented a resilient email delivery system that tries multiple providers (Microsoft Graph, Brevo, Mailjet, SendGrid, and SMTP) in sequence.
+- [x] **Circular Dependency Fix**: Resolved DI circularity using a factory lambda for `FallbackEmailService`.
 
 ### 📊 Technical Metrics
 - **Lines of Code**: ~2,800 (excluding vendor libraries)
-- **Test Coverage**: 41 comprehensive unit and integration tests (100% pass rate)
+- **Test Coverage**: 42 comprehensive unit and integration tests (100% pass rate)
 - **Build Status**: ✅ Success (0 warnings, 0 errors)
 - **Dependencies**: 7 NuGet packages (all secure, latest stable versions)
 - **Database**: PostgreSQL with automatic migrations
@@ -62,7 +63,7 @@ WhereAreThey.Tests/
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
 | UI Library | Radzen Blazor | 8.5.1 |
-| Email Service | Multi-Provider Fallback (Brevo, Mailjet, SendGrid, Microsoft Graph, SMTP) | - |
+| Email Service | Multi-Provider Fallback (Microsoft Graph, Brevo, Mailjet, SendGrid, SMTP) | - |
 | Database | PostgreSQL + EF Core | 9.0.0 |
 | Concurrency | IDbContextFactory | 9.0.0 |
 | Deployment | Docker / Railway | - |
@@ -144,7 +145,7 @@ dotnet test
 - ✅ Background task error resilience
 - ✅ Radius limit enforcement (160.9km)
 - ✅ Encrypted email at rest verification
-- ✅ 100% Pass Rate (41 tests total)
+- ✅ 100% Pass Rate (42 tests total)
 
 ### 🚀 Running the Application
 ```bash

@@ -89,7 +89,9 @@ public class MicrosoftGraphEmailServiceTests
               req.Method == HttpMethod.Post &&
               req.RequestUri!.ToString().Contains("sendMail") &&
               req.Headers.Authorization!.Scheme == "Bearer" &&
-              req.Headers.Authorization.Parameter == "mock-token"),
+              req.Headers.Authorization.Parameter == "mock-token" &&
+              req.Content!.ReadAsStringAsync().Result.Contains("sender@example.com") &&
+              req.Content.ReadAsStringAsync().Result.Contains("Sender")),
            ItExpr.IsAny<CancellationToken>()
         );
     }
