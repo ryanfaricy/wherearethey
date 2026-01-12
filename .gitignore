@@ -10,6 +10,9 @@
 *.userosscache
 *.sln.docstates
 
+# AI Output
+.output.txt
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
