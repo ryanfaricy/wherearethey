@@ -274,6 +274,9 @@
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng)
     {
+        var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
+        if (zoom >= 15) return;
+
         // Find reports within a certain radius (e.g. 5km)
         double searchRadiusKm = 5.0; 
 
@@ -282,12 +285,25 @@
             .OrderByDescending(r => r.Timestamp)
             .ToList();
 
-        if (nearbyReports.Any())
+        var nearbyAlerts = userAlerts
+            .Where(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude) <= searchRadiusKm)
+            .ToList();
+
+        if (nearbyReports.Any() || nearbyAlerts.Any())
         {
-            // Tapping on a blob reveals report details
-            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
-                new Dictionary<string, object> { { "Reports", nearbyReports } },
+            // Tapping on a blob reveals area details
+            var result = await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
+                new Dictionary<string, object> 
+                { 
+                    { "Reports", nearbyReports },
+                    { "Alerts", nearbyAlerts }
+                },
                 new DialogOptions { Width = "350px" });
+
+            if (result == true) // If an alert was deleted
+            {
+                await LoadUserAlerts();
+            }
         }
         else
         {

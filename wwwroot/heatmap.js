@@ -3,6 +3,7 @@ let heatLayer;
 let tileLayer;
 let alertLayers = [];
 let reportMarkers = [];
+let alertMarkers = [];
 let allReports = [];
 let selectedReportId = null;
 let resizeObserver = null;
@@ -17,6 +18,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         }
         map.remove();
         alertLayers = [];
+        alertMarkers = [];
         reportMarkers = [];
     }
 
@@ -68,8 +70,10 @@ window.updatePinsVisibility = function() {
     const zoom = map.getZoom();
     if (zoom >= PIN_ZOOM_THRESHOLD) {
         reportMarkers.forEach(m => m.addTo(map));
+        alertMarkers.forEach(m => m.addTo(map));
     } else {
         reportMarkers.forEach(m => m.remove());
+        alertMarkers.forEach(m => m.remove());
     }
 };
 
@@ -79,12 +83,100 @@ window.deleteAlert = function (alertId) {
     }
 };
 
+window.getZoomLevel = function () {
+    return map ? map.getZoom() : 0;
+};
+
+function onMarkerClick(e) {
+    L.DomEvent.stopPropagation(e);
+    const latlng = e.target.getLatLng();
+    const markersAtSpot = [];
+    
+    // Convert latlng to container point for distance check in pixels
+    const clickPoint = map.latLngToContainerPoint(latlng);
+    const pixelThreshold = 15; // pixels
+    
+    reportMarkers.forEach(m => {
+        if (map.hasLayer(m)) {
+            const p = map.latLngToContainerPoint(m.getLatLng());
+            if (clickPoint.distanceTo(p) < pixelThreshold) {
+                markersAtSpot.push({ type: 'report', data: m.reportData });
+            }
+        }
+    });
+
+    alertMarkers.forEach(m => {
+        if (map.hasLayer(m)) {
+            const p = map.latLngToContainerPoint(m.getLatLng());
+            if (clickPoint.distanceTo(p) < pixelThreshold) {
+                markersAtSpot.push({ type: 'alert', data: m.alertData });
+            }
+        }
+    });
+
+    if (markersAtSpot.length > 0) {
+        let content = '<div style="max-height: 250px; overflow-y: auto; min-width: 200px; font-family: sans-serif; color: #333;">';
+        if (markersAtSpot.length > 1) {
+             content += `<div style="font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #eee; padding-bottom: 4px; color: var(--rz-primary);">Items at this location (${markersAtSpot.length})</div>`;
+        }
+        
+        markersAtSpot.forEach(m => {
+            if (m.type === 'report') {
+                const r = m.data;
+                const date = new Date(r.timestamp);
+                const timeStr = date.toLocaleString();
+                content += `
+                    <div style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px;">
+                        <div style="font-weight: bold; color: ${r.isEmergency ? '#d32f2f' : '#1976d2'}; margin-bottom: 2px;">
+                            ${r.isEmergency ? '🚨 EMERGENCY REPORT' : '📍 Report'}
+                        </div>
+                        <div style="font-size: 0.8em; color: #666;">${timeStr}</div>
+                        ${r.message ? `<div style="font-style: italic; font-size: 0.85em; margin-top: 4px; border-top: 1px dotted #eee; padding-top: 2px;">${r.message}</div>` : ''}
+                    </div>
+                `;
+            } else if (m.type === 'alert') {
+                const alert = m.data;
+                content += `
+                    <div style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px;">
+                        <div style="font-weight: bold; color: #e65100; margin-bottom: 2px;">🔔 Alert Zone</div>
+                        <div style="font-size: 0.8em; color: #666;"><strong>Radius:</strong> ${alert.radiusKm} km</div>
+                        ${alert.message ? `<div style="font-style: italic; font-size: 0.85em; margin-top: 4px; border-top: 1px dotted #eee; padding-top: 2px;">${alert.message}</div>` : ''}
+                        <div style="text-align: right; margin-top: 6px;">
+                            <button onclick="deleteAlert(${alert.id})" 
+                                    style="background: #f44336; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold;">
+                                DELETE
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+        
+        content += '</div>';
+
+        L.popup({
+            closeButton: true,
+            className: 'aggregated-popup'
+        })
+            .setLatLng(latlng)
+            .setContent(content)
+            .openOn(map);
+            
+        // Select the first report if present
+        const firstReport = markersAtSpot.find(m => m.type === 'report');
+        if (firstReport) {
+             window.selectReport(firstReport.data.id);
+        }
+    }
+}
+
 window.updateAlerts = function (alerts) {
     if (!map) return;
 
     // Clear existing alert layers
     alertLayers.forEach(layer => map.removeLayer(layer));
     alertLayers = [];
+    alertMarkers = [];
 
     if (!alerts || !alerts.length) return;
 
@@ -108,30 +200,10 @@ window.updateAlerts = function (alerts) {
             fillColor: '#ffb74d',
             fillOpacity: 1,
             weight: 2
-        }).addTo(map);
-
-        let popupContent = `
-            <div style="font-family: sans-serif; min-width: 180px; color: #333;">
-                <div style="font-weight: bold; color: #e65100; margin-bottom: 5px;">
-                    🔔 Alert Zone
-                </div>
-                <div style="font-size: 0.85em; margin-bottom: 5px;">
-                    <strong>Radius:</strong> ${alert.radiusKm} km
-                </div>
-                ${alert.message ? `<div style="font-style: italic; margin-bottom: 10px; border-top: 1px solid #eee; padding-top: 5px;">${alert.message}</div>` : ''}
-                <div style="border-top: 1px solid #eee; padding-top: 8px; text-align: right;">
-                    <button onclick="deleteAlert(${alert.id})" 
-                            style="background: #f44336; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">
-                        DELETE
-                    </button>
-                </div>
-            </div>
-        `;
-
-        marker.bindPopup(popupContent, {
-            closeButton: false,
-            className: 'alert-popup'
         });
+
+        marker.alertData = alert;
+        marker.on('click', onMarkerClick);
 
         if (alert.message) {
             marker.bindTooltip(alert.message, {
@@ -139,8 +211,12 @@ window.updateAlerts = function (alerts) {
                 direction: 'top'
             });
         }
+        
+        alertMarkers.push(marker);
         alertLayers.push(marker);
     });
+    
+    updatePinsVisibility();
 };
 
 window.updateMapTheme = function (theme) {
@@ -191,28 +267,8 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
             weight: 2
         });
 
-        const date = new Date(r.timestamp);
-        const timeStr = date.toLocaleString();
-        let popupContent = `
-            <div style="font-family: sans-serif; min-width: 150px; color: #333;">
-                <div style="font-weight: bold; color: ${r.isEmergency ? '#d32f2f' : '#1976d2'}; margin-bottom: 5px;">
-                    ${r.isEmergency ? '🚨 EMERGENCY REPORT' : '📍 Report'}
-                </div>
-                <div style="font-size: 0.85em; margin-bottom: 5px;">
-                    ${timeStr}
-                </div>
-                ${r.message ? `<div style="font-style: italic; border-top: 1px solid #eee; padding-top: 5px;">${r.message}</div>` : ''}
-            </div>
-        `;
-
-        marker.bindPopup(popupContent, {
-            closeButton: false,
-            className: 'report-popup'
-        });
-
-        marker.on('click', function() {
-            window.selectReport(r.id);
-        });
+        marker.reportData = r;
+        marker.on('click', onMarkerClick);
 
         marker.reportId = r.id;
         reportMarkers.push(marker);
@@ -272,7 +328,9 @@ window.focusReport = function(reportId) {
         if (!map.hasLayer(marker)) {
             marker.addTo(map);
         }
-        marker.openPopup();
+        
+        // Use the manual click trigger to show the aggregated popup
+        onMarkerClick({ target: marker, latlng: marker.getLatLng() });
         window.selectReport(reportId);
     }
 };

@@ -1,62 +1,137 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject DialogService DialogService
+@inject AlertService AlertService
+@inject NotificationService NotificationService
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Report Summary</RadzenText>
+    <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
     
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-        <RadzenText TextStyle="TextStyle.Body1">Reports in this area:</RadzenText>
-        <RadzenBadge Text="@Reports.Count.ToString()" BadgeStyle="BadgeStyle.Primary" />
-    </RadzenStack>
-
-    @if (EmergencyCount > 0)
-    {
-        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="false">
-            <b>@EmergencyCount</b> emergency reports detected!
-        </RadzenAlert>
-    }
-
-    <RadzenText TextStyle="TextStyle.Body2">
-        <strong>Most recent:</strong> @MostRecentTimestamp.ToLocalTime().ToString("g") 
-        <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
-    </RadzenText>
-
-    <div style="max-height: 300px; overflow-y: auto;">
-        <RadzenDataList Data="@Reports.Take(10)" TItem="LocationReport">
-            <Template Context="r">
-                <RadzenCard Class="rz-p-2 mb-1" Style="@(GetReportStyle(r))">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                        <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
-                        @if (r.IsEmergency)
-                        {
-                            <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
-                        }
+    <RadzenTabs RenderMode="TabRenderMode.Client">
+        <Tabs>
+            <RadzenTabsItem Text="Reports" Icon="visibility">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.Body1">Reports in this area:</RadzenText>
+                        <RadzenBadge Text="@Reports.Count.ToString()" BadgeStyle="BadgeStyle.Primary" />
                     </RadzenStack>
-                    @if (!string.IsNullOrEmpty(r.Message))
-                    {
-                        <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
-                    }
-                </RadzenCard>
-            </Template>
-        </RadzenDataList>
-    </div>
 
-    @if (Reports.Count > 10)
-    {
-        <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 10) more reports</RadzenText>
-    }
+                    @if (EmergencyCount > 0)
+                    {
+                        <RadzenAlert AlertStyle="AlertStyle.Danger" ShowIcon="true" Variant="Variant.Flat" Shade="Shade.Lighter" AllowClose="false">
+                            <b>@EmergencyCount</b> emergency reports detected!
+                        </RadzenAlert>
+                    }
+
+                    @if (Reports.Any())
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption">
+                            <strong>Most recent:</strong> @MostRecentTimestamp.ToLocalTime().ToString("g") 
+                            <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
+                        </RadzenText>
+
+                        <div style="max-height: 250px; overflow-y: auto;">
+                            <RadzenDataList Data="@Reports.Take(15)" TItem="LocationReport">
+                                <Template Context="r">
+                                    @if (r.IsEmergency)
+                                    {
+                                        <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
+                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
+                                                <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
+                                            </RadzenStack>
+                                            @if (!string.IsNullOrEmpty(r.Message))
+                                            {
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                                            }
+                                        </RadzenCard>
+                                    }
+                                    else
+                                    {
+                                        <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-info);">
+                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
+                                            </RadzenStack>
+                                            @if (!string.IsNullOrEmpty(r.Message))
+                                            {
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                                            }
+                                        </RadzenCard>
+                                    }
+                                </Template>
+                            </RadzenDataList>
+                        </div>
+
+                        @if (Reports.Count > 15)
+                        {
+                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 15) more reports</RadzenText>
+                        }
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Class="opacity-75 rz-p-4 text-center">No reports in this area.</RadzenText>
+                    }
+                </RadzenStack>
+            </RadzenTabsItem>
+            <RadzenTabsItem Text="Alert Zones" Icon="notifications">
+                <RadzenStack Gap="0.5rem">
+                    @if (Alerts.Any())
+                    {
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            <RadzenDataList Data="@Alerts" TItem="Alert">
+                                <Template Context="a">
+                                    <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid #ff9800;">
+                                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                            <RadzenStack Gap="0">
+                                                <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@GetAlertName(a)</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption">Radius: @a.RadiusKm km</RadzenText>
+                                            </RadzenStack>
+                                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                          Click="@(() => DeleteAlert(a))" />
+                                        </RadzenStack>
+                                    </RadzenCard>
+                                </Template>
+                            </RadzenDataList>
+                        </div>
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Body2" Class="opacity-75 rz-p-4 text-center">No alert zones in this area.</RadzenText>
+                    }
+                </RadzenStack>
+            </RadzenTabsItem>
+        </Tabs>
+    </RadzenTabs>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-3">
-        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close(alertDeleted))" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 
 @code {
     [Parameter] public List<LocationReport> Reports { get; set; } = new();
+    [Parameter] public List<Alert> Alerts { get; set; } = new();
+
+    private bool alertDeleted = false;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
+
+    private async Task DeleteAlert(Alert alert)
+    {
+        string extra = string.IsNullOrEmpty(alert.Message) ? "" : $" ({alert.Message})";
+        var confirmed = await DialogService.Confirm($"Are you sure you want to delete this alert zone?{extra}", 
+            "Delete Alert", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirmed == true)
+        {
+            await AlertService.DeactivateAlertAsync(alert.Id);
+            Alerts.Remove(alert);
+            alertDeleted = true;
+            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+            StateHasChanged();
+        }
+    }
 
     private string TimeAgo(DateTime dateTime)
     {
@@ -68,10 +143,8 @@
         return $"{(int)span.TotalDays}d ago";
     }
 
-    private string GetReportStyle(LocationReport r)
+    private string GetAlertName(Alert alert)
     {
-        return r.IsEmergency 
-            ? "border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);" 
-            : "border-left: 4px solid var(--rz-info);";
+        return string.IsNullOrEmpty(alert.Message) ? "Alert Zone" : alert.Message;
     }
 }
