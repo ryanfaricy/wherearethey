@@ -68,11 +68,11 @@ WhereAreThey.Tests/
    ```bash
    dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
    dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
-   dotnet user-secrets set "Email:SmtpServer" "your-smtp-server"
-   dotnet user-secrets set "Email:SmtpPort" "465"
-   dotnet user-secrets set "Email:SmtpUser" "your-smtp-user"
-   dotnet user-secrets set "Email:SmtpPass" "your-smtp-password"
+   dotnet user-secrets set "Email:ApiKey" "your-brevo-api-key"
+   dotnet user-secrets set "Email:FromEmail" "alerts@aretheyhere.com"
    ```
+
+   *Note: The application now uses the Brevo HTTP API by default for improved reliability in cloud environments like Railway.*
 
 4. **Run the application**
    ```bash
@@ -303,15 +303,12 @@ dotnet ef database drop -f
 dotnet ef database update
 ```
 
-### SMTP Email Timeouts on Railway
-If you experience `System.TimeoutException` when sending emails on Railway:
-1.  **Default Port**: The application now defaults to port **2525** with STARTTLS, which is often more reliable and less likely to be throttled in cloud environments than 465 or 587.
-2.  **Verify Secrets**: Ensure `Email:SmtpUser` and `Email:SmtpPass` are correctly set in Railway environment variables.
-3.  **Resilience**: The application is configured to:
-    - Automatically retry connection attempts.
-    - Log DNS resolution results for easier troubleshooting.
-    - Set `LocalDomain` (EHLO) explicitly.
-4.  **Alternatives**: If 2525 is also problematic, try port **465** or **587** and set `Email:SmtpPort` accordingly.
+### Email Delivery Issues on Railway
+If you experience issues with email delivery:
+1.  **Brevo API**: The application now uses Brevo's HTTP API (`https://api.brevo.com/v3/smtp/email`) by default. This avoids common SMTP port blocking issues in cloud environments.
+2.  **Verify Secrets**: Ensure `Email:ApiKey` is correctly set in Railway environment variables.
+3.  **Logs**: Check the application logs for "Email sent to... via Brevo API" or any "Failed to send email via Brevo API" error messages.
+4.  **SMTP Fallback**: While the app defaults to the HTTP API, the `SmtpEmailService` code is still available if you need to revert and re-configure it in `Program.cs`.
 
 ## 📞 Support
 
