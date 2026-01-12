@@ -1,0 +1,13 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/out
+**/*.db
+**/*.db-shm
+**/*.db-wal
+docker-compose.yml
+Dockerfile
+.dockerignore
+node_modules

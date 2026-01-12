@@ -17,7 +17,8 @@ A critical, mobile-first Blazor Server application for anonymous location report
 ### Technology Stack
 - **Framework**: .NET 10.0 (Blazor Server with Interactive rendering)
 - **UI Components**: Radzen Blazor Components 5.7.6 (Material Design)
-- **Database**: SQLite with Entity Framework Core 9.0
+- **Database**: PostgreSQL with Entity Framework Core 9.0
+- **Containerization**: Docker & Docker Compose
 - **Payment Processing**: Stripe.net 47.4.0
 - **Testing**: xUnit with EF Core InMemory provider
 
@@ -44,10 +45,29 @@ WhereAreThey.Tests/
 ## 🚀 Getting Started
 
 ### Prerequisites
-- .NET 10.0 SDK or later
+- .NET 10.0 SDK or later (for local development)
+- Docker and Docker Compose (recommended for deployment)
 - JetBrains Rider (or Visual Studio/VS Code)
 
-### Installation
+### Fast Deployment with Docker (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/ryanfaricy/wherearethey.git
+   cd wherearethey
+   ```
+
+2. **Configure Environment**
+   
+   Edit `docker-compose.yml` or set environment variables for Stripe and Email.
+
+3. **Run with Docker Compose**
+   ```bash
+   docker-compose up -d
+   ```
+   The application will be available at `http://localhost:8080`.
+
+### Local Development Installation
 
 1. **Clone the repository**
    ```bash
@@ -60,15 +80,31 @@ WhereAreThey.Tests/
    dotnet restore
    ```
 
-3. **Configure Stripe (Optional)**
+3. **Database Setup**
+   Ensure you have a PostgreSQL instance running and update the connection string in `appsettings.json`.
+
+4. **Configuration**
    
-   Edit `appsettings.json` to add your Stripe keys:
+   Edit `appsettings.json` to add your Stripe and Brevo SMTP details:
    ```json
-   "Stripe": {
-     "PublishableKey": "pk_test_YOUR_KEY",
-     "SecretKey": "sk_test_YOUR_KEY"
+   {
+     "Stripe": {
+       "PublishableKey": "pk_test_YOUR_KEY",
+       "SecretKey": "sk_test_YOUR_KEY"
+     },
+     "Email": {
+       "SmtpServer": "smtp-relay.brevo.com",
+       "SmtpPort": 587,
+       "SmtpUser": "9fc309001@smtp-brevo.com",
+       "SmtpPass": "your-brevo-smtp-key",
+       "FromEmail": "your-verified-sender@domain.com",
+       "FromName": "AreTheyHere Alerts",
+       "EnableSsl": true
+     }
    }
    ```
+   
+   *Note: Ensure the `FromEmail` is a verified sender in your Brevo account.*
 
 4. **Run the application**
    ```bash
@@ -120,7 +156,7 @@ WhereAreThey.Tests/
 ## ⚡ Performance & Scalability
 
 - **High Concurrency Configuration**: Handles 10,000+ concurrent connections
-- **Lightweight Database**: SQLite for minimal overhead
+- **Production Ready**: PostgreSQL for high-concurrency and reliability
 - **Server-Side Rendering**: Blazor Server for efficient updates
 - **Indexed Database Queries**: Optimized for fast lookups
 - **Geographic Distance Calculations**: Haversine formula for accurate radius searches

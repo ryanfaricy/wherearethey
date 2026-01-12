@@ -20,10 +20,9 @@ builder.Services.AddRadzenComponents();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
-// Add DbContext with SQLite
+// Add DbContext with PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection") 
-        ?? "Data Source=wherearethey.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add application services
 builder.Services.AddScoped<LocationService>();
