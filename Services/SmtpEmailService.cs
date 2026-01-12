@@ -42,7 +42,11 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
             using var client = new SmtpClient();
             
             // Set a timeout to prevent hanging forever
-            client.Timeout = 15000; // 15 seconds
+            // Increased to 30s as some cloud environments (like Railway) can have slow handshakes
+            client.Timeout = 30000; 
+            
+            // Disable CRL checks to avoid timeouts in restricted network environments
+            client.CheckCertificateRevocation = false;
 
             var secureSocketOptions = SecureSocketOptions.None;
             if (_options.EnableSsl)
@@ -52,6 +56,7 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
                     : SecureSocketOptions.StartTls;
             }
 
+            logger.LogDebug("Attempting to connect to {Server}:{Port} (Options: {Options})", _options.SmtpServer, _options.SmtpPort, secureSocketOptions);
             await client.ConnectAsync(_options.SmtpServer, _options.SmtpPort, secureSocketOptions);
 
             if (!string.IsNullOrEmpty(_options.SmtpUser))

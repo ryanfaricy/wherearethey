@@ -302,6 +302,12 @@ dotnet ef database drop -f
 dotnet ef database update
 ```
 
+### SMTP Email Timeouts on Railway
+If you experience `System.TimeoutException` when sending emails on Railway:
+1.  **Check Port**: While port 587 is standard, some environments block it. Try using port **465** with `Email:EnableSsl` set to `true`.
+2.  **Verify Secrets**: Ensure `Email:SmtpUser` and `Email:SmtpPass` are correctly set in Railway environment variables.
+3.  **Resilience**: The application is configured to disable CRL checks and uses a 30s timeout to mitigate common cloud networking delays.
+
 ## 📞 Support
 
 For issues or questions, please open a GitHub issue or contact the maintainer.

@@ -20,6 +20,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
 - [x] Decryption failure resilience
+- [x] **SMTP Resilience**: Configured MailKit with extended timeouts and disabled CRL checks for cloud reliability.
 
 ### 📊 Technical Metrics
 - **Lines of Code**: ~2,600 (excluding vendor libraries)
