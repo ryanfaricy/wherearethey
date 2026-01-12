@@ -1,4 +1,5 @@
 @page "/"
+@using System.Globalization
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.WebUtilities
@@ -101,15 +102,15 @@
                 focusReportId = rId;
             }
 
-            if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat))
+            if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, CultureInfo.InvariantCulture, out var lat))
             {
                 initialLat = lat;
             }
-            if (query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, out var lng))
+            if (query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, CultureInfo.InvariantCulture, out var lng))
             {
                 initialLng = lng;
             }
-            if (query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, out var radius))
+            if (query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, CultureInfo.InvariantCulture, out var radius))
             {
                 initialRadius = radius;
             }

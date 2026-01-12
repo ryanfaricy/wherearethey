@@ -1,4 +1,5 @@
-﻿@using WhereAreThey.Components.Pages
+﻿@using System.Globalization
+@using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @inject NavigationManager NavigationManager
@@ -60,7 +61,7 @@
 
         if (result is Alert alert)
         {
-            NavigationManager.NavigateTo($"/?lat={alert.Latitude}&lng={alert.Longitude}&radius={alert.RadiusKm}", forceLoad: true);
+            NavigationManager.NavigateTo($"/?lat={alert.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={alert.Longitude.ToString(CultureInfo.InvariantCulture)}&radius={alert.RadiusKm.ToString(CultureInfo.InvariantCulture)}", forceLoad: true);
         }
     }
 

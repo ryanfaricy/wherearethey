@@ -5,17 +5,33 @@ let alertLayers = [];
 let reportMarkers = [];
 let allReports = [];
 let selectedReportId = null;
+let resizeObserver = null;
 const PIN_ZOOM_THRESHOLD = 15;
 
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper, alerts) {
     if (map) {
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+            resizeObserver = null;
+        }
         map.remove();
         alertLayers = [];
         reportMarkers = [];
     }
 
+    const container = document.getElementById(elementId);
+    map = L.map(elementId).setView([initialLat, initialLng], (initialLat !== 0 || initialLng !== 0) ? 13 : 2);
+
+    if (container) {
+        resizeObserver = new ResizeObserver(() => {
+            if (map) {
+                map.invalidateSize();
+            }
+        });
+        resizeObserver.observe(container);
+    }
+
     const hasInitialLocation = initialLat !== 0 || initialLng !== 0;
-    map = L.map(elementId).setView([initialLat, initialLng], hasInitialLocation ? 13 : 2);
 
     updateMapTheme();
 

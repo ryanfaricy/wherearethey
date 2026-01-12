@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -44,12 +45,12 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
                     var body = $@"
                         <h3>New report near your alert area</h3>
                         {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
-                        <p><strong>Location:</strong> {report.Latitude:F4}, {report.Longitude:F4}</p>
+                        <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
                         <p><strong>Time:</strong> {report.Timestamp:g} UTC</p>
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
                         <hr/>
-                        <p><a href='{baseUrl}/?lat={report.Latitude}&lng={report.Longitude}&reportId={report.Id}'>View on Heat Map</a></p>
+                        <p><a href='{baseUrl}/?lat={report.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={report.Longitude.ToString(CultureInfo.InvariantCulture)}&reportId={report.Id}'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
                     await emailService.SendEmailAsync(email!, subject, body);
