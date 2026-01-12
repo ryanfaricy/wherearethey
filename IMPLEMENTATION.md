@@ -20,8 +20,9 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
 - [x] Decryption failure resilience
-- [x] **Multi-Provider Email Fallback**: Implemented a resilient email delivery system that tries multiple providers (Microsoft Graph, Brevo, Mailjet, SendGrid, and SMTP) in sequence.
+ - [x] **Multi-Provider Email Fallback**: Implemented a resilient email delivery system that tries multiple providers (Microsoft Graph and SMTP) in sequence.
 - [x] **Circular Dependency Fix**: Resolved DI circularity using a factory lambda for `FallbackEmailService`.
+- [x] **Redundant Providers Removal**: Removed Brevo, Mailjet, and SendGrid providers as they are no longer needed.
 
 ### 📊 Technical Metrics
 - **Lines of Code**: ~2,800 (excluding vendor libraries)
@@ -41,7 +42,7 @@ WhereAreThey/
 │   └── Pages/         # 5 functional pages
 ├── Data/              # EF Core DbContext
 ├── Models/            # 3 data models (LocationReport, Alert, Donation)
-├── Services/          # 9 service classes (Email fallback chain)
+├── Services/          # 6 service classes (Email fallback chain)
 └── wwwroot/           # Static assets & JavaScript
 
 WhereAreThey.Tests/
@@ -51,9 +52,6 @@ WhereAreThey.Tests/
 ├── DonationServiceTests.cs  # 3 tests
 ├── AppThemeServiceTests.cs   # 3 tests
 ├── SmtpEmailServiceTests.cs  # 1 test
-├── BrevoHttpEmailServiceTests.cs # 3 tests
-├── MailjetHttpEmailServiceTests.cs # 2 tests
-├── SendGridHttpEmailServiceTests.cs # 2 tests
 ├── MicrosoftGraphEmailServiceTests.cs # 3 tests
 └── FallbackEmailServiceTests.cs # 4 tests
 ```
@@ -63,7 +61,7 @@ WhereAreThey.Tests/
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
 | UI Library | Radzen Blazor | 8.5.1 |
-| Email Service | Multi-Provider Fallback (Microsoft Graph, Brevo, Mailjet, SendGrid, SMTP) | - |
+| Email Service | Multi-Provider Fallback (Microsoft Graph, SMTP) | - |
 | Database | PostgreSQL + EF Core | 9.0.0 |
 | Concurrency | IDbContextFactory | 9.0.0 |
 | Deployment | Docker / Railway | - |

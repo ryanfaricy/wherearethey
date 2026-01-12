@@ -6,16 +6,6 @@ public class EmailOptions
     public string FromEmail { get; set; } = "alert@aretheyhere.com";
     public string FromName { get; set; } = "AreTheyHere Alerts";
 
-    // Brevo (Primary)
-    public string ApiKey { get; set; } = "";
-
-    // Mailjet
-    public string MailjetApiKey { get; set; } = "";
-    public string MailjetApiSecret { get; set; } = "";
-
-    // SendGrid
-    public string SendGridApiKey { get; set; } = "";
-
     // Microsoft Graph
     public string GraphTenantId { get; set; } = "";
     public string GraphClientId { get; set; } = "";

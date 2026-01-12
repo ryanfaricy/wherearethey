@@ -22,17 +22,11 @@ builder.Services.AddRadzenComponents();
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
-builder.Services.AddHttpClient<BrevoHttpEmailService>();
-builder.Services.AddHttpClient<MailjetHttpEmailService>();
-builder.Services.AddHttpClient<SendGridHttpEmailService>();
 builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
     new FallbackEmailService(new IEmailService[] 
     {
         sp.GetRequiredService<MicrosoftGraphEmailService>(),
-        sp.GetRequiredService<BrevoHttpEmailService>(),
-        sp.GetRequiredService<MailjetHttpEmailService>(),
-        sp.GetRequiredService<SendGridHttpEmailService>(),
         sp.GetRequiredService<SmtpEmailService>()
     }, sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 

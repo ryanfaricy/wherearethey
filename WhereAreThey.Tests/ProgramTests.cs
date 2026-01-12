@@ -19,17 +19,11 @@ public class ProgramTests
         builder.Services.Configure<EmailOptions>(options => { });
         
         builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
-        builder.Services.AddHttpClient<BrevoHttpEmailService>();
-        builder.Services.AddHttpClient<MailjetHttpEmailService>();
-        builder.Services.AddHttpClient<SendGridHttpEmailService>();
         builder.Services.AddTransient<SmtpEmailService>();
         builder.Services.AddScoped<IEmailService>(sp => 
             new FallbackEmailService(new IEmailService[] 
             {
                 sp.GetRequiredService<MicrosoftGraphEmailService>(),
-                sp.GetRequiredService<BrevoHttpEmailService>(),
-                sp.GetRequiredService<MailjetHttpEmailService>(),
-                sp.GetRequiredService<SendGridHttpEmailService>(),
                 sp.GetRequiredService<SmtpEmailService>()
             }, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackEmailService>>()));
 

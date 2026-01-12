@@ -68,10 +68,6 @@ WhereAreThey.Tests/
    ```bash
    dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
    dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
-   dotnet user-secrets set "Email:ApiKey" "your-brevo-api-key"
-   dotnet user-secrets set "Email:MailjetApiKey" "your-mailjet-api-key"
-   dotnet user-secrets set "Email:MailjetApiSecret" "your-mailjet-api-secret"
-   dotnet user-secrets set "Email:SendGridApiKey" "your-sendgrid-api-key"
    dotnet user-secrets set "Email:GraphTenantId" "your-tenant-id"
    dotnet user-secrets set "Email:GraphClientId" "your-client-id"
    dotnet user-secrets set "Email:GraphClientSecret" "your-client-secret"
@@ -79,7 +75,7 @@ WhereAreThey.Tests/
    dotnet user-secrets set "Email:FromEmail" "alert@aretheyhere.com"
    ```
 
-   *Note: The application uses a multi-provider fallback system (Microsoft Graph, Brevo, Mailjet, SendGrid, and SMTP) to ensure critical alerts are delivered even if one provider fails or hits its limits.*
+   *Note: The application uses a multi-provider fallback system (Microsoft Graph and SMTP) to ensure critical alerts are delivered even if one provider fails or hits its limits.*
 
 4. **Run the application**
    ```bash
@@ -312,10 +308,10 @@ dotnet ef database update
 
 ### Email Delivery Issues on Railway
 If you experience issues with email delivery:
-1.  **Multi-Provider Fallback**: The application now uses a fallback chain: Microsoft Graph -> Brevo API -> Mailjet API -> SendGrid API -> SMTP. If one fails, it automatically tries the next.
-2.  **Verify Secrets**: Ensure `Email:ApiKey` (for Brevo), `Email:MailjetApiKey`, `Email:SendGridApiKey`, or `Email:GraphClientId` etc. are correctly set in Railway environment variables.
+1.  **Multi-Provider Fallback**: The application now uses a fallback chain: Microsoft Graph -> SMTP. If one fails, it automatically tries the next.
+2.  **Verify Secrets**: Ensure `Email:GraphClientId`, `Email:GraphTenantId`, `Email:GraphClientSecret`, and `Email:GraphSenderUserId` are correctly set in Railway environment variables.
 3.  **Logs**: Check the application logs for "Attempting to send email via..." or any "Failed to send email via..." error messages. The logs will show which provider succeeded or why they failed.
-4.  **SMTP Last Resort**: If all HTTP APIs fail, the app will attempt SMTP via the configured `SmtpServer`.
+4.  **SMTP Last Resort**: If Microsoft Graph fails, the app will attempt SMTP via the configured `SmtpServer`.
 
 ## 📞 Support
 
