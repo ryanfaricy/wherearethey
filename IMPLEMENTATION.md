@@ -170,7 +170,9 @@ Access at: `https://localhost:5001` or `http://localhost:5000`
 
 ### 🔧 Configuration
 - Connection strings in appsettings.json
-- Stripe API keys configuration
+- **Secret Management**:
+    - User Secrets (Secrets.json) used for sensitive data (Stripe, SMTP)
+    - No secrets stored in source code or appsettings.json
 - Kestrel server tuning
 - Logging configuration
 - Development/Production environments

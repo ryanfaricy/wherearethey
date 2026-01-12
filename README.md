@@ -60,14 +60,15 @@ WhereAreThey.Tests/
    dotnet restore
    ```
 
-3. **Configure Stripe (Optional)**
+3. **Configure Secrets (Optional)**
    
-   Edit `appsettings.json` to add your Stripe keys:
-   ```json
-   "Stripe": {
-     "PublishableKey": "pk_test_YOUR_KEY",
-     "SecretKey": "sk_test_YOUR_KEY"
-   }
+   It is recommended to use .NET User Secrets for sensitive information:
+   ```bash
+   dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
+   dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
+   dotnet user-secrets set "Email:SmtpServer" "your-smtp-server"
+   dotnet user-secrets set "Email:SmtpUser" "your-smtp-user"
+   dotnet user-secrets set "Email:SmtpPass" "your-smtp-password"
    ```
 
 4. **Run the application**
@@ -210,15 +211,17 @@ For high-concurrency cloud deployments, it is recommended to switch the database
 
 ## 🔧 Configuration
 
+### Secrets Management
+Sensitive data like Stripe and SMTP keys should be stored in .NET User Secrets during development:
+```bash
+dotnet user-secrets set "Stripe:SecretKey" "sk_test_..."
+```
+
 ### appsettings.json
 ```json
 {
   "ConnectionStrings": {
     "DefaultConnection": "Data Source=wherearethey.db"
-  },
-  "Stripe": {
-    "PublishableKey": "pk_test_...",
-    "SecretKey": "sk_test_..."
   }
 }
 ```
