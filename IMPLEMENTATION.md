@@ -20,11 +20,11 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
 - [x] Decryption failure resilience
-- [x] **Brevo HTTP API Integration**: Migrated from SMTP to Brevo's REST API for superior reliability in cloud environments where SMTP ports are frequently blocked.
+- [x] **Multi-Provider Email Fallback**: Implemented a resilient email delivery system that tries multiple providers (Brevo, Mailjet, SendGrid, Microsoft Graph, and SMTP) in sequence. This ensures critical alerts are delivered even if a provider is down or has reached its rate limit.
 
 ### 📊 Technical Metrics
-- **Lines of Code**: ~2,600 (excluding vendor libraries)
-- **Test Coverage**: 30 comprehensive unit and integration tests (100% pass rate)
+- **Lines of Code**: ~2,800 (excluding vendor libraries)
+- **Test Coverage**: 41 comprehensive unit and integration tests (100% pass rate)
 - **Build Status**: ✅ Success (0 warnings, 0 errors)
 - **Dependencies**: 7 NuGet packages (all secure, latest stable versions)
 - **Database**: PostgreSQL with automatic migrations
@@ -40,7 +40,7 @@ WhereAreThey/
 │   └── Pages/         # 5 functional pages
 ├── Data/              # EF Core DbContext
 ├── Models/            # 3 data models (LocationReport, Alert, Donation)
-├── Services/          # 3 service classes
+├── Services/          # 9 service classes (Email fallback chain)
 └── wwwroot/           # Static assets & JavaScript
 
 WhereAreThey.Tests/
@@ -50,7 +50,11 @@ WhereAreThey.Tests/
 ├── DonationServiceTests.cs  # 3 tests
 ├── AppThemeServiceTests.cs   # 3 tests
 ├── SmtpEmailServiceTests.cs  # 1 test
-└── BrevoHttpEmailServiceTests.cs # 3 tests
+├── BrevoHttpEmailServiceTests.cs # 3 tests
+├── MailjetHttpEmailServiceTests.cs # 2 tests
+├── SendGridHttpEmailServiceTests.cs # 2 tests
+├── MicrosoftGraphEmailServiceTests.cs # 3 tests
+└── FallbackEmailServiceTests.cs # 4 tests
 ```
 
 #### Technology Stack
@@ -58,7 +62,7 @@ WhereAreThey.Tests/
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
 | UI Library | Radzen Blazor | 8.5.1 |
-| Email Service | Brevo HTTP API | - |
+| Email Service | Multi-Provider Fallback (Brevo, Mailjet, SendGrid, Microsoft Graph, SMTP) | - |
 | Database | PostgreSQL + EF Core | 9.0.0 |
 | Concurrency | IDbContextFactory | 9.0.0 |
 | Deployment | Docker / Railway | - |
@@ -126,7 +130,7 @@ WhereAreThey.Tests/
 cd WhereAreThey.Tests
 dotnet test
 ```
-**Result**: 30/30 tests passing
+**Result**: 38/38 tests passing
 - Location report CRUD operations (8 tests)
 - Time-range filtering and edge cases
 - Geographic radius queries (Haversine & Bounding Box)
@@ -135,12 +139,12 @@ dotnet test
 - Cross-user alert integration (User A reports, User B alerted)
 - Donation recording and status updates (3 tests)
 - Theme state management (3 tests)
-- GeoUtils accuracy (3 tests)
-- Email service fallback and HTTP API (4 tests)
-- Background task error resilience
-- Radius limit enforcement (160.9km)
-- Encrypted email at rest verification
-- 100% Pass Rate (30 tests total)
+- ✅ GeoUtils accuracy (3 tests)
+- ✅ Email service multi-provider fallback and HTTP APIs (15 tests)
+- ✅ Background task error resilience
+- ✅ Radius limit enforcement (160.9km)
+- ✅ Encrypted email at rest verification
+- ✅ 100% Pass Rate (41 tests total)
 
 ### 🚀 Running the Application
 ```bash

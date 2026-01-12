@@ -69,10 +69,17 @@ WhereAreThey.Tests/
    dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
    dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
    dotnet user-secrets set "Email:ApiKey" "your-brevo-api-key"
+   dotnet user-secrets set "Email:MailjetApiKey" "your-mailjet-api-key"
+   dotnet user-secrets set "Email:MailjetApiSecret" "your-mailjet-api-secret"
+   dotnet user-secrets set "Email:SendGridApiKey" "your-sendgrid-api-key"
+   dotnet user-secrets set "Email:GraphTenantId" "your-tenant-id"
+   dotnet user-secrets set "Email:GraphClientId" "your-client-id"
+   dotnet user-secrets set "Email:GraphClientSecret" "your-client-secret"
+   dotnet user-secrets set "Email:GraphSenderUserId" "your-sender-user-id"
    dotnet user-secrets set "Email:FromEmail" "alerts@aretheyhere.com"
    ```
 
-   *Note: The application now uses the Brevo HTTP API by default for improved reliability in cloud environments like Railway.*
+   *Note: The application uses a multi-provider fallback system (Brevo, Mailjet, SendGrid, Microsoft Graph, and SMTP) to ensure critical alerts are delivered even if one provider fails or hits its limits.*
 
 4. **Run the application**
    ```bash
@@ -187,10 +194,10 @@ dotnet test --verbosity normal
 - ✅ Cross-user alert integration (User A reports, User B alerted)
 - ✅ Donation recording and status updates (3 tests)
 - ✅ Theme state and event management (3 tests)
-- ✅ Email service fallback and error resilience (1 test)
+- ✅ Email service multi-provider fallback and HTTP APIs (12 tests)
 - ✅ Radius limit enforcement (160.9km)
 - ✅ Encrypted email at rest verification
-- ✅ 100% Pass Rate (27 tests total)
+- ✅ 100% Pass Rate (38 tests total)
 
 ## 🛠️ Development
 
@@ -305,10 +312,10 @@ dotnet ef database update
 
 ### Email Delivery Issues on Railway
 If you experience issues with email delivery:
-1.  **Brevo API**: The application now uses Brevo's HTTP API (`https://api.brevo.com/v3/smtp/email`) by default. This avoids common SMTP port blocking issues in cloud environments.
-2.  **Verify Secrets**: Ensure `Email:ApiKey` is correctly set in Railway environment variables.
-3.  **Logs**: Check the application logs for "Email sent to... via Brevo API" or any "Failed to send email via Brevo API" error messages.
-4.  **SMTP Fallback**: While the app defaults to the HTTP API, the `SmtpEmailService` code is still available if you need to revert and re-configure it in `Program.cs`.
+1.  **Multi-Provider Fallback**: The application now uses a fallback chain: Brevo API -> Mailjet API -> SendGrid API -> Microsoft Graph -> SMTP. If one fails, it automatically tries the next.
+2.  **Verify Secrets**: Ensure `Email:ApiKey` (for Brevo), `Email:MailjetApiKey`, `Email:SendGridApiKey`, or `Email:GraphClientId` etc. are correctly set in Railway environment variables.
+3.  **Logs**: Check the application logs for "Attempting to send email via..." or any "Failed to send email via..." error messages. The logs will show which provider succeeded or why they failed.
+4.  **SMTP Last Resort**: If all HTTP APIs fail, the app will attempt SMTP via the configured `SmtpServer`.
 
 ## 📞 Support
 

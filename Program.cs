@@ -22,6 +22,11 @@ builder.Services.AddRadzenComponents();
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<IEmailService, BrevoHttpEmailService>();
+builder.Services.AddHttpClient<IEmailService, MailjetHttpEmailService>();
+builder.Services.AddHttpClient<IEmailService, SendGridHttpEmailService>();
+builder.Services.AddHttpClient<IEmailService, MicrosoftGraphEmailService>();
+builder.Services.AddTransient<IEmailService, SmtpEmailService>();
+builder.Services.AddScoped<IEmailService, FallbackEmailService>();
 
 // Add DbContextFactory with PostgreSQL
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
