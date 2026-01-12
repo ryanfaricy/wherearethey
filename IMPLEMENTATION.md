@@ -107,15 +107,13 @@ WhereAreThey.Tests/
 - **EF Core Migrations**: Successfully transitioned from `EnsureCreated()` to full EF Core Migrations. This allows for seamless schema updates as the application evolves.
 - **Auto-Migration**: The application automatically applies any pending migrations on startup via `db.Database.Migrate()` in `Program.cs`.
 
-### ☁️ Cloud Deployment Considerations
-- **PostgreSQL**: The application is now configured to use PostgreSQL, which is the industry standard for reliable, high-concurrency web applications.
-- **Docker Support**: Full Docker and Docker Compose support has been added, making deployment to any cloud provider trivial.
-- **Environment Variables**: All critical configuration (Connection Strings, Stripe keys, SMTP details) can be overridden via environment variables for secure production deployment.
-- **Recommended Hosting**:
-    - **Railway**: Fastest and easiest for Docker-based apps.
-    - **Render**: Great alternative with managed Postgres.
-    - **Azure Container Apps**: Ideal for scaling .NET workloads.
-    - **DigitalOcean**: Reliable App Platform with managed databases.
+### ☁️ Cloud Deployment & Secrets (Railway)
+- **Railway Optimized**: The application is configured to automatically parse Railway's `DATABASE_URL` for PostgreSQL.
+- **Secret Management**:
+  - **Local**: Uses `dotnet user-secrets` to store API keys outside the source code.
+  - **Docker**: Environment variables mapping in `docker-compose.yml` via `${VARIABLE:-default}` syntax.
+  - **Cloud**: Railway environment variables mapping (e.g., `Stripe__SecretKey`).
+- **Port Compatibility**: Dockerfile and Kestrel are aligned to use port 8080 by default, ensuring smooth operation on cloud platforms like Railway.
 
 ### 🧪 Testing
 ```bash
@@ -139,12 +137,16 @@ dotnet test
 - 100% Pass Rate (25 tests total)
 
 ### 🚀 Running the Application
-```bash
-cd wherearethey
-dotnet restore
-dotnet run
-```
-Access at: `https://localhost:5001` or `http://localhost:5000`
+
+#### Local Development (Host)
+1. Initialize secrets: `dotnet user-secrets set "Stripe:SecretKey" "sk_test_..."` etc.
+2. Start the DB container: `docker-compose up -d db`
+3. Run: `dotnet run`
+4. Access at: `https://localhost:7117` or `http://localhost:5097` (see `launchSettings.json`)
+
+#### Local Development (Docker)
+1. Run: `docker-compose up -d`
+2. Access at: `http://localhost:8080`
 
 ### 📱 Mobile-First Design
 - Radzen Material Design theme
@@ -156,13 +158,12 @@ Access at: `https://localhost:5001` or `http://localhost:5000`
 
 ### 📝 Documentation
 - Comprehensive README.md with:
-  - Installation instructions
+  - Secrets configuration guide
+  - Railway deployment steps
   - Feature documentation
   - API/service descriptions
   - Database schema
-  - Configuration guide
   - Security considerations
-  - Emergency usage guidelines
 
 ### 🎨 UI/UX Highlights
 - Material Design icon system
@@ -173,11 +174,11 @@ Access at: `https://localhost:5001` or `http://localhost:5000`
 - Consistent Radzen component usage
 
 ### 🔧 Configuration
-- Connection strings in appsettings.json
-- Stripe API keys configuration
-- Kestrel server tuning
-- Logging configuration
-- Development/Production environments
+- **appsettings.json**: Contains non-sensitive defaults and structure.
+- **User Secrets**: Primary storage for local development credentials.
+- **Environment Variables**: Overrides for production/cloud.
+- **Program.cs**: Auto-detection of `DATABASE_URL`.
+- **Kestrel**: Tuned for 10,000+ connections.
 
 ### 📦 Dependencies
 All dependencies are secure and up-to-date:

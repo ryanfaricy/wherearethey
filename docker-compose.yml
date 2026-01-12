@@ -20,10 +20,14 @@ services:
     depends_on:
       - db
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__DefaultConnection=Host=db;Database=wherearethey;Username=postgres;Password=postgres
+      - Stripe__PublishableKey=${STRIPE_PUBLISHABLE_KEY:-pk_test_placeholder}
+      - Stripe__SecretKey=${STRIPE_SECRET_KEY:-sk_test_placeholder}
+      - Email__SmtpUser=${SMTP_USER:-user_placeholder}
+      - Email__SmtpPass=${SMTP_PASS:-pass_placeholder}
     ports:
-      - "8080:80"
+      - "8080:8080"
     restart: always
 
 volumes:

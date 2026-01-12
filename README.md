@@ -67,57 +67,64 @@ WhereAreThey.Tests/
    ```
    The application will be available at `http://localhost:8080`.
 
-### Local Development Installation
+### Local Development & Secrets
 
-1. **Clone the repository**
+To debug locally without committing secrets to the repository:
+
+1. **Initialize User Secrets**:
    ```bash
-   git clone https://github.com/ryanfaricy/wherearethey.git
-   cd wherearethey
+   dotnet user-secrets set "Stripe:SecretKey" "your_test_key"
+   dotnet user-secrets set "Stripe:PublishableKey" "your_test_key"
+   dotnet user-secrets set "Email:SmtpPass" "your_smtp_password"
+   dotnet user-secrets set "Email:SmtpUser" "your_smtp_user"
    ```
 
-2. **Restore dependencies**
+2. **Start the Database**:
+   The application requires PostgreSQL. Even if you are running the app in your IDE (Rider/VS), the database must be running. You don't need to install PostgreSQL manually if you have Docker:
    ```bash
-   dotnet restore
+   docker-compose up -d db
+   ```
+   This starts only the database container and exposes it on `localhost:5432`.
+
+3. **Database Connection**:
+   By default, the app expects PostgreSQL at `localhost`. You can verify or change this via user-secrets:
+   ```bash
+   dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"
    ```
 
-3. **Database Setup**
-   Ensure you have a PostgreSQL instance running and update the connection string in `appsettings.json`.
-
-4. **Configuration**
-   
-   Edit `appsettings.json` to add your Stripe and Brevo SMTP details:
-   ```json
-   {
-     "Stripe": {
-       "PublishableKey": "pk_test_YOUR_KEY",
-       "SecretKey": "sk_test_YOUR_KEY"
-     },
-     "Email": {
-       "SmtpServer": "smtp-relay.brevo.com",
-       "SmtpPort": 587,
-       "SmtpUser": "9fc309001@smtp-brevo.com",
-       "SmtpPass": "your-brevo-smtp-key",
-       "FromEmail": "your-verified-sender@domain.com",
-       "FromName": "AreTheyHere Alerts",
-       "EnableSsl": true
-     }
-   }
-   ```
-   
-   *Note: Ensure the `FromEmail` is a verified sender in your Brevo account.*
-
-4. **Run the application**
+4. **Run the application**:
    ```bash
    dotnet run
    ```
-   
-   The application will be available at `https://localhost:5001` or `http://localhost:5000`
 
-5. **Run tests**
-   ```bash
-   cd ../WhereAreThey.Tests
-   dotnet test
-   ```
+### ☁️ Cloud Deployment (Railway)
+
+This application is optimized for [Railway](https://railway.app/).
+
+1. **Connect your GitHub Repo**: Railway will automatically detect the `Dockerfile`.
+2. **Add a PostgreSQL Database**: Click "New" -> "Database" -> "Add PostgreSQL".
+3. **Environment Variables**:
+   The app will automatically detect Railway's `DATABASE_URL`. You only need to add your secrets:
+   - `Stripe__SecretKey`
+   - `Stripe__PublishableKey`
+   - `Email__SmtpUser`
+   - `Email__SmtpPass`
+   
+   *Note: Use double underscores (`__`) for nested .NET configuration sections.*
+
+### 🐳 Running with Docker Locally
+
+To start the entire stack (App + DB) locally:
+```bash
+docker-compose up -d
+```
+You can provide secrets via a `.env` file in the root directory:
+```env
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_PUBLISHABLE_KEY=pk_test_...
+SMTP_USER=user@domain.com
+SMTP_PASS=password
+```
 
 ## 📱 Features
 
@@ -197,9 +204,6 @@ dotnet ef migrations add <MigrationName>
 ```bash
 dotnet ef database update
 ```
-
-**Cloud Deployment:**
-For high-concurrency cloud deployments, it is recommended to switch the database provider from SQLite to a managed service like Azure SQL or PostgreSQL. This ensures data persistence and better performance under heavy write loads.
 
 ### Adding New Features
 
