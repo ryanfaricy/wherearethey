@@ -308,6 +308,20 @@
         await ShowReportDialog(report);
     }
 
+    [JSInvokable]
+    public async Task OnAlertDeleteClick(int alertId)
+    {
+        var confirmed = await DialogService.Confirm("Are you sure you want to delete this alert zone?", "Delete Alert", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirmed == true)
+        {
+            await AlertService.DeactivateAlertAsync(alertId);
+            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+            await LoadUserAlerts();
+        }
+    }
+
     private async Task ShowReportDialog(LocationReport report)
     {
         var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",

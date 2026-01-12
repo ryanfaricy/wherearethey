@@ -6,9 +6,10 @@ let reportMarkers = [];
 let allReports = [];
 let selectedReportId = null;
 let resizeObserver = null;
+let dotNetHelper;
 const PIN_ZOOM_THRESHOLD = 15;
 
-window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper, alerts) {
+window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts) {
     if (map) {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -19,6 +20,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
         reportMarkers = [];
     }
 
+    dotNetHelper = helper;
     const container = document.getElementById(elementId);
     map = L.map(elementId).setView([initialLat, initialLng], (initialLat !== 0 || initialLng !== 0) ? 13 : 2);
 
@@ -71,6 +73,12 @@ window.updatePinsVisibility = function() {
     }
 };
 
+window.deleteAlert = function (alertId) {
+    if (dotNetHelper) {
+        dotNetHelper.invokeMethodAsync('OnAlertDeleteClick', alertId);
+    }
+};
+
 window.updateAlerts = function (alerts) {
     if (!map) return;
 
@@ -95,12 +103,35 @@ window.updateAlerts = function (alerts) {
 
         // Create small pin/marker
         const marker = L.circleMarker([alert.latitude, alert.longitude], {
-            radius: 5,
+            radius: 7,
             color: '#e65100',
             fillColor: '#ffb74d',
             fillOpacity: 1,
             weight: 2
         }).addTo(map);
+
+        let popupContent = `
+            <div style="font-family: sans-serif; min-width: 180px; color: #333;">
+                <div style="font-weight: bold; color: #e65100; margin-bottom: 5px;">
+                    🔔 Alert Zone
+                </div>
+                <div style="font-size: 0.85em; margin-bottom: 5px;">
+                    <strong>Radius:</strong> ${alert.radiusKm} km
+                </div>
+                ${alert.message ? `<div style="font-style: italic; margin-bottom: 10px; border-top: 1px solid #eee; padding-top: 5px;">${alert.message}</div>` : ''}
+                <div style="border-top: 1px solid #eee; padding-top: 8px; text-align: right;">
+                    <button onclick="deleteAlert(${alert.id})" 
+                            style="background: #f44336; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.85em; font-weight: bold;">
+                        DELETE
+                    </button>
+                </div>
+            </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+            closeButton: false,
+            className: 'alert-popup'
+        });
 
         if (alert.message) {
             marker.bindTooltip(alert.message, {
