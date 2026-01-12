@@ -75,7 +75,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"));
 
 // Add application services
-builder.Services.AddScoped<LocationService>();
+builder.Services.AddSingleton<LocationService>();
 builder.Services.AddScoped<AlertService>();
 builder.Services.AddScoped<DonationService>();
 builder.Services.AddScoped<AppThemeService>();
