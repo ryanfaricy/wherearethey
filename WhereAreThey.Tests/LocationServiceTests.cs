@@ -41,7 +41,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         var report = new LocationReport
         {
             Latitude = 40.7128,
@@ -65,7 +65,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -102,7 +102,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -123,7 +123,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         
         // New York City coordinates
         var centerLat = 40.7128;
@@ -164,7 +164,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         var centerLat = 40.0;
         var centerLon = -74.0;
         var radiusKm = 10.0;
@@ -211,7 +211,7 @@ public class LocationServiceTests
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
 
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
         var matchingAlert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "test" };
@@ -249,7 +249,7 @@ public class LocationServiceTests
         // This will cause a NullReferenceException or similar when trying to resolve services from scope
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Throws(new Exception("Mock error"));
 
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
 
         // Act & Assert
@@ -282,9 +282,10 @@ public class LocationServiceTests
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(_configurationMock.Object);
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider, _loggerMock.Object);
+        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object);
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";
@@ -343,9 +344,10 @@ public class LocationServiceTests
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(_configurationMock.Object);
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider, _loggerMock.Object);
+        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object);
         
         var userBEmail = "userB@example.com";
         var alertMessage = "This is my custom alert message";
@@ -412,7 +414,7 @@ public class LocationServiceTests
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
 
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object);
         
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
         var alertWithBadEmail = new Alert { Id = 99, Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "bad-data" };
@@ -436,5 +438,58 @@ public class LocationServiceTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task AddLocationReport_ShouldUseConfiguredBaseUrlInEmail()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
+        var emailServiceMock = new Mock<IEmailService>();
+        
+        var customBaseUrl = "https://custom.example.com";
+        _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
+        
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
+        
+        var services = new ServiceCollection();
+        services.AddSingleton(alertService);
+        services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(_configurationMock.Object);
+        var serviceProvider = services.BuildServiceProvider();
+
+        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object);
+        
+        var userEmail = "test@example.com";
+        var alert = new Alert 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            RadiusKm = 10.0, 
+            IsActive = true,
+            IsVerified = true,
+            UserIdentifier = "UserB"
+        };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            alert.EncryptedEmail = dataProtectionProvider.CreateProtector("WhereAreThey.Alerts.Email").Protect(userEmail);
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+        }
+
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
+
+        // Act
+        await service.AddLocationReportAsync(report);
+        await Task.Delay(500);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == userEmail),
+            It.IsAny<string>(),
+            It.Is<string>(b => b.Contains(customBaseUrl + "/heatmap"))), Times.Once);
     }
 }

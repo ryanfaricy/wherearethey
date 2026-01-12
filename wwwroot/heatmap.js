@@ -2,11 +2,16 @@ let map;
 let heatLayer;
 let tileLayer;
 let alertLayers = [];
+let reportMarkers = [];
+let allReports = [];
+let selectedReportId = null;
+const PIN_ZOOM_THRESHOLD = 15;
 
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper, alerts) {
     if (map) {
         map.remove();
         alertLayers = [];
+        reportMarkers = [];
     }
 
     const hasInitialLocation = initialLat !== 0 || initialLng !== 0;
@@ -25,6 +30,11 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
             dotNetHelper.invokeMethodAsync('OnMapContextMenu', e.latlng.lat, e.latlng.lng);
         }
     });
+
+    map.on('zoomend', function() {
+        updatePinsVisibility();
+    });
+
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 
@@ -32,6 +42,16 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
     
     if (alerts) {
         updateAlerts(alerts);
+    }
+};
+
+window.updatePinsVisibility = function() {
+    if (!map) return;
+    const zoom = map.getZoom();
+    if (zoom >= PIN_ZOOM_THRESHOLD) {
+        reportMarkers.forEach(m => m.addTo(map));
+    } else {
+        reportMarkers.forEach(m => m.remove());
     }
 };
 
@@ -102,10 +122,56 @@ window.updateMapTheme = function (theme) {
 
 window.updateHeatMap = function (reports, shouldFitBounds = true) {
     if (!map) return;
+    allReports = reports;
 
     if (heatLayer) {
         map.removeLayer(heatLayer);
     }
+
+    // Clear old markers
+    reportMarkers.forEach(m => map.removeLayer(m));
+    reportMarkers = [];
+
+    // Create markers for reports
+    reports.forEach(r => {
+        const isSelected = r.id === selectedReportId;
+        const color = isSelected ? '#ffeb3b' : (r.isEmergency ? '#f44336' : '#2196f3');
+        const marker = L.circleMarker([r.latitude, r.longitude], {
+            radius: isSelected ? 8 : 6,
+            color: '#fff',
+            fillColor: color,
+            fillOpacity: 0.9,
+            weight: 2
+        });
+
+        const date = new Date(r.timestamp);
+        const timeStr = date.toLocaleString();
+        let popupContent = `
+            <div style="font-family: sans-serif; min-width: 150px; color: #333;">
+                <div style="font-weight: bold; color: ${r.isEmergency ? '#d32f2f' : '#1976d2'}; margin-bottom: 5px;">
+                    ${r.isEmergency ? '🚨 EMERGENCY REPORT' : '📍 Report'}
+                </div>
+                <div style="font-size: 0.85em; margin-bottom: 5px;">
+                    ${timeStr}
+                </div>
+                ${r.message ? `<div style="font-style: italic; border-top: 1px solid #eee; padding-top: 5px;">${r.message}</div>` : ''}
+            </div>
+        `;
+
+        marker.bindPopup(popupContent, {
+            closeButton: false,
+            className: 'report-popup'
+        });
+
+        marker.on('click', function() {
+            window.selectReport(r.id);
+        });
+
+        marker.reportId = r.id;
+        reportMarkers.push(marker);
+    });
+
+    updatePinsVisibility();
 
     // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
     const heatData = reports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
@@ -131,6 +197,36 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
     if (shouldFitBounds && reports.length > 0) {
         const bounds = L.latLngBounds(reports.map(r => [r.latitude, r.longitude]));
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+};
+
+window.selectReport = function(reportId) {
+    selectedReportId = reportId;
+    reportMarkers.forEach(m => {
+        const report = allReports.find(r => r.id === m.reportId);
+        if (report) {
+            const isSel = report.id === selectedReportId;
+            m.setStyle({
+                radius: isSel ? 8 : 6,
+                fillColor: isSel ? '#ffeb3b' : (report.isEmergency ? '#f44336' : '#2196f3')
+            });
+            if (isSel) {
+                m.bringToFront();
+            }
+        }
+    });
+};
+
+window.focusReport = function(reportId) {
+    selectedReportId = reportId;
+    const marker = reportMarkers.find(m => m.reportId === reportId);
+    if (marker) {
+        map.setView(marker.getLatLng(), 17);
+        if (!map.hasLayer(marker)) {
+            marker.addTo(map);
+        }
+        marker.openPopup();
+        window.selectReport(reportId);
     }
 };
 
