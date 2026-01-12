@@ -490,6 +490,6 @@ public class LocationServiceTests
         emailServiceMock.Verify(x => x.SendEmailAsync(
             It.Is<string>(s => s == userEmail),
             It.IsAny<string>(),
-            It.Is<string>(b => b.Contains(customBaseUrl + "/heatmap"))), Times.Once);
+            It.Is<string>(b => b.Contains(customBaseUrl + "/?lat"))), Times.Once);
     }
 }

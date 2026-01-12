@@ -49,7 +49,7 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
                         <hr/>
-                        <p><a href='{baseUrl}/heatmap?lat={report.Latitude}&lng={report.Longitude}&reportId={report.Id}'>View on Heat Map</a></p>
+                        <p><a href='{baseUrl}/?lat={report.Latitude}&lng={report.Longitude}&reportId={report.Id}'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
                     await emailService.SendEmailAsync(email!, subject, body);

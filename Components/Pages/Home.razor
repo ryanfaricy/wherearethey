@@ -90,10 +90,17 @@
             double initialLat = 0;
             double initialLng = 0;
             double? initialRadius = null;
+            int? focusReportId = null;
 
             // Check query parameters
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
             var query = QueryHelpers.ParseQuery(uri.Query);
+
+            if (query.TryGetValue("reportId", out var reportIdStr) && int.TryParse(reportIdStr, out var rId))
+            {
+                focusReportId = rId;
+            }
+
             if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, out var lat))
             {
                 initialLat = lat;
@@ -107,7 +114,7 @@
                 initialRadius = radius;
             }
 
-            if (initialLat == 0 && initialLng == 0)
+            if (initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {
                 try
                 {
@@ -131,7 +138,11 @@
             await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts);
             mapInitialized = true;
 
-            if (initialRadius.HasValue)
+            if (focusReportId.HasValue)
+            {
+                await JSRuntime.InvokeVoidAsync("focusReport", focusReportId.Value);
+            }
+            else if (initialRadius.HasValue)
             {
                 await JSRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
             }
