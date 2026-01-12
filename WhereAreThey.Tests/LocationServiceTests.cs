@@ -314,4 +314,47 @@ public class LocationServiceTests
             It.Is<string>(s => s.Contains("EMERGENCY")),
             It.Is<string>(b => b.Contains("Alert trigger message"))), Times.Once);
     }
+
+    [Fact]
+    public async Task AddLocationReport_ShouldHandleDecryptionFailureGracefully()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        
+        var alertServiceMock = new Mock<AlertService>(factory, new Moq.Mock<IDataProtectionProvider>().Object);
+        var emailServiceMock = new Mock<IEmailService>();
+        var scopeMock = new Mock<IServiceScope>();
+        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+
+        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
+        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
+
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
+        
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
+        var alertWithBadEmail = new Alert { Id = 99, Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "bad-data" };
+
+        alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
+            .ReturnsAsync(new List<Alert> { alertWithBadEmail });
+        alertServiceMock.Setup(x => x.DecryptEmail(It.IsAny<string>())).Returns((string?)null);
+
+        // Act
+        await service.AddLocationReportAsync(report);
+        await Task.Delay(200);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        
+        _loggerMock.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to decrypt email")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 }

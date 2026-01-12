@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Radzen;
 using WhereAreThey.Components;
@@ -10,8 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Add Data Protection for encrypted emails at rest
-builder.Services.AddDataProtection();
+// Add Data Protection for encrypted emails at rest - persist keys to DB for Railway
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<ApplicationDbContext>();
 
 // Add Radzen services
 builder.Services.AddRadzenComponents();

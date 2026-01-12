@@ -34,7 +34,7 @@ public class AlertService(IDbContextFactory<ApplicationDbContext> contextFactory
         }
         catch
         {
-            return "Error decrypting email";
+            return null;
         }
     }
 

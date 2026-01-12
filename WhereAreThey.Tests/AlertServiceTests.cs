@@ -253,6 +253,21 @@ public class AlertServiceTests
     }
 
     [Fact]
+    public void DecryptEmail_ShouldReturnNullOnFailure()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
+        
+        // Act
+        var result = service.DecryptEmail("invalid-encrypted-data");
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
     public async Task CreateAlert_ShouldCapRadiusAt160_9()
     {
         // Arrange

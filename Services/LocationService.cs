@@ -49,7 +49,11 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
                         <p><a href='https://aretheyhere.com/heatmap'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
-                    await emailService.SendEmailAsync(email, subject, body);
+                    await emailService.SendEmailAsync(email!, subject, body);
+                }
+                else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
+                {
+                    logger.LogWarning("Failed to decrypt email for alert {AlertId}. The encryption keys may have changed.", alert.Id);
                 }
             }
         }

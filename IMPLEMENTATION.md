@@ -16,18 +16,18 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] High-concurrency support (10,000+ connections)
 - [x] "THEY ARE HERE!" anonymous location reporting
 - [x] "ARE THEY HERE?" heat map visualization (mobile-first list)
-- [x] Distance-based alerts with **encrypted emails at rest**
-- [x] Donation framework (Simplified Stripe integration)
+- [x] Distance-based alerts with **encrypted emails at rest (Persistent keys)**
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
+- [x] Decryption failure resilience
 
 ### 📊 Technical Metrics
-- **Lines of Code**: ~2,500 (excluding vendor libraries)
-- **Test Coverage**: 25 comprehensive unit and integration tests (100% pass rate)
+- **Lines of Code**: ~2,600 (excluding vendor libraries)
+- **Test Coverage**: 27 comprehensive unit and integration tests (100% pass rate)
 - **Build Status**: ✅ Success (0 warnings, 0 errors)
-- **Dependencies**: 6 NuGet packages (all secure, latest stable versions)
-- **Database**: SQLite with automatic migrations
-- **Performance**: Configured for 10,000 concurrent connections
+- **Dependencies**: 7 NuGet packages (all secure, latest stable versions)
+- **Database**: PostgreSQL with automatic migrations
+- **Performance**: Configured for 10,000 connections
 
 ### 🏗️ Architecture
 
