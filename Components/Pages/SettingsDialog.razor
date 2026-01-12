@@ -1,7 +1,9 @@
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Map Settings</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Settings</RadzenText>
     
     <RadzenFormField Text="Time Range (Last X Hours)" Variant="Variant.Outlined">
         <RadzenNumeric @bind-Value="@HoursBack" TValue="int" Min="1" Max="168" ShowUpDown="true" Style="width: 100%;" />
@@ -10,7 +12,38 @@
         </RadzenText>
     </RadzenFormField>
 
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
+    <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 0.5rem 0;" />
+
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">Anonymous Profile ID</RadzenText>
+        <RadzenText TextStyle="TextStyle.Caption">
+            This unique ID links alerts to this device. Save it to recover your alerts on another device.
+        </RadzenText>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenTextBox Value="@userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
+            <RadzenButton Icon="content_copy" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
+        </RadzenStack>
+
+        @if (!showImport)
+        {
+            <RadzenButton Text="IMPORT EXISTING ID" Click="@(() => showImport = true)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Style="justify-content: start; padding-left: 0;" />
+        }
+        else
+        {
+            <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
+                <RadzenFormField Text="Paste New ID" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenTextBox @bind-Value="@importId" Placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Text="CANCEL" Click="@(() => { showImport = false; importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
+                    <RadzenButton Text="SAVE & REFRESH" Click="@ImportProfile" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
+                </RadzenStack>
+            </RadzenStack>
+        }
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
         <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
         <RadzenButton Text="APPLY" Click="@(() => DialogService.Close(HoursBack))" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
@@ -18,4 +51,38 @@
 
 @code {
     [Parameter] public int HoursBack { get; set; } = 24;
+    
+    private string userIdentifier = "";
+    private string importId = "";
+    private bool showImport = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            StateHasChanged();
+        }
+    }
+
+    private async Task CopyId()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", userIdentifier);
+        NotificationService.Notify(NotificationSeverity.Info, "ID copied to clipboard");
+    }
+
+    private async Task ImportProfile()
+    {
+        if (Guid.TryParse(importId, out _))
+        {
+            await JSRuntime.InvokeAsync<bool>("setUserIdentifier", importId);
+            DialogService.Close(HoursBack);
+            // We need a hard refresh to reload everything with the new ID
+            await JSRuntime.InvokeVoidAsync("location.reload");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Invalid ID format. Must be a GUID.");
+        }
+    }
 }

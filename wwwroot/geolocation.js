@@ -21,6 +21,23 @@ window.getUserIdentifier = function () {
     if (!id) {
         id = crypto.randomUUID();
         localStorage.setItem('user-identifier', id);
+        localStorage.setItem('user-identifier-new', 'true');
     }
     return id;
+};
+
+window.setUserIdentifier = function (id) {
+    if (id && id.length > 0) {
+        localStorage.setItem('user-identifier', id);
+        return true;
+    }
+    return false;
+};
+
+window.isNewUser = function () {
+    const isNew = localStorage.getItem('user-identifier-new') === 'true';
+    if (isNew) {
+        localStorage.removeItem('user-identifier-new');
+    }
+    return isNew;
 };
