@@ -3,6 +3,7 @@
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.WebUtilities
 @inject LocationService LocationService
+@inject AlertService AlertService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
@@ -42,9 +43,11 @@
 
 @code {
     private List<LocationReport> reports = new();
+    private List<Alert> userAlerts = new();
     private int hoursBack = 24;
     private bool mapInitialized = false;
     private bool isGettingLocation = false;
+    private string? userIdentifier;
     private DotNetObjectReference<Home>? objRef;
 
     protected override async Task OnInitializedAsync()
@@ -66,6 +69,9 @@
     {
         if (firstRender)
         {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            await LoadUserAlerts();
+            
             objRef = DotNetObjectReference.Create(this);
             
             double initialLat = 0;
@@ -109,7 +115,7 @@
                 }
             }
 
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef);
+            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts);
             mapInitialized = true;
 
             if (initialRadius.HasValue)
@@ -125,6 +131,18 @@
         if (mapInitialized)
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+        }
+    }
+
+    private async Task LoadUserAlerts()
+    {
+        if (!string.IsNullOrEmpty(userIdentifier))
+        {
+            userAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
+            if (mapInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("updateAlerts", userAlerts);
+            }
         }
     }
 
@@ -185,6 +203,8 @@
         var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS",
             parameters,
             new DialogOptions { Width = "350px" });
+
+        await LoadUserAlerts();
 
         if (result is Alert alert)
         {

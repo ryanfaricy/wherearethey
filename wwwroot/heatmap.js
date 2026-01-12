@@ -1,10 +1,12 @@
 let map;
 let heatLayer;
 let tileLayer;
+let alertLayers = [];
 
-window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper) {
+window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNetHelper, alerts) {
     if (map) {
         map.remove();
+        alertLayers = [];
     }
 
     const hasInitialLocation = initialLat !== 0 || initialLng !== 0;
@@ -27,6 +29,51 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, dotNe
     map.doubleClickZoom.enable();
 
     updateHeatMap(reports, !hasInitialLocation);
+    
+    if (alerts) {
+        updateAlerts(alerts);
+    }
+};
+
+window.updateAlerts = function (alerts) {
+    if (!map) return;
+
+    // Clear existing alert layers
+    alertLayers.forEach(layer => map.removeLayer(layer));
+    alertLayers = [];
+
+    if (!alerts || !alerts.length) return;
+
+    alerts.forEach(alert => {
+        // Create circle
+        const circle = L.circle([alert.latitude, alert.longitude], {
+            radius: alert.radiusKm * 1000,
+            color: '#ff9800', // Orange-ish
+            fillColor: '#ff9800',
+            fillOpacity: 0.1,
+            weight: 2,
+            dashArray: '5, 10',
+            interactive: false // Don't block clicks
+        }).addTo(map);
+        alertLayers.push(circle);
+
+        // Create small pin/marker
+        const marker = L.circleMarker([alert.latitude, alert.longitude], {
+            radius: 5,
+            color: '#e65100',
+            fillColor: '#ffb74d',
+            fillOpacity: 1,
+            weight: 2
+        }).addTo(map);
+
+        if (alert.message) {
+            marker.bindTooltip(alert.message, {
+                permanent: false,
+                direction: 'top'
+            });
+        }
+        alertLayers.push(marker);
+    });
 };
 
 window.updateMapTheme = function (theme) {

@@ -3,6 +3,7 @@
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.WebUtilities
 @inject LocationService LocationService
+@inject AlertService AlertService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IJSRuntime JSRuntime
@@ -78,8 +79,10 @@
 
 @code {
     private List<LocationReport> reports = new();
+    private List<Alert> userAlerts = new();
     private int hoursBack = 24;
     private bool mapInitialized = false;
+    private string? userIdentifier;
     private DotNetObjectReference<HeatMap>? objRef;
 
     protected override async Task OnInitializedAsync()
@@ -101,6 +104,9 @@
     {
         if (firstRender)
         {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            await LoadUserAlerts();
+            
             objRef = DotNetObjectReference.Create(this);
             double initialLat = 0;
             double initialLng = 0;
@@ -136,7 +142,7 @@
                 }
             }
 
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef);
+            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts);
             mapInitialized = true;
 
             if (initialRadius.HasValue)
@@ -256,6 +262,18 @@
         if (mapInitialized)
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+        }
+    }
+
+    private async Task LoadUserAlerts()
+    {
+        if (!string.IsNullOrEmpty(userIdentifier))
+        {
+            userAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
+            if (mapInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("updateAlerts", userAlerts);
+            }
         }
     }
 
