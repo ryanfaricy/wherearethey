@@ -20,7 +20,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] Rider-compatible project structure
 - [x] Cross-user alert integration tests
 - [x] Decryption failure resilience
-- [x] **SMTP Resilience**: Migrated to Port 465 (SSL/TLS) by default and increased timeout to 60s for maximum cloud reliability.
+- [x] **SMTP Resilience**: Migrated to Port 2525 by default with connection retries, DNS logging, and explicit EHLO domain for maximum cloud reliability.
 
 ### 📊 Technical Metrics
 - **Lines of Code**: ~2,600 (excluding vendor libraries)
@@ -57,7 +57,7 @@ WhereAreThey.Tests/
 |-----------|-----------|---------|
 | Framework | .NET | 10.0 |
 | UI Library | Radzen Blazor | 8.5.1 |
-| Email Service | MailKit | 4.14.1 |
+| Email Service | MailKit (Port 2525) | 4.14.1 |
 | Database | PostgreSQL + EF Core | 9.0.0 |
 | Concurrency | IDbContextFactory | 9.0.0 |
 | Deployment | Docker / Railway | - |

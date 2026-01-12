@@ -305,10 +305,13 @@ dotnet ef database update
 
 ### SMTP Email Timeouts on Railway
 If you experience `System.TimeoutException` when sending emails on Railway:
-1.  **Default Port**: The application now defaults to port **465** with SSL/TLS, which is more reliable in most cloud environments than 587.
+1.  **Default Port**: The application now defaults to port **2525** with STARTTLS, which is often more reliable and less likely to be throttled in cloud environments than 465 or 587.
 2.  **Verify Secrets**: Ensure `Email:SmtpUser` and `Email:SmtpPass` are correctly set in Railway environment variables.
-3.  **Resilience**: The application is configured to disable CRL checks and uses a 60s timeout to mitigate common cloud networking delays.
-4.  **Alternatives**: If 465 is also problematic, try port **587** or **2525** (if supported by your provider) and set `Email:EnableSsl` to `true`.
+3.  **Resilience**: The application is configured to:
+    - Automatically retry connection attempts.
+    - Log DNS resolution results for easier troubleshooting.
+    - Set `LocalDomain` (EHLO) explicitly.
+4.  **Alternatives**: If 2525 is also problematic, try port **465** or **587** and set `Email:SmtpPort` accordingly.
 
 ## 📞 Support
 

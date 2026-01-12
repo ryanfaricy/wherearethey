@@ -1,3 +1,4 @@
+using System.Net;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.Options;
@@ -8,7 +9,7 @@ namespace WhereAreThey.Services;
 public class EmailOptions
 {
     public string SmtpServer { get; set; } = "";
-    public int SmtpPort { get; set; } = 465;
+    public int SmtpPort { get; set; } = 2525;
     public string SmtpUser { get; set; } = "";
     public string SmtpPass { get; set; } = "";
     public string FromEmail { get; set; } = "alerts@aretheyhere.com";
@@ -48,6 +49,12 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
             // Disable CRL checks to avoid timeouts in restricted network environments
             client.CheckCertificateRevocation = false;
 
+            // Set LocalDomain for EHLO - derives from FromEmail if possible
+            if (!string.IsNullOrEmpty(_options.FromEmail) && _options.FromEmail.Contains('@'))
+            {
+                client.LocalDomain = _options.FromEmail.Split('@')[1];
+            }
+
             var secureSocketOptions = SecureSocketOptions.None;
             if (_options.EnableSsl)
             {
@@ -56,8 +63,35 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
                     : SecureSocketOptions.StartTls;
             }
 
-            logger.LogDebug("Attempting to connect to {Server}:{Port} (Options: {Options})", _options.SmtpServer, _options.SmtpPort, secureSocketOptions);
-            await client.ConnectAsync(_options.SmtpServer, _options.SmtpPort, secureSocketOptions);
+            // Log DNS resolution for debugging cloud networking issues
+            try
+            {
+                var ips = await Dns.GetHostAddressesAsync(_options.SmtpServer);
+                logger.LogDebug("Resolved {Server} to: {IPs}", _options.SmtpServer, string.Join(", ", ips.Select(i => i.ToString())));
+            }
+            catch (Exception dnsEx)
+            {
+                logger.LogWarning(dnsEx, "Failed to resolve SMTP server {Server}", _options.SmtpServer);
+            }
+
+            // Attempt connection with a single retry to handle transient network blips
+            int maxAttempts = 2;
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                try
+                {
+                    logger.LogDebug("Attempt {Attempt}/{Max}: Connecting to {Server}:{Port} (Options: {Options})", 
+                        attempt, maxAttempts, _options.SmtpServer, _options.SmtpPort, secureSocketOptions);
+                    
+                    await client.ConnectAsync(_options.SmtpServer, _options.SmtpPort, secureSocketOptions);
+                    break; // Success
+                }
+                catch (Exception ex) when (attempt < maxAttempts)
+                {
+                    logger.LogWarning(ex, "Connection attempt {Attempt} failed. Retrying in 2 seconds...", attempt);
+                    await Task.Delay(2000);
+                }
+            }
 
             if (!string.IsNullOrEmpty(_options.SmtpUser))
             {
