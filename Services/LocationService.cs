@@ -41,6 +41,7 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
                     var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
                     var body = $@"
                         <h3>New report near your alert area</h3>
+                        {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
                         <p><strong>Location:</strong> {report.Latitude:F4}, {report.Longitude:F4}</p>
                         <p><strong>Time:</strong> {report.Timestamp:g} UTC</p>
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}

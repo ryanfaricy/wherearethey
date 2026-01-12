@@ -316,6 +316,58 @@ public class LocationServiceTests
     }
 
     [Fact]
+    public async Task AddLocationReport_ShouldIncludeAlertMessageInEmail()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
+        var alertService = new AlertService(factory, dataProtectionProvider);
+        var emailServiceMock = new Mock<IEmailService>();
+        
+        var services = new ServiceCollection();
+        services.AddSingleton(alertService);
+        services.AddSingleton(emailServiceMock.Object);
+        var serviceProvider = services.BuildServiceProvider();
+
+        var service = new LocationService(factory, serviceProvider, _loggerMock.Object);
+        
+        var userBEmail = "userB@example.com";
+        var alertMessage = "This is my custom alert message";
+        var alert = new Alert 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            RadiusKm = 10.0, 
+            IsActive = true,
+            UserIdentifier = "UserB",
+            Message = alertMessage
+        };
+        await alertService.CreateAlertAsync(alert, userBEmail);
+
+        var report = new LocationReport 
+        { 
+            Latitude = 40.01, 
+            Longitude = -74.0,
+            ReporterIdentifier = "UserA",
+            Message = "Something happened",
+            IsEmergency = false
+        };
+
+        // Act
+        await service.AddLocationReportAsync(report);
+
+        // Wait for background task
+        await Task.Delay(500);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == userBEmail),
+            It.IsAny<string>(),
+            It.Is<string>(b => b.Contains(alertMessage))), Times.Once);
+    }
+
+    [Fact]
     public async Task AddLocationReport_ShouldHandleDecryptionFailureGracefully()
     {
         // Arrange
