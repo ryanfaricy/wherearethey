@@ -72,12 +72,14 @@ WhereAreThey.Tests/
 To debug locally without committing secrets to the repository:
 
 1. **Initialize User Secrets**:
+   Run these commands in your project root to set your local development secrets:
    ```bash
    dotnet user-secrets set "Stripe:SecretKey" "your_test_key"
    dotnet user-secrets set "Stripe:PublishableKey" "your_test_key"
-   dotnet user-secrets set "Email:SmtpPass" "your_smtp_password"
-   dotnet user-secrets set "Email:SmtpUser" "your_smtp_user"
+   dotnet user-secrets set "Email:SmtpUser" "your_brevo_login_email"
+   dotnet user-secrets set "Email:SmtpPass" "your_brevo_smtp_key"
    ```
+   *Note: You can verify your secrets are set by running `dotnet user-secrets list`.*
 
 2. **Start the Database**:
    The application requires PostgreSQL. Even if you are running the app in your IDE (Rider/VS), the database must be running. You don't need to install PostgreSQL manually if you have Docker:

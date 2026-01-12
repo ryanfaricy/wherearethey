@@ -10,12 +10,21 @@ namespace WhereAreThey.Tests;
 
 public class DonationServiceTests
 {
-    private ApplicationDbContext CreateInMemoryContext()
+    private ApplicationDbContext CreateInMemoryContext(out DbContextOptions<ApplicationDbContext> options)
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         return new ApplicationDbContext(options);
+    }
+
+    private IDbContextFactory<ApplicationDbContext> CreateDbFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContext()).Returns(() => new ApplicationDbContext(options));
+        mock.Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        return mock.Object;
     }
 
     private IConfiguration CreateMockConfiguration()
@@ -29,8 +38,9 @@ public class DonationServiceTests
     public async Task RecordDonation_ShouldSaveDonation()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -55,8 +65,9 @@ public class DonationServiceTests
     public async Task UpdateDonationStatus_ShouldUpdateStatus()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
         var piId = "pi_123";
         context.Donations.Add(new Donation
         {
@@ -71,7 +82,8 @@ public class DonationServiceTests
 
         // Assert
         Assert.True(result);
-        var updated = await context.Donations.FirstAsync(d => d.StripePaymentIntentId == piId);
+        using var assertContext = new ApplicationDbContext(options);
+        var updated = await assertContext.Donations.FirstAsync(d => d.StripePaymentIntentId == piId);
         Assert.Equal("completed", updated.Status);
     }
 
@@ -79,8 +91,9 @@ public class DonationServiceTests
     public async Task UpdateDonationStatus_ShouldReturnFalseIfNotFound()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new DonationService(context, CreateMockConfiguration());
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new DonationService(factory, CreateMockConfiguration());
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");

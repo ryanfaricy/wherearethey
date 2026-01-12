@@ -4,12 +4,13 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class LocationService(ApplicationDbContext context, IServiceProvider serviceProvider, ILogger<LocationService> logger)
+public class LocationService(IDbContextFactory<ApplicationDbContext> dbFactory, IServiceProvider serviceProvider, ILogger<LocationService> logger)
 {
     public event Action? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         report.Timestamp = DateTime.UtcNow;
         context.LocationReports.Add(report);
         await context.SaveChangesAsync();
@@ -26,6 +27,7 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
     {
         try
         {
+            // Background task needs its own scope to resolve scoped services
             using var scope = serviceProvider.CreateScope();
             var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
@@ -60,6 +62,7 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         var cutoff = DateTime.UtcNow.AddHours(-hours);
         return await context.LocationReports
             .Where(r => r.Timestamp >= cutoff)
@@ -69,6 +72,7 @@ public class LocationService(ApplicationDbContext context, IServiceProvider serv
 
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         // Simple bounding box calculation (approximation)
         var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km
         var lonDelta = radiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));

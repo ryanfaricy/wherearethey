@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -11,20 +12,30 @@ public class AlertServiceTests
 {
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
 
-    private ApplicationDbContext CreateInMemoryContext()
+    private ApplicationDbContext CreateInMemoryContext(out DbContextOptions<ApplicationDbContext> options)
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         return new ApplicationDbContext(options);
+    }
+
+    private IDbContextFactory<ApplicationDbContext> CreateDbFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContext()).Returns(() => new ApplicationDbContext(options));
+        mock.Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        return mock.Object;
     }
 
     [Fact]
     public async Task CreateAlert_ShouldCreateActiveAlertAndEncryptEmail()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var email = "test@example.com";
         var alert = new Alert
         {
@@ -49,8 +60,9 @@ public class AlertServiceTests
     public async Task GetActiveAlerts_ShouldOnlyReturnActiveAlerts()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
         var activeAlert = new Alert
         {
@@ -88,8 +100,9 @@ public class AlertServiceTests
     public async Task DeactivateAlert_ShouldSetIsActiveToFalse()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
         var alert = new Alert
         {
@@ -109,7 +122,8 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result);
-        var deactivatedAlert = await context.Alerts.FindAsync(alert.Id);
+        using var assertContext = new ApplicationDbContext(options);
+        var deactivatedAlert = await assertContext.Alerts.FindAsync(alert.Id);
         Assert.False(deactivatedAlert!.IsActive);
     }
 
@@ -117,8 +131,9 @@ public class AlertServiceTests
     public async Task GetActiveAlerts_ShouldNotReturnExpiredAlerts()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
         var expiredAlert = new Alert
         {
@@ -158,8 +173,9 @@ public class AlertServiceTests
     public async Task GetMatchingAlerts_ShouldReturnAlertsWithinRadius()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         
         // Alert at (40, -74) with 10km radius
         var alert = new Alert
@@ -190,8 +206,9 @@ public class AlertServiceTests
     public async Task GetActiveAlerts_ShouldFilterByUserIdentifier()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var userId1 = "user1";
         var userId2 = "user2";
 
@@ -219,8 +236,9 @@ public class AlertServiceTests
     public async Task CreateAlert_ShouldCapRadiusAt160_9()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new AlertService(context, _dataProtectionProvider);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new AlertService(factory, _dataProtectionProvider);
         var email = "test@example.com";
         var alert = new Alert
         {

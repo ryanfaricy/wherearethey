@@ -16,20 +16,30 @@ public class LocationServiceTests
     private readonly Mock<IServiceProvider> _serviceProviderMock = new();
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
 
-    private ApplicationDbContext CreateInMemoryContext()
+    private ApplicationDbContext CreateInMemoryContext(out DbContextOptions<ApplicationDbContext> options)
     {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         return new ApplicationDbContext(options);
+    }
+
+    private IDbContextFactory<ApplicationDbContext> CreateDbFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContext()).Returns(() => new ApplicationDbContext(options));
+        mock.Setup(f => f.CreateDbContextAsync(It.IsAny<CancellationToken>()))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        return mock.Object;
     }
 
     [Fact]
     public async Task AddLocationReport_ShouldAddReport()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         var report = new LocationReport
         {
             Latitude = 40.7128,
@@ -51,8 +61,9 @@ public class LocationServiceTests
     public async Task GetRecentReports_ShouldReturnReportsWithinTimeRange()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         
         var oldReport = new LocationReport
         {
@@ -84,8 +95,9 @@ public class LocationServiceTests
     public async Task GetRecentReports_ShouldReturnEmptyIfFutureCutoff()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         context.LocationReports.Add(new LocationReport { Timestamp = DateTime.UtcNow });
         await context.SaveChangesAsync();
 
@@ -100,8 +112,9 @@ public class LocationServiceTests
     public async Task GetReportsInRadius_ShouldReturnNearbyReports()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         
         // New York City coordinates
         var centerLat = 40.7128;
@@ -137,8 +150,9 @@ public class LocationServiceTests
     public async Task GetReportsInRadius_EdgeCases()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         var centerLat = 40.0;
         var centerLon = -74.0;
         var radiusKm = 10.0;
@@ -164,9 +178,10 @@ public class LocationServiceTests
     public async Task AddLocationReport_ShouldTriggerAlerts()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
         
-        var alertServiceMock = new Mock<AlertService>(context, new Moq.Mock<IDataProtectionProvider>().Object);
+        var alertServiceMock = new Mock<AlertService>(factory, new Moq.Mock<IDataProtectionProvider>().Object);
         var emailServiceMock = new Mock<IEmailService>();
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -176,7 +191,7 @@ public class LocationServiceTests
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
 
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
         var matchingAlert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "test" };
@@ -202,7 +217,8 @@ public class LocationServiceTests
     public async Task AddLocationReport_ShouldNotCrashOnAlertError()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
         
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -213,7 +229,7 @@ public class LocationServiceTests
         // This will cause a NullReferenceException or similar when trying to resolve services from scope
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Throws(new Exception("Mock error"));
 
-        var service = new LocationService(context, _serviceProviderMock.Object, _loggerMock.Object);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object);
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0 };
 
         // Act & Assert
@@ -237,9 +253,10 @@ public class LocationServiceTests
     public async Task AddLocationReport_Integration_ShouldSendEmailToAlertSubscribers()
     {
         // Arrange
-        using var context = CreateInMemoryContext();
+        using var context = CreateInMemoryContext(out var options);
+        var factory = CreateDbFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
-        var alertService = new AlertService(context, dataProtectionProvider);
+        var alertService = new AlertService(factory, dataProtectionProvider);
         var emailServiceMock = new Mock<IEmailService>();
         
         var services = new ServiceCollection();
@@ -247,7 +264,7 @@ public class LocationServiceTests
         services.AddSingleton(emailServiceMock.Object);
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(context, serviceProvider, _loggerMock.Object);
+        var service = new LocationService(factory, serviceProvider, _loggerMock.Object);
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";

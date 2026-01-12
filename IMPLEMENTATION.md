@@ -111,8 +111,12 @@ WhereAreThey.Tests/
 - **Railway Optimized**: The application is configured to automatically parse Railway's `DATABASE_URL` for PostgreSQL.
 - **Secret Management**:
   - **Local**: Uses `dotnet user-secrets` to store API keys outside the source code.
+    ```bash
+    dotnet user-secrets set "Email:SmtpUser" "..."
+    dotnet user-secrets set "Email:SmtpPass" "..."
+    ```
   - **Docker**: Environment variables mapping in `docker-compose.yml` via `${VARIABLE:-default}` syntax.
-  - **Cloud**: Railway environment variables mapping (e.g., `Stripe__SecretKey`).
+  - **Cloud**: Railway environment variables mapping (e.g., `Email__SmtpPass`).
 - **Port Compatibility**: Dockerfile and Kestrel are aligned to use port 8080 by default, ensuring smooth operation on cloud platforms like Railway.
 
 ### 🧪 Testing

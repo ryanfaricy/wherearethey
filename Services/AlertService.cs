@@ -5,12 +5,13 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class AlertService(ApplicationDbContext context, IDataProtectionProvider provider)
+public class AlertService(IDbContextFactory<ApplicationDbContext> dbFactory, IDataProtectionProvider provider)
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         if (alert.RadiusKm > 160.9)
         {
             alert.RadiusKm = 160.9;
@@ -39,6 +40,7 @@ public class AlertService(ApplicationDbContext context, IDataProtectionProvider 
 
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         var query = context.Alerts
             .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
 
@@ -52,6 +54,7 @@ public class AlertService(ApplicationDbContext context, IDataProtectionProvider 
 
     public virtual async Task<bool> DeactivateAlertAsync(int id)
     {
+        using var context = await dbFactory.CreateDbContextAsync();
         var alert = await context.Alerts.FindAsync(id);
         if (alert == null) return false;
 
