@@ -21,25 +21,38 @@ builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 // Add DbContextFactory with PostgreSQL
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+string? connectionString = null;
 
-// Railway specific: handle DATABASE_URL if DefaultConnection is not set
-if (string.IsNullOrEmpty(connectionString))
+if (!string.IsNullOrEmpty(databaseUrl))
 {
-    var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-    if (!string.IsNullOrEmpty(databaseUrl))
+    // Railway/Heroku often provide DATABASE_URL as a postgres:// URI
+    if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
     {
         try
         {
             var uri = new Uri(databaseUrl);
             var userInfo = uri.UserInfo.Split(':');
-            connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Prefer;Trust Server Certificate=true";
+            var username = userInfo[0];
+            var password = userInfo.Length > 1 ? userInfo[1] : "";
+            connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing DATABASE_URL: {ex.Message}");
+            Console.WriteLine($"Error parsing DATABASE_URL URI: {ex.Message}");
         }
     }
+    else
+    {
+        // If it's not a URI, assume it's a direct connection string
+        connectionString = databaseUrl;
+    }
+}
+
+// If DATABASE_URL was not present or failed to parse, fallback to appsettings
+if (string.IsNullOrEmpty(connectionString))
+{
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>

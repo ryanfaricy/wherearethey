@@ -106,6 +106,7 @@ WhereAreThey.Tests/
 
 ### 🗄️ Database & Migrations
 - **PostgreSQL**: Fully migrated from SQLite to PostgreSQL for production reliability.
+- **Connection String Resolution**: Prioritizes `DATABASE_URL` environment variable (with automatic URI parsing) to ensure seamless deployment on Railway and other container platforms. Fallback to `appsettings.json` for local development.
 - **EF Core Migrations**: Fresh PostgreSQL migrations generated.
 - **Auto-Migration**: The application automatically applies any pending migrations on startup via `db.Database.Migrate()` in `Program.cs`.
 

@@ -164,8 +164,9 @@ If you want to debug in your IDE while using the Docker-managed database:
 ### 🚆 Deployment to Railway
 Railway will automatically detect the `Dockerfile` and deploy the application.
 
-1.  **Add PostgreSQL**: Add the PostgreSQL plugin to your Railway project. Railway provides the `DATABASE_URL` automatically.
+1.  **Add PostgreSQL**: Add the PostgreSQL plugin to your Railway project.
 2.  **Configuration**:
+    *   `DATABASE_URL`: Automatically provided by Railway. The application is configured to prioritize this over local connection strings and handles `postgres://` URI parsing automatically.
     *   `PORT`: Automatically handled by Railway.
     *   **Secrets**: Add your `Stripe__SecretKey`, `Email__SmtpPass`, etc., as environment variables in the Railway dashboard.
 
