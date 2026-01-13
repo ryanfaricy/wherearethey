@@ -67,6 +67,20 @@
                 <b>@L["Sync_Devices"]:</b> @L["Sync_Devices_Desc"]
             </RadzenText>
         </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="get_app" Style="color: var(--rz-success);" />
+            <RadzenText TextStyle="TextStyle.Body2">
+                <b>@L["INSTALL_APP"]:</b> @L["PWA_Install_Help"] (@L["SETTINGS"])
+            </RadzenText>
+        </RadzenStack>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="ios" Style="color: var(--rz-base);" />
+            <RadzenText TextStyle="TextStyle.Body2">
+                <b>iOS:</b> @L["PWA_IOS_Install_Help"]
+            </RadzenText>
+        </RadzenStack>
     </RadzenStack>
 
     <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 1rem 0;" />

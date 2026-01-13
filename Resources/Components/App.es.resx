@@ -445,4 +445,13 @@
   <data name="Limit_Alerts" xml:space="preserve">
     <value>Zonas de Alerta: Hasta {0} cada {1} minutos.</value>
   </data>
+  <data name="INSTALL_APP" xml:space="preserve">
+    <value>INSTALAR APP</value>
+  </data>
+  <data name="PWA_Install_Help" xml:space="preserve">
+    <value>Instala AreTheyHere en tu pantalla de inicio para un acceso más rápido y una mejor experiencia.</value>
+  </data>
+  <data name="PWA_IOS_Install_Help" xml:space="preserve">
+    <value>Para instalar en iOS: toca el botón 'Compartir' en Safari y selecciona 'Añadir a la pantalla de inicio'.</value>
+  </data>
 </root>
