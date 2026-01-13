@@ -4,25 +4,28 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class FeedbackService(IDbContextFactory<ApplicationDbContext> contextFactory)
+public class FeedbackService(
+    IDbContextFactory<ApplicationDbContext> contextFactory,
+    SettingsService settingsService)
 {
     public async Task AddFeedbackAsync(Feedback feedback)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
+        var settings = await settingsService.GetSettingsAsync();
 
-        // Anti-spam: check cooldown (5 minutes)
-        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+        // Anti-spam: check cooldown
+        var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
         bool hasRecentFeedback = false;
 
         if (!string.IsNullOrEmpty(feedback.UserIdentifier))
         {
             hasRecentFeedback = await context.Feedbacks
-                .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= fiveMinutesAgo);
+                .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= cooldownLimit);
         }
 
         if (hasRecentFeedback)
         {
-            throw new InvalidOperationException("You can only submit one feedback every five minutes.");
+            throw new InvalidOperationException($"You can only submit one feedback every {settings.ReportCooldownMinutes} minutes.");
         }
 
         // Anti-spam: basic message validation

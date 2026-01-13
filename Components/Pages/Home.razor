@@ -45,7 +45,6 @@
 @code {
     private List<LocationReport> reports = new();
     private List<Alert> userAlerts = new();
-    private int hoursBack = 24;
     private bool mapInitialized = false;
     private bool isGettingLocation = false;
     private string? userIdentifier;
@@ -152,7 +151,7 @@
 
     private async Task LoadReports()
     {
-        reports = await LocationService.GetRecentReportsAsync(hoursBack);
+        reports = await LocationService.GetRecentReportsAsync();
         if (mapInitialized)
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
@@ -173,15 +172,9 @@
 
     private async Task OnSettingsClick()
     {
-        var result = await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
-            new Dictionary<string, object> { { "HoursBack", hoursBack } },
+        await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
+            null,
             new DialogOptions { Width = "400px" });
-
-        if (result != null)
-        {
-            hoursBack = (int)result;
-            await LoadReports();
-        }
     }
 
     private async Task OnHelpClick()

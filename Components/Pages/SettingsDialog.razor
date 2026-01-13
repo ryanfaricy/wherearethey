@@ -5,15 +5,6 @@
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Settings</RadzenText>
     
-    <RadzenFormField Text="Time Range (Last X Hours)" Variant="Variant.Outlined">
-        <RadzenNumeric @bind-Value="@HoursBack" TValue="int" Min="1" Max="168" ShowUpDown="true" Style="width: 100%;" />
-        <RadzenText TextStyle="TextStyle.Caption" Class="mt-1">
-            Show reports from the last @HoursBack hours.
-        </RadzenText>
-    </RadzenFormField>
-
-    <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 0.5rem 0;" />
-
     <RadzenStack Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">Anonymous Profile ID</RadzenText>
         <RadzenText TextStyle="TextStyle.Caption">
@@ -45,13 +36,11 @@
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
         <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
-        <RadzenButton Text="APPLY" Click="@(() => DialogService.Close(HoursBack))" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 
 @code {
-    [Parameter] public int HoursBack { get; set; } = 24;
-    
     private string userIdentifier = "";
     private string importId = "";
     private bool showImport = false;
@@ -76,7 +65,7 @@
         if (Guid.TryParse(importId, out _))
         {
             await JSRuntime.InvokeAsync<bool>("setUserIdentifier", importId);
-            DialogService.Close(HoursBack);
+            DialogService.Close();
             // We need a hard refresh to reload everything with the new ID
             await JSRuntime.InvokeVoidAsync("location.reload");
         }

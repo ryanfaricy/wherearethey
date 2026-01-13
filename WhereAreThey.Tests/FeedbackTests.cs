@@ -21,7 +21,14 @@ public class FeedbackTests
         var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
         mock.Setup(f => f.CreateDbContextAsync(default))
             .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        mock.Setup(f => f.CreateDbContext())
+            .Returns(() => new ApplicationDbContext(options));
         return mock.Object;
+    }
+
+    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        return new SettingsService(factory);
     }
 
     [Fact]
@@ -30,7 +37,8 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new FeedbackService(factory);
+        var settingsService = CreateSettingsService(factory);
+        var service = new FeedbackService(factory, settingsService);
         var feedback = new Feedback
         {
             Type = "Bug",
@@ -53,16 +61,17 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new FeedbackService(factory);
+        var settingsService = CreateSettingsService(factory);
+        var service = new FeedbackService(factory, settingsService);
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
         // Act
         await service.AddFeedbackAsync(feedback1);
-
+        
         // Assert
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddFeedbackAsync(feedback2));
-        Assert.Contains("five minutes", ex.Message);
+        Assert.Contains("5 minutes", ex.Message);
     }
 
     [Fact]
@@ -71,7 +80,8 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new FeedbackService(factory);
+        var settingsService = CreateSettingsService(factory);
+        var service = new FeedbackService(factory, settingsService);
         var feedback = new Feedback 
         { 
             Type = "Feature", 
@@ -90,7 +100,8 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new FeedbackService(factory);
+        var settingsService = CreateSettingsService(factory);
+        var service = new FeedbackService(factory, settingsService);
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.AddFeedbackAsync(feedback);

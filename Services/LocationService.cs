@@ -9,27 +9,29 @@ public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IServiceProvider serviceProvider, 
     ILogger<LocationService> logger, 
-    IConfiguration configuration)
+    IConfiguration configuration,
+    SettingsService settingsService)
 {
     public event Action? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
+        var settings = await settingsService.GetSettingsAsync();
 
-        // Anti-spam: check cooldown (5 minutes)
-        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+        // Anti-spam: check cooldown
+        var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
         bool hasRecentReport = false;
 
         if (!string.IsNullOrEmpty(report.ReporterIdentifier))
         {
             hasRecentReport = await context.LocationReports
-                .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= fiveMinutesAgo);
+                .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= cooldownLimit);
         }
 
         if (hasRecentReport)
         {
-            throw new InvalidOperationException("You can only make one report every five minutes.");
+            throw new InvalidOperationException($"You can only make one report every {settings.ReportCooldownMinutes} minutes.");
         }
 
         // Anti-spam: basic message validation
@@ -41,15 +43,17 @@ public class LocationService(
             }
         }
 
-        // Anti-spam: check distance (5 miles / ~8.05 km)
+        // Anti-spam: check distance
         if (report.ReporterLatitude.HasValue && report.ReporterLongitude.HasValue)
         {
             var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
                 report.ReporterLatitude.Value, report.ReporterLongitude.Value);
 
-            if (distance > 8.05) // 5 miles ≈ 8.04672 km
+            // Convert miles to km for distance calculation (1 mile ≈ 1.60934 km)
+            var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
+            if (distance > maxDistanceKm)
             {
-                throw new InvalidOperationException("You can only make a report within five miles of your location.");
+                throw new InvalidOperationException($"You can only make a report within {settings.MaxReportDistanceMiles} miles of your location.");
             }
         }
         else
@@ -115,11 +119,13 @@ public class LocationService(
         }
     }
 
-    public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
+    public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        // Limit to 6 hours as per requirement
-        var actualHours = Math.Min(hours, 6);
+        var settings = await settingsService.GetSettingsAsync();
+        
+        // Use the global expiry setting if no hours provided
+        var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         return await context.LocationReports
             .Where(r => r.Timestamp >= cutoff)
@@ -130,8 +136,10 @@ public class LocationService(
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        // Limit to 6 hours as per requirement
-        var cutoff = DateTime.UtcNow.AddHours(-6);
+        var settings = await settingsService.GetSettingsAsync();
+
+        // Use the global expiry setting
+        var cutoff = DateTime.UtcNow.AddHours(-settings.ReportExpiryHours);
         
         // Simple bounding box calculation (approximation)
         var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km

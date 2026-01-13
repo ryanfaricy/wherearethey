@@ -1,4 +1,7 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
 @inject DialogService DialogService
+@inject SettingsService SettingsService
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">Privacy Policy</RadzenText>
@@ -15,7 +18,7 @@
 
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">2. Location Data</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            When you submit a report, we store the coordinates of the incident and your approximate location at the time of reporting (to prevent spam). This data is never linked to a real identity. Reports expire from public view after <b>6 hours</b>.
+            When you submit a report, we store the coordinates of the incident and your approximate location at the time of reporting (to prevent spam). This data is never linked to a real identity. Reports expire from public view after <b>@settings.ReportExpiryHours hours</b>.
         </RadzenText>
 
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">3. Encrypted Alerts</RadzenText>
@@ -33,3 +36,12 @@
         <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
+
+@code {
+    private SystemSettings settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await SettingsService.GetSettingsAsync();
+    }
+}

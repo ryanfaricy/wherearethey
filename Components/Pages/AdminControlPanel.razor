@@ -6,6 +6,7 @@
 @inject AlertService AlertService
 @inject DonationService DonationService
 @inject FeedbackService FeedbackService
+@inject SettingsService SettingsService
 @inject IConfiguration Configuration
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService
@@ -172,6 +173,30 @@
                         </Columns>
                     </RadzenDataGrid>
                 </RadzenTabsItem>
+
+                <RadzenTabsItem Text="SETTINGS" Icon="settings">
+                    <RadzenCard>
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
+                        <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
+                            <RadzenFormField Text="Report Expiry (Hours)" Variant="Variant.Outlined">
+                                <RadzenNumeric @bind-Value="@systemSettings.ReportExpiryHours" TValue="int" Min="1" Max="168" />
+                                <RadzenText TextStyle="TextStyle.Caption">Reports disappear from public view after this many hours.</RadzenText>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Submission Cooldown (Minutes)" Variant="Variant.Outlined">
+                                <RadzenNumeric @bind-Value="@systemSettings.ReportCooldownMinutes" TValue="int" Min="1" Max="60" />
+                                <RadzenText TextStyle="TextStyle.Caption">Time users must wait between submitting reports or feedback.</RadzenText>
+                            </RadzenFormField>
+
+                            <RadzenFormField Text="Max Report Distance (Miles)" Variant="Variant.Outlined">
+                                <RadzenNumeric @bind-Value="@systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
+                                <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
+                            </RadzenFormField>
+
+                            <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
+                        </RadzenStack>
+                    </RadzenCard>
+                </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>
     }
@@ -184,6 +209,7 @@
     private List<Alert> alerts = new();
     private List<Donation> donations = new();
     private List<Feedback> feedbacks = new();
+    private SystemSettings systemSettings = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -235,6 +261,13 @@
         alerts = await AlertService.GetAllAlertsAdminAsync();
         donations = await DonationService.GetAllDonationsAsync();
         feedbacks = await FeedbackService.GetAllFeedbackAsync();
+        systemSettings = await SettingsService.GetSettingsAsync();
+    }
+
+    private async Task SaveSettings()
+    {
+        await SettingsService.UpdateSettingsAsync(systemSettings);
+        NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
     }
 
     private async Task DeleteReport(int id)
