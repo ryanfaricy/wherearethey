@@ -5,6 +5,8 @@ let alertLayers = [];
 let reportMarkers = [];
 let alertMarkers = [];
 let allReports = [];
+let userLocationMarker;
+let userLocationCircle;
 let selectedReportId = null;
 let resizeObserver = null;
 let dotNetHelper;
@@ -23,6 +25,8 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         alertLayers = [];
         alertMarkers = [];
         reportMarkers = [];
+        userLocationMarker = null;
+        userLocationCircle = null;
     }
 
     dotNetHelper = helper;
@@ -367,5 +371,38 @@ window.setMapView = function (lat, lng, radiusKm) {
         map.setView([lat, lng], Math.round(zoom));
     } else {
         map.setView([lat, lng], 13);
+    }
+};
+
+window.updateUserLocation = function (lat, lng, accuracy) {
+    if (!map) return;
+
+    if (userLocationMarker) {
+        userLocationMarker.setLatLng([lat, lng]);
+    } else {
+        userLocationMarker = L.circleMarker([lat, lng], {
+            radius: 8,
+            fillColor: '#2196F3',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 1,
+            pane: 'markerPane',
+            interactive: false
+        }).addTo(map);
+    }
+
+    if (userLocationCircle) {
+        userLocationCircle.setLatLng([lat, lng]);
+        userLocationCircle.setRadius(accuracy);
+    } else if (accuracy) {
+        userLocationCircle = L.circle([lat, lng], {
+            radius: accuracy,
+            color: '#2196F3',
+            fillColor: '#2196F3',
+            fillOpacity: 0.15,
+            weight: 1,
+            interactive: false
+        }).addTo(map);
     }
 };

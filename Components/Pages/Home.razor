@@ -56,6 +56,9 @@
     private bool isGettingLocation = false;
     private string? userIdentifier;
     private DotNetObjectReference<Home>? objRef;
+    private int locationWatchId = -1;
+    private GeolocationPosition? lastKnownPosition;
+    private DateTime lastLocationUpdate;
 
     protected override async Task OnInitializedAsync()
     {
@@ -169,6 +172,15 @@
 
             await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts, jsTranslations);
             mapInitialized = true;
+
+            try
+            {
+                locationWatchId = await JSRuntime.InvokeAsync<int>("watchLocation", objRef);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error starting location watch: {ex.Message}");
+            }
 
             if (focusReportId.HasValue)
             {
@@ -285,21 +297,18 @@
 
     private async Task OnReportClick()
     {
+        if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
+        {
+            await ProcessReportWithLocation(lastKnownPosition);
+            return;
+        }
+
         isGettingLocation = true;
         StateHasChanged();
         try
         {
             var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-            var report = new LocationReport
-            {
-                Latitude = position.Coords.Latitude,
-                Longitude = position.Coords.Longitude,
-                ReporterIdentifier = userIdentifier,
-                ReporterLatitude = position.Coords.Latitude,
-                ReporterLongitude = position.Coords.Longitude
-            };
-            
-            await ShowReportDialog(report);
+            await ProcessReportWithLocation(position);
         }
         catch (Exception ex)
         {
@@ -310,6 +319,35 @@
         {
             isGettingLocation = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task ProcessReportWithLocation(GeolocationPosition position)
+    {
+        var report = new LocationReport
+        {
+            Latitude = position.Coords.Latitude,
+            Longitude = position.Coords.Longitude,
+            ReporterIdentifier = userIdentifier,
+            ReporterLatitude = position.Coords.Latitude,
+            ReporterLongitude = position.Coords.Longitude
+        };
+        
+        await ShowReportDialog(report);
+    }
+
+    [JSInvokable]
+    public async Task OnLocationUpdated(GeolocationPosition position)
+    {
+        lastKnownPosition = position;
+        lastLocationUpdate = DateTime.UtcNow;
+
+        if (mapInitialized)
+        {
+            await JSRuntime.InvokeVoidAsync("updateUserLocation", 
+                position.Coords.Latitude, 
+                position.Coords.Longitude, 
+                position.Coords.Accuracy);
         }
     }
 
@@ -359,30 +397,41 @@
     {
         // Long-press/right click reveals create report
         // We need user's current location to verify distance
-        isGettingLocation = true;
-        StateHasChanged();
-        try
+        
+        GeolocationPosition? position = null;
+        if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
         {
-            var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-            var report = new LocationReport
-            {
-                Latitude = lat,
-                Longitude = lng,
-                ReporterIdentifier = userIdentifier,
-                ReporterLatitude = position.Coords.Latitude,
-                ReporterLongitude = position.Coords.Longitude
-            };
-            await ShowReportDialog(report);
+            position = lastKnownPosition;
         }
-        catch (Exception ex)
+
+        if (position == null)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to get your location", "We need your location to verify the report.");
-        }
-        finally
-        {
-            isGettingLocation = false;
+            isGettingLocation = true;
             StateHasChanged();
+            try
+            {
+                position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+            }
+            catch (Exception)
+            {
+                // Fallback handled below
+            }
+            finally
+            {
+                isGettingLocation = false;
+                StateHasChanged();
+            }
         }
+
+        var report = new LocationReport
+        {
+            Latitude = lat,
+            Longitude = lng,
+            ReporterIdentifier = userIdentifier,
+            ReporterLatitude = position?.Coords.Latitude,
+            ReporterLongitude = position?.Coords.Longitude
+        };
+        await ShowReportDialog(report);
     }
 
     [JSInvokable]
@@ -414,6 +463,10 @@
     public void Dispose()
     {
         LocationService.OnReportAdded -= HandleReportAdded;
+        if (locationWatchId != -1)
+        {
+            _ = JSRuntime.InvokeVoidAsync("stopWatching", locationWatchId);
+        }
         objRef?.Dispose();
     }
 
@@ -426,5 +479,6 @@
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        public double Accuracy { get; set; }
     }
 }

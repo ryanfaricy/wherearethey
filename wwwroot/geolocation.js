@@ -7,13 +7,50 @@ window.getLocation = function () {
                 position => resolve({
                     coords: {
                         latitude: position.coords.latitude,
-                        longitude: position.coords.longitude
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
                     }
                 }),
-                error => reject(new Error(error.message))
+                error => reject(new Error(error.message)),
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                }
             );
         }
     });
+};
+
+window.watchLocation = function (dotNetHelper) {
+    if (!navigator.geolocation) {
+        return -1;
+    }
+    return navigator.geolocation.watchPosition(
+        position => {
+            dotNetHelper.invokeMethodAsync('OnLocationUpdated', {
+                coords: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
+                }
+            });
+        },
+        error => {
+            console.warn('Geolocation watch error:', error);
+        },
+        {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 10000
+        }
+    );
+};
+
+window.stopWatching = function (watchId) {
+    if (watchId !== undefined && watchId !== null && watchId !== -1) {
+        navigator.geolocation.clearWatch(watchId);
+    }
 };
 
 window.getUserIdentifier = function () {
