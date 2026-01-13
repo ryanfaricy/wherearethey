@@ -21,6 +21,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<LocationReport>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
+            entity.HasIndex(e => e.ExternalId).IsUnique();
             entity.HasIndex(e => e.Timestamp);
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
@@ -29,6 +31,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<Alert>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
+            entity.HasIndex(e => e.ExternalId).IsUnique();
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.UserIdentifier);
             entity.HasIndex(e => e.EmailHash);

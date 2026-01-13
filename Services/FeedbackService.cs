@@ -18,7 +18,7 @@ public class FeedbackService(
 
         // Anti-spam: check cooldown
         var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        bool hasRecentFeedback = false;
+        var hasRecentFeedback = false;
 
         if (!string.IsNullOrEmpty(feedback.UserIdentifier))
         {

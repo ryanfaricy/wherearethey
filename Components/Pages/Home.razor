@@ -94,20 +94,44 @@
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
             var query = QueryHelpers.ParseQuery(uri.Query);
 
-            if (query.TryGetValue("reportId", out var reportIdStr) && int.TryParse(reportIdStr, out var rId))
+            if (query.TryGetValue("reportId", out var reportIdStr))
             {
-                focusReportId = rId;
+                if (Guid.TryParse(reportIdStr, out var rGuid))
+                {
+                    var report = await LocationService.GetReportByExternalIdAsync(rGuid);
+                    if (report != null)
+                    {
+                        focusReportId = report.Id;
+                        initialLat = report.Latitude;
+                        initialLng = report.Longitude;
+                    }
+                }
+                else if (int.TryParse(reportIdStr, out var rId))
+                {
+                    focusReportId = rId;
+                }
             }
 
-            if (query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, CultureInfo.InvariantCulture, out var lat))
+            if (query.TryGetValue("alertId", out var alertIdStr) && Guid.TryParse(alertIdStr, out var aGuid))
+            {
+                var alert = await AlertService.GetAlertByExternalIdAsync(aGuid);
+                if (alert != null)
+                {
+                    initialLat = alert.Latitude;
+                    initialLng = alert.Longitude;
+                    initialRadius = alert.RadiusKm;
+                }
+            }
+
+            if (initialLat == 0 && query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, CultureInfo.InvariantCulture, out var lat))
             {
                 initialLat = lat;
             }
-            if (query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, CultureInfo.InvariantCulture, out var lng))
+            if (initialLng == 0 && query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, CultureInfo.InvariantCulture, out var lng))
             {
                 initialLng = lng;
             }
-            if (query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, CultureInfo.InvariantCulture, out var radius))
+            if (!initialRadius.HasValue && query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, CultureInfo.InvariantCulture, out var radius))
             {
                 initialRadius = radius;
             }
@@ -296,7 +320,7 @@
         if (zoom >= 15) return;
 
         // Find reports within a certain radius (e.g. 5km)
-        double searchRadiusKm = 5.0; 
+        var searchRadiusKm = 5.0; 
 
         var nearbyReports = reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)

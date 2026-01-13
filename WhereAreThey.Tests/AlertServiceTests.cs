@@ -353,6 +353,30 @@ public class AlertServiceTests
     }
 
     [Fact]
+    public async Task GetAlertByExternalId_ShouldReturnCorrectAlert()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var alert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 5.0, ExternalId = Guid.NewGuid() };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetAlertByExternalIdAsync(alert.ExternalId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(alert.Id, result.Id);
+        Assert.Equal(alert.ExternalId, result.ExternalId);
+    }
+
+    [Fact]
     public async Task CreateAlert_ShouldCapRadiusAt160_9()
     {
         // Arrange

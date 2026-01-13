@@ -133,14 +133,19 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (double lat, double lng, SettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, LocationService locationService, SettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
 {
+    if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
+
+    var report = await locationService.GetReportByExternalIdAsync(rGuid);
+    if (report == null) return Results.NotFound();
+
     var httpClient = httpClientFactory.CreateClient();
     var settings = await settingsService.GetSettingsAsync();
     if (string.IsNullOrEmpty(settings.MapboxToken)) return Results.NotFound();
 
-    var latStr = lat.ToString(CultureInfo.InvariantCulture);
-    var lngStr = lng.ToString(CultureInfo.InvariantCulture);
+    var latStr = report.Latitude.ToString(CultureInfo.InvariantCulture);
+    var lngStr = report.Longitude.ToString(CultureInfo.InvariantCulture);
     var mapboxUrl = $"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-l+f44336({lngStr},{latStr})/{lngStr},{latStr},14,0/450x300?access_token={settings.MapboxToken}";
 
     var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);

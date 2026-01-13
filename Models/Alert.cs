@@ -3,6 +3,7 @@ namespace WhereAreThey.Models;
 public class Alert
 {
     public int Id { get; set; }
+    public Guid ExternalId { get; set; } = Guid.NewGuid();
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public double RadiusKm { get; set; }

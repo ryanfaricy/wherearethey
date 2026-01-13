@@ -3,6 +3,7 @@ namespace WhereAreThey.Models;
 public class LocationReport
 {
     public int Id { get; set; }
+    public Guid ExternalId { get; set; } = Guid.NewGuid();
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public DateTime Timestamp { get; set; }

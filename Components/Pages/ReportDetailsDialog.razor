@@ -119,7 +119,7 @@
 
     private async Task DeleteAlert(Alert alert)
     {
-        string extra = string.IsNullOrEmpty(alert.Message) ? "" : $" ({alert.Message})";
+        var extra = string.IsNullOrEmpty(alert.Message) ? "" : $" ({alert.Message})";
         var confirmed = await DialogService.Confirm($"Are you sure you want to delete this alert zone?{extra}", 
             "Delete Alert", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
 

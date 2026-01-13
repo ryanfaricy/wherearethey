@@ -27,7 +27,7 @@ public class LocationService(
 
         // Anti-spam: check cooldown
         var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        bool hasRecentReport = false;
+        var hasRecentReport = false;
 
         if (!string.IsNullOrEmpty(report.ReporterIdentifier))
         {
@@ -116,14 +116,12 @@ public class LocationService(
             }
 
             // Map thumbnail
-            string mapThumbnailHtml = "";
-            var heatMapUrl = $"{baseUrl}/?lat={report.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={report.Longitude.ToString(CultureInfo.InvariantCulture)}&reportId={report.Id}";
+            var mapThumbnailHtml = "";
+            var heatMapUrl = $"{baseUrl}/?reportId={report.ExternalId}";
 
             if (!string.IsNullOrEmpty(settings.MapboxToken))
             {
-                var lat = report.Latitude.ToString(CultureInfo.InvariantCulture);
-                var lng = report.Longitude.ToString(CultureInfo.InvariantCulture);
-                var mapUrl = $"{baseUrl}/api/map/proxy?lat={lat}&lng={lng}";
+                var mapUrl = $"{baseUrl}/api/map/proxy?reportId={report.ExternalId}";
                 mapThumbnailHtml = $"<p><a href='{heatMapUrl}'><img src='{mapUrl}' alt='Map Location' style='max-width: 100%; height: auto; border-radius: 8px;' /></a></p>";
             }
 
@@ -157,6 +155,12 @@ public class LocationService(
         {
             logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
         }
+    }
+
+    public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.LocationReports.FirstOrDefaultAsync(r => r.ExternalId == externalId);
     }
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)

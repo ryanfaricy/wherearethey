@@ -143,6 +143,12 @@ public class AlertService(
         }
     }
 
+    public async Task<Alert?> GetAlertByExternalIdAsync(Guid externalId)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Alerts.FirstOrDefaultAsync(a => a.ExternalId == externalId);
+    }
+
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

@@ -486,6 +486,30 @@ public class LocationServiceTests
     }
 
     [Fact]
+    public async Task GetReportByExternalId_ShouldReturnCorrectReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.LocationReports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetReportByExternalIdAsync(report.ExternalId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(report.Id, result.Id);
+        Assert.Equal(report.ExternalId, result.ExternalId);
+    }
+
+    [Fact]
     public async Task AddLocationReport_ShouldUseConfiguredBaseUrlInEmail()
     {
         // Arrange
@@ -537,6 +561,6 @@ public class LocationServiceTests
         emailServiceMock.Verify(x => x.SendEmailAsync(
             It.Is<string>(s => s == userEmail),
             It.IsAny<string>(),
-            It.Is<string>(b => b.Contains(customBaseUrl + "/?lat"))), Times.Once);
+            It.Is<string>(b => b.Contains(customBaseUrl + "/?reportId="))), Times.Once);
     }
 }

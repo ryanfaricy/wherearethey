@@ -64,8 +64,8 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
             }
 
             // Attempt connection with a single retry to handle transient network blips
-            int maxAttempts = 2;
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            var maxAttempts = 2;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 try
                 {

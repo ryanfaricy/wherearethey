@@ -86,7 +86,7 @@
 
         if (result is Alert alert)
         {
-            NavigationManager.NavigateTo($"/?lat={alert.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={alert.Longitude.ToString(CultureInfo.InvariantCulture)}&radius={alert.RadiusKm.ToString(CultureInfo.InvariantCulture)}", forceLoad: true);
+            NavigationManager.NavigateTo($"/?alertId={alert.ExternalId}", forceLoad: true);
         }
     }
 
