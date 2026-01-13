@@ -57,9 +57,32 @@
         }
         catch (Exception)
         {
-            // If location fails, still open dialog but with empty coordinates
+            // Fallback: try to use map center if possible
+            LocationReport? fallbackReport = null;
+            try
+            {
+                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                if (mapState != null)
+                {
+                    fallbackReport = new LocationReport
+                    {
+                        Latitude = mapState.Lat,
+                        Longitude = mapState.Lng,
+                        ReporterIdentifier = userIdentifier,
+                        ReporterLatitude = mapState.Lat,
+                        ReporterLongitude = mapState.Lng
+                    };
+                }
+            }
+            catch { /* Map might not be available */ }
+
+            if (fallbackReport == null)
+            {
+                fallbackReport = new LocationReport { ReporterIdentifier = userIdentifier };
+            }
+
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
-                new Dictionary<string, object> { { "report", new LocationReport { ReporterIdentifier = userIdentifier } } },
+                new Dictionary<string, object> { { "report", fallbackReport } },
                 new DialogOptions { Width = "500px" });
         }
     }

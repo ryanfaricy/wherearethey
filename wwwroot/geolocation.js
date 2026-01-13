@@ -3,21 +3,32 @@ window.getLocation = function () {
         if (!navigator.geolocation) {
             reject(new Error('Geolocation is not supported by your browser'));
         } else {
-            navigator.geolocation.getCurrentPosition(
-                position => resolve({
-                    coords: {
-                        latitude: position.coords.latitude,
-                        longitude: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    }
-                }),
-                error => reject(new Error(error.message)),
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 30000
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 30000
+            };
+
+            const success = position => resolve({
+                coords: {
+                    latitude: position.coords.latitude,
+                    longitude: position.coords.longitude,
+                    accuracy: position.coords.accuracy
                 }
-            );
+            });
+
+            const failure = error => {
+                if (error.code === error.TIMEOUT && options.enableHighAccuracy) {
+                    console.warn('Geolocation timeout with high accuracy, retrying with low accuracy...');
+                    options.enableHighAccuracy = false;
+                    // Give it another 10 seconds for low accuracy
+                    navigator.geolocation.getCurrentPosition(success, err => reject(new Error(err.message)), options);
+                } else {
+                    reject(new Error(error.message));
+                }
+            };
+
+            navigator.geolocation.getCurrentPosition(success, failure, options);
         }
     });
 };

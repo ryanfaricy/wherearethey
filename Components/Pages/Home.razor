@@ -312,8 +312,26 @@
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", ex.Message);
-            // Fallback: show dialog without location? Or just let them try again.
+            // Fallback: use map center instead of showing an error
+            try
+            {
+                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                if (mapState != null)
+                {
+                    await ProcessReportWithLocation(new GeolocationPosition 
+                    { 
+                        Coords = new GeolocationCoordinates { Latitude = mapState.Lat, Longitude = mapState.Lng } 
+                    });
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", ex.Message);
+                }
+            }
+            catch
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", ex.Message);
+            }
         }
         finally
         {
@@ -428,8 +446,8 @@
             Latitude = lat,
             Longitude = lng,
             ReporterIdentifier = userIdentifier,
-            ReporterLatitude = position?.Coords.Latitude,
-            ReporterLongitude = position?.Coords.Longitude
+            ReporterLatitude = position?.Coords.Latitude ?? lat,
+            ReporterLongitude = position?.Coords.Longitude ?? lng
         };
         await ShowReportDialog(report);
     }
