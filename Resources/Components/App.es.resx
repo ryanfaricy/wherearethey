@@ -418,4 +418,16 @@
   <data name="Feedback_Links_Error" xml:space="preserve">
     <value>No se permiten enlaces en los comentarios para evitar el spam.</value>
   </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Apariencia</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Claro</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Oscuro</value>
+  </data>
+  <data name="Theme_System" xml:space="preserve">
+    <value>Sistema</value>
+  </data>
 </root>

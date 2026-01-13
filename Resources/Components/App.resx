@@ -418,4 +418,16 @@
   <data name="Feedback_Links_Error" xml:space="preserve">
     <value>Links are not allowed in feedback to prevent spam.</value>
   </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Theme_System" xml:space="preserve">
+    <value>System</value>
+  </data>
 </root>

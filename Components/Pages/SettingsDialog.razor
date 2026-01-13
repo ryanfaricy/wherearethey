@@ -1,9 +1,11 @@
 @using Microsoft.Extensions.Localization
 @using System.Globalization
+@using WhereAreThey.Services
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
+@inject AppThemeService ThemeService
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -14,6 +16,17 @@
         <RadzenDropDown TValue="string" Data="@supportedCultures" 
                         Value="@currentCulture" Change="@OnCultureChange"
                         TextProperty="DisplayName" ValueProperty="Name" />
+    </RadzenStack>
+
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Theme"]</RadzenText>
+        <RadzenSelectBar @bind-Value="@CurrentTheme" TValue="AppTheme" Change="@OnThemeChanged" Size="ButtonSize.Small" Variant="Variant.Flat" Style="width: 100%;">
+            <Items>
+                <RadzenSelectBarItem Icon="light_mode" Text="@L["Theme_Light"]" Value="AppTheme.Light" />
+                <RadzenSelectBarItem Icon="dark_mode" Text="@L["Theme_Dark"]" Value="AppTheme.Dark" />
+                <RadzenSelectBarItem Icon="settings_brightness" Text="@L["Theme_System"]" Value="AppTheme.System" />
+            </Items>
+        </RadzenSelectBar>
     </RadzenStack>
     
     <RadzenStack Gap="0.5rem">
@@ -57,6 +70,17 @@
     private bool showImport = false;
     private string currentCulture = CultureInfo.CurrentCulture.Name;
 
+    private AppTheme CurrentTheme
+    {
+        get => ThemeService.CurrentTheme;
+        set => ThemeService.SetTheme(value);
+    }
+
+    private async Task OnThemeChanged(AppTheme theme)
+    {
+        await JSRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
+    }
+
     private List<CultureDisplay> supportedCultures = new()
     {
         new CultureDisplay { Name = "en", DisplayName = "English" },
@@ -85,6 +109,13 @@
         if (firstRender)
         {
             userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            
+            var stored = await JSRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
+            if (Enum.TryParse<AppTheme>(stored, out var theme))
+            {
+                ThemeService.SetTheme(theme);
+            }
+            
             StateHasChanged();
         }
     }
