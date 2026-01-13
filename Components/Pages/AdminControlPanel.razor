@@ -1,0 +1,234 @@
+@page "/cp"
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject LocationService LocationService
+@inject AlertService AlertService
+@inject DonationService DonationService
+@inject IConfiguration Configuration
+@inject ProtectedSessionStorage SessionStorage
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<PageTitle>Admin Control Panel</PageTitle>
+
+<div class="rz-p-4">
+    @if (!isAuthenticated)
+    {
+        <div class="d-flex justify-content-center align-items-center" style="height: 70vh;">
+            <RadzenCard Style="width: 400px;">
+                <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Admin Login</RadzenText>
+                <RadzenStack Gap="1rem">
+                    <RadzenFormField Text="Password">
+                        <RadzenPassword @bind-Value="@passwordInput" @onkeypress="@OnKeyPress" />
+                    </RadzenFormField>
+                    <RadzenButton Text="LOGIN" Click="@Login" ButtonStyle="ButtonStyle.Primary" />
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-center rz-mb-4">
+            <RadzenText TextStyle="TextStyle.H4">Control Panel</RadzenText>
+            <RadzenButton Text="LOGOUT" Click="@Logout" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
+        </div>
+
+        <RadzenTabs RenderMode="TabRenderMode.Client">
+            <Tabs>
+                <RadzenTabsItem Text="OVERVIEW" Icon="dashboard">
+                    <RadzenRow>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
+                                <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@reports.Count</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
+                                <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@alerts.Count(a => a.IsActive)</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
+                                <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@donations.Count(d => d.Status == "succeeded")</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="REPORTS" Icon="report_problem">
+                    <RadzenDataGrid Data="@reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter ID" />
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location">
+                                <Template Context="report">
+                                    @(report.ReporterLatitude.HasValue ? $"{report.ReporterLatitude.Value:F4}, {report.ReporterLongitude.Value:F4}" : "N/A")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency" Width="100px">
+                                <Template Context="report">
+                                    <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
+                                                 Text="@(report.IsEmergency ? "YES" : "NO")" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Location">
+                                <Template Context="report">
+                                    @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                                <Template Context="report">
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                  Click="@(() => DeleteReport(report.Id))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="ALERTS" Icon="notifications">
+                    <RadzenDataGrid Data="@alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="Alert" Title="Email">
+                                <Template Context="alert">
+                                    @AlertService.DecryptEmail(alert.EncryptedEmail)
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified" Width="100px">
+                                <Template Context="alert">
+                                    <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
+                                                 Text="@(alert.IsVerified ? "YES" : "NO")" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active" Width="100px">
+                                <Template Context="alert">
+                                    <RadzenBadge BadgeStyle="@(alert.IsActive ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                                 Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Width="100px" />
+                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                                <Template Context="alert">
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                  Click="@(() => DeleteAlert(alert.Id))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="DONATIONS" Icon="volunteer_activism">
+                    <RadzenDataGrid Data="@donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date" />
+                            <RadzenDataGridColumn TItem="Donation" Property="DonorName" Title="Donor" />
+                            <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
+                                <Template Context="donation">
+                                    @donation.Amount @donation.Currency.ToUpper()
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
+                                <Template Context="donation">
+                                    <RadzenBadge BadgeStyle="@(donation.Status == "succeeded" ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                                                 Text="@donation.Status" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+            </Tabs>
+        </RadzenTabs>
+    }
+</div>
+
+@code {
+    private bool isAuthenticated = false;
+    private string passwordInput = "";
+    private List<LocationReport> reports = new();
+    private List<Alert> alerts = new();
+    private List<Donation> donations = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var result = await SessionStorage.GetAsync<bool>("isAdmin");
+            if (result.Success && result.Value)
+            {
+                isAuthenticated = true;
+                await LoadData();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Login()
+    {
+        var adminPassword = Configuration["AdminPassword"];
+        if (!string.IsNullOrEmpty(adminPassword) && passwordInput == adminPassword)
+        {
+            isAuthenticated = true;
+            await SessionStorage.SetAsync("isAdmin", true);
+            await LoadData();
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Invalid password");
+        }
+    }
+
+    private async Task Logout()
+    {
+        isAuthenticated = false;
+        passwordInput = "";
+        await SessionStorage.DeleteAsync("isAdmin");
+    }
+
+    private async Task OnKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Login();
+        }
+    }
+
+    private async Task LoadData()
+    {
+        reports = await LocationService.GetAllReportsAsync();
+        alerts = await AlertService.GetAllAlertsAdminAsync();
+        donations = await DonationService.GetAllDonationsAsync();
+    }
+
+    private async Task DeleteReport(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this report?", "Delete Report", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            await LocationService.DeleteReportAsync(id);
+            await LoadData();
+            NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
+        }
+    }
+
+    private async Task DeleteAlert(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this alert? This cannot be undone.", "Delete Alert", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirm == true)
+        {
+            await AlertService.DeleteAlertAsync(id);
+            await LoadData();
+            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+        }
+    }
+}

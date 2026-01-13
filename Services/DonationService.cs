@@ -48,4 +48,13 @@ public class DonationService(IDbContextFactory<ApplicationDbContext> contextFact
         await context.SaveChangesAsync();
         return true;
     }
+
+    // Admin methods
+    public async Task<List<Donation>> GetAllDonationsAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Donations
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync();
+    }
 }

@@ -152,4 +152,25 @@ public class LocationService(
         return reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
             .ToList();
     }
+
+    // Admin methods
+    public async Task<List<LocationReport>> GetAllReportsAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.LocationReports
+            .OrderByDescending(r => r.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task DeleteReportAsync(int id)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var report = await context.LocationReports.FindAsync(id);
+        if (report != null)
+        {
+            context.LocationReports.Remove(report);
+            await context.SaveChangesAsync();
+            OnReportAdded?.Invoke();
+        }
+    }
 }

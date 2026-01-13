@@ -183,4 +183,24 @@ public class AlertService(
             .Where(a => GeoUtils.CalculateDistance(latitude, longitude, a.Latitude, a.Longitude) <= a.RadiusKm)
             .ToList();
     }
+
+    // Admin methods
+    public virtual async Task<List<Alert>> GetAllAlertsAdminAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Alerts
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
+
+    public virtual async Task DeleteAlertAsync(int id)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var alert = await context.Alerts.FindAsync(id);
+        if (alert != null)
+        {
+            context.Alerts.Remove(alert);
+            await context.SaveChangesAsync();
+        }
+    }
 }
