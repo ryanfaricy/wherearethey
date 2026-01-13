@@ -27,6 +27,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
     - Supported languages: English, Spanish, French, German, Italian, Portuguese, Russian, Chinese, Japanese.
     - Dynamic language switching via user settings.
     - Localized all UI components, dialogs, error messages, and map interactions.
+- [x] **Mobile Toolbar Optimization**: Ensured all top toolbar buttons fit on a single line in mobile view (optimized for iPhone 12 Pro).
 
 ### 📊 Technical Metrics
 - **Lines of Code**: ~2,800 (excluding vendor libraries)

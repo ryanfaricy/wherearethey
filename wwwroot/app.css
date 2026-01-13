@@ -80,4 +80,27 @@ h1:focus {
     .responsive-button-text .rz-button-text {
         display: none;
     }
+
+    .main-toolbar {
+        gap: 4px !important;
+        padding: 4px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: hidden;
+    }
+
+    .main-toolbar .rz-button {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        min-width: unset !important;
+    }
+
+    .report-button .rz-button-text {
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .report-button .rz-button-text {
+        display: none;
+    }
 }
