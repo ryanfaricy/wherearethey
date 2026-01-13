@@ -41,7 +41,7 @@ public class DonationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new DonationService(factory, CreateMockConfiguration());
+        IDonationService service = new DonationService(factory, CreateMockConfiguration());
         var donation = new Donation
         {
             Amount = 25.00m,

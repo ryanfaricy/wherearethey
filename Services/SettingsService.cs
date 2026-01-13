@@ -4,7 +4,7 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFactory)
+public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFactory) : ISettingsService
 {
     private SystemSettings? _cachedSettings;
     private DateTime _lastUpdate = DateTime.MinValue;

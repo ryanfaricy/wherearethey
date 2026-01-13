@@ -7,7 +7,7 @@ public enum AppTheme
     System
 }
 
-public class AppThemeService
+public class AppThemeService : IAppThemeService
 {
     public AppTheme CurrentTheme { get; private set; } = AppTheme.System;
 

@@ -41,7 +41,7 @@ public class AdminServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var config = CreateMockConfiguration("secret");
-        var service = new AdminService(factory, config);
+        IAdminService service = new AdminService(factory, config);
         var ip = "127.0.0.1";
 
         // Act

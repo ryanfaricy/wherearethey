@@ -9,7 +9,7 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace WhereAreThey.Services;
 
-public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
+public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration) : IDonationService
 {
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
         .AccessToken(configuration["Square:AccessToken"] ?? "")

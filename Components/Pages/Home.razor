@@ -4,10 +4,10 @@
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
-@inject LocationService LocationService
-@inject AlertService AlertService
+@inject ILocationService LocationService
+@inject IAlertService AlertService
 @inject NavigationManager NavigationManager
-@inject SettingsService SettingsService
+@inject ISettingsService SettingsService
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
 @inject NotificationService NotificationService

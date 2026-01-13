@@ -52,7 +52,7 @@ public class FeedbackTests
         return mock.Object;
     }
 
-    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
         return new SettingsService(factory);
     }
@@ -64,7 +64,8 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback
         {
             Type = "Bug",
@@ -88,7 +89,8 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
@@ -107,7 +109,8 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback 
         { 
             Type = "Feature", 
@@ -127,7 +130,8 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.AddFeedbackAsync(feedback);

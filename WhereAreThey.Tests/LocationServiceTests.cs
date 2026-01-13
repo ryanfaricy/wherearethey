@@ -19,6 +19,7 @@ public class LocationServiceTests
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _alertLoggerMock = new();
+    private readonly Mock<IReportProcessingService> _reportProcessingMock = new();
 
     private IStringLocalizer<App> CreateLocalizer()
     {
@@ -65,9 +66,17 @@ public class LocationServiceTests
         return mock.Object;
     }
 
-    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
         return new SettingsService(factory);
+    }
+
+    private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        var localizer = CreateLocalizer();
+        var settingsService = CreateSettingsService(factory);
+        var validator = new SubmissionValidator(factory, localizer);
+        return new LocationService(factory, _reportProcessingMock.Object, settingsService, validator, localizer);
     }
 
     [Fact]
@@ -76,7 +85,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         var report = new LocationReport
         {
             Latitude = 40.7128,
@@ -103,7 +112,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -140,7 +149,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -161,7 +170,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         
         // New York City coordinates
         var centerLat = 40.7128;
@@ -202,7 +211,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         var centerLat = 40.0;
         var centerLon = -74.0;
         var radiusKm = 10.0;
@@ -233,46 +242,16 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        
-        var alertServiceMock = new Mock<AlertService>(
-            factory, 
-            new Mock<IDataProtectionProvider>().Object,
-            new Mock<IEmailService>().Object,
-            _configurationMock.Object,
-            _alertLoggerMock.Object,
-            CreateSettingsService(factory),
-            CreateLocalizer());
-        var emailServiceMock = new Mock<IEmailService>();
-        var geocodingServiceMock = new Mock<GeocodingService>(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
-        var scopeMock = new Mock<IServiceScope>();
-        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-
-        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
-        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(GeocodingService))).Returns(geocodingServiceMock.Object);
-
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
-        var matchingAlert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "test" };
-
-        alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
-            .ReturnsAsync(new List<Alert> { matchingAlert });
-        alertServiceMock.Setup(x => x.DecryptEmail(It.IsAny<string>())).Returns("test@example.com");
 
         // Act
         await service.AddLocationReportAsync(report);
-
-        // Wait a bit for the background task
-        await Task.Delay(200);
+        await Task.Delay(100);
 
         // Assert
-        emailServiceMock.Verify(x => x.SendEmailAsync(
-            It.Is<string>(s => s == "test@example.com"),
-            It.IsAny<string>(),
-            It.IsAny<string>()), Times.Once);
+        _reportProcessingMock.Verify(x => x.ProcessReportAsync(It.IsAny<LocationReport>()), Times.Once);
     }
 
     [Fact]
@@ -282,33 +261,15 @@ public class LocationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         
-        var scopeMock = new Mock<IServiceScope>();
-        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+        // Setup mock to throw
+        _reportProcessingMock.Setup(x => x.ProcessReportAsync(It.IsAny<LocationReport>())).ThrowsAsync(new Exception("Mock error"));
 
-        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
-        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
-        
-        // This will cause a NullReferenceException or similar when trying to resolve services from scope
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Throws(new Exception("Mock error"));
-
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => service.AddLocationReportAsync(report));
         Assert.Null(exception); // Should not throw
-
-        // Wait for background task to finish and log error
-        await Task.Delay(200);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Error,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Error processing alerts")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
     }
 
     [Fact]
@@ -319,19 +280,23 @@ public class LocationServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
-        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
+        var settingsService = CreateSettingsService(factory);
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
-        services.AddSingleton(alertService);
+        services.AddSingleton<IAlertService>(alertService);
         services.AddSingleton(emailServiceMock.Object);
-        services.AddSingleton(geocodingService);
+        services.AddSingleton<IGeocodingService>(geocodingService);
         services.AddSingleton(_configurationMock.Object);
-        services.AddSingleton(CreateSettingsService(factory));
+        services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
+        services.AddLogging();
+        services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object, serviceProvider.GetRequiredService<SettingsService>(), serviceProvider.GetRequiredService<IStringLocalizer<App>>());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";
@@ -387,19 +352,23 @@ public class LocationServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
-        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
+        var settingsService = CreateSettingsService(factory);
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
-        services.AddSingleton(alertService);
+        services.AddSingleton<IAlertService>(alertService);
         services.AddSingleton(emailServiceMock.Object);
-        services.AddSingleton(geocodingService);
+        services.AddSingleton<IGeocodingService>(geocodingService);
         services.AddSingleton(_configurationMock.Object);
-        services.AddSingleton(CreateSettingsService(factory));
+        services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
+        services.AddLogging();
+        services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object, serviceProvider.GetRequiredService<SettingsService>(), serviceProvider.GetRequiredService<IStringLocalizer<App>>());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
         
         var userBEmail = "userB@example.com";
         var alertMessage = "This is my custom alert message";
@@ -452,50 +421,16 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        
-        var alertServiceMock = new Mock<AlertService>(
-            factory, 
-            new Mock<IDataProtectionProvider>().Object,
-            new Mock<IEmailService>().Object,
-            _configurationMock.Object,
-            _alertLoggerMock.Object,
-            CreateSettingsService(factory),
-            CreateLocalizer());
-        var emailServiceMock = new Mock<IEmailService>();
-        var geocodingServiceMock = new Mock<GeocodingService>(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
-        var scopeMock = new Mock<IServiceScope>();
-        var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-
-        _serviceProviderMock.Setup(x => x.GetService(typeof(IServiceScopeFactory))).Returns(scopeFactoryMock.Object);
-        scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
-        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(GeocodingService))).Returns(geocodingServiceMock.Object);
-
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
-        var alertWithBadEmail = new Alert { Id = 99, Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "bad-data" };
-
-        alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
-            .ReturnsAsync(new List<Alert> { alertWithBadEmail });
-        alertServiceMock.Setup(x => x.DecryptEmail(It.IsAny<string>())).Returns((string?)null);
 
         // Act
         await service.AddLocationReportAsync(report);
-        await Task.Delay(200);
+        await Task.Delay(100);
 
         // Assert
-        emailServiceMock.Verify(x => x.SendEmailAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
-        
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Failed to decrypt email")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
+        _reportProcessingMock.Verify(x => x.ProcessReportAsync(It.IsAny<LocationReport>()), Times.Once);
     }
 
     [Fact]
@@ -504,7 +439,7 @@ public class LocationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var service = CreateService(factory);
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
         
         await using (var context = await factory.CreateDbContextAsync())
@@ -530,23 +465,27 @@ public class LocationServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
-        
+        var settingsService = CreateSettingsService(factory);
+        var validator = new SubmissionValidator(factory, CreateLocalizer());
+
         var customBaseUrl = "https://custom.example.com";
         _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
         
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
-        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
-        services.AddSingleton(alertService);
+        services.AddSingleton<IAlertService>(alertService);
         services.AddSingleton(emailServiceMock.Object);
-        services.AddSingleton(geocodingService);
+        services.AddSingleton<IGeocodingService>(geocodingService);
         services.AddSingleton(_configurationMock.Object);
-        services.AddSingleton(CreateSettingsService(factory));
+        services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
+        services.AddLogging();
+        services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider, _loggerMock.Object, _configurationMock.Object, serviceProvider.GetRequiredService<SettingsService>(), serviceProvider.GetRequiredService<IStringLocalizer<App>>());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
         
         var userEmail = "test@example.com";
         var alert = new Alert 

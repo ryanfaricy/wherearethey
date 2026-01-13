@@ -47,7 +47,7 @@ builder.Services.AddHttpClient();
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
-builder.Services.AddHttpClient<GeocodingService>(client => {
+builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
     client.Timeout = TimeSpan.FromSeconds(10);
 });
 builder.Services.AddTransient<SmtpEmailService>();
@@ -97,13 +97,15 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"));
 
 // Add application services
-builder.Services.AddSingleton<SettingsService>();
-builder.Services.AddSingleton<LocationService>();
-builder.Services.AddScoped<AlertService>();
-builder.Services.AddScoped<DonationService>();
-builder.Services.AddScoped<FeedbackService>();
-builder.Services.AddScoped<AdminService>();
-builder.Services.AddScoped<AppThemeService>();
+builder.Services.AddSingleton<ISubmissionValidator, SubmissionValidator>();
+builder.Services.AddSingleton<ISettingsService, SettingsService>();
+builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
+builder.Services.AddSingleton<ILocationService, LocationService>();
+builder.Services.AddScoped<IAlertService, AlertService>();
+builder.Services.AddScoped<IDonationService, DonationService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddHttpContextAccessor();
 
 // Configure for high concurrency
@@ -164,7 +166,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, LocationService locationService, SettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, ILocationService locationService, ISettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
 

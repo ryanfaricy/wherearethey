@@ -38,15 +38,16 @@ public class AlertServiceTests
         return mock.Object;
     }
 
-    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
         return new SettingsService(factory);
     }
 
-    private AlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    private IAlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var settingsService = CreateSettingsService(factory);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, _localizerMock.Object);
+        var validator = new SubmissionValidator(factory, _localizerMock.Object);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
     }
 
     [Fact]

@@ -65,9 +65,18 @@ public class AntiSpamTests
         return mock.Object;
     }
 
-    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
         return new SettingsService(factory);
+    }
+
+    private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        var localizer = CreateLocalizer();
+        var settingsService = CreateSettingsService(factory);
+        var validator = new SubmissionValidator(factory, localizer);
+        var reportProcessingMock = new Mock<IReportProcessingService>();
+        return new LocationService(factory, reportProcessingMock.Object, settingsService, validator, localizer);
     }
 
     [Fact]
@@ -76,8 +85,7 @@ public class AntiSpamTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
+        var service = CreateService(factory);
         
         var report = new LocationReport
         {
@@ -99,8 +107,7 @@ public class AntiSpamTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
+        var service = CreateService(factory);
         
         var report1 = new LocationReport
         {
@@ -134,8 +141,7 @@ public class AntiSpamTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
+        var service = CreateService(factory);
         
         var report = new LocationReport
         {
@@ -158,8 +164,7 @@ public class AntiSpamTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
+        var service = CreateService(factory);
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -192,8 +197,8 @@ public class AntiSpamTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
+        var service = CreateService(factory);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
 
         var customSettings = new SystemSettings 
         { 

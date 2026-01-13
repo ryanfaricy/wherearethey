@@ -3,7 +3,7 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class GeocodingService(HttpClient httpClient, SettingsService settingsService, ILogger<GeocodingService> logger)
+public class GeocodingService(HttpClient httpClient, ISettingsService settingsService, ILogger<GeocodingService> logger) : IGeocodingService
 {
     public virtual async Task<string?> ReverseGeocodeAsync(double latitude, double longitude)
     {

@@ -2,12 +2,12 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@inject LocationService LocationService
-@inject AlertService AlertService
-@inject DonationService DonationService
-@inject FeedbackService FeedbackService
-@inject AdminService AdminService
-@inject SettingsService SettingsService
+@inject ILocationService LocationService
+@inject IAlertService AlertService
+@inject IDonationService DonationService
+@inject IFeedbackService FeedbackService
+@inject IAdminService AdminService
+@inject ISettingsService SettingsService
 @inject IConfiguration Configuration
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService

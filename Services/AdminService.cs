@@ -5,7 +5,7 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
+public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration) : IAdminService
 {
     public async Task<bool> LoginAsync(string password, string? ipAddress)
     {

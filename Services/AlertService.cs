@@ -15,31 +15,21 @@ public class AlertService(
     IEmailService emailService,
     IConfiguration configuration,
     ILogger<AlertService> logger,
-    SettingsService settingsService,
-    IStringLocalizer<App> L)
+    ISettingsService settingsService,
+    ISubmissionValidator validator,
+    IStringLocalizer<App> L) : IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
 
-        // Anti-spam: check cooldown and count
-        var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        
-        if (string.IsNullOrEmpty(alert.UserIdentifier))
-        {
-            throw new InvalidOperationException(L["Identifier_Error"]);
-        }
+        // Anti-spam validation
+        await validator.ValidateAlertLimitAsync(alert.UserIdentifier, settings.ReportCooldownMinutes, settings.AlertLimitCount);
+        validator.ValidateNoLinks(alert.Message, "Links_Error");
 
-        var recentAlertCount = await context.Alerts
-            .CountAsync(a => a.UserIdentifier == alert.UserIdentifier && a.CreatedAt >= cooldownLimit);
-
-        if (recentAlertCount >= settings.AlertLimitCount)
-        {
-            throw new InvalidOperationException(string.Format(L["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
-        }
+        await using var context = await contextFactory.CreateDbContextAsync();
 
         if (alert.RadiusKm > 160.9)
         {
@@ -209,13 +199,7 @@ public class AlertService(
         // For performance, we use a bounding box first.
         // The maximum radius for any alert is 160.9 km (100 miles).
         const double maxRadiusKm = 160.9;
-        var latDelta = maxRadiusKm / 111.0;
-        var lonDelta = maxRadiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));
-
-        var minLat = latitude - latDelta;
-        var maxLat = latitude + latDelta;
-        var minLon = longitude - lonDelta;
-        var maxLon = longitude + lonDelta;
+        var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(latitude, longitude, maxRadiusKm);
 
         await using var context = await contextFactory.CreateDbContextAsync();
         var candidateAlerts = await context.Alerts

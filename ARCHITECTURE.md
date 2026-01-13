@@ -19,7 +19,9 @@ This document provides a high-level overview of the application architecture, da
 ## 🧩 Key Components & Services
 
 ### Services
-- **LocationService (Singleton)**: Manages incident reports. Handles reverse geocoding (via `GeocodingService`) and background alert processing.
+- **LocationService (Singleton)**: Manages incident reports. Delegates post-submission tasks to `IReportProcessingService`.
+- **ReportProcessingService (Singleton)**: Handles background processing for new reports, including alert matching, geocoding, and email notifications.
+- **SubmissionValidator (Singleton)**: Centralized validation logic for anti-spam (cooldowns, limits) and message content.
 - **AlertService (Scoped)**: Manages distance-based user alerts. Handles email encryption at rest using the Data Protection API.
 - **SettingsService (Singleton)**: Manages global system settings (limits, tokens, toggle features) with a 1-minute memory cache.
 - **AdminService (Scoped)**: Manages admin authentication and brute-force protection (IP tracking and lockout).
@@ -63,4 +65,7 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 2. **Follow Localization Patterns**: Add new strings to `App.resx` and `App.es.resx`. Use `L["Key"]` in components.
 3. **Respect Anonymity**: Never add fields that collect PII (Personally Identifiable Information) unless it's for the Admin area.
 4. **Use `IDbContextFactory`**: Always create a new context within service methods using `await using var context = await contextFactory.CreateDbContextAsync()`.
-5. **Update Tests**: Any logic change in services MUST be accompanied by a test update in `WhereAreThey.Tests`.
+5. **Interface-Based DI**: Register all services via interfaces in `Program.cs`. Inject interfaces into constructors.
+6. **Centralized Validation**: Use `ISubmissionValidator` for any submission-related checks (spam, content).
+7. **Decouple Post-Processing**: Use `IReportProcessingService` for non-blocking tasks that occur after a report is saved.
+8. **Update Tests**: Any logic change in services MUST be accompanied by a test update in `WhereAreThey.Tests`.

@@ -8,39 +8,19 @@ namespace WhereAreThey.Services;
 
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    SettingsService settingsService,
-    IStringLocalizer<App> L)
+    ISettingsService settingsService,
+    ISubmissionValidator validator,
+    IStringLocalizer<App> L) : IFeedbackService
 {
     public async Task AddFeedbackAsync(Feedback feedback)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
 
-        // Anti-spam: check cooldown
-        var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        
-        if (string.IsNullOrEmpty(feedback.UserIdentifier))
-        {
-            throw new InvalidOperationException(L["Identifier_Error"]);
-        }
+        // Anti-spam validation
+        await validator.ValidateFeedbackCooldownAsync(feedback.UserIdentifier, settings.ReportCooldownMinutes);
+        validator.ValidateNoLinks(feedback.Message, "Feedback_Links_Error");
 
-        var hasRecentFeedback = await context.Feedbacks
-            .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= cooldownLimit);
-
-        if (hasRecentFeedback)
-        {
-            throw new InvalidOperationException(string.Format(L["Feedback_Cooldown_Error"], settings.ReportCooldownMinutes));
-        }
-
-        // Anti-spam: basic message validation
-        if (!string.IsNullOrEmpty(feedback.Message))
-        {
-            if (feedback.Message.Contains("http://") || feedback.Message.Contains("https://") || feedback.Message.Contains("www."))
-            {
-                throw new InvalidOperationException(L["Feedback_Links_Error"]);
-            }
-        }
-
+        await using var context = await contextFactory.CreateDbContextAsync();
         feedback.Timestamp = DateTime.UtcNow;
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();
