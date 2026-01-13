@@ -2,6 +2,7 @@
 @using WhereAreThey.Services
 @using Microsoft.Extensions.Localization
 @inject AlertService AlertService
+@inject GeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
@@ -15,6 +16,12 @@
             <RadzenTabsItem Text="@L["Create_New"]">
                 <RadzenTemplateForm Data="@newAlert" Submit="@((Alert args) => CreateAlert())">
                     <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
+                            <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
+                                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
+                        </RadzenFormField>
+
                         <div class="row">
                             <div class="col-6">
                                 <RadzenFormField Text="@L["Latitude"]" Variant="Variant.Outlined" Style="width: 100%;">
@@ -105,6 +112,7 @@
     private Alert newAlert = new Alert { RadiusKm = 5.0 };
     private string email = "";
     private List<Alert> activeAlerts = new();
+    private List<GeocodingResult> geocodingResults = new();
     private bool isSubmitting = false;
     private string? userIdentifier;
 
@@ -119,6 +127,27 @@
             
             await LoadAlerts();
             StateHasChanged();
+        }
+    }
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
+        {
+            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private void OnAddressSelected(object value)
+    {
+        if (value is string address)
+        {
+            var selected = geocodingResults.FirstOrDefault(r => r.Address == address);
+            if (selected != null)
+            {
+                newAlert.Latitude = selected.Latitude;
+                newAlert.Longitude = selected.Longitude;
+            }
         }
     }
 

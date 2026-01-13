@@ -30,6 +30,9 @@ builder.Services.AddHttpClient();
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
+builder.Services.AddHttpClient<GeocodingService>(client => {
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
     new FallbackEmailService(new IEmailService[] 

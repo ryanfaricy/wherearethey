@@ -242,6 +242,7 @@ public class LocationServiceTests
             CreateSettingsService(factory),
             CreateLocalizer());
         var emailServiceMock = new Mock<IEmailService>();
+        var geocodingServiceMock = new Mock<GeocodingService>(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
 
@@ -249,6 +250,7 @@ public class LocationServiceTests
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(GeocodingService))).Returns(geocodingServiceMock.Object);
 
         var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
@@ -317,10 +319,12 @@ public class LocationServiceTests
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
         var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(geocodingService);
         services.AddSingleton(_configurationMock.Object);
         services.AddSingleton(CreateSettingsService(factory));
         services.AddSingleton(CreateLocalizer());
@@ -383,10 +387,12 @@ public class LocationServiceTests
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
         var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(geocodingService);
         services.AddSingleton(_configurationMock.Object);
         services.AddSingleton(CreateSettingsService(factory));
         services.AddSingleton(CreateLocalizer());
@@ -455,6 +461,7 @@ public class LocationServiceTests
             CreateSettingsService(factory),
             CreateLocalizer());
         var emailServiceMock = new Mock<IEmailService>();
+        var geocodingServiceMock = new Mock<GeocodingService>(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
 
@@ -462,6 +469,7 @@ public class LocationServiceTests
         scopeFactoryMock.Setup(x => x.CreateScope()).Returns(scopeMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Returns(alertServiceMock.Object);
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(IEmailService))).Returns(emailServiceMock.Object);
+        scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(GeocodingService))).Returns(geocodingServiceMock.Object);
 
         var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
@@ -526,10 +534,12 @@ public class LocationServiceTests
         _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
         
         var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
+        var geocodingService = new GeocodingService(new HttpClient(), CreateSettingsService(factory), new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(geocodingService);
         services.AddSingleton(_configurationMock.Object);
         services.AddSingleton(CreateSettingsService(factory));
         services.AddSingleton(CreateLocalizer());

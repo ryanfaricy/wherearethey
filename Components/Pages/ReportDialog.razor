@@ -2,13 +2,27 @@
 @using WhereAreThey.Services
 @using Microsoft.Extensions.Localization
 @inject LocationService LocationService
+@inject GeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IStringLocalizer<App> L
 
 <RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
-        <RadzenText TextStyle="TextStyle.Subtitle1">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
+        <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
+                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
+        </RadzenFormField>
+
+        @if (!string.IsNullOrEmpty(approxAddress))
+        {
+            <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-info" Style="margin-top: -0.5rem;">
+                <b>@L["Approx_Address"]:</b> @approxAddress
+            </RadzenText>
+        }
+
+        <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined">
             <RadzenTextArea @bind-Value="@report.Message" Rows="3" 
@@ -32,6 +46,35 @@
 @code {
     [Parameter] public LocationReport report { get; set; } = new();
     private bool isSubmitting = false;
+    private string? approxAddress;
+    private List<GeocodingResult> geocodingResults = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        approxAddress = await GeocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
+    }
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
+        {
+            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private void OnAddressSelected(object value)
+    {
+        if (value is string address)
+        {
+            var selected = geocodingResults.FirstOrDefault(r => r.Address == address);
+            if (selected != null)
+            {
+                report.Latitude = selected.Latitude;
+                report.Longitude = selected.Longitude;
+                approxAddress = selected.Address;
+            }
+        }
+    }
 
     private async Task SubmitReport()
     {

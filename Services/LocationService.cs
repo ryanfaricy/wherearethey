@@ -89,11 +89,15 @@ public class LocationService(
             using var scope = serviceProvider.CreateScope();
             var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+            var geocodingService = scope.ServiceProvider.GetRequiredService<GeocodingService>();
             var settings = await settingsService.GetSettingsAsync();
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
             var baseUrl = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+
+            // Approximate address
+            var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
 
             // Determine local time
             string localTimeStr;
@@ -135,6 +139,7 @@ public class LocationService(
                         <h3>New report near your alert area</h3>
                         {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
                         <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
+                        {(!string.IsNullOrEmpty(address) ? $"<p><strong>Approx. Address:</strong> {address}</p>" : "")}
                         <p><strong>Time:</strong> {localTimeStr}</p>
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}

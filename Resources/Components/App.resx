@@ -460,4 +460,13 @@
   <data name="PWA_IOS_Install_Help" xml:space="preserve">
     <value>To install on iOS: tap the 'Share' button in Safari and select 'Add to Home Screen'.</value>
   </data>
+  <data name="Approx_Address" xml:space="preserve">
+    <value>Approximate Address</value>
+  </data>
+  <data name="Search_Address" xml:space="preserve">
+    <value>Search Address</value>
+  </data>
+  <data name="Search_Address_Placeholder" xml:space="preserve">
+    <value>Type an address to find coordinates...</value>
+  </data>
 </root>
