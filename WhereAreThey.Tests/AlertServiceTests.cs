@@ -8,6 +8,9 @@ using WhereAreThey.Models;
 using WhereAreThey.Services;
 using Xunit;
 
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
+
 namespace WhereAreThey.Tests;
 
 public class AlertServiceTests
@@ -16,6 +19,7 @@ public class AlertServiceTests
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
+    private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
 
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -34,9 +38,15 @@ public class AlertServiceTests
         return mock.Object;
     }
 
+    private SettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        return new SettingsService(factory);
+    }
+
     private AlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object);
+        var settingsService = CreateSettingsService(factory);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, _localizerMock.Object);
     }
 
     [Fact]
@@ -402,5 +412,42 @@ public class AlertServiceTests
             var savedAlert = await context.Alerts.FindAsync(result.Id);
             Assert.Equal(160.9, savedAlert!.RadiusKm);
         }
+    }
+
+    [Fact]
+    public async Task CreateAlert_ShouldEnforceLimit()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var userId = "limitedUser";
+        var email = "test@example.com";
+        
+        _localizerMock.Setup(l => l["Alert_Cooldown_Error"])
+            .Returns(new LocalizedString("Alert_Cooldown_Error", "You can only create {0} alert zones every {1} minutes."));
+
+        // Create 3 alerts (the default limit)
+        for (int i = 0; i < 3; i++)
+        {
+            await service.CreateAlertAsync(new Alert
+            {
+                Latitude = 40, Longitude = -74, RadiusKm = 5,
+                UserIdentifier = userId
+            }, email);
+        }
+
+        // The 4th one should fail
+        var alert4 = new Alert
+        {
+            Latitude = 40, Longitude = -74, RadiusKm = 5,
+            UserIdentifier = userId
+        };
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+            service.CreateAlertAsync(alert4, email));
+        
+        _localizerMock.Verify(l => l["Alert_Cooldown_Error"], Times.AtLeastOnce);
     }
 }

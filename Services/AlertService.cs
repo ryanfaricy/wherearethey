@@ -4,6 +4,8 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
 
 namespace WhereAreThey.Services;
 
@@ -12,13 +14,31 @@ public class AlertService(
     IDataProtectionProvider provider,
     IEmailService emailService,
     IConfiguration configuration,
-    ILogger<AlertService> logger)
+    ILogger<AlertService> logger,
+    SettingsService settingsService,
+    IStringLocalizer<App> L)
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
+        var settings = await settingsService.GetSettingsAsync();
+
+        // Anti-spam: check cooldown and count
+        var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
+        
+        if (!string.IsNullOrEmpty(alert.UserIdentifier))
+        {
+            var recentAlertCount = await context.Alerts
+                .CountAsync(a => a.UserIdentifier == alert.UserIdentifier && a.CreatedAt >= cooldownLimit);
+
+            if (recentAlertCount >= settings.AlertLimitCount)
+            {
+                throw new InvalidOperationException(string.Format(L["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
+            }
+        }
+
         if (alert.RadiusKm > 160.9)
         {
             alert.RadiusKm = 160.9;

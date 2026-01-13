@@ -67,6 +67,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             Id = 1,
             ReportExpiryHours = 6,
             ReportCooldownMinutes = 5,
+            AlertLimitCount = 3,
             MaxReportDistanceMiles = 5.0m,
             MapboxToken = null,
             DonationsEnabled = true

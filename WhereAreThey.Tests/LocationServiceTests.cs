@@ -238,7 +238,9 @@ public class LocationServiceTests
             new Mock<IDataProtectionProvider>().Object,
             new Mock<IEmailService>().Object,
             _configurationMock.Object,
-            _alertLoggerMock.Object);
+            _alertLoggerMock.Object,
+            CreateSettingsService(factory),
+            CreateLocalizer());
         var emailServiceMock = new Mock<IEmailService>();
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -314,7 +316,7 @@ public class LocationServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
@@ -380,7 +382,7 @@ public class LocationServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);
@@ -449,7 +451,9 @@ public class LocationServiceTests
             new Mock<IDataProtectionProvider>().Object,
             new Mock<IEmailService>().Object,
             _configurationMock.Object,
-            _alertLoggerMock.Object);
+            _alertLoggerMock.Object,
+            CreateSettingsService(factory),
+            CreateLocalizer());
         var emailServiceMock = new Mock<IEmailService>();
         var scopeMock = new Mock<IServiceScope>();
         var scopeFactoryMock = new Mock<IServiceScopeFactory>();
@@ -521,7 +525,7 @@ public class LocationServiceTests
         var customBaseUrl = "https://custom.example.com";
         _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
         
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object);
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
         var services = new ServiceCollection();
         services.AddSingleton(alertService);

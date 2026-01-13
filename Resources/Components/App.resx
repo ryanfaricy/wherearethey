@@ -430,4 +430,19 @@
   <data name="Theme_System" xml:space="preserve">
     <value>System</value>
   </data>
+  <data name="Alert_Cooldown_Error" xml:space="preserve">
+    <value>You can only create {0} alert zones every {1} minutes.</value>
+  </data>
+  <data name="AntiSpam_Limits_Title" xml:space="preserve">
+    <value>Anti-Spam &amp; Limits</value>
+  </data>
+  <data name="AntiSpam_Limits_Desc" xml:space="preserve">
+    <value>To ensure system reliability, we enforce basic limits:</value>
+  </data>
+  <data name="Limit_Reports" xml:space="preserve">
+    <value>Reports: One every {0} minutes.</value>
+  </data>
+  <data name="Limit_Alerts" xml:space="preserve">
+    <value>Alert Zones: Up to {0} every {1} minutes.</value>
+  </data>
 </root>

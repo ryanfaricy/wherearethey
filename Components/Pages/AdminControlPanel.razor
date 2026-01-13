@@ -188,6 +188,11 @@
                                 <RadzenText TextStyle="TextStyle.Caption">Time users must wait between submitting reports or feedback.</RadzenText>
                             </RadzenFormField>
 
+                            <RadzenFormField Text="Alert Creation Limit" Variant="Variant.Outlined">
+                                <RadzenNumeric @bind-Value="@systemSettings.AlertLimitCount" TValue="int" Min="1" Max="100" />
+                                <RadzenText TextStyle="TextStyle.Caption">Number of alerts a user can create within the cooldown period.</RadzenText>
+                            </RadzenFormField>
+
                             <RadzenFormField Text="Max Report Distance (Miles)" Variant="Variant.Outlined">
                                 <RadzenNumeric @bind-Value="@systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
                                 <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
