@@ -27,13 +27,14 @@ public class LocationService(
 
         // Anti-spam: check cooldown
         var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        var hasRecentReport = false;
-
-        if (!string.IsNullOrEmpty(report.ReporterIdentifier))
+        
+        if (string.IsNullOrEmpty(report.ReporterIdentifier))
         {
-            hasRecentReport = await context.LocationReports
-                .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= cooldownLimit);
+            throw new InvalidOperationException(L["Identifier_Error"]);
         }
+
+        var hasRecentReport = await context.LocationReports
+            .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= cooldownLimit);
 
         if (hasRecentReport)
         {

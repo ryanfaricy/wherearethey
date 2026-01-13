@@ -83,6 +83,7 @@ public class LocationServiceTests
             Longitude = -74.0060,
             ReporterLatitude = 40.7128,
             ReporterLongitude = -74.0060,
+            ReporterIdentifier = "test-user",
             Message = "Test location",
             IsEmergency = false
         };
@@ -254,7 +255,7 @@ public class LocationServiceTests
 
         var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0 };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
         var matchingAlert = new Alert { Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "test" };
 
         alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
@@ -291,7 +292,7 @@ public class LocationServiceTests
         scopeMock.Setup(x => x.ServiceProvider.GetService(typeof(AlertService))).Throws(new Exception("Mock error"));
 
         var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0 };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
 
         // Act & Assert
         var exception = await Record.ExceptionAsync(() => service.AddLocationReportAsync(report));
@@ -360,7 +361,7 @@ public class LocationServiceTests
             Longitude = -74.0,
             ReporterLatitude = 40.01,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA",
+            ReporterIdentifier = "test-user",
             Message = "Alert trigger message",
             IsEmergency = true
         };
@@ -473,7 +474,7 @@ public class LocationServiceTests
 
         var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, CreateSettingsService(factory), CreateLocalizer());
         
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0 };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
         var alertWithBadEmail = new Alert { Id = 99, Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0, EncryptedEmail = "bad-data" };
 
         alertServiceMock.Setup(x => x.GetMatchingAlertsAsync(It.IsAny<double>(), It.IsAny<double>()))
@@ -565,7 +566,7 @@ public class LocationServiceTests
             await context.SaveChangesAsync();
         }
 
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0 };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
 
         // Act
         await service.AddLocationReportAsync(report);

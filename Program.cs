@@ -85,7 +85,9 @@ builder.Services.AddSingleton<LocationService>();
 builder.Services.AddScoped<AlertService>();
 builder.Services.AddScoped<DonationService>();
 builder.Services.AddScoped<FeedbackService>();
+builder.Services.AddScoped<AdminService>();
 builder.Services.AddScoped<AppThemeService>();
+builder.Services.AddHttpContextAccessor();
 
 // Configure for high concurrency
 builder.WebHost.ConfigureKestrel(serverOptions =>
@@ -119,6 +121,14 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
+
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    await next();
+});
 
 app.UseAntiforgery();
 

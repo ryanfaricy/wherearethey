@@ -18,13 +18,14 @@ public class FeedbackService(
 
         // Anti-spam: check cooldown
         var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
-        var hasRecentFeedback = false;
-
-        if (!string.IsNullOrEmpty(feedback.UserIdentifier))
+        
+        if (string.IsNullOrEmpty(feedback.UserIdentifier))
         {
-            hasRecentFeedback = await context.Feedbacks
-                .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= cooldownLimit);
+            throw new InvalidOperationException(L["Identifier_Error"]);
         }
+
+        var hasRecentFeedback = await context.Feedbacks
+            .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= cooldownLimit);
 
         if (hasRecentFeedback)
         {

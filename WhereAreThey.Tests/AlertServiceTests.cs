@@ -62,7 +62,8 @@ public class AlertServiceTests
             Latitude = 40.7128,
             Longitude = -74.0060,
             RadiusKm = 5.0,
-            Message = "Test alert"
+            Message = "Test alert",
+            UserIdentifier = "test-user"
         };
 
         // Act
@@ -164,7 +165,7 @@ public class AlertServiceTests
         var service = CreateService(factory);
         var email = "verify@example.com";
         
-        var alert = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5 }, email);
+        var alert = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user" }, email);
         Assert.False(alert.IsVerified);
 
         string? token;
@@ -399,7 +400,8 @@ public class AlertServiceTests
             Latitude = 40.0,
             Longitude = -74.0,
             RadiusKm = 200.0,
-            Message = "Too big radius"
+            Message = "Too big radius",
+            UserIdentifier = "test-user"
         };
 
         // Act

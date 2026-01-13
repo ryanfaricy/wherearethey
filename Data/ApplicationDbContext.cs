@@ -11,6 +11,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<EmailVerification> EmailVerifications { get; set; }
     public DbSet<Donation> Donations { get; set; }
     public DbSet<Feedback> Feedbacks { get; set; }
+    public DbSet<AdminLoginAttempt> AdminLoginAttempts { get; set; }
     public DbSet<SystemSettings> Settings { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
@@ -60,6 +61,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => e.UserIdentifier);
+        });
+
+        modelBuilder.Entity<AdminLoginAttempt>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.IpAddress);
         });
 
         modelBuilder.Entity<SystemSettings>().HasData(new SystemSettings

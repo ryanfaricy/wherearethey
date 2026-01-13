@@ -451,6 +451,9 @@
   <data name="Limit_Alerts" xml:space="preserve">
     <value>Zonas de Alerta: Hasta {0} cada {1} minutos.</value>
   </data>
+  <data name="Identifier_Error" xml:space="preserve">
+    <value>Falta el identificador anónimo. Por favor, actualice la página e intente de nuevo.</value>
+  </data>
   <data name="INSTALL_APP" xml:space="preserve">
     <value>INSTALAR APP</value>
   </data>

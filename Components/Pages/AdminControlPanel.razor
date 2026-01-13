@@ -6,11 +6,13 @@
 @inject AlertService AlertService
 @inject DonationService DonationService
 @inject FeedbackService FeedbackService
+@inject AdminService AdminService
 @inject SettingsService SettingsService
 @inject IConfiguration Configuration
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IHttpContextAccessor HttpContextAccessor
 
 <PageTitle>Admin Control Panel</PageTitle>
 
@@ -65,6 +67,20 @@
                             </RadzenCard>
                         </RadzenColumn>
                     </RadzenRow>
+
+                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
+                    <RadzenDataGrid Data="@loginAttempts.Take(5)" TItem="AdminLoginAttempt">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
+                                <Template Context="attempt">
+                                    <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                                 Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="REPORTS" Icon="report_problem">
@@ -136,7 +152,7 @@
                     <RadzenDataGrid Data="@donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date" />
-                            <RadzenDataGridColumn TItem="Donation" Property="DonorName" Title="Donor" />
+                            <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" />
                             <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
                                 <Template Context="donation">
                                     @donation.Amount @donation.Currency.ToUpper()
@@ -168,6 +184,21 @@
                                 <Template Context="fb">
                                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                                   Click="@(() => DeleteFeedback(fb.Id))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
+
+                <RadzenTabsItem Text="LOGINS" Icon="security">
+                    <RadzenDataGrid Data="@loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
+                                <Template Context="attempt">
+                                    <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                                 Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
                                 </Template>
                             </RadzenDataGridColumn>
                         </Columns>
@@ -224,7 +255,14 @@
     private List<Alert> alerts = new();
     private List<Donation> donations = new();
     private List<Feedback> feedbacks = new();
+    private List<AdminLoginAttempt> loginAttempts = new();
     private SystemSettings systemSettings = new();
+    private string? clientIp;
+
+    protected override void OnInitialized()
+    {
+        clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -242,16 +280,24 @@
 
     private async Task Login()
     {
-        var adminPassword = Configuration["AdminPassword"];
-        if (!string.IsNullOrEmpty(adminPassword) && passwordInput == adminPassword)
+        try
         {
-            isAuthenticated = true;
-            await SessionStorage.SetAsync("isAdmin", true);
-            await LoadData();
+            if (await AdminService.LoginAsync(passwordInput, clientIp))
+            {
+                isAuthenticated = true;
+                await SessionStorage.SetAsync("isAdmin", true);
+                await LoadData();
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Invalid password");
+                await LoadData(); // Refresh login attempts list
+            }
         }
-        else
+        catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Invalid password");
+            NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
+            await LoadData();
         }
     }
 
@@ -277,6 +323,7 @@
         donations = await DonationService.GetAllDonationsAsync();
         feedbacks = await FeedbackService.GetAllFeedbackAsync();
         systemSettings = await SettingsService.GetSettingsAsync();
+        loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
     }
 
     private async Task SaveSettings()

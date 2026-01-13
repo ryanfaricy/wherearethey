@@ -28,15 +28,17 @@ public class AlertService(
         // Anti-spam: check cooldown and count
         var cooldownLimit = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
         
-        if (!string.IsNullOrEmpty(alert.UserIdentifier))
+        if (string.IsNullOrEmpty(alert.UserIdentifier))
         {
-            var recentAlertCount = await context.Alerts
-                .CountAsync(a => a.UserIdentifier == alert.UserIdentifier && a.CreatedAt >= cooldownLimit);
+            throw new InvalidOperationException(L["Identifier_Error"]);
+        }
 
-            if (recentAlertCount >= settings.AlertLimitCount)
-            {
-                throw new InvalidOperationException(string.Format(L["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
-            }
+        var recentAlertCount = await context.Alerts
+            .CountAsync(a => a.UserIdentifier == alert.UserIdentifier && a.CreatedAt >= cooldownLimit);
+
+        if (recentAlertCount >= settings.AlertLimitCount)
+        {
+            throw new InvalidOperationException(string.Format(L["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
         }
 
         if (alert.RadiusKm > 160.9)

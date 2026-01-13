@@ -451,6 +451,9 @@
   <data name="Limit_Alerts" xml:space="preserve">
     <value>Alert Zones: Up to {0} every {1} minutes.</value>
   </data>
+  <data name="Identifier_Error" xml:space="preserve">
+    <value>Anonymous identifier is missing. Please refresh the page and try again.</value>
+  </data>
   <data name="INSTALL_APP" xml:space="preserve">
     <value>INSTALL APP</value>
   </data>
