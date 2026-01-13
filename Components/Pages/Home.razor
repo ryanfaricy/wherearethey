@@ -17,11 +17,11 @@
     <!-- Toolbar -->
     <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
         <RadzenButton Text="REPORT" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
-        <RadzenButton Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Text="ALERTS" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="SETTINGS" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="HELP" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="REFRESH" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
     </div>
 
     <!-- Map Container -->
@@ -175,7 +175,7 @@
     {
         var result = await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
             new Dictionary<string, object> { { "HoursBack", hoursBack } },
-            new DialogOptions { Width = "300px" });
+            new DialogOptions { Width = "400px" });
 
         if (result != null)
         {
@@ -188,7 +188,7 @@
     {
         await DialogService.OpenAsync<HelpDialog>("HELP",
             null,
-            new DialogOptions { Width = "350px" });
+            new DialogOptions { Width = "500px" });
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();
@@ -227,7 +227,7 @@
 
         var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS",
             parameters,
-            new DialogOptions { Width = "350px" });
+            new DialogOptions { Width = "500px" });
 
         await LoadUserAlerts();
 
@@ -241,7 +241,7 @@
     {
         await DialogService.OpenAsync<DonateDialog>("DONATE",
             null,
-            new DialogOptions { Width = "350px" });
+            new DialogOptions { Width = "500px" });
     }
 
     private async Task OnReportClick()
@@ -301,7 +301,7 @@
                     { "Reports", nearbyReports },
                     { "Alerts", nearbyAlerts }
                 },
-                new DialogOptions { Width = "350px" });
+                new DialogOptions { Width = "500px" });
 
             if (result == true) // If an alert was deleted
             {
@@ -364,7 +364,7 @@
     {
         var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
             new Dictionary<string, object> { { "report", report } },
-            new DialogOptions { Width = "350px", Resizable = false, Draggable = true });
+            new DialogOptions { Width = "500px", Resizable = false, Draggable = true });
 
         if (result == true)
         {

@@ -75,3 +75,9 @@ h1:focus {
 [data-theme="dark"] .report-normal {
     background-color: rgba(10, 132, 255, 0.2) !important;
 }
+
+@media (max-width: 768px) {
+    .responsive-button-text .rz-button-text {
+        display: none;
+    }
+}
