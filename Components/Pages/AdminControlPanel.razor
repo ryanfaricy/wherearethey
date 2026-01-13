@@ -198,6 +198,11 @@
                                 <RadzenText TextStyle="TextStyle.Caption">Required for map thumbnails in alert emails. Leave empty to disable thumbnails.</RadzenText>
                             </RadzenFormField>
 
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                <RadzenSwitch @bind-Value="@systemSettings.DonationsEnabled" />
+                                <RadzenLabel Text="Enable Public Donations" />
+                            </RadzenStack>
+
                             <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
                         </RadzenStack>
                     </RadzenCard>

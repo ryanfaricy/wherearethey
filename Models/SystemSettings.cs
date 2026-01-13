@@ -7,4 +7,5 @@ public class SystemSettings
     public int ReportCooldownMinutes { get; set; } = 5;
     public decimal MaxReportDistanceMiles { get; set; } = 5.0m;
     public string? MapboxToken { get; set; }
+    public bool DonationsEnabled { get; set; } = true;
 }

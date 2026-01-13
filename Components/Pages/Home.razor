@@ -7,6 +7,7 @@
 @inject LocationService LocationService
 @inject AlertService AlertService
 @inject NavigationManager NavigationManager
+@inject SettingsService SettingsService
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -20,7 +21,10 @@
     <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2 main-toolbar" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
         <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" />
         <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        @if (systemSettings.DonationsEnabled)
+        {
+            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        }
         <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
@@ -47,6 +51,7 @@
 @code {
     private List<LocationReport> reports = new();
     private List<Alert> userAlerts = new();
+    private SystemSettings systemSettings = new();
     private bool mapInitialized = false;
     private bool isGettingLocation = false;
     private string? userIdentifier;
@@ -54,6 +59,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        systemSettings = await SettingsService.GetSettingsAsync();
         await LoadReports();
         LocationService.OnReportAdded += HandleReportAdded;
     }

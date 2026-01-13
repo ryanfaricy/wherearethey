@@ -199,10 +199,17 @@ public class AntiSpamTests
         { 
             ReportExpiryHours = 24, 
             ReportCooldownMinutes = 10,
-            MaxReportDistanceMiles = 50.0m
+            MaxReportDistanceMiles = 50.0m,
+            DonationsEnabled = false
         };
         await settingsService.UpdateSettingsAsync(customSettings);
 
+        // Act
+        var retrieved = await settingsService.GetSettingsAsync();
+
+        // Assert
+        Assert.False(retrieved.DonationsEnabled);
+        
         using (var context = new ApplicationDbContext(options))
         {
             // Report from 12 hours ago - should now be included
