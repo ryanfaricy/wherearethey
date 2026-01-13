@@ -5,13 +5,61 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class LocationService(IDbContextFactory<ApplicationDbContext> contextFactory, IServiceProvider serviceProvider, ILogger<LocationService> logger, IConfiguration configuration)
+public class LocationService(
+    IDbContextFactory<ApplicationDbContext> contextFactory, 
+    IServiceProvider serviceProvider, 
+    ILogger<LocationService> logger, 
+    IConfiguration configuration)
 {
     public event Action? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
+
+        // Anti-spam: check cooldown (5 minutes)
+        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+        bool hasRecentReport = false;
+
+        if (!string.IsNullOrEmpty(report.ReporterIdentifier))
+        {
+            hasRecentReport = await context.LocationReports
+                .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= fiveMinutesAgo);
+        }
+
+        if (hasRecentReport)
+        {
+            throw new InvalidOperationException("You can only make one report every five minutes.");
+        }
+
+        // Anti-spam: basic message validation
+        if (!string.IsNullOrEmpty(report.Message))
+        {
+            if (report.Message.Contains("http://") || report.Message.Contains("https://") || report.Message.Contains("www."))
+            {
+                throw new InvalidOperationException("Links are not allowed in reports to prevent spam.");
+            }
+        }
+
+        // Anti-spam: check distance (5 miles / ~8.05 km)
+        if (report.ReporterLatitude.HasValue && report.ReporterLongitude.HasValue)
+        {
+            var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
+                report.ReporterLatitude.Value, report.ReporterLongitude.Value);
+
+            if (distance > 8.05) // 5 miles ≈ 8.04672 km
+            {
+                throw new InvalidOperationException("You can only make a report within five miles of your location.");
+            }
+        }
+        else
+        {
+            // We require reporter location for non-emergency reports
+            // Emergency reports might be allowed without location if it's a critical failure, 
+            // but the rule says "a user can only make a report within five miles"
+            throw new InvalidOperationException("Unable to verify your current location. Please ensure GPS is enabled.");
+        }
+
         report.Timestamp = DateTime.UtcNow;
         context.LocationReports.Add(report);
         await context.SaveChangesAsync();
@@ -70,7 +118,9 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
     public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var cutoff = DateTime.UtcNow.AddHours(-hours);
+        // Limit to 6 hours as per requirement
+        var actualHours = Math.Min(hours, 6);
+        var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         return await context.LocationReports
             .Where(r => r.Timestamp >= cutoff)
             .OrderByDescending(r => r.Timestamp)
@@ -80,6 +130,9 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
+        // Limit to 6 hours as per requirement
+        var cutoff = DateTime.UtcNow.AddHours(-6);
+        
         // Simple bounding box calculation (approximation)
         var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km
         var lonDelta = radiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));
@@ -90,7 +143,8 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
         var maxLon = longitude + lonDelta;
 
         var reports = await context.LocationReports
-            .Where(r => r.Latitude >= minLat && r.Latitude <= maxLat &&
+            .Where(r => r.Timestamp >= cutoff &&
+                       r.Latitude >= minLat && r.Latitude <= maxLat &&
                        r.Longitude >= minLon && r.Longitude <= maxLon)
             .ToListAsync();
 

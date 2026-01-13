@@ -254,7 +254,10 @@
             var report = new LocationReport
             {
                 Latitude = position.Coords.Latitude,
-                Longitude = position.Coords.Longitude
+                Longitude = position.Coords.Longitude,
+                ReporterIdentifier = userIdentifier,
+                ReporterLatitude = position.Coords.Latitude,
+                ReporterLongitude = position.Coords.Longitude
             };
             
             await ShowReportDialog(report);
@@ -316,12 +319,31 @@
     public async Task OnMapContextMenu(double lat, double lng)
     {
         // Long-press/right click reveals create report
-        var report = new LocationReport
+        // We need user's current location to verify distance
+        isGettingLocation = true;
+        StateHasChanged();
+        try
         {
-            Latitude = lat,
-            Longitude = lng
-        };
-        await ShowReportDialog(report);
+            var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+            var report = new LocationReport
+            {
+                Latitude = lat,
+                Longitude = lng,
+                ReporterIdentifier = userIdentifier,
+                ReporterLatitude = position.Coords.Latitude,
+                ReporterLongitude = position.Coords.Longitude
+            };
+            await ShowReportDialog(report);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to get your location", "We need your location to verify the report.");
+        }
+        finally
+        {
+            isGettingLocation = false;
+            StateHasChanged();
+        }
     }
 
     [JSInvokable]

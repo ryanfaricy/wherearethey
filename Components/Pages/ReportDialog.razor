@@ -36,9 +36,11 @@
         isSubmitting = true;
         try
         {
-            if (string.IsNullOrEmpty(report.ReporterIdentifier))
+            // Basic message validation
+            if (!string.IsNullOrEmpty(report.Message) && report.Message.Length > 500)
             {
-                report.ReporterIdentifier = Guid.NewGuid().ToString();
+                NotificationService.Notify(NotificationSeverity.Warning, "Message too long", "Please limit message to 500 characters.");
+                return;
             }
 
             await LocationService.AddLocationReportAsync(report);
