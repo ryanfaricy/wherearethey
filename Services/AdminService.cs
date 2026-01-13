@@ -14,6 +14,7 @@ public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory
         // Check for brute force: more than 5 failed attempts from this IP in the last 15 minutes
         var lockoutThreshold = DateTime.UtcNow.AddMinutes(-15);
         var failedAttempts = await context.AdminLoginAttempts
+            .AsNoTracking()
             .CountAsync(a => a.IpAddress == ipAddress && a.Timestamp >= lockoutThreshold && !a.IsSuccessful);
 
         if (failedAttempts >= 5)
@@ -46,6 +47,7 @@ public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.AdminLoginAttempts
+            .AsNoTracking()
             .OrderByDescending(a => a.Timestamp)
             .Take(count)
             .ToListAsync();

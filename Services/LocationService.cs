@@ -166,7 +166,9 @@ public class LocationService(
     public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.LocationReports.FirstOrDefaultAsync(r => r.ExternalId == externalId);
+        return await context.LocationReports
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.ExternalId == externalId);
     }
 
     public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
@@ -178,6 +180,7 @@ public class LocationService(
         var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         return await context.LocationReports
+            .AsNoTracking()
             .Where(r => r.Timestamp >= cutoff)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
@@ -201,6 +204,7 @@ public class LocationService(
         var maxLon = longitude + lonDelta;
 
         var reports = await context.LocationReports
+            .AsNoTracking()
             .Where(r => r.Timestamp >= cutoff &&
                        r.Latitude >= minLat && r.Latitude <= maxLat &&
                        r.Longitude >= minLon && r.Longitude <= maxLon)
@@ -216,6 +220,7 @@ public class LocationService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.LocationReports
+            .AsNoTracking()
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
     }

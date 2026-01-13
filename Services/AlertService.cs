@@ -168,13 +168,16 @@ public class AlertService(
     public async Task<Alert?> GetAlertByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.Alerts.FirstOrDefaultAsync(a => a.ExternalId == externalId);
+        return await context.Alerts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.ExternalId == externalId);
     }
 
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var query = context.Alerts
+            .AsNoTracking()
             .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
 
         if (onlyVerified)
@@ -203,11 +206,26 @@ public class AlertService(
 
     public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
     {
-        // For performance, we could use a bounding box first if we had thousands of alerts
-        // But for now, we'll fetch active ones and filter in memory as the number of active alerts is likely manageable
-        var activeAlerts = await GetActiveAlertsAsync(onlyVerified: true);
-        
-        return activeAlerts
+        // For performance, we use a bounding box first.
+        // The maximum radius for any alert is 160.9 km (100 miles).
+        const double maxRadiusKm = 160.9;
+        var latDelta = maxRadiusKm / 111.0;
+        var lonDelta = maxRadiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));
+
+        var minLat = latitude - latDelta;
+        var maxLat = latitude + latDelta;
+        var minLon = longitude - lonDelta;
+        var maxLon = longitude + lonDelta;
+
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var candidateAlerts = await context.Alerts
+            .AsNoTracking()
+            .Where(a => a.IsActive && a.IsVerified && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
+            .Where(a => a.Latitude >= minLat && a.Latitude <= maxLat &&
+                       a.Longitude >= minLon && a.Longitude <= maxLon)
+            .ToListAsync();
+            
+        return candidateAlerts
             .Where(a => GeoUtils.CalculateDistance(latitude, longitude, a.Latitude, a.Longitude) <= a.RadiusKm)
             .ToList();
     }
@@ -217,6 +235,7 @@ public class AlertService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Alerts
+            .AsNoTracking()
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
     }

@@ -1,53 +1,33 @@
-# WhereAreThey - Emergency Location Tracking System
+# AreTheyHere - Anonymous Emergency Incident Tracking
 
-A critical, mobile-first Blazor Server application for anonymous location reporting and emergency alerts. Built with .NET 10, Radzen Blazor Components, and Entity Framework Core.
+A production-ready, mobile-first Blazor Server application for anonymous location reporting and emergency alerts. Built with .NET 10, Radzen Blazor Components, and Entity Framework Core.
 
-## 🚨 Mission-Critical Features
+## 🚨 Core Features
 
-- **ARE THEY HERE?**: Instant heat map visualization of recent reports
-- **THEY ARE HERE!**: One-tap anonymous location reporting
-- **Distance-Based Alerts**: Sign up with encrypted email for location-specific notifications
-- **Donation Integration**: Support the service through simplified Stripe payments
-- **Mobile-First Design**: Radical simple UI optimized for phone use in emergencies
-- **High Concurrency**: Configured to handle 10,000+ simultaneous connections
-- **Data Privacy**: Emails are stored encrypted at rest using AES-256 (via Data Protection API)
+- **Anonymous Reporting**: One-tap reporting of incidents without user accounts.
+- **Live Heat Map**: Visual distribution of recent reports with color-coded urgency.
+- **Smart Alerts**: Subscription-based email alerts for specific geographic zones (encrypted at rest).
+- **Security-First**: GUID-based External IDs for all public links to prevent enumeration.
+- **Anti-Spam**: Intelligent cooldowns, distance verification, and admin brute-force protection.
+- **PWA Ready**: "Add to Home Screen" support for a native-like experience.
+- **Geocoding**: Automatic translation of coordinates to approximate addresses.
+- **Admin Control Panel**: Comprehensive management of reports, alerts, and system settings.
+- **Donation Integration**: Support the service through secure Square payments.
 
-## 🏗️ Architecture
-
-### Technology Stack
-- **Framework**: .NET 10.0 (Blazor Server with Interactive rendering)
-- **UI Components**: Radzen Blazor Components 5.7.6 (Material Design)
-- **Database**: PostgreSQL with Entity Framework Core 9.0
-- **Concurrency**: IDbContextFactory for high-traffic stability
-- **Payment Processing**: Stripe.net 47.4.0
-- **Testing**: xUnit with EF Core InMemory provider
-- **Deployment**: Docker-ready (Railway optimized)
-
-### Project Structure
-```
-WhereAreThey/
-├── Components/
-│   ├── Layout/         # MainLayout, NavMenu (Radzen-based)
-│   └── Pages/          # Home, Report, HeatMap, Alerts, Donate
-├── Data/               # ApplicationDbContext
-├── Models/             # LocationReport, Alert, Donation
-├── Services/           # LocationService, AlertService, DonationService
-└── wwwroot/            # Static assets and JavaScript
-
-WhereAreThey.Tests/
-├── LocationServiceTests.cs
-├── AlertServiceTests.cs
-├── GeoUtilsTests.cs
-├── DonationServiceTests.cs
-├── AppThemeServiceTests.cs
-└── SmtpEmailServiceTests.cs
-```
+## 🏗️ Technology Stack
+- **Framework**: .NET 10.0 (Blazor Server)
+- **UI Components**: Radzen Blazor Components (Material Design)
+- **Database**: PostgreSQL with EF Core 9.0
+- **Payments**: Square .NET SDK
+- **Maps**: Leaflet & Mapbox API
+- **Concurrency**: `IDbContextFactory` for high-traffic stability (10,000+ connections)
+- **Testing**: xUnit with 60+ comprehensive tests
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- .NET 10.0 SDK or later
-- JetBrains Rider (or Visual Studio/VS Code)
+- .NET 10.0 SDK
+- PostgreSQL (or use the provided Docker Compose)
 
 ### Installation
 
@@ -57,143 +37,47 @@ WhereAreThey.Tests/
    cd wherearethey
    ```
 
-2. **Restore dependencies**
+2. **Run with Docker (Recommended)**
    ```bash
-   dotnet restore
+   docker-compose up -d
    ```
+   The app will be available at `http://localhost:8080`.
 
-3. **Configure Secrets (Optional)**
-   
-   It is recommended to use .NET User Secrets for sensitive information:
-   ```bash
-   dotnet user-secrets set "Stripe:PublishableKey" "pk_test_YOUR_KEY"
-   dotnet user-secrets set "Stripe:SecretKey" "sk_test_YOUR_KEY"
-   dotnet user-secrets set "Email:GraphTenantId" "your-tenant-id"
-   dotnet user-secrets set "Email:GraphClientId" "your-client-id"
-   dotnet user-secrets set "Email:GraphClientSecret" "your-client-secret"
-   dotnet user-secrets set "Email:GraphSenderUserId" "your-sender-user-id"
-   dotnet user-secrets set "Email:FromEmail" "alert@aretheyhere.com"
-   ```
+3. **Configure Secrets**
+   Set the following environment variables or use .NET User Secrets:
+   - `Square:ApplicationId`, `Square:AccessToken`, `Square:LocationId`, `Square:Environment`
+   - `Email:GraphClientId`, `Email:GraphTenantId`, `Email:GraphClientSecret`
+   - `AdminPassword`: The password for the Admin Control Panel.
+   - `BaseUrl`: The public URL of your deployment.
 
-   *Note: The application uses a multi-provider fallback system (Microsoft Graph and SMTP) to ensure critical alerts are delivered even if one provider fails or hits its limits.*
+## 🔒 Security & Privacy
 
-4. **Run the application**
-   ```bash
-   dotnet run
-   ```
-   
-   The application will be available at `https://localhost:5001` or `http://localhost:5000`
+- **No PII**: We do not collect names or IP addresses for regular users.
+- **Encryption**: Alert emails are encrypted at rest using the AES-256 Data Protection API.
+- **Anonymous Identifiers**: We use client-side generated GUIDs for rate limiting without tracking users.
+- **Brute-Force Protection**: Admin login attempts are tracked by IP and locked out after repeated failures.
 
-5. **Run tests**
-   ```bash
-   cd ../WhereAreThey.Tests
-   dotnet test
-   ```
+## ⚡ Performance
 
-## 📱 Features
-
-### 1. THEY ARE HERE! (Location Reporting)
-- Radical simple submission of GPS coordinates
-- Optional emergency flag for critical situations
-- Automatic timestamp recording
-- Uses browser geolocation API
-
-### 2. ARE THEY HERE? (Heat Map Visualization)
-- View all reports from the last 24 hours (configurable)
-- Mobile-first list view of recent reports
-- See geographic distribution of reports
-- Color-coded urgency indicators
-
-### 3. Distance-Based Alerts
-- Create alerts with your email (encrypted at rest)
-- Set radius (in kilometers) for monitoring
-- Optional expiration dates
-- Masked email display for privacy
-
-### 4. Donation System
-- Stripe integration for secure payments
-- Preset donation amounts ($5, $10, $25, $50)
-- Optional donor information
-- Recent donations display
-
-## 🔒 Security Features
-
-- **Anonymous Reporting**: No authentication required for reporting
-- **SQL Injection Prevention**: Parameterized queries via EF Core
-- **XSS Protection**: Blazor's built-in sanitization
-- **HTTPS Enforcement**: Configured for production environments
-- **Dependency Vulnerability Management**: Updated to secure package versions
-
-## ⚡ Performance & Scalability
-
-- **High Concurrency Configuration**: Handles 10,000+ concurrent connections
-- **PostgreSQL**: Production-grade database for robust data handling
-- **DbContextFactory**: Efficiently manages database operations in Blazor Server
-- **Server-Side Rendering**: Blazor Server for efficient updates
-- **Indexed Database Queries**: Optimized for fast lookups
-- **Geographic Distance Calculations**: Haversine formula for accurate radius searches
-
-## 🐳 Docker & Cloud Deployment
-
-The application is fully dockerized for both local development and cloud deployment (e.g., Railway).
-
-### ⚡ Quick Start (Docker Compose)
-The fastest way to get everything running locally with PostgreSQL:
-
-1.  **Start the stack**:
-    ```bash
-    docker-compose up -d
-    ```
-    This starts the application at `http://localhost:8080` and a PostgreSQL database at `localhost:5432`.
-
-2.  **Configure Secrets (Optional)**:
-    Copy `.env.example` to `.env` and fill in your Stripe and SMTP keys. Docker Compose will automatically pick them up.
-    ```bash
-    cp .env.example .env
-    ```
-
-### 💻 Local Development (Hybrid)
-If you want to debug in your IDE while using the Docker-managed database:
-
-1.  **Start only the database**:
-    ```bash
-    docker-compose up -d db
-    ```
-2.  **Run the app normally**:
-    ```bash
-    dotnet run
-    ```
-    The app will connect to the PostgreSQL instance running in Docker because the port `5432` is exposed to your host.
-
-### 🚆 Deployment to Railway
-Railway will automatically detect the `Dockerfile` and deploy the application.
-
-1.  **Add PostgreSQL**: Add the PostgreSQL plugin to your Railway project.
-2.  **Configuration**:
-    *   `DATABASE_URL`: Automatically provided by Railway. The application is configured to prioritize this over local connection strings and handles `postgres://` URI parsing automatically.
-    *   `PORT`: Automatically handled by Railway.
-    *   **Secrets**: Add your `Stripe__SecretKey`, `Email__SmtpPass`, etc., as environment variables in the Railway dashboard.
+- **Optimized Queries**: All read-only operations use `AsNoTracking()`.
+- **Bounding Box Filters**: Geographic queries use database-level bounding box filters before memory-intensive distance calculations.
+- **Response Compression**: Gzip/Brotli compression enabled for faster load times.
+- **Background Processing**: Alert notifications are processed in background tasks to keep the UI responsive.
 
 ## 🧪 Testing
 
-The project includes comprehensive unit tests:
-
+The project includes 60+ unit and integration tests covering all critical paths.
 ```bash
 cd WhereAreThey.Tests
-dotnet test --verbosity normal
+dotnet test
 ```
 
-### Test Coverage
-- ✅ Location report creation and time-range filtering (8 tests)
-- ✅ Geographic radius queries and accuracy (3 tests)
-- ✅ Alert creation, management, and expiration (7 tests)
-- ✅ Cross-user alert integration (User A reports, User B alerted)
-- ✅ Donation recording and status updates (3 tests)
-- ✅ Theme state and event management (3 tests)
-- ✅ Email service multi-provider fallback and HTTP APIs (12 tests)
-- ✅ Radius limit enforcement (160.9km)
-- ✅ Encrypted email at rest verification
-- ✅ 100% Pass Rate (42 tests total)
+## 📄 License
+
+This project is open source and available for emergency response and humanitarian purposes.
+
+---
+*Built with care for life-critical situations. People's safety depends on reliability.*
 
 ## 🛠️ Development
 

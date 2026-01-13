@@ -18,7 +18,9 @@ public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFact
         }
 
         await using var context = await contextFactory.CreateDbContextAsync();
-        _cachedSettings = await context.Settings.FirstOrDefaultAsync() ?? new SystemSettings();
+        _cachedSettings = await context.Settings
+            .AsNoTracking()
+            .FirstOrDefaultAsync() ?? new SystemSettings();
         _lastUpdate = DateTime.UtcNow;
 
         return _cachedSettings;

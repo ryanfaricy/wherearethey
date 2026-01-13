@@ -60,6 +60,7 @@ public class DonationService(IDbContextFactory<ApplicationDbContext> contextFact
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Donations
+            .AsNoTracking()
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
     }

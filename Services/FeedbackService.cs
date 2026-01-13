@@ -50,6 +50,7 @@ public class FeedbackService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Feedbacks
+            .AsNoTracking()
             .OrderByDescending(f => f.Timestamp)
             .ToListAsync();
     }
