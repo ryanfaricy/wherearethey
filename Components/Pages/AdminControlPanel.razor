@@ -5,6 +5,7 @@
 @inject LocationService LocationService
 @inject AlertService AlertService
 @inject DonationService DonationService
+@inject FeedbackService FeedbackService
 @inject IConfiguration Configuration
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService
@@ -38,22 +39,28 @@
             <Tabs>
                 <RadzenTabsItem Text="OVERVIEW" Icon="dashboard">
                     <RadzenRow>
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
                                 <RadzenText TextStyle="TextStyle.H3">@reports.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
                                 <RadzenText TextStyle="TextStyle.H3">@alerts.Count(a => a.IsActive)</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
+                        <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
                                 <RadzenText TextStyle="TextStyle.H3">@donations.Count(d => d.Status == "succeeded")</RadzenText>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="3">
+                            <RadzenCard Class="rz-variant-flat rz-background-color-secondary-lighter">
+                                <RadzenText TextStyle="TextStyle.Subtitle2">Feedback Items</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@feedbacks.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                     </RadzenRow>
@@ -143,6 +150,28 @@
                         </Columns>
                     </RadzenDataGrid>
                 </RadzenTabsItem>
+
+                <RadzenTabsItem Text="FEEDBACK" Icon="chat">
+                    <RadzenDataGrid Data="@feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type" Width="100px">
+                                <Template Context="fb">
+                                    <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                            <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User ID" />
+                            <RadzenDataGridColumn TItem="Feedback" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                                <Template Context="fb">
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                  Click="@(() => DeleteFeedback(fb.Id))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>
     }
@@ -154,6 +183,7 @@
     private List<LocationReport> reports = new();
     private List<Alert> alerts = new();
     private List<Donation> donations = new();
+    private List<Feedback> feedbacks = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -204,6 +234,7 @@
         reports = await LocationService.GetAllReportsAsync();
         alerts = await AlertService.GetAllAlertsAdminAsync();
         donations = await DonationService.GetAllDonationsAsync();
+        feedbacks = await FeedbackService.GetAllFeedbackAsync();
     }
 
     private async Task DeleteReport(int id)
@@ -229,6 +260,17 @@
             await AlertService.DeleteAlertAsync(id);
             await LoadData();
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+        }
+    }
+    private async Task DeleteFeedback(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this feedback?", "Delete Feedback", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            await FeedbackService.DeleteFeedbackAsync(id);
+            await LoadData();
         }
     }
 }

@@ -72,6 +72,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 builder.Services.AddSingleton<LocationService>();
 builder.Services.AddScoped<AlertService>();
 builder.Services.AddScoped<DonationService>();
+builder.Services.AddScoped<FeedbackService>();
 builder.Services.AddScoped<AppThemeService>();
 
 // Configure for high concurrency

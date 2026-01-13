@@ -1,0 +1,77 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@inject FeedbackService FeedbackService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<RadzenStack Gap="1.5rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Feedback & Support</RadzenText>
+    
+    <RadzenText TextStyle="TextStyle.Body2">
+        Found a bug or have a suggestion for a new feature? Let us know below.
+    </RadzenText>
+
+    <RadzenTemplateForm Data="@feedback" Submit="@((Feedback args) => SubmitFeedback())">
+        <RadzenStack Gap="1rem">
+            <RadzenFormField Text="Type" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenDropDown @bind-Value="@feedback.Type" Data="@feedbackTypes" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="Message" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenTextArea @bind-Value="@feedback.Message" Style="width: 100%; height: 150px;" 
+                                Placeholder="Describe the bug or feature request in detail..." />
+            </RadzenFormField>
+
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SUBMIT" 
+                          Icon="send" ButtonStyle="ButtonStyle.Primary" 
+                          Style="width: 100%;" Disabled="@isSubmitting" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private Feedback feedback = new Feedback();
+    private List<string> feedbackTypes = new() { "Bug", "Feature" };
+    private bool isSubmitting = false;
+    private string? userIdentifier;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitFeedback()
+    {
+        if (string.IsNullOrWhiteSpace(feedback.Message))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Message is required");
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            feedback.UserIdentifier = userIdentifier;
+            await FeedbackService.AddFeedbackAsync(feedback);
+            NotificationService.Notify(NotificationSeverity.Success, "Thank you for your feedback!");
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to submit feedback", ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

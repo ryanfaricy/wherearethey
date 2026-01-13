@@ -68,7 +68,23 @@
         AreTheyHere is a privacy-first, anonymous tool. People's lives depend on accurate and timely reporting.
     </RadzenText>
 
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-2">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-2">
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+            <RadzenButton Text="PRIVACY" Click="@ShowPrivacyPolicy" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
+            <RadzenButton Text="FEEDBACK" Click="@ShowFeedback" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
+        </RadzenStack>
         <RadzenButton Text="GOT IT" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
+
+@code {
+    private async Task ShowPrivacyPolicy()
+    {
+        await DialogService.OpenAsync<PrivacyPolicyDialog>("PRIVACY POLICY", null, new DialogOptions { Width = "500px" });
+    }
+
+    private async Task ShowFeedback()
+    {
+        await DialogService.OpenAsync<FeedbackDialog>("FEEDBACK", null, new DialogOptions { Width = "500px" });
+    }
+}
