@@ -370,13 +370,17 @@
     }
 
     [JSInvokable]
-    public async Task OnMapClick(double lat, double lng)
+    public async Task OnMapClick(double lat, double lng, bool force = false)
     {
-        var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
-        if (zoom >= 15) return;
+        if (!force)
+        {
+            var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
+            if (zoom >= 15) return;
+        }
 
-        // Find reports within a certain radius (e.g. 5km)
-        var searchRadiusKm = 5.0; 
+        // Find reports within a certain radius
+        // Use a smaller radius if force-clicked (marker) to only show items at that spot
+        var searchRadiusKm = force ? 0.05 : 5.0; 
 
         var nearbyReports = reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
@@ -389,7 +393,7 @@
 
         if (nearbyReports.Any() || nearbyAlerts.Any())
         {
-            // Tapping on a blob reveals area details
+            // Tapping on a blob or marker reveals area details
             var result = await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
                 new Dictionary<string, object> 
                 { 
@@ -403,9 +407,9 @@
                 await LoadUserAlerts();
             }
         }
-        else
+        else if (!force)
         {
-            // Tapping on a non-blob area opens create alert
+            // Tapping on a non-blob area opens create alert (only for map clicks, not marker clicks)
             await ShowAlertsDialog(lat, lng);
         }
     }
