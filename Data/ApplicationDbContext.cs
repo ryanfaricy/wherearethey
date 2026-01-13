@@ -63,7 +63,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             Id = 1,
             ReportExpiryHours = 6,
             ReportCooldownMinutes = 5,
-            MaxReportDistanceMiles = 5.0m
+            MaxReportDistanceMiles = 5.0m,
+            MapboxToken = null
         });
     }
 }

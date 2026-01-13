@@ -38,6 +38,7 @@ public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFact
             existing.ReportExpiryHours = settings.ReportExpiryHours;
             existing.ReportCooldownMinutes = settings.ReportCooldownMinutes;
             existing.MaxReportDistanceMiles = settings.MaxReportDistanceMiles;
+            existing.MapboxToken = settings.MapboxToken;
         }
 
         await context.SaveChangesAsync();

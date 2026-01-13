@@ -193,6 +193,11 @@
                                 <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
                             </RadzenFormField>
 
+                            <RadzenFormField Text="Mapbox Token (Optional)" Variant="Variant.Outlined">
+                                <RadzenTextBox @bind-Value="@systemSettings.MapboxToken" />
+                                <RadzenText TextStyle="TextStyle.Caption">Required for map thumbnails in alert emails. Leave empty to disable thumbnails.</RadzenText>
+                            </RadzenFormField>
+
                             <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
                         </RadzenStack>
                     </RadzenCard>

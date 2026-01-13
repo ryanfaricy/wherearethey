@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
@@ -18,6 +19,9 @@ builder.Services.AddDataProtection()
 
 // Add Radzen services
 builder.Services.AddRadzenComponents();
+
+// Add HttpClient for proxy and other services
+builder.Services.AddHttpClient();
 
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
@@ -114,5 +118,29 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
+
+app.MapGet("/api/map/proxy", async (double lat, double lng, SettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
+{
+    var httpClient = httpClientFactory.CreateClient();
+    var settings = await settingsService.GetSettingsAsync();
+    if (string.IsNullOrEmpty(settings.MapboxToken)) return Results.NotFound();
+
+    var latStr = lat.ToString(CultureInfo.InvariantCulture);
+    var lngStr = lng.ToString(CultureInfo.InvariantCulture);
+    var mapboxUrl = $"https://api.mapbox.com/styles/v1/mapbox/streets-v11/static/pin-s-l+f44336({lngStr},{latStr})/{lngStr},{latStr},14,0/450x300?access_token={settings.MapboxToken}";
+
+    var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);
+    
+    // Use the BaseUrl as Referer as requested
+    var referer = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+    request.Headers.Referrer = new Uri(referer);
+
+    var response = await httpClient.SendAsync(request);
+    if (!response.IsSuccessStatusCode) return Results.StatusCode((int)response.StatusCode);
+
+    var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/png";
+    var stream = await response.Content.ReadAsStreamAsync();
+    return Results.Stream(stream, contentType);
+});
 
 app.Run();

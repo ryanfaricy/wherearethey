@@ -1,4 +1,6 @@
 using System.Globalization;
+using GeoTimeZone;
+using TimeZoneConverter;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -83,10 +85,43 @@ public class LocationService(
             using var scope = serviceProvider.CreateScope();
             var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
             var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+            var settings = await settingsService.GetSettingsAsync();
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
             var baseUrl = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+
+            // Determine local time
+            string localTimeStr;
+            try
+            {
+                var tzResult = TimeZoneLookup.GetTimeZone(report.Latitude, report.Longitude);
+                var tzInfo = TZConvert.GetTimeZoneInfo(tzResult.Result);
+                
+                // Ensure we have a UTC DateTime before conversion to avoid Kind-related issues
+                var utcTime = report.Timestamp.Kind == DateTimeKind.Utc 
+                    ? report.Timestamp 
+                    : DateTime.SpecifyKind(report.Timestamp, DateTimeKind.Utc);
+                
+                var localTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, tzInfo);
+                localTimeStr = $"{localTime:g} ({tzResult.Result})";
+            }
+            catch
+            {
+                localTimeStr = $"{report.Timestamp:g} UTC";
+            }
+
+            // Map thumbnail
+            string mapThumbnailHtml = "";
+            var heatMapUrl = $"{baseUrl}/?lat={report.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={report.Longitude.ToString(CultureInfo.InvariantCulture)}&reportId={report.Id}";
+
+            if (!string.IsNullOrEmpty(settings.MapboxToken))
+            {
+                var lat = report.Latitude.ToString(CultureInfo.InvariantCulture);
+                var lng = report.Longitude.ToString(CultureInfo.InvariantCulture);
+                var mapUrl = $"{baseUrl}/api/map/proxy?lat={lat}&lng={lng}";
+                mapThumbnailHtml = $"<p><a href='{heatMapUrl}'><img src='{mapUrl}' alt='Map Location' style='max-width: 100%; height: auto; border-radius: 8px;' /></a></p>";
+            }
 
             foreach (var alert in matchingAlerts)
             {
@@ -98,11 +133,12 @@ public class LocationService(
                         <h3>New report near your alert area</h3>
                         {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
                         <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
-                        <p><strong>Time:</strong> {report.Timestamp:g} UTC</p>
+                        <p><strong>Time:</strong> {localTimeStr}</p>
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
+                        {mapThumbnailHtml}
                         <hr/>
-                        <p><a href='{baseUrl}/?lat={report.Latitude.ToString(CultureInfo.InvariantCulture)}&lng={report.Longitude.ToString(CultureInfo.InvariantCulture)}&reportId={report.Id}'>View on Heat Map</a></p>
+                        <p><a href='{heatMapUrl}'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
                     await emailService.SendEmailAsync(email!, subject, body);
