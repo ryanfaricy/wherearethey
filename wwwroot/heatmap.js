@@ -73,6 +73,40 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 
+    // Add Locate Control
+    const LocateControl = L.Control.extend({
+        options: { position: 'topleft' },
+        onAdd: function (map) {
+            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            const button = L.DomUtil.create('a', 'leaflet-control-locate', container);
+            button.innerHTML = '<i class="rzi" style="font-size: 20px;">my_location</i>';
+            button.title = "Center on my location";
+
+            L.DomEvent.on(button, 'click', function (e) {
+                L.DomEvent.stopPropagation(e);
+                L.DomEvent.preventDefault(e);
+                if (userLocationMarker) {
+                    map.setView(userLocationMarker.getLatLng(), 17);
+                } else {
+                    // If no location yet, try to get it
+                    if (window.getLocation) {
+                        window.getLocation().then(pos => {
+                            window.updateUserLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+                            map.setView([pos.coords.latitude, pos.coords.longitude], 17);
+                            if (dotNetHelper) {
+                                dotNetHelper.invokeMethodAsync('OnLocationUpdated', pos);
+                            }
+                        }).catch(err => {
+                            console.warn('Could not get location:', err);
+                        });
+                    }
+                }
+            });
+            return container;
+        }
+    });
+    map.addControl(new LocateControl());
+
     updateHeatMap(reports, !hasInitialLocation);
     
     if (alerts) {
@@ -133,22 +167,25 @@ window.updateAlerts = function (alerts) {
         // Create circle
         const circle = L.circle([alert.latitude, alert.longitude], {
             radius: alert.radiusKm * 1000,
-            color: '#ff9800', // Orange-ish
+            color: '#e65100', // Darker orange
             fillColor: '#ff9800',
-            fillOpacity: 0.1,
-            weight: 2,
-            dashArray: '5, 10',
-            interactive: false // Don't block clicks
+            fillOpacity: 0.05,
+            weight: 1.5,
+            dashArray: '10, 10',
+            interactive: false
         }).addTo(map);
         alertLayers.push(circle);
 
-        // Create small pin/marker
-        const marker = L.circleMarker([alert.latitude, alert.longitude], {
-            radius: 7,
-            color: '#e65100',
-            fillColor: '#ffb74d',
-            fillOpacity: 1,
-            weight: 2
+        // Create marker with icon
+        const alertIcon = L.divIcon({
+            className: 'alert-pin-icon',
+            html: '<i class="rzi">notifications</i>',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+        });
+
+        const marker = L.marker([alert.latitude, alert.longitude], {
+            icon: alertIcon
         });
 
         marker.alertData = alert;
@@ -332,13 +369,14 @@ window.updateUserLocation = function (lat, lng, accuracy) {
     if (userLocationMarker) {
         userLocationMarker.setLatLng([lat, lng]);
     } else {
-        userLocationMarker = L.circleMarker([lat, lng], {
-            radius: 8,
-            fillColor: '#2196F3',
-            color: '#fff',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 1,
+        const userIcon = L.divIcon({
+            className: 'user-location-pulse',
+            iconSize: [14, 14],
+            iconAnchor: [7, 7]
+        });
+
+        userLocationMarker = L.marker([lat, lng], {
+            icon: userIcon,
             pane: 'markerPane',
             interactive: false
         }).addTo(map);
@@ -352,7 +390,7 @@ window.updateUserLocation = function (lat, lng, accuracy) {
             radius: accuracy,
             color: '#2196F3',
             fillColor: '#2196F3',
-            fillOpacity: 0.15,
+            fillOpacity: 0.1,
             weight: 1,
             interactive: false
         }).addTo(map);
