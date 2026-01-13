@@ -4,6 +4,8 @@
 @inject DonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -42,6 +44,8 @@
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" />
                             </div>
                         </div>
+
+                        <div id="card-container" style="min-height: 80px; margin-bottom: 1rem;"></div>
 
                         <RadzenFormField Text="@L["Email_Optional"]" Variant="Variant.Outlined">
                             <RadzenTextBox @bind-Value="@donation.DonorEmail" 
@@ -93,13 +97,39 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate recent donations
-        recentDonations = new List<DonationDisplay>
+        var donations = await DonationService.GetAllDonationsAsync();
+        recentDonations = donations
+            .Where(d => d.Status == "completed")
+            .Take(10)
+            .Select(d => new DonationDisplay 
+            { 
+                DisplayName = string.IsNullOrWhiteSpace(d.DonorName) ? "Anonymous" : d.DonorName,
+                Amount = d.Amount,
+                TimeAgo = TimeAgo(d.CreatedAt)
+            }).ToList();
+    }
+
+    private string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalSeconds < 60) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            new DonationDisplay { DisplayName = "Anonymous", Amount = 25, TimeAgo = "2h ago" },
-            new DonationDisplay { DisplayName = "John D.", Amount = 50, TimeAgo = "5h ago" },
-            new DonationDisplay { DisplayName = "Anonymous", Amount = 10, TimeAgo = "1d ago" },
-        };
+            var appId = Configuration["Square:ApplicationId"];
+            var locId = Configuration["Square:LocationId"];
+            
+            if (!string.IsNullOrEmpty(appId) && !string.IsNullOrEmpty(locId))
+            {
+                await JSRuntime.InvokeAsync<bool>("squarePayments.initialize", appId, locId);
+            }
+        }
     }
 
     private async Task ProcessDonation()
@@ -113,10 +143,30 @@
         isProcessing = true;
         try
         {
-            await Task.Delay(1000); // Simulate API
+            // 1. Get token from Square
+            string token;
+            try
+            {
+                token = await JSRuntime.InvokeAsync<string>("squarePayments.tokenize");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Payment initialization failed", ex.Message);
+                return;
+            }
+
+            // 2. Create payment on backend
+            var response = await DonationService.CreateSquarePaymentAsync(donation.Amount, token);
             
+            if (response.Errors != null && response.Errors.Any())
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Payment failed", response.Errors[0].Detail);
+                return;
+            }
+
+            // 3. Record donation
             donation.Status = "completed";
-            donation.StripePaymentIntentId = Guid.NewGuid().ToString();
+            donation.ExternalPaymentId = response.Payment.Id;
             await DonationService.RecordDonationAsync(donation);
 
             NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
@@ -130,6 +180,9 @@
             });
 
             donation = new Donation { Amount = 10 };
+            
+            // Close the dialog after successful payment
+            DialogService.Close(true);
         }
         catch (Exception ex)
         {

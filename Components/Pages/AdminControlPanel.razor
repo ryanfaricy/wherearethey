@@ -55,7 +55,7 @@
                         <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@donations.Count(d => d.Status == "succeeded")</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="3">
@@ -144,7 +144,7 @@
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
                                 <Template Context="donation">
-                                    <RadzenBadge BadgeStyle="@(donation.Status == "succeeded" ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                                    <RadzenBadge BadgeStyle="@(donation.Status == "succeeded" || donation.Status == "completed" ? BadgeStyle.Success : BadgeStyle.Secondary)" 
                                                  Text="@donation.Status" />
                                 </Template>
                             </RadzenDataGridColumn>
