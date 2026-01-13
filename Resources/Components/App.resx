@@ -157,6 +157,12 @@
   <data name="Settings_Desc" xml:space="preserve">
     <value>Manage your anonymous Profile ID and view app settings.</value>
   </data>
+  <data name="Donate_Desc" xml:space="preserve">
+    <value>Support AreTheyHere with a donation.</value>
+  </data>
+  <data name="Refresh_Desc" xml:space="preserve">
+    <value>Refresh the heat map with the latest reports.</value>
+  </data>
   <data name="Sync_Devices" xml:space="preserve">
     <value>Sync Devices</value>
   </data>

@@ -157,6 +157,12 @@
   <data name="Settings_Desc" xml:space="preserve">
     <value>Gestione su ID de perfil anónimo y vea la configuración de la aplicación.</value>
   </data>
+  <data name="Donate_Desc" xml:space="preserve">
+    <value>Apoya a AreTheyHere con una donación.</value>
+  </data>
+  <data name="Refresh_Desc" xml:space="preserve">
+    <value>Actualiza el mapa de calor con los últimos informes.</value>
+  </data>
   <data name="Sync_Devices" xml:space="preserve">
     <value>Sincronizar Dispositivos</value>
   </data>
