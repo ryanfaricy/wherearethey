@@ -72,17 +72,7 @@
             userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
             
             var isNew = await JSRuntime.InvokeAsync<bool>("isNewUser");
-            if (isNew)
-            {
-                NotificationService.Notify(new NotificationMessage 
-                { 
-                    Severity = NotificationSeverity.Info, 
-                    Summary = "Welcome!", 
-                    Detail = "You have a new anonymous profile. See Settings to save your ID for recovery.",
-                    Duration = 10000
-                });
-            }
-
+            
             await LoadUserAlerts();
             
             objRef = DotNetObjectReference.Create(this);
@@ -145,6 +135,20 @@
             else if (initialRadius.HasValue)
             {
                 await JSRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
+            }
+
+            if (isNew)
+            {
+                NotificationService.Notify(new NotificationMessage 
+                { 
+                    Severity = NotificationSeverity.Info, 
+                    Summary = "Welcome!", 
+                    Detail = "You have a new anonymous profile. See Settings to save your ID for recovery.",
+                    Duration = 10000
+                });
+
+                // Show help dialog for first-ever load
+                await OnHelpClick();
             }
         }
     }
