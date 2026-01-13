@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 
@@ -6,7 +8,8 @@ namespace WhereAreThey.Services;
 
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    SettingsService settingsService)
+    SettingsService settingsService,
+    IStringLocalizer<App> L)
 {
     public async Task AddFeedbackAsync(Feedback feedback)
     {
@@ -25,7 +28,7 @@ public class FeedbackService(
 
         if (hasRecentFeedback)
         {
-            throw new InvalidOperationException($"You can only submit one feedback every {settings.ReportCooldownMinutes} minutes.");
+            throw new InvalidOperationException(string.Format(L["Feedback_Cooldown_Error"], settings.ReportCooldownMinutes));
         }
 
         // Anti-spam: basic message validation
@@ -33,7 +36,7 @@ public class FeedbackService(
         {
             if (feedback.Message.Contains("http://") || feedback.Message.Contains("https://") || feedback.Message.Contains("www."))
             {
-                throw new InvalidOperationException("Links are not allowed in feedback to prevent spam.");
+                throw new InvalidOperationException(L["Feedback_Links_Error"]);
             }
         }
 

@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
+
 namespace WhereAreThey.Services;
 
 public class LocationService(
@@ -12,7 +15,8 @@ public class LocationService(
     IServiceProvider serviceProvider, 
     ILogger<LocationService> logger, 
     IConfiguration configuration,
-    SettingsService settingsService)
+    SettingsService settingsService,
+    IStringLocalizer<App> L)
 {
     public event Action? OnReportAdded;
 
@@ -33,7 +37,7 @@ public class LocationService(
 
         if (hasRecentReport)
         {
-            throw new InvalidOperationException($"You can only make one report every {settings.ReportCooldownMinutes} minutes.");
+            throw new InvalidOperationException(string.Format(L["Cooldown_Error"], settings.ReportCooldownMinutes));
         }
 
         // Anti-spam: basic message validation
@@ -41,7 +45,7 @@ public class LocationService(
         {
             if (report.Message.Contains("http://") || report.Message.Contains("https://") || report.Message.Contains("www."))
             {
-                throw new InvalidOperationException("Links are not allowed in reports to prevent spam.");
+                throw new InvalidOperationException(L["Links_Error"]);
             }
         }
 
@@ -55,7 +59,7 @@ public class LocationService(
             var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
             if (distance > maxDistanceKm)
             {
-                throw new InvalidOperationException($"You can only make a report within {settings.MaxReportDistanceMiles} miles of your location.");
+                throw new InvalidOperationException(string.Format(L["Distance_Error"], settings.MaxReportDistanceMiles));
             }
         }
         else
@@ -63,7 +67,7 @@ public class LocationService(
             // We require reporter location for non-emergency reports
             // Emergency reports might be allowed without location if it's a critical failure, 
             // but the rule says "a user can only make a report within five miles"
-            throw new InvalidOperationException("Unable to verify your current location. Please ensure GPS is enabled.");
+            throw new InvalidOperationException(L["Location_Verify_Error"]);
         }
 
         report.Timestamp = DateTime.UtcNow;

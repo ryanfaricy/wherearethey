@@ -1,37 +1,39 @@
 @using Radzen.Blazor
+@using Microsoft.Extensions.Localization
 @inject DialogService DialogService
+@inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">Quick Help Guide</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">@L["Quick_Help_Guide"]</RadzenText>
 
     <RadzenStack Gap="1rem">
-        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">Map Interactions</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">@L["Map_Interactions"]</RadzenText>
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="touch_app" Style="color: var(--rz-info);" />
             <RadzenText TextStyle="TextStyle.Body2">
-                <b>Tap a Heat Area:</b> See a summary of reports and alert zones in that area. <b>Zoom in</b> to see individual pins and tap them for specific details. Overlapping pins are automatically grouped.
+                <b>@L["Tap_Heat_Area"]:</b> @L["Tap_Heat_Area_Desc"]
             </RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="add_location_alt" Style="color: var(--rz-warning);" />
             <RadzenText TextStyle="TextStyle.Body2">
-                <b>Tap an Empty Area:</b> Quickly set up an alert for that specific spot.
+                <b>@L["Tap_Empty_Area"]:</b> @L["Tap_Empty_Area_Desc"]
             </RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="report_problem" Style="color: var(--rz-danger);" />
             <RadzenText TextStyle="TextStyle.Body2">
-                <b>Long-Press / Right-Click:</b> Report "them" at that exact location.
+                <b>@L["Long_Press"]:</b> @L["Long_Press_Desc"]
             </RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="notifications_active" Style="color: #e65100;" />
             <RadzenText TextStyle="TextStyle.Body2">
-                <b>Orange Pins:</b> Your active alerts. Tap to see details or delete the alert zone.
+                <b>@L["Orange_Pins"]:</b> @L["Orange_Pins_Desc"]
             </RadzenText>
         </RadzenStack>
     </RadzenStack>
@@ -39,52 +41,52 @@
     <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 1rem 0;" />
 
     <RadzenStack Gap="1rem">
-        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">Toolbar Actions</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">@L["Toolbar_Actions"]</RadzenText>
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-            <RadzenBadge Text="REPORT" BadgeStyle="BadgeStyle.Danger" />
-            <RadzenText TextStyle="TextStyle.Body2">Submit a report for your <b>current location</b>.</RadzenText>
+            <RadzenBadge Text="@L["REPORT"]" BadgeStyle="BadgeStyle.Danger" />
+            <RadzenText TextStyle="TextStyle.Body2">@L["Report_Desc"]</RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="notifications" Style="color: var(--rz-warning);" />
-            <RadzenText TextStyle="TextStyle.Body2">Manage your radius-based email alerts.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2">@L["Alerts_Desc"]</RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="settings" Style="color: var(--rz-base);" />
-            <RadzenText TextStyle="TextStyle.Body2">Manage your anonymous Profile ID and view app settings.</RadzenText>
+            <RadzenText TextStyle="TextStyle.Body2">@L["Settings_Desc"]</RadzenText>
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="sync" Style="color: var(--rz-success);" />
             <RadzenText TextStyle="TextStyle.Body2">
-                <b>Sync Devices:</b> Copy your Profile ID from Settings to use the same profile on multiple devices.
+                <b>@L["Sync_Devices"]:</b> @L["Sync_Devices_Desc"]
             </RadzenText>
         </RadzenStack>
     </RadzenStack>
 
     <RadzenText TextStyle="TextStyle.Caption" Class="opacity-75 mt-2">
-        AreTheyHere is a privacy-first, anonymous tool. People's lives depend on accurate and timely reporting.
+        @L["Privacy_Disclaimer"]
     </RadzenText>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Class="mt-2">
         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-            <RadzenButton Text="PRIVACY" Click="@ShowPrivacyPolicy" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
-            <RadzenButton Text="FEEDBACK" Click="@ShowFeedback" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
+            <RadzenButton Text="@L["PRIVACY"]" Click="@ShowPrivacyPolicy" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
+            <RadzenButton Text="@L["FEEDBACK"]" Click="@ShowFeedback" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Text" />
         </RadzenStack>
-        <RadzenButton Text="GOT IT" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton Text="@L["GOT_IT"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 
 @code {
     private async Task ShowPrivacyPolicy()
     {
-        await DialogService.OpenAsync<PrivacyPolicyDialog>("PRIVACY POLICY", null, new DialogOptions { Width = "500px" });
+        await DialogService.OpenAsync<PrivacyPolicyDialog>(L["PRIVACY_POLICY"], null, new DialogOptions { Width = "500px" });
     }
 
     private async Task ShowFeedback()
     {
-        await DialogService.OpenAsync<FeedbackDialog>("FEEDBACK", null, new DialogOptions { Width = "500px" });
+        await DialogService.OpenAsync<FeedbackDialog>(L["FEEDBACK"], null, new DialogOptions { Width = "500px" });
     }
 }

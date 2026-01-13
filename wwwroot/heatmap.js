@@ -10,7 +10,10 @@ let resizeObserver = null;
 let dotNetHelper;
 const PIN_ZOOM_THRESHOLD = 15;
 
-window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts) {
+let translations = {};
+
+window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t) {
+    if (t) translations = t;
     if (map) {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -117,7 +120,7 @@ function onMarkerClick(e) {
     if (markersAtSpot.length > 0) {
         let content = '<div style="max-height: 250px; overflow-y: auto; min-width: 200px; font-family: sans-serif; color: #333;">';
         if (markersAtSpot.length > 1) {
-             content += `<div style="font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #eee; padding-bottom: 4px; color: var(--rz-primary);">Items at this location (${markersAtSpot.length})</div>`;
+             content += `<div style="font-weight: bold; margin-bottom: 8px; border-bottom: 2px solid #eee; padding-bottom: 4px; color: var(--rz-primary);">${translations.Items_at_location || 'Items at this location'} (${markersAtSpot.length})</div>`;
         }
         
         markersAtSpot.forEach(m => {
@@ -128,7 +131,7 @@ function onMarkerClick(e) {
                 content += `
                     <div style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px;">
                         <div style="font-weight: bold; color: ${r.isEmergency ? '#d32f2f' : '#1976d2'}; margin-bottom: 2px;">
-                            ${r.isEmergency ? '🚨 EMERGENCY REPORT' : '📍 Report'}
+                            ${r.isEmergency ? ('🚨 ' + (translations.EMERGENCY_REPORT || 'EMERGENCY REPORT')) : ('📍 ' + (translations.Report || 'Report'))}
                         </div>
                         <div style="font-size: 0.8em; color: #666;">${timeStr}</div>
                         ${r.message ? `<div style="font-style: italic; font-size: 0.85em; margin-top: 4px; border-top: 1px dotted #eee; padding-top: 2px;">${r.message}</div>` : ''}
@@ -138,13 +141,13 @@ function onMarkerClick(e) {
                 const alert = m.data;
                 content += `
                     <div style="border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px;">
-                        <div style="font-weight: bold; color: #e65100; margin-bottom: 2px;">🔔 Alert Zone</div>
-                        <div style="font-size: 0.8em; color: #666;"><strong>Radius:</strong> ${alert.radiusKm} km</div>
+                        <div style="font-weight: bold; color: #e65100; margin-bottom: 2px;">🔔 ${translations.Alert_Zone || 'Alert Zone'}</div>
+                        <div style="font-size: 0.8em; color: #666;"><strong>${translations.Radius || 'Radius'}:</strong> ${alert.radiusKm} km</div>
                         ${alert.message ? `<div style="font-style: italic; font-size: 0.85em; margin-top: 4px; border-top: 1px dotted #eee; padding-top: 2px;">${alert.message}</div>` : ''}
                         <div style="text-align: right; margin-top: 6px;">
                             <button onclick="deleteAlert(${alert.id})" 
                                     style="background: #f44336; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8em; font-weight: bold;">
-                                DELETE
+                                ${translations.DELETE || 'DELETE'}
                             </button>
                         </div>
                     </div>

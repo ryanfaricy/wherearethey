@@ -2,16 +2,18 @@
 @using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject LocationService LocationService
+@inject IStringLocalizer<App> L
 
 <RadzenPanelMenu Style="height: 100%">
-    <RadzenPanelMenuItem Text="ARE THEY HERE?" Icon="visibility" Path="/" />
-    <RadzenPanelMenuItem Text="THEY ARE HERE!" Icon="report_problem" Click="@OnReportClick" />
-    <RadzenPanelMenuItem Text="Alerts" Icon="notifications" Click="@OnAlertsClick" />
-    <RadzenPanelMenuItem Text="Donate" Icon="volunteer_activism" Click="@OnDonateClick" />
+    <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" />
+    <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
+    <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
+    <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
 </RadzenPanelMenu>
 
 @code {

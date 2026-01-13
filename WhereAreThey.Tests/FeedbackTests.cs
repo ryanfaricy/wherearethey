@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using Moq;
+using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -9,6 +11,30 @@ namespace WhereAreThey.Tests;
 
 public class FeedbackTests
 {
+    private IStringLocalizer<App> CreateLocalizer()
+    {
+        var mock = new Mock<IStringLocalizer<App>>();
+        mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => 
+        {
+            var val = key switch
+            {
+                "Feedback_Links_Error" => "Links are not allowed in feedback to prevent spam.",
+                "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
+                _ => key
+            };
+            return new LocalizedString(key, val);
+        });
+        mock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] args) => 
+        {
+            var val = key switch
+            {
+                "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
+                _ => key
+            };
+            return new LocalizedString(key, string.Format(val, args));
+        });
+        return mock.Object;
+    }
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -38,7 +64,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService);
+        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
         var feedback = new Feedback
         {
             Type = "Bug",
@@ -62,7 +88,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService);
+        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
@@ -81,7 +107,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService);
+        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
         var feedback = new Feedback 
         { 
             Type = "Feature", 
@@ -101,7 +127,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new FeedbackService(factory, settingsService);
+        var service = new FeedbackService(factory, settingsService, CreateLocalizer());
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.AddFeedbackAsync(feedback);

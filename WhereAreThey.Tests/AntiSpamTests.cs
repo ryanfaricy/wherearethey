@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -14,6 +16,37 @@ public class AntiSpamTests
     private readonly Mock<IServiceProvider> _serviceProviderMock = new();
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
+
+    private IStringLocalizer<App> CreateLocalizer()
+    {
+        var mock = new Mock<IStringLocalizer<App>>();
+        mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => 
+        {
+            var val = key switch
+            {
+                "Links_Error" => "Links are not allowed in reports to prevent spam.",
+                "Location_Verify_Error" => "Unable to verify your current location. Please ensure GPS is enabled.",
+                "Feedback_Links_Error" => "Links are not allowed in feedback to prevent spam.",
+                "Cooldown_Error" => "You can only make one report every {0} minutes.",
+                "Distance_Error" => "You can only make a report within {0} miles of your location.",
+                "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
+                _ => key
+            };
+            return new LocalizedString(key, val);
+        });
+        mock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] args) => 
+        {
+            var val = key switch
+            {
+                "Cooldown_Error" => "You can only make one report every {0} minutes.",
+                "Distance_Error" => "You can only make a report within {0} miles of your location.",
+                "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
+                _ => key
+            };
+            return new LocalizedString(key, string.Format(val, args));
+        });
+        return mock.Object;
+    }
 
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -44,7 +77,7 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
         
         var report = new LocationReport
         {
@@ -67,7 +100,7 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
         
         var report1 = new LocationReport
         {
@@ -102,7 +135,7 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
         
         var report = new LocationReport
         {
@@ -126,7 +159,7 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
         
         using (var context = new ApplicationDbContext(options))
         {
@@ -160,7 +193,7 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService);
+        var service = new LocationService(factory, _serviceProviderMock.Object, _loggerMock.Object, _configurationMock.Object, settingsService, CreateLocalizer());
 
         var customSettings = new SystemSettings 
         { 

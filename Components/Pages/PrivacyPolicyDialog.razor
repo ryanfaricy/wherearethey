@@ -1,39 +1,41 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
 @inject DialogService DialogService
 @inject SettingsService SettingsService
+@inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">Privacy Policy</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">@L["Privacy_Title"]</RadzenText>
 
     <RadzenStack Gap="1rem">
         <RadzenText TextStyle="TextStyle.Body1">
-            <b>AreTheyHere</b> is built on the principle of radical anonymity and user privacy. We believe that privacy is a fundamental human right, especially in contexts where reporting can have significant consequences.
+            @((MarkupString)L["Privacy_Intro"].Value)
         </RadzenText>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">1. No Personal Tracking</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_1_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            We do not collect or store your IP address, name, phone number, or any other personally identifiable information (PII). Your activity on this platform is linked only to an anonymous <b>Profile ID</b> generated locally on your device.
+            @((MarkupString)L["Privacy_1_Desc"].Value)
         </RadzenText>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">2. Location Data</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_2_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            When you submit a report, we store the coordinates of the incident and your approximate location at the time of reporting (to prevent spam). This data is never linked to a real identity. Reports expire from public view after <b>@settings.ReportExpiryHours hours</b>.
+            @((MarkupString)string.Format(L["Privacy_2_Desc"], settings.ReportExpiryHours))
         </RadzenText>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">3. Encrypted Alerts</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_3_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            If you sign up for email alerts, your email address is <b>encrypted at rest</b>. We only use it to send you the alerts you've requested. We do not sell or share these emails with any third parties.
+            @((MarkupString)L["Privacy_3_Desc"].Value)
         </RadzenText>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">4. Open and Transparent</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_4_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            Our goal is to provide a tool for community safety while protecting the individuals who use it. No ads, no trackers, no bullshit.
+            @((MarkupString)L["Privacy_4_Desc"].Value)
         </RadzenText>
     </RadzenStack>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-2">
-        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 

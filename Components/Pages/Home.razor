@@ -3,25 +3,27 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Localization
 @inject LocationService LocationService
 @inject AlertService AlertService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject IStringLocalizer<App> L
 @implements IDisposable
 
-<PageTitle>AreTheyHere - Live Heat Map</PageTitle>
+<PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
 
 <div class="d-flex flex-column" style="height: calc(100vh - 56px);">
     <!-- Toolbar -->
     <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
-        <RadzenButton Text="REPORT" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
-        <RadzenButton Text="ALERTS" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="DONATE" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="SETTINGS" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="HELP" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="REFRESH" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
+        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
     </div>
 
     <!-- Map Container -->
@@ -125,7 +127,17 @@
                 }
             }
 
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts);
+            var jsTranslations = new
+            {
+                Items_at_location = L["Items_at_location"].Value,
+                EMERGENCY_REPORT = L["EMERGENCY_REPORT"].Value,
+                Report = L["Report"].Value,
+                Alert_Zone = L["Alert_Zone"].Value,
+                Radius = L["Radius"].Value,
+                DELETE = L["DELETE"].Value
+            };
+
+            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts, jsTranslations);
             mapInitialized = true;
 
             if (focusReportId.HasValue)

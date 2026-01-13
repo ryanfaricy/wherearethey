@@ -13,6 +13,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Add Localization
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllers(); // Needed for culture switching via cookie
+
 // Add Data Protection for encrypted emails at rest - persist keys to DB for Railway
 builder.Services.AddDataProtection()
     .PersistKeysToDbContext<ApplicationDbContext>();
@@ -115,6 +119,16 @@ app.UseHttpsRedirection();
 
 app.UseAntiforgery();
 
+// Configure Localization Middleware
+var supportedCultures = new[] { "en", "es", "fr", "de", "it", "pt", "ru", "zh", "ja" };
+var localizationOptions = new RequestLocalizationOptions()
+    .SetDefaultCulture(supportedCultures[0])
+    .AddSupportedCultures(supportedCultures)
+    .AddSupportedUICultures(supportedCultures);
+
+app.UseRequestLocalization(localizationOptions);
+
+app.MapControllers();
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

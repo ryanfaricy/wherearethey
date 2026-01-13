@@ -1,26 +1,28 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
 @inject LocationService LocationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IStringLocalizer<App> L
 
 <RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
-        <RadzenText TextStyle="TextStyle.Subtitle1">Report coordinates: <b>@report.Latitude.ToString("F6"), @report.Longitude.ToString("F6")</b></RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle1">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
         
-        <RadzenFormField Text="Message (Optional)" Variant="Variant.Outlined">
+        <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined">
             <RadzenTextArea @bind-Value="@report.Message" Rows="3" 
                             Style="width: 100%;" MaxLength="500" />
         </RadzenFormField>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
             <RadzenCheckBox @bind-Value="@report.IsEmergency" TValue="bool" Name="IsEmergency" />
-            <RadzenLabel Text="This is an emergency" Component="IsEmergency" />
+            <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="mt-3" JustifyContent="JustifyContent.End">
-            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
-            <RadzenButton ButtonType="ButtonType.Submit" Text="SUBMIT REPORT" 
+            <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
                           Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
                           Disabled="@isSubmitting" />
         </RadzenStack>
@@ -39,17 +41,17 @@
             // Basic message validation
             if (!string.IsNullOrEmpty(report.Message) && report.Message.Length > 500)
             {
-                NotificationService.Notify(NotificationSeverity.Warning, "Message too long", "Please limit message to 500 characters.");
+                NotificationService.Notify(NotificationSeverity.Warning, L["Message_Too_Long"], L["Message_Too_Long_Detail"]);
                 return;
             }
 
             await LocationService.AddLocationReportAsync(report);
-            NotificationService.Notify(NotificationSeverity.Success, "Location reported successfully");
+            NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to submit report", ex.Message);
+            NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], ex.Message);
         }
         finally
         {
