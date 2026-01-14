@@ -25,6 +25,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
             entity.HasIndex(e => e.ExternalId).IsUnique();
             entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => new { e.Timestamp, e.Latitude, e.Longitude });
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
         });
