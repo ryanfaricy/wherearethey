@@ -68,8 +68,8 @@ public class ReportProcessingService(
                     var body = $@"
                         <h3>New report near your alert area</h3>
                         {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
-                        <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
                         {(!string.IsNullOrEmpty(address) ? $"<p><strong>Approx. Address:</strong> {address}</p>" : "")}
+                        <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
                         <p><strong>Time:</strong> {localTimeStr}</p>
                         {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
                         {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}

@@ -179,6 +179,7 @@
             newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = userIdentifier };
             email = "";
             await LoadAlerts();
+            DialogService.Close(true);
         }
         catch (Exception ex)
         {
