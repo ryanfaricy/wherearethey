@@ -128,6 +128,7 @@ builder.Services.AddScoped<IDonationService, DonationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
+builder.Services.AddScoped<UserTimeZoneService>();
 builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
 

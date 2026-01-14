@@ -14,6 +14,7 @@
 @inject DialogService DialogService
 @inject IHttpContextAccessor HttpContextAccessor
 @inject ILogger<AdminControlPanel> Logger
+@inject UserTimeZoneService TimeZoneService
 
 <PageTitle>Admin Control Panel</PageTitle>
 
@@ -72,7 +73,11 @@
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
                     <RadzenDataGrid Data="@loginAttempts.Take(5)" TItem="AdminLoginAttempt">
                         <Columns>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+                                <Template Context="attempt">
+                                    @TimeZoneService.FormatLocal(attempt.Timestamp, "g")
+                                </Template>
+                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
                                 <Template Context="attempt">
@@ -88,7 +93,11 @@
                     <RadzenDataGrid Data="@reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" />
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
+                                <Template Context="report">
+                                    @TimeZoneService.FormatLocal(report.Timestamp, "g")
+                                </Template>
+                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter ID" />
                             <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location">
@@ -152,7 +161,11 @@
                 <RadzenTabsItem Text="DONATIONS" Icon="volunteer_activism">
                     <RadzenDataGrid Data="@donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
-                            <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date" />
+                            <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
+                                <Template Context="donation">
+                                    @TimeZoneService.FormatLocal(donation.CreatedAt, "g")
+                                </Template>
+                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" />
                             <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
                                 <Template Context="donation">
@@ -173,7 +186,11 @@
                     <RadzenDataGrid Data="@feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" />
-                            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
+                                <Template Context="feedback">
+                                    @TimeZoneService.FormatLocal(feedback.Timestamp, "g")
+                                </Template>
+                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type" Width="100px">
                                 <Template Context="fb">
                                     <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
@@ -194,7 +211,11 @@
                 <RadzenTabsItem Text="LOGINS" Icon="security">
                     <RadzenDataGrid Data="@loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+                                <Template Context="attempt">
+                                    @TimeZoneService.FormatLocal(attempt.Timestamp, "g")
+                                </Template>
+                            </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
                                 <Template Context="attempt">

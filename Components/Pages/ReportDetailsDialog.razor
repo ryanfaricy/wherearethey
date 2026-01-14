@@ -3,6 +3,7 @@
 @inject DialogService DialogService
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
+@inject UserTimeZoneService TimeZoneService
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
@@ -26,7 +27,7 @@
                     @if (Reports.Any())
                     {
                         <RadzenText TextStyle="TextStyle.Caption">
-                            <strong>Most recent:</strong> @MostRecentTimestamp.ToLocalTime().ToString("g") 
+                            <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentTimestamp, "g") 
                             <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
                         </RadzenText>
 
@@ -37,7 +38,7 @@
                                     {
                                         <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
                                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
                                                 <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
                                             </RadzenStack>
                                             @if (!string.IsNullOrEmpty(r.Message))
@@ -50,7 +51,7 @@
                                     {
                                         <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-info);">
                                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@r.Timestamp.ToLocalTime().ToString("t")</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
                                             </RadzenStack>
                                             @if (!string.IsNullOrEmpty(r.Message))
                                             {
