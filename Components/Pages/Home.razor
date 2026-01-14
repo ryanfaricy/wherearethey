@@ -18,9 +18,9 @@
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
 
-<div class="d-flex flex-column" style="height: calc(100vh - 56px);">
+<div class="d-flex flex-column" style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
-    <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2 main-toolbar" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+    <div class="rz-p-2 rz-background-color-primary-lighter d-flex align-items-center flex-wrap gap-2 main-toolbar" style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
         <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" />
         <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         @if (systemSettings.DonationsEnabled)

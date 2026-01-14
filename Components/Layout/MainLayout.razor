@@ -1,21 +1,17 @@
 ﻿@inject IJSRuntime JSRuntime
 @inherits LayoutComponentBase
 
-<RadzenLayout>
-    <RadzenHeader>
-        <div class="container-fluid">
-            <div class="row align-items-center">
-                <div class="col d-flex align-items-center">
-                    <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
-                    <RadzenLabel Text="AreTheyHere" Style="margin-left: 1rem; font-size: 1.5rem; font-weight: bold;" />
-                </div>
-            </div>
-        </div>
+<RadzenLayout style="position: relative">
+    <RadzenHeader Style="z-index: 1002;">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="AreTheyHere" Style="margin-left: 1rem; font-size: 1.5rem; font-weight: bold;" />
+        </RadzenStack>
     </RadzenHeader>
-    <RadzenSidebar @bind-Expanded="@sidebarExpanded" style="width: 250px">
+    <RadzenSidebar Responsive="false" @bind-Expanded="@sidebarExpanded" style="position: absolute; z-index: 1001; width: 250px; top: 0; bottom: 0; left: 0;">
         <NavMenu />
     </RadzenSidebar>
-    <RadzenBody>
+    <RadzenBody Style="position: relative">
         @Body
     </RadzenBody>
 </RadzenLayout>
