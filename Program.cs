@@ -11,8 +11,13 @@ using WhereAreThey.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddRazorComponents()
+var razorComponentsBuilder = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+if (!builder.Environment.IsProduction())
+{
+    razorComponentsBuilder.AddCircuitOptions(options => { options.DetailedErrors = true; });
+}
 
 // Add Localization
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");

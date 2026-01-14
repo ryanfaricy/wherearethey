@@ -56,7 +56,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
 
     map.on('click', function(e) {
         if (dotNetHelper) {
-            dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng);
+            dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng, false);
         }
     });
 
