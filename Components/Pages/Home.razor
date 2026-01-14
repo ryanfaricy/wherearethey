@@ -519,15 +519,25 @@
     public async Task OnMapClick(double lat, double lng, bool force = false)
     {
         followMe = false;
-        if (!force)
-        {
-            var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
-            if (zoom >= 15) return;
-        }
+        var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
 
         // Find reports within a certain radius
-        // Use a smaller radius if force-clicked (marker) to only show items at that spot
-        var searchRadiusKm = force ? 0.05 : 5.0; 
+        // - Marker clicks (force): 50m
+        // - High zoom map clicks: 200m tap tolerance for near-misses on mobile
+        // - Low zoom map clicks: 5km area search for heatmap blobs
+        double searchRadiusKm;
+        if (force)
+        {
+            searchRadiusKm = 0.05;
+        }
+        else if (zoom >= 15)
+        {
+            searchRadiusKm = 0.2;
+        }
+        else
+        {
+            searchRadiusKm = 5.0;
+        }
 
         var nearbyReports = reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
@@ -540,6 +550,12 @@
 
         if (nearbyReports.Any() || nearbyAlerts.Any())
         {
+            // If it's a single report, highlight it immediately for better feedback
+            if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
+            {
+                await JSRuntime.InvokeVoidAsync("selectReport", nearbyReports[0].Id);
+            }
+
             // Tapping on a blob or marker reveals area details
             var result = await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
                 new Dictionary<string, object> 
