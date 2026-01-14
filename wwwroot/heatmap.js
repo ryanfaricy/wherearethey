@@ -64,6 +64,9 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     });
 
     map.on('contextmenu', function(e) {
+        if (e.originalEvent) {
+            L.DomEvent.preventDefault(e.originalEvent);
+        }
         if (dotNetHelper) {
             dotNetHelper.invokeMethodAsync('OnMapContextMenu', e.latlng.lat, e.latlng.lng);
         }

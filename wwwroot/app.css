@@ -290,6 +290,17 @@ h1:focus {
     }
 }
 
+#heatmap {
+    height: 100%;
+    width: 100%;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
 /* App Loading Spinner */
 .app-loading-container {
     display: flex;
