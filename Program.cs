@@ -106,6 +106,7 @@ builder.Services.AddScoped<IDonationService, DonationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
+builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
 
 // Configure for high concurrency

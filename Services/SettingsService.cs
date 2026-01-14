@@ -42,6 +42,7 @@ public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFact
             existing.MaxReportDistanceMiles = settings.MaxReportDistanceMiles;
             existing.MapboxToken = settings.MapboxToken;
             existing.DonationsEnabled = settings.DonationsEnabled;
+            existing.DataRetentionDays = settings.DataRetentionDays;
         }
 
         await context.SaveChangesAsync();

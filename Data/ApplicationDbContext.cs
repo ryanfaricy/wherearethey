@@ -35,6 +35,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
             entity.HasIndex(e => e.ExternalId).IsUnique();
+            entity.HasIndex(e => new { e.IsActive, e.IsVerified, e.Latitude, e.Longitude });
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.UserIdentifier);
             entity.HasIndex(e => e.EmailHash);
@@ -79,7 +80,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             AlertLimitCount = 3,
             MaxReportDistanceMiles = 5.0m,
             MapboxToken = null,
-            DonationsEnabled = true
+            DonationsEnabled = true,
+            DataRetentionDays = 30
         });
     }
 }
