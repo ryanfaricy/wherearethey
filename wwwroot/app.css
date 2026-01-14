@@ -174,10 +174,27 @@ h1:focus {
 }
 
 /* Map Search and Controls */
+.map-controls-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    z-index: 1000;
+    display: flex;
+    justify-content: flex-end;
+    pointer-events: none;
+}
+
+.map-controls-container > * {
+    pointer-events: auto;
+}
+
 .search-card {
     background: rgba(255, 255, 255, 0.9) !important;
     backdrop-filter: blur(8px);
     border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    width: 100%;
+    max-width: 500px;
 }
 
 [data-theme="dark"] .search-card {
@@ -198,9 +215,22 @@ h1:focus {
 }
 
 @media (max-width: 768px) {
-    .map-search-container {
-        width: 180px !important;
+    .map-controls-container {
+        top: 5px;
+        right: 5px;
+        left: 5px;
     }
+    
+    .map-controls-container .search-card {
+        gap: 4px !important;
+        max-width: none;
+    }
+
+    .time-filter .rz-button {
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+
     .map-legend {
         bottom: 10px !important;
         left: 5px !important;

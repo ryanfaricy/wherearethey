@@ -36,36 +36,30 @@
     <div style="flex: 1; position: relative;">
         <div id="heatmap" style="height: 100%; width: 100%;"></div>
         
-        <!-- Search Box -->
-        <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; width: 280px;" class="map-search-container">
-            <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
+        <!-- Map Controls -->
+        <div class="map-controls-container">
+            <RadzenCard Class="rz-p-1 rz-shadow-5 search-card d-flex align-items-center gap-2">
                 <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
                                     LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                    Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" 
+                                    Placeholder="@L["Search_Address_Placeholder"]" Style="flex: 1; min-width: 100px;" 
                                     InputClass="search-input" />
-            </RadzenCard>
-        </div>
-
-        <!-- Floating Controls -->
-        <div style="position: absolute; top: 65px; right: 10px; z-index: 1000;" class="map-floating-controls">
-            <RadzenStack Gap="0.5rem" AlignItems="AlignItems.End">
+                
                 <RadzenToggleButton @bind-Value="@followMe" Icon="my_location" 
                                     ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
                                     Size="ButtonSize.Medium" ToolTip="Follow Me" 
-                                    Class="rz-shadow-2 rz-border-radius-1" 
                                     ToggleButtonStyle="ButtonStyle.Primary"
                                     Change="@OnFollowMeChange" />
                 
                 <RadzenSelectBar @bind-Value="@selectedHours" TValue="int" Change="@LoadReports"
                                  Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
-                                 Class="rz-shadow-2 time-filter">
+                                 Class="time-filter">
                     <Items>
                         <RadzenSelectBarItem Text="1h" Value="1" />
-                        <RadzenSelectBarItem Text="4h" Value="4" />
-                        <RadzenSelectBarItem Text="24h" Value="24" />
+                        <RadzenSelectBarItem Text="2h" Value="2" />
+                        <RadzenSelectBarItem Text="@($"{systemSettings.ReportExpiryHours}h")" Value="@systemSettings.ReportExpiryHours" />
                     </Items>
                 </RadzenSelectBar>
-            </RadzenStack>
+            </RadzenCard>
         </div>
 
         <!-- Map Legend -->
