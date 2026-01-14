@@ -92,6 +92,15 @@
                 }, 300);
             }
         };
+
+        window.fixDialogScroll = function() {
+            setTimeout(function() {
+                var dialogContent = document.querySelector('.rz-dialog-content');
+                if (dialogContent) {
+                    dialogContent.scrollTop = 0;
+                }
+            }, 50);
+        };
     </script>
 </body>
 

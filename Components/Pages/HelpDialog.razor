@@ -4,6 +4,7 @@
 @using WhereAreThey.Services
 @inject DialogService DialogService
 @inject ISettingsService SettingsService
+@inject IJSRuntime JSRuntime
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -133,13 +134,23 @@
         settings = await SettingsService.GetSettingsAsync();
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
+        }
+    }
+
     private async Task ShowPrivacyPolicy()
     {
-        await DialogService.OpenAsync<PrivacyPolicyDialog>(L["PRIVACY_POLICY"], null, new DialogOptions { Width = "500px" });
+        await DialogService.OpenAsync<PrivacyPolicyDialog>(L["PRIVACY_POLICY"], null, 
+            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
     }
 
     private async Task ShowFeedback()
     {
-        await DialogService.OpenAsync<FeedbackDialog>(L["FEEDBACK"], null, new DialogOptions { Width = "500px" });
+        await DialogService.OpenAsync<FeedbackDialog>(L["FEEDBACK"], null, 
+            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
     }
 }

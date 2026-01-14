@@ -5,6 +5,7 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
@@ -46,6 +47,14 @@
     protected override async Task OnInitializedAsync()
     {
         approxAddress = await GeocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
+        }
     }
 
     private async Task OnAddressSearch(LoadDataArgs args)

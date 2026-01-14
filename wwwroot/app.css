@@ -338,3 +338,14 @@ h1:focus {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Responsive Dialogs */
+.rz-dialog {
+    max-width: 98vw !important;
+}
+
+@media (max-width: 768px) {
+    .rz-dialog-content {
+        padding: 1rem !important;
+    }
+}

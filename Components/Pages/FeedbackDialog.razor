@@ -54,6 +54,7 @@
         if (firstRender)
         {
             userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
             StateHasChanged();
         }
     }

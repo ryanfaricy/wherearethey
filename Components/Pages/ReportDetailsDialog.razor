@@ -4,6 +4,7 @@
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
+@inject IJSRuntime JSRuntime
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
@@ -114,6 +115,14 @@
     [Parameter] public List<Alert> Alerts { get; set; } = new();
 
     private bool alertDeleted = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
+        }
+    }
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
