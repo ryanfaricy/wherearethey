@@ -24,7 +24,7 @@
                         <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined">
                             <RadzenNumeric @bind-Value="@donation.Amount" TValue="decimal" 
                                            Min="1" Max="10000" ShowUpDown="false" 
-                                           Format="c" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" 
+                                           Format="$0.00" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" 
                                            Disabled="@isProcessing" />
                         </RadzenFormField>
 
