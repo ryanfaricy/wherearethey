@@ -25,26 +25,35 @@ public class LocationService(
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
-        await validator.ValidateAndThrowAsync(report);
-
-        await using var context = await contextFactory.CreateDbContextAsync();
-
-        report.Timestamp = DateTime.UtcNow;
-        context.LocationReports.Add(report);
-        await context.SaveChangesAsync();
-
-        OnReportAdded?.Invoke(report);
-
         try
         {
-            await mediator.Publish(new ReportAddedEvent(report));
+            await validator.ValidateAndThrowAsync(report);
+
+            await using var context = await contextFactory.CreateDbContextAsync();
+
+            report.ExternalId = Guid.NewGuid();
+            report.Timestamp = DateTime.UtcNow;
+            context.LocationReports.Add(report);
+            await context.SaveChangesAsync();
+
+            OnReportAdded?.Invoke(report);
+
+            try
+            {
+                await mediator.Publish(new ReportAddedEvent(report));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error publishing report added event");
+            }
+
+            return report;
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error publishing report added event");
+            logger.LogError(ex, "Error adding location report at {Lat}, {Lng}", report.Latitude, report.Longitude);
+            throw;
         }
-
-        return report;
     }
 
     public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)

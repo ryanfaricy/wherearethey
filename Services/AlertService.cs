@@ -27,31 +27,40 @@ public class AlertService(
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
-        await validator.ValidateAndThrowAsync(alert);
-
-        await using var context = await contextFactory.CreateDbContextAsync();
-
-        if (alert.RadiusKm > 160.9)
+        try
         {
-            alert.RadiusKm = 160.9;
+            await validator.ValidateAndThrowAsync(alert);
+
+            await using var context = await contextFactory.CreateDbContextAsync();
+
+            if (alert.RadiusKm > 160.9)
+            {
+                alert.RadiusKm = 160.9;
+            }
+            
+            var emailHash = ComputeHash(email);
+            var isVerified = await context.EmailVerifications
+                .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
+
+            alert.ExternalId = Guid.NewGuid();
+            alert.EncryptedEmail = _protector.Protect(email);
+            alert.EmailHash = emailHash;
+            alert.IsVerified = isVerified;
+            alert.CreatedAt = DateTime.UtcNow;
+            alert.IsActive = true;
+            
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+
+            await mediator.Publish(new AlertCreatedEvent(alert, email));
+
+            return alert;
         }
-        
-        var emailHash = ComputeHash(email);
-        var isVerified = await context.EmailVerifications
-            .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
-
-        alert.EncryptedEmail = _protector.Protect(email);
-        alert.EmailHash = emailHash;
-        alert.IsVerified = isVerified;
-        alert.CreatedAt = DateTime.UtcNow;
-        alert.IsActive = true;
-        
-        context.Alerts.Add(alert);
-        await context.SaveChangesAsync();
-
-        await mediator.Publish(new AlertCreatedEvent(alert, email));
-
-        return alert;
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error creating alert for email hash {EmailHash}", ComputeHash(email));
+            throw;
+        }
     }
 
     public static string ComputeHash(string email)

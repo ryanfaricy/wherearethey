@@ -1,0 +1,24 @@
+@using WhereAreThey.Services
+@inject IJSRuntime JS
+@inject UserTimeZoneService TimeZoneService
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !TimeZoneService.IsInitialized)
+        {
+            try
+            {
+                var timeZoneId = await JS.InvokeAsync<string>("timeUtils.getTimeZone");
+                if (!string.IsNullOrEmpty(timeZoneId))
+                {
+                    TimeZoneService.SetTimeZone(timeZoneId);
+                }
+            }
+            catch
+            {
+                // Fallback or ignore
+            }
+        }
+    }
+}

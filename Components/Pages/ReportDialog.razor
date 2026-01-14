@@ -5,6 +5,7 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
 <RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
@@ -78,6 +79,7 @@
 
     private async Task SubmitReport()
     {
+        if (isSubmitting) return;
         isSubmitting = true;
         try
         {
@@ -94,6 +96,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to submit report at {Lat}, {Lng}", report.Latitude, report.Longitude);
             NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], ex.Message);
         }
         finally

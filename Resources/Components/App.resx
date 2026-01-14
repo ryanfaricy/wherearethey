@@ -451,6 +451,9 @@
   <data name="Limit_Alerts" xml:space="preserve">
     <value>Alert Zones: Up to {0} every {1} minutes.</value>
   </data>
+  <data name="Report_Expiry" xml:space="preserve">
+    <value>Report Expiry: Reports disappear after {0} hours.</value>
+  </data>
   <data name="Identifier_Error" xml:space="preserve">
     <value>Anonymous identifier is missing. Please refresh the page and try again.</value>
   </data>

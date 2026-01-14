@@ -6,6 +6,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -153,6 +154,8 @@
 
     private async Task CreateAlert()
     {
+        if (isSubmitting) return;
+
         if (string.IsNullOrWhiteSpace(email))
         {
             NotificationService.Notify(NotificationSeverity.Error, "Email is required");
@@ -172,6 +175,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to create alert for email {Email}", email);
             NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", ex.Message);
         }
         finally
@@ -190,6 +194,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to deactivate alert {AlertId}", id);
             NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", ex.Message);
         }
     }

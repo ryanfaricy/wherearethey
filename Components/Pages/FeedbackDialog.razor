@@ -5,6 +5,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject ILogger<FeedbackDialog> Logger
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -59,6 +60,8 @@
 
     private async Task SubmitFeedback()
     {
+        if (isSubmitting) return;
+
         if (string.IsNullOrWhiteSpace(feedback.Message))
         {
             NotificationService.Notify(NotificationSeverity.Error, L["Message_Required"]);
@@ -75,6 +78,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Failed to submit feedback");
             NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], ex.Message);
         }
         finally
