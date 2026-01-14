@@ -55,13 +55,10 @@
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
             <RadzenTextBox Value="@userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
             <RadzenButton Icon="content_copy" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
+            <RadzenButton Text="@L["IMPORT"]" Click="@(() => showImport = !showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
         </RadzenStack>
 
-        @if (!showImport)
-        {
-            <RadzenButton Text="@L["IMPORT_EXISTING_ID"]" Click="@(() => showImport = true)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Style="justify-content: start; padding-left: 0;" />
-        }
-        else
+        @if (showImport)
         {
             <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
                 <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Style="width: 100%;">

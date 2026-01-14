@@ -97,6 +97,9 @@
   <data name="IMPORT_EXISTING_ID" xml:space="preserve">
     <value>IMPORT EXISTING ID</value>
   </data>
+  <data name="IMPORT" xml:space="preserve">
+    <value>IMPORT</value>
+  </data>
   <data name="CANCEL" xml:space="preserve">
     <value>CANCEL</value>
   </data>
