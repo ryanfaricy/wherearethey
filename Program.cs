@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
+using System.Threading.RateLimiting;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
@@ -114,6 +116,22 @@ builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
 
+// Add Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("MapProxyPolicy", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? httpContext.Request.Headers.Host.ToString(),
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0
+            }));
+});
+
 // Configure for high concurrency
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
@@ -147,6 +165,7 @@ if (!app.Environment.IsDevelopment())
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseResponseCompression();
 app.UseHttpsRedirection();
+app.UseRateLimiter();
 
 app.Use(async (context, next) =>
 {
@@ -199,6 +218,8 @@ app.MapGet("/api/map/proxy", async (string? reportId, ILocationService locationS
     var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/png";
     var stream = await response.Content.ReadAsStreamAsync();
     return Results.Stream(stream, contentType);
-});
+}).RequireRateLimiting("MapProxyPolicy");
 
 app.Run();
+
+public partial class Program { }
