@@ -84,8 +84,6 @@ h1:focus {
     .main-toolbar {
         gap: 4px !important;
         padding: 4px !important;
-        flex-wrap: nowrap !important;
-        overflow-x: hidden;
     }
 
     .main-toolbar .rz-button {
