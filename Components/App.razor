@@ -7,6 +7,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Live anonymous incident reporting and heat map." />
     <base href="/" />
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
@@ -43,6 +44,19 @@
     <link rel="manifest" href="manifest.json" />
     <meta name="theme-color" content="#f44336" />
     <link rel="apple-touch-icon" href="favicon.png" />
+
+    <!-- Social Media Meta Tags -->
+    <meta property="og:title" content="AreTheyHere - Live Heat Map" />
+    <meta property="og:description" content="Live anonymous incident reporting and heat map." />
+    <meta property="og:image" content="@((Configuration["BaseUrl"] ?? "https://aretheyhere.com").TrimEnd('/'))/favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@(Configuration["BaseUrl"] ?? "https://aretheyhere.com")" />
+    
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="AreTheyHere - Live Heat Map" />
+    <meta name="twitter:description" content="Live anonymous incident reporting and heat map." />
+    <meta name="twitter:image" content="@((Configuration["BaseUrl"] ?? "https://aretheyhere.com").TrimEnd('/'))/favicon.png" />
+
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
