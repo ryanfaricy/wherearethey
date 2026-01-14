@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.Threading.RateLimiting;
+using FluentValidation;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
+using WhereAreThey.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -104,7 +106,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"));
 
 // Add application services
-builder.Services.AddSingleton<ISubmissionValidator, SubmissionValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Singleton);
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();

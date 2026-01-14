@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
@@ -16,18 +17,14 @@ public class AlertService(
     IConfiguration configuration,
     ILogger<AlertService> logger,
     ISettingsService settingsService,
-    ISubmissionValidator validator,
+    IValidator<Alert> validator,
     IStringLocalizer<App> L) : IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
-        var settings = await settingsService.GetSettingsAsync();
-
-        // Anti-spam validation
-        await validator.ValidateAlertLimitAsync(alert.UserIdentifier, settings.ReportCooldownMinutes, settings.AlertLimitCount);
-        validator.ValidateNoLinks(alert.Message, "Links_Error");
+        await validator.ValidateAndThrowAsync(alert);
 
         await using var context = await contextFactory.CreateDbContextAsync();
 

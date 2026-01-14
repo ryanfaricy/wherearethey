@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -6,8 +7,8 @@ using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Validators;
 using Xunit;
-
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
 
@@ -20,6 +21,12 @@ public class AlertServiceTests
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
+
+    public AlertServiceTests()
+    {
+        _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => new LocalizedString(key, key));
+        _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] args) => new LocalizedString(key, key));
+    }
 
     private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -46,7 +53,7 @@ public class AlertServiceTests
     private IAlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, _localizerMock.Object);
+        var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
         return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
     }
 
@@ -448,7 +455,7 @@ public class AlertServiceTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => 
+        var exception = await Assert.ThrowsAsync<ValidationException>(() => 
             service.CreateAlertAsync(alert4, email));
         
         _localizerMock.Verify(l => l["Alert_Cooldown_Error"], Times.AtLeastOnce);

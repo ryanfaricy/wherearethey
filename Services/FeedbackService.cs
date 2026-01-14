@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
@@ -9,16 +10,12 @@ namespace WhereAreThey.Services;
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     ISettingsService settingsService,
-    ISubmissionValidator validator,
+    IValidator<Feedback> validator,
     IStringLocalizer<App> L) : IFeedbackService
 {
     public async Task AddFeedbackAsync(Feedback feedback)
     {
-        var settings = await settingsService.GetSettingsAsync();
-
-        // Anti-spam validation
-        await validator.ValidateFeedbackCooldownAsync(feedback.UserIdentifier, settings.ReportCooldownMinutes);
-        validator.ValidateNoLinks(feedback.Message, "Feedback_Links_Error");
+        await validator.ValidateAndThrowAsync(feedback);
 
         await using var context = await contextFactory.CreateDbContextAsync();
         feedback.Timestamp = DateTime.UtcNow;

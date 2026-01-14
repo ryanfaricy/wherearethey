@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -9,6 +10,7 @@ using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Validators;
 using Xunit;
 
 namespace WhereAreThey.Tests;
@@ -75,7 +77,7 @@ public class LocationServiceTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, localizer);
+        var validator = new LocationReportValidator(factory, settingsService, localizer);
         return new LocationService(factory, _reportProcessingMock.Object, settingsService, validator, localizer);
     }
 
@@ -313,8 +315,9 @@ public class LocationServiceTests
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -328,7 +331,7 @@ public class LocationServiceTests
         services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, reportValidator, CreateLocalizer());
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";
@@ -385,8 +388,9 @@ public class LocationServiceTests
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -400,7 +404,7 @@ public class LocationServiceTests
         services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, reportValidator, CreateLocalizer());
         
         var userBEmail = "userB@example.com";
         var alertMessage = "This is my custom alert message";
@@ -498,12 +502,13 @@ public class LocationServiceTests
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
 
         var customBaseUrl = "https://custom.example.com";
         _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
         
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, validator, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -517,7 +522,7 @@ public class LocationServiceTests
         services.AddSingleton<IReportProcessingService, ReportProcessingService>();
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, validator, CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IReportProcessingService>(), settingsService, reportValidator, CreateLocalizer());
         
         var userEmail = "test@example.com";
         var alert = new Alert 

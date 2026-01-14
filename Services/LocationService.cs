@@ -1,3 +1,4 @@
+using FluentValidation;
 using System.Globalization;
 using GeoTimeZone;
 using TimeZoneConverter;
@@ -14,40 +15,16 @@ public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IReportProcessingService reportProcessingService,
     ISettingsService settingsService,
-    ISubmissionValidator validator,
+    IValidator<LocationReport> validator,
     IStringLocalizer<App> L) : ILocationService
 {
     public event Action<LocationReport?>? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
+        await validator.ValidateAndThrowAsync(report);
+
         await using var context = await contextFactory.CreateDbContextAsync();
-        var settings = await settingsService.GetSettingsAsync();
-
-        // Anti-spam validation
-        await validator.ValidateLocationReportCooldownAsync(report.ReporterIdentifier, settings.ReportCooldownMinutes);
-        validator.ValidateNoLinks(report.Message, "Links_Error");
-
-        // Anti-spam: check distance
-        if (report.ReporterLatitude.HasValue && report.ReporterLongitude.HasValue)
-        {
-            var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
-                report.ReporterLatitude.Value, report.ReporterLongitude.Value);
-
-            // Convert miles to km for distance calculation (1 mile ≈ 1.60934 km)
-            var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
-            if (distance > maxDistanceKm)
-            {
-                throw new InvalidOperationException(string.Format(L["Distance_Error"], settings.MaxReportDistanceMiles));
-            }
-        }
-        else
-        {
-            // We require reporter location for non-emergency reports
-            // Emergency reports might be allowed without location if it's a critical failure, 
-            // but the rule says "a user can only make a report within five miles"
-            throw new InvalidOperationException(L["Location_Verify_Error"]);
-        }
 
         report.Timestamp = DateTime.UtcNow;
         context.LocationReports.Add(report);

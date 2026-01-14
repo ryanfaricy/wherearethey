@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -7,6 +8,7 @@ using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Validators;
 using Xunit;
 
 namespace WhereAreThey.Tests;
@@ -74,7 +76,7 @@ public class AntiSpamTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, localizer);
+        var validator = new LocationReportValidator(factory, settingsService, localizer);
         var reportProcessingMock = new Mock<IReportProcessingService>();
         return new LocationService(factory, reportProcessingMock.Object, settingsService, validator, localizer);
     }
@@ -97,7 +99,7 @@ public class AntiSpamTests
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
         Assert.Contains("5.0 miles", ex.Message);
     }
 
@@ -131,7 +133,7 @@ public class AntiSpamTests
         await service.AddLocationReportAsync(report1);
         
         // Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddLocationReportAsync(report2));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report2));
         Assert.Contains("5 minutes", ex.Message);
     }
 
@@ -154,7 +156,7 @@ public class AntiSpamTests
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
         Assert.Contains("Links are not allowed", ex.Message);
     }
 
@@ -236,7 +238,7 @@ public class AntiSpamTests
         var report = new LocationReport { ReporterIdentifier = "UserB", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
         await service.AddLocationReportAsync(report);
         
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
         Assert.Contains("10 minutes", ex.Message);
 
         // Check distance
@@ -246,7 +248,7 @@ public class AntiSpamTests
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
             Timestamp = DateTime.UtcNow 
         };
-        var exDist = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddLocationReportAsync(farReport));
+        var exDist = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(farReport));
         Assert.Contains("50.0 miles", exDist.Message);
     }
 }

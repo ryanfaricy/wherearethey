@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -5,6 +6,7 @@ using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Validators;
 using Xunit;
 
 namespace WhereAreThey.Tests;
@@ -64,7 +66,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
         var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback
         {
@@ -89,7 +91,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
         var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
@@ -98,7 +100,7 @@ public class FeedbackTests
         await service.AddFeedbackAsync(feedback1);
         
         // Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddFeedbackAsync(feedback2));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddFeedbackAsync(feedback2));
         Assert.Contains("5 minutes", ex.Message);
     }
 
@@ -109,7 +111,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
         var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback 
         { 
@@ -119,7 +121,7 @@ public class FeedbackTests
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.AddFeedbackAsync(feedback));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddFeedbackAsync(feedback));
         Assert.Contains("Links are not allowed", ex.Message);
     }
 
@@ -130,7 +132,7 @@ public class FeedbackTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
-        var validator = new SubmissionValidator(factory, CreateLocalizer());
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
         var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
