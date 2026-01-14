@@ -451,6 +451,9 @@
   <data name="Limit_Alerts" xml:space="preserve">
     <value>Zonas de Alerta: Hasta {0} cada {1} minutos.</value>
   </data>
+  <data name="Report_Expiry" xml:space="preserve">
+    <value>Caducidad del Informe: Los informes desaparecen después de {0} horas.</value>
+  </data>
   <data name="Identifier_Error" xml:space="preserve">
     <value>Falta el identificador anónimo. Por favor, actualice la página e intente de nuevo.</value>
   </data>

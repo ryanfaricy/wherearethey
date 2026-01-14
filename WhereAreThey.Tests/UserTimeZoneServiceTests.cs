@@ -37,4 +37,18 @@ public class UserTimeZoneServiceTests
         
         Assert.Equal("12:00", formatted); // GMT in winter
     }
+
+    [Fact]
+    public void SetTimeZone_WithWindowsId_ShouldInitialize()
+    {
+        var service = new UserTimeZoneService();
+        service.SetTimeZone("Eastern Standard Time");
+        Assert.True(service.IsInitialized);
+        
+        // 2026-01-13 22:00 UTC is 2026-01-13 17:00 EST
+        var utc = new DateTime(2026, 1, 13, 22, 0, 0, DateTimeKind.Utc);
+        var local = service.ToLocal(utc);
+        
+        Assert.Equal(17, local.Hour);
+    }
 }
