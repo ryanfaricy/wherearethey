@@ -340,7 +340,7 @@
         {
             await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"],
                 null,
-                new DialogOptions { Width = "400px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
         }
         finally
         {
@@ -355,7 +355,7 @@
         {
             await DialogService.OpenAsync<HelpDialog>(L["HELP"],
                 null,
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
         }
         finally
         {
@@ -402,7 +402,7 @@
 
             var result = await DialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
                 parameters,
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
 
             await LoadUserAlerts();
 
@@ -424,7 +424,7 @@
         {
             await DialogService.OpenAsync<DonateDialog>(L["DONATE"],
                 null,
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
         }
         finally
         {
@@ -624,7 +624,7 @@
                     { "Reports", nearbyReports },
                     { "Alerts", nearbyAlerts }
                 },
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
 
             if (result == true) // If an alert was deleted
             {
@@ -707,7 +707,7 @@
     {
         var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
             new Dictionary<string, object> { { "report", report } },
-            new DialogOptions { Width = "500px", Resizable = false, Draggable = false, CloseDialogOnOverlayClick = true });
+            DialogConfigs.Default);
 
         if (result == true)
         {

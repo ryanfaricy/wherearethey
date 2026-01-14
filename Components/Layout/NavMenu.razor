@@ -53,7 +53,7 @@
             
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
                 new Dictionary<string, object> { { "report", report } },
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
         }
         catch (Exception)
         {
@@ -83,7 +83,7 @@
 
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
                 new Dictionary<string, object> { { "report", fallbackReport } },
-                new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+                DialogConfigs.Default);
         }
     }
 
@@ -106,7 +106,7 @@
         }
 
         var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, 
-            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+            DialogConfigs.Default);
 
         if (result is Alert alert)
         {
@@ -117,7 +117,7 @@
     private async Task OnDonateClick()
     {
         await DialogService.OpenAsync<DonateDialog>("DONATE", null, 
-            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+            DialogConfigs.Default);
     }
 
     public class GeolocationPosition

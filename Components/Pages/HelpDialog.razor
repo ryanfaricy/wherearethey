@@ -145,12 +145,12 @@
     private async Task ShowPrivacyPolicy()
     {
         await DialogService.OpenAsync<PrivacyPolicyDialog>(L["PRIVACY_POLICY"], null, 
-            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+            DialogConfigs.Default);
     }
 
     private async Task ShowFeedback()
     {
         await DialogService.OpenAsync<FeedbackDialog>(L["FEEDBACK"], null, 
-            new DialogOptions { Width = "500px", CloseDialogOnOverlayClick = true });
+            DialogConfigs.Default);
     }
 }
