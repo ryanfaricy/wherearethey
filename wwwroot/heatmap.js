@@ -153,10 +153,10 @@ window.updateAlerts = function (alerts) {
 
         // Create marker with icon
         const alertIcon = L.divIcon({
-            className: 'alert-pin-icon',
-            html: '<i class="rzi">notifications</i>',
-            iconSize: [26, 26],
-            iconAnchor: [13, 13]
+            className: 'alert-pin-container',
+            html: '<div class="alert-pin-inner"><i class="rzi">notifications</i></div>',
+            iconSize: [44, 44],
+            iconAnchor: [22, 22]
         });
 
         const marker = L.marker([alert.latitude, alert.longitude], {
@@ -245,21 +245,33 @@ window.addSingleReport = function (report) {
     refreshHeatLayer();
 };
 
+function createReportIcon(r, isSelected) {
+    const type = r.isEmergency ? 'emergency' : 'normal';
+    const selectedClass = isSelected ? 'selected' : '';
+    const iconName = r.isEmergency ? 'report_problem' : 'location_on';
+    
+    return L.divIcon({
+        className: `report-pin-container ${type} ${selectedClass}`,
+        html: `<div class="report-pin-inner"><i class="rzi">${iconName}</i></div>`,
+        iconSize: [44, 44],
+        iconAnchor: [22, 22]
+    });
+}
+
 function addReportMarker(r) {
     const isSelected = r.id === selectedReportId;
-    const color = isSelected ? '#ffeb3b' : (r.isEmergency ? '#f44336' : '#2196f3');
-    const marker = L.circleMarker([r.latitude, r.longitude], {
-        radius: isSelected ? 8 : 6,
-        color: '#fff',
-        fillColor: color,
-        fillOpacity: 0.9,
-        weight: 2
+    const marker = L.marker([r.latitude, r.longitude], {
+        icon: createReportIcon(r, isSelected)
     });
 
     marker.reportData = r;
     marker.on('click', onMarkerClick);
 
     marker.reportId = r.id;
+    
+    if (isSelected) {
+        marker.setZIndexOffset(1000);
+    }
 
     const tooltipText = r.message ? 
         (r.isEmergency ? '🚨 ' + r.message : r.message) : 
@@ -267,7 +279,8 @@ function addReportMarker(r) {
 
     marker.bindTooltip(tooltipText, {
         permanent: false,
-        direction: 'top'
+        direction: 'top',
+        offset: [0, -10]
     });
 
     reportMarkers.push(marker);
@@ -303,12 +316,11 @@ window.selectReport = function(reportId) {
         const report = allReports.find(r => r.id === m.reportId);
         if (report) {
             const isSel = report.id === selectedReportId;
-            m.setStyle({
-                radius: isSel ? 8 : 6,
-                fillColor: isSel ? '#ffeb3b' : (report.isEmergency ? '#f44336' : '#2196f3')
-            });
+            m.setIcon(createReportIcon(report, isSel));
             if (isSel) {
-                m.bringToFront();
+                m.setZIndexOffset(1000);
+            } else {
+                m.setZIndexOffset(0);
             }
         }
     });

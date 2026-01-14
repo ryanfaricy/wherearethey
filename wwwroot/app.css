@@ -128,8 +128,53 @@ h1:focus {
     }
 }
 
+/* Marker hit areas and icons */
+.report-pin-container, .alert-pin-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent; /* Large hit area for mobile */
+}
+
+.report-pin-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+}
+
+.report-pin-inner i {
+    font-size: 14px;
+}
+
+.report-pin-container.normal .report-pin-inner {
+    background-color: #2196f3;
+}
+
+.report-pin-container.emergency .report-pin-inner {
+    background-color: #f44336;
+}
+
+.report-pin-container.selected .report-pin-inner {
+    background-color: #ffeb3b;
+    width: 32px;
+    height: 32px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    color: #444;
+}
+
+.report-pin-container.selected .report-pin-inner i {
+    font-size: 18px;
+}
+
 /* Alert Pin */
-.alert-pin-icon {
+.alert-pin-inner {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -138,10 +183,12 @@ h1:focus {
     border-radius: 50%;
     color: white;
     box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    width: 28px;
+    height: 28px;
 }
 
-.alert-pin-icon i {
-    font-size: 14px;
+.alert-pin-inner i {
+    font-size: 16px;
 }
 
 /* Map Controls */
