@@ -5,6 +5,7 @@ namespace WhereAreThey.Services;
 public interface IAlertService
 {
     Task<Alert> CreateAlertAsync(Alert alert, string email);
+    Task SendVerificationEmailAsync(string email, string emailHash);
     Task<bool> VerifyEmailAsync(string token);
     string? DecryptEmail(string? encryptedEmail);
     Task<Alert?> GetAlertByExternalIdAsync(Guid externalId);

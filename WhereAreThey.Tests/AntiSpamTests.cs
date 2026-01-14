@@ -10,6 +10,7 @@ using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
 using Xunit;
+using MediatR;
 
 namespace WhereAreThey.Tests;
 
@@ -77,8 +78,8 @@ public class AntiSpamTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        var reportProcessingMock = new Mock<IReportProcessingService>();
-        return new LocationService(factory, reportProcessingMock.Object, settingsService, validator, localizer);
+        var mediatorMock = new Mock<IMediator>();
+        return new LocationService(factory, mediatorMock.Object, settingsService, validator, _loggerMock.Object, localizer);
     }
 
     [Fact]

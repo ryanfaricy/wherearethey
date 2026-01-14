@@ -8,14 +8,17 @@ using WhereAreThey.Models;
 
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
+using MediatR;
+using WhereAreThey.Events;
 
 namespace WhereAreThey.Services;
 
 public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
-    IReportProcessingService reportProcessingService,
+    IMediator mediator,
     ISettingsService settingsService,
     IValidator<LocationReport> validator,
+    ILogger<LocationService> logger,
     IStringLocalizer<App> L) : ILocationService
 {
     public event Action<LocationReport?>? OnReportAdded;
@@ -32,8 +35,14 @@ public class LocationService(
 
         OnReportAdded?.Invoke(report);
 
-        // Process alerts in the background to not block the reporter
-        _ = Task.Run(async () => await reportProcessingService.ProcessReportAsync(report));
+        try
+        {
+            await mediator.Publish(new ReportAddedEvent(report));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error publishing report added event");
+        }
 
         return report;
     }

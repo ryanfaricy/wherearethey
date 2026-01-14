@@ -11,6 +11,8 @@ using WhereAreThey.Validators;
 using Xunit;
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
+using MediatR;
+using WhereAreThey.Events;
 
 namespace WhereAreThey.Tests;
 
@@ -18,6 +20,7 @@ public class AlertServiceTests
 {
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
     private readonly Mock<IEmailService> _emailServiceMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
@@ -54,7 +57,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
     }
 
     [Fact]
@@ -85,11 +88,10 @@ public class AlertServiceTests
         Assert.NotEqual(email, result.EncryptedEmail);
         Assert.Equal(email, service.DecryptEmail(result.EncryptedEmail));
         
-        // Verify verification email was sent
-        _emailServiceMock.Verify(x => x.SendEmailAsync(
-            It.Is<string>(s => s == email),
-            It.Is<string>(s => s.Contains("Verify")),
-            It.IsAny<string>()), Times.Once);
+        // Verify event was published
+        _mediatorMock.Verify(x => x.Publish(
+            It.Is<AlertCreatedEvent>(e => e.Alert.Id == result.Id && e.Email == email),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -175,6 +177,9 @@ public class AlertServiceTests
         
         var alert = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user" }, email);
         Assert.False(alert.IsVerified);
+
+        // Manually trigger verification email to create verification record
+        await service.SendVerificationEmailAsync(email, AlertService.ComputeHash(email));
 
         string? token;
         using (var context = new ApplicationDbContext(options))

@@ -7,13 +7,16 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
+using MediatR;
+using WhereAreThey.Events;
 
 namespace WhereAreThey.Services;
 
 public class AlertService(
-    IDbContextFactory<ApplicationDbContext> contextFactory, 
+    IDbContextFactory<ApplicationDbContext> contextFactory,
     IDataProtectionProvider provider,
     IEmailService emailService,
+    IMediator mediator,
     IConfiguration configuration,
     ILogger<AlertService> logger,
     ISettingsService settingsService,
@@ -46,15 +49,12 @@ public class AlertService(
         context.Alerts.Add(alert);
         await context.SaveChangesAsync();
 
-        if (!isVerified)
-        {
-            await SendVerificationEmailAsync(email, emailHash);
-        }
+        await mediator.Publish(new AlertCreatedEvent(alert, email));
 
         return alert;
     }
 
-    private static string ComputeHash(string email)
+    public static string ComputeHash(string email)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
         var bytes = Encoding.UTF8.GetBytes(normalizedEmail);
@@ -62,7 +62,7 @@ public class AlertService(
         return Convert.ToHexString(hash);
     }
 
-    private async Task SendVerificationEmailAsync(string email, string emailHash)
+    public async Task SendVerificationEmailAsync(string email, string emailHash)
     {
         try
         {

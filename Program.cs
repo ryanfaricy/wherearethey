@@ -53,6 +53,9 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 // Add HttpClient for proxy and other services
 builder.Services.AddHttpClient();
 
+// Add MediatR
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
