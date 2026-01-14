@@ -21,11 +21,16 @@
             <RadzenTabsItem Text="@L["DONATE"]">
                 <RadzenTemplateForm Data="@donation" Submit="@((Donation args) => ProcessDonation())">
                     <RadzenStack Gap="1rem">
-                        <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined">
-                            <RadzenNumeric @bind-Value="@donation.Amount" TValue="decimal" 
-                                           Min="1" Max="10000" ShowUpDown="false" 
-                                           Format="$0.00" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" 
-                                           Disabled="@isProcessing" />
+                        <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined" Component="Amount" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenNumeric Name="Amount" @bind-Value="@donation.Amount" TValue="decimal" 
+                                               Min="1" Max="10000" ShowUpDown="false" 
+                                               Format="$0.00" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" 
+                                               Disabled="@isProcessing" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenNumericRangeValidator Component="Amount" Min="1" Max="10000" Text="@L["Amount_Range_Error"]" />
+                            </Helper>
                         </RadzenFormField>
 
                         <div class="row g-2">
@@ -53,11 +58,16 @@
 
                         <div id="card-container" style="min-height: 80px; margin-bottom: 1rem;"></div>
 
-                        <RadzenFormField Text="@L["Email_Optional"]" Variant="Variant.Outlined">
-                            <RadzenTextBox @bind-Value="@donation.DonorEmail" 
-                                           Placeholder="your@email.com" 
-                                           Style="width: 100%;" 
-                                           Disabled="@isProcessing" />
+                        <RadzenFormField Text="@L["Email_Optional"]" Variant="Variant.Outlined" Component="DonorEmail" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenTextBox Name="DonorEmail" @bind-Value="@donation.DonorEmail" 
+                                               Placeholder="your@email.com" 
+                                               Style="width: 100%;" 
+                                               Disabled="@isProcessing" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenEmailValidator Component="DonorEmail" Text="@L["Invalid_Email"]" />
+                            </Helper>
                         </RadzenFormField>
 
                         <RadzenButton ButtonType="ButtonType.Submit" 
@@ -143,12 +153,6 @@
     private async Task ProcessDonation()
     {
         if (isProcessing) return;
-
-        if (donation.Amount < 1)
-        {
-            NotificationService.Notify(NotificationSeverity.Warning, L["Minimum_donation"]);
-            return;
-        }
 
         isProcessing = true;
         StateHasChanged();

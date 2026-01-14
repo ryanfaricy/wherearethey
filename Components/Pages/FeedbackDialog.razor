@@ -21,9 +21,14 @@
                 <RadzenDropDown @bind-Value="@feedback.Type" Data="@feedbackTypes" Style="width: 100%;" />
             </RadzenFormField>
 
-            <RadzenFormField Text="@L["Message"]" Variant="Variant.Outlined" Style="width: 100%;">
-                <RadzenTextArea @bind-Value="@feedback.Message" Style="width: 100%; height: 150px;" 
-                                Placeholder="@L["Feedback_Placeholder"]" />
+            <RadzenFormField Text="@L["Message"]" Variant="Variant.Outlined" Component="FeedbackMessage" Style="width: 100%;">
+                <ChildContent>
+                    <RadzenTextArea Name="FeedbackMessage" @bind-Value="@feedback.Message" Style="width: 100%; height: 150px;" 
+                                    Placeholder="@L["Feedback_Placeholder"]" />
+                </ChildContent>
+                <Helper>
+                    <RadzenRequiredValidator Component="FeedbackMessage" Text="@L["Message_Required"]" />
+                </Helper>
             </RadzenFormField>
 
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT"]" 
@@ -62,12 +67,6 @@
     private async Task SubmitFeedback()
     {
         if (isSubmitting) return;
-
-        if (string.IsNullOrWhiteSpace(feedback.Message))
-        {
-            NotificationService.Notify(NotificationSeverity.Error, L["Message_Required"]);
-            return;
-        }
 
         isSubmitting = true;
         try

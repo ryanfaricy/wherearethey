@@ -487,4 +487,16 @@
   <data name="VIEW" xml:space="preserve">
     <value>VER</value>
   </data>
+  <data name="Invalid_Email" xml:space="preserve">
+    <value>Dirección de correo no válida</value>
+  </data>
+  <data name="Radius_Range_Error" xml:space="preserve">
+    <value>El radio debe estar entre 0.1 y 160.9 km</value>
+  </data>
+  <data name="Amount_Range_Error" xml:space="preserve">
+    <value>La cantidad debe estar entre $1 y $10,000</value>
+  </data>
+  <data name="ID_Required" xml:space="preserve">
+    <value>El ID es obligatorio</value>
+  </data>
 </root>

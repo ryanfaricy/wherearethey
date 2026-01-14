@@ -38,23 +38,36 @@
                             </div>
                         </div>
 
-                        <RadzenFormField Text="@L["Radius_Km"]" Variant="Variant.Outlined">
-                            <RadzenNumeric @bind-Value="@newAlert.RadiusKm" TValue="double" 
-                                           Min="0.1m" Max="160.9m" ShowUpDown="true" 
-                                           Step="0.5m" Style="width: 100%;" />
+                        <RadzenFormField Text="@L["Radius_Km"]" Variant="Variant.Outlined" Component="RadiusKm" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenNumeric Name="RadiusKm" @bind-Value="@newAlert.RadiusKm" TValue="double" 
+                                               Min="0.1m" Max="160.9m" ShowUpDown="true" 
+                                               Step="0.5m" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenNumericRangeValidator Component="RadiusKm" Min="0.1" Max="160.9" Text="@L["Radius_Range_Error"]" />
+                            </Helper>
                         </RadzenFormField>
 
-                        <RadzenFormField Text="@L["Alert_Message"]" Variant="Variant.Outlined">
-                            <RadzenTextBox @bind-Value="@newAlert.Message" Style="width: 100%;" 
-                                           Placeholder="@L["Alert_Message_Placeholder"]" />
+                        <RadzenFormField Text="@L["Alert_Message"]" Variant="Variant.Outlined" Component="AlertMessage" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenTextBox Name="AlertMessage" @bind-Value="@newAlert.Message" Style="width: 100%;" 
+                                               Placeholder="@L["Alert_Message_Placeholder"]" MaxLength="100" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenLengthValidator Component="AlertMessage" Max="100" Text="@L["Message_Too_Long"]" />
+                            </Helper>
                         </RadzenFormField>
 
-                        <RadzenFormField Text="@L["Email_for_Alerts"]" Variant="Variant.Outlined">
-                            <RadzenTextBox @bind-Value="@email" Style="width: 100%;" 
-                                           Placeholder="your@email.com" />
-                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-info mt-1">
-                                @L["Email_Encrypted_Note"]
-                            </RadzenText>
+                        <RadzenFormField Text="@L["Email_for_Alerts"]" Variant="Variant.Outlined" Component="Email" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenTextBox Name="Email" @bind-Value="@email" Style="width: 100%;" 
+                                               Placeholder="your@email.com" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="Email" Text="@L["Email_Required"]" />
+                                <RadzenEmailValidator Component="Email" Text="@L["Invalid_Email"]" />
+                            </Helper>
                         </RadzenFormField>
 
                         <RadzenButton ButtonType="ButtonType.Submit" Text="@L["CREATE_ALERT"]" 
@@ -163,12 +176,6 @@
     private async Task CreateAlert()
     {
         if (isSubmitting) return;
-
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Email is required");
-            return;
-        }
 
         isSubmitting = true;
         try
