@@ -1,22 +1,26 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
-@inject DonationService DonationService
+@using Microsoft.Extensions.Localization
+@inject IDonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IConfiguration Configuration
+@inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-success);">SUPPORT US</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-success);">@L["SUPPORT_US"]</RadzenText>
     
     <RadzenText TextStyle="TextStyle.Body2">
-        Your donation helps keep this life-saving service online. <strong>People's lives depend on it.</strong>
+        @((MarkupString)L["Donate_Intro"].Value)
     </RadzenText>
 
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
-            <RadzenTabsItem Text="Donate">
+            <RadzenTabsItem Text="@L["DONATE"]">
                 <RadzenTemplateForm Data="@donation" Submit="@((Donation args) => ProcessDonation())">
                     <RadzenStack Gap="1rem">
-                        <RadzenFormField Text="Amount" Variant="Variant.Outlined">
+                        <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined">
                             <RadzenNumeric @bind-Value="@donation.Amount" TValue="decimal" 
                                            Min="1" Max="10000" ShowUpDown="false" 
                                            Format="c" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" />
@@ -41,14 +45,16 @@
                             </div>
                         </div>
 
-                        <RadzenFormField Text="Email (Optional)" Variant="Variant.Outlined">
+                        <div id="card-container" style="min-height: 80px; margin-bottom: 1rem;"></div>
+
+                        <RadzenFormField Text="@L["Email_Optional"]" Variant="Variant.Outlined">
                             <RadzenTextBox @bind-Value="@donation.DonorEmail" 
                                            Placeholder="your@email.com" 
                                            Style="width: 100%;" />
                         </RadzenFormField>
 
                         <RadzenButton ButtonType="ButtonType.Submit" 
-                                      Text="@($"DONATE ${donation.Amount:F2}")" 
+                                      Text="@(string.Format(L["DONATE_AMOUNT"], donation.Amount.ToString("F2")))" 
                                       Icon="volunteer_activism" 
                                       ButtonStyle="ButtonStyle.Success" 
                                       Style="width: 100%; font-weight: bold;" 
@@ -56,14 +62,14 @@
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Recent">
+            <RadzenTabsItem Text="@L["Recent"]">
                 @if (recentDonations.Any())
                 {
                     <RadzenDataList Data="@recentDonations" TItem="DonationDisplay" PageSize="4">
                         <Template Context="d">
                             <div class="d-flex justify-content-between align-items-center mb-2 p-2 rz-border-radius-2" style="background-color: var(--rz-success-lighter);">
                                 <div>
-                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; margin-bottom: 0;">@d.DisplayName</RadzenText>
+                                    <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; margin-bottom: 0;">@(d.DisplayName == "Anonymous" ? L["Anonymous"] : d.DisplayName)</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Caption" Style="margin-bottom: 0;">@d.TimeAgo</RadzenText>
                                 </div>
                                 <RadzenBadge Text="@($"${d.Amount:F0}")" BadgeStyle="BadgeStyle.Success" />
@@ -73,14 +79,14 @@
                 }
                 else
                 {
-                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">No recent donations.</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_recent_donations"]</RadzenText>
                 }
             </RadzenTabsItem>
         </Tabs>
     </RadzenTabs>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
     </RadzenStack>
 </RadzenStack>
 
@@ -91,33 +97,79 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Simulate recent donations
-        recentDonations = new List<DonationDisplay>
+        var donations = await DonationService.GetAllDonationsAsync();
+        recentDonations = donations
+            .Where(d => d.Status == "completed")
+            .Take(10)
+            .Select(d => new DonationDisplay 
+            { 
+                DisplayName = string.IsNullOrWhiteSpace(d.DonorName) ? "Anonymous" : d.DonorName,
+                Amount = d.Amount,
+                TimeAgo = TimeAgo(d.CreatedAt)
+            }).ToList();
+    }
+
+    private string TimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.UtcNow - dateTime;
+        if (span.TotalSeconds < 60) return "just now";
+        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
+        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        return $"{(int)span.TotalDays}d ago";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
         {
-            new DonationDisplay { DisplayName = "Anonymous", Amount = 25, TimeAgo = "2h ago" },
-            new DonationDisplay { DisplayName = "John D.", Amount = 50, TimeAgo = "5h ago" },
-            new DonationDisplay { DisplayName = "Anonymous", Amount = 10, TimeAgo = "1d ago" },
-        };
+            var appId = Configuration["Square:ApplicationId"];
+            var locId = Configuration["Square:LocationId"];
+            
+            if (!string.IsNullOrEmpty(appId) && !string.IsNullOrEmpty(locId))
+            {
+                await JSRuntime.InvokeAsync<bool>("squarePayments.initialize", appId, locId);
+            }
+        }
     }
 
     private async Task ProcessDonation()
     {
         if (donation.Amount < 1)
         {
-            NotificationService.Notify(NotificationSeverity.Warning, "Minimum donation is $1");
+            NotificationService.Notify(NotificationSeverity.Warning, L["Minimum_donation"]);
             return;
         }
 
         isProcessing = true;
         try
         {
-            await Task.Delay(1000); // Simulate API
+            // 1. Get token from Square
+            string token;
+            try
+            {
+                token = await JSRuntime.InvokeAsync<string>("squarePayments.tokenize");
+            }
+            catch (Exception ex)
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Payment initialization failed", ex.Message);
+                return;
+            }
+
+            // 2. Create payment on backend
+            var response = await DonationService.CreateSquarePaymentAsync(donation.Amount, token);
             
+            if (response.Errors != null && response.Errors.Any())
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Payment failed", response.Errors[0].Detail);
+                return;
+            }
+
+            // 3. Record donation
             donation.Status = "completed";
-            donation.StripePaymentIntentId = Guid.NewGuid().ToString();
+            donation.ExternalPaymentId = response.Payment.Id;
             await DonationService.RecordDonationAsync(donation);
 
-            NotificationService.Notify(NotificationSeverity.Success, "Thank you for your support!");
+            NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
             
             var displayName = string.IsNullOrWhiteSpace(donation.DonorName) ? "Anonymous" : donation.DonorName;
             recentDonations.Insert(0, new DonationDisplay 
@@ -128,6 +180,9 @@
             });
 
             donation = new Donation { Amount = 10 };
+            
+            // Close the dialog after successful payment
+            DialogService.Close(true);
         }
         catch (Exception ex)
         {

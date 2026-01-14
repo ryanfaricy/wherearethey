@@ -15,4 +15,12 @@ public static class GeoUtils
         var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
         return R * c;
     }
+
+    public static (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double latitude, double longitude, double radiusKm)
+    {
+        var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km
+        var lonDelta = radiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));
+
+        return (latitude - latDelta, latitude + latDelta, longitude - lonDelta, longitude + lonDelta);
+    }
 }

@@ -1,32 +1,38 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
-using Stripe;
+using Square;
+using Square.Models;
+
+using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace WhereAreThey.Services;
 
-public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration)
+public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration) : IDonationService
 {
-    private readonly IConfiguration _configuration = configuration;
+    private readonly ISquareClient _squareClient = new SquareClient.Builder()
+        .AccessToken(configuration["Square:AccessToken"] ?? "")
+        .Environment(configuration["Square:Environment"] == "Production" ? Square.Environment.Production : Square.Environment.Sandbox)
+        .Build();
 
-    public async Task<string> CreatePaymentIntentAsync(decimal amount, string currency = "usd")
+    public async Task<CreatePaymentResponse> CreateSquarePaymentAsync(decimal amount, string sourceId)
     {
-        StripeConfiguration.ApiKey = _configuration["Stripe:SecretKey"];
-        var options = new PaymentIntentCreateOptions
-        {
-            Amount = (long)(amount * 100), // Stripe expects amount in cents
-            Currency = currency,
-            AutomaticPaymentMethods = new PaymentIntentAutomaticPaymentMethodsOptions
-            {
-                Enabled = true,
-            },
-        };
+        var amountMoney = new Money.Builder()
+            .Amount((long)(amount * 100))
+            .Currency("USD")
+            .Build();
 
-        var service = new PaymentIntentService();
-        var paymentIntent = await service.CreateAsync(options);
-        return paymentIntent.ClientSecret;
+        var body = new CreatePaymentRequest.Builder(sourceId, Guid.NewGuid().ToString())
+            .AmountMoney(amountMoney)
+            .Autocomplete(true)
+            .LocationId(configuration["Square:LocationId"] ?? "")
+            .Build();
+
+        var result = await _squareClient.PaymentsApi.CreatePaymentAsync(body);
+
+        return result;
     }
-
     public async Task<Donation> RecordDonationAsync(Donation donation)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -36,16 +42,26 @@ public class DonationService(IDbContextFactory<ApplicationDbContext> contextFact
         return donation;
     }
 
-    public async Task<bool> UpdateDonationStatusAsync(string paymentIntentId, string status)
+    public async Task<bool> UpdateDonationStatusAsync(string paymentId, string status)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var donation = await context.Donations
-            .FirstOrDefaultAsync(d => d.StripePaymentIntentId == paymentIntentId);
+            .FirstOrDefaultAsync(d => d.ExternalPaymentId == paymentId);
         
         if (donation == null) return false;
 
         donation.Status = status;
         await context.SaveChangesAsync();
         return true;
+    }
+
+    // Admin methods
+    public async Task<List<Donation>> GetAllDonationsAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.Donations
+            .AsNoTracking()
+            .OrderByDescending(d => d.CreatedAt)
+            .ToListAsync();
     }
 }

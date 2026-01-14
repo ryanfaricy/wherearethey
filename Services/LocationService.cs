@@ -1,73 +1,70 @@
+using FluentValidation;
+using System.Globalization;
+using GeoTimeZone;
+using TimeZoneConverter;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 
+using Microsoft.Extensions.Localization;
+using WhereAreThey.Components;
+using MediatR;
+using WhereAreThey.Events;
+
 namespace WhereAreThey.Services;
 
-public class LocationService(IDbContextFactory<ApplicationDbContext> contextFactory, IServiceProvider serviceProvider, ILogger<LocationService> logger)
+public class LocationService(
+    IDbContextFactory<ApplicationDbContext> contextFactory, 
+    IMediator mediator,
+    ISettingsService settingsService,
+    IValidator<LocationReport> validator,
+    ILogger<LocationService> logger,
+    IStringLocalizer<App> L) : ILocationService
 {
-    public event Action? OnReportAdded;
+    public event Action<LocationReport?>? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
+        await validator.ValidateAndThrowAsync(report);
+
         await using var context = await contextFactory.CreateDbContextAsync();
+
         report.Timestamp = DateTime.UtcNow;
         context.LocationReports.Add(report);
         await context.SaveChangesAsync();
 
-        OnReportAdded?.Invoke();
+        OnReportAdded?.Invoke(report);
 
-        // Process alerts in the background to not block the reporter
-        _ = Task.Run(async () => await ProcessAlertsForReport(report));
+        try
+        {
+            await mediator.Publish(new ReportAddedEvent(report));
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error publishing report added event");
+        }
 
         return report;
     }
 
-    private async Task ProcessAlertsForReport(LocationReport report)
-    {
-        try
-        {
-            using var scope = serviceProvider.CreateScope();
-            var alertService = scope.ServiceProvider.GetRequiredService<AlertService>();
-            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-
-            var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
-            
-            foreach (var alert in matchingAlerts)
-            {
-                var email = alertService.DecryptEmail(alert.EncryptedEmail);
-                if (!string.IsNullOrEmpty(email))
-                {
-                    var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
-                    var body = $@"
-                        <h3>New report near your alert area</h3>
-                        <p><strong>Location:</strong> {report.Latitude:F4}, {report.Longitude:F4}</p>
-                        <p><strong>Time:</strong> {report.Timestamp:g} UTC</p>
-                        {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
-                        {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
-                        <hr/>
-                        <p><a href='https://aretheyhere.com/heatmap'>View on Heat Map</a></p>
-                        <small>You received this because you set up an alert on AreTheyHere.</small>";
-
-                    await emailService.SendEmailAsync(email!, subject, body);
-                }
-                else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
-                {
-                    logger.LogWarning("Failed to decrypt email for alert {AlertId}. The encryption keys may have changed.", alert.Id);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
-        }
-    }
-
-    public async Task<List<LocationReport>> GetRecentReportsAsync(int hours = 24)
+    public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var cutoff = DateTime.UtcNow.AddHours(-hours);
         return await context.LocationReports
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.ExternalId == externalId);
+    }
+
+    public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var settings = await settingsService.GetSettingsAsync();
+        
+        // Use the global expiry setting if no hours provided
+        var actualHours = hours ?? settings.ReportExpiryHours;
+        var cutoff = DateTime.UtcNow.AddHours(-actualHours);
+        return await context.LocationReports
+            .AsNoTracking()
             .Where(r => r.Timestamp >= cutoff)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
@@ -76,22 +73,45 @@ public class LocationService(IDbContextFactory<ApplicationDbContext> contextFact
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        // Simple bounding box calculation (approximation)
-        var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km
-        var lonDelta = radiusKm / (111.0 * Math.Cos(latitude * Math.PI / 180.0));
+        var settings = await settingsService.GetSettingsAsync();
 
-        var minLat = latitude - latDelta;
-        var maxLat = latitude + latDelta;
-        var minLon = longitude - lonDelta;
-        var maxLon = longitude + lonDelta;
+        // Use the global expiry setting
+        var cutoff = DateTime.UtcNow.AddHours(-settings.ReportExpiryHours);
+        
+        // Simple bounding box calculation
+        var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(latitude, longitude, radiusKm);
 
         var reports = await context.LocationReports
-            .Where(r => r.Latitude >= minLat && r.Latitude <= maxLat &&
+            .AsNoTracking()
+            .Where(r => r.Timestamp >= cutoff &&
+                       r.Latitude >= minLat && r.Latitude <= maxLat &&
                        r.Longitude >= minLon && r.Longitude <= maxLon)
             .ToListAsync();
 
         // Filter by actual distance using Haversine formula
         return reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
             .ToList();
+    }
+
+    // Admin methods
+    public async Task<List<LocationReport>> GetAllReportsAsync()
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        return await context.LocationReports
+            .AsNoTracking()
+            .OrderByDescending(r => r.Timestamp)
+            .ToListAsync();
+    }
+
+    public async Task DeleteReportAsync(int id)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var report = await context.LocationReports.FindAsync(id);
+        if (report != null)
+        {
+            context.LocationReports.Remove(report);
+            await context.SaveChangesAsync();
+            OnReportAdded?.Invoke(null);
+        }
     }
 }

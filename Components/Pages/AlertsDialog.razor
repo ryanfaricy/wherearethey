@@ -1,59 +1,68 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
-@inject AlertService AlertService
+@using Microsoft.Extensions.Localization
+@inject IAlertService AlertService
+@inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Distance-Based Alerts</RadzenText>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Distance_Based_Alerts"]</RadzenText>
     
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
-            <RadzenTabsItem Text="Create New">
+            <RadzenTabsItem Text="@L["Create_New"]">
                 <RadzenTemplateForm Data="@newAlert" Submit="@((Alert args) => CreateAlert())">
                     <RadzenStack Gap="1rem">
+                        <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
+                            <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
+                                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
+                        </RadzenFormField>
+
                         <div class="row">
                             <div class="col-6">
-                                <RadzenFormField Text="Latitude" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenFormField Text="@L["Latitude"]" Variant="Variant.Outlined" Style="width: 100%;">
                                     <RadzenNumeric @bind-Value="@newAlert.Latitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
                             </div>
                             <div class="col-6">
-                                <RadzenFormField Text="Longitude" Variant="Variant.Outlined" Style="width: 100%;">
+                                <RadzenFormField Text="@L["Longitude"]" Variant="Variant.Outlined" Style="width: 100%;">
                                     <RadzenNumeric @bind-Value="@newAlert.Longitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
                             </div>
                         </div>
 
-                        <RadzenFormField Text="Radius (km)" Variant="Variant.Outlined">
+                        <RadzenFormField Text="@L["Radius_Km"]" Variant="Variant.Outlined">
                             <RadzenNumeric @bind-Value="@newAlert.RadiusKm" TValue="double" 
                                            Min="0.1m" Max="160.9m" ShowUpDown="true" 
                                            Step="0.5m" Style="width: 100%;" />
                         </RadzenFormField>
 
-                        <RadzenFormField Text="Alert Message" Variant="Variant.Outlined">
+                        <RadzenFormField Text="@L["Alert_Message"]" Variant="Variant.Outlined">
                             <RadzenTextBox @bind-Value="@newAlert.Message" Style="width: 100%;" 
-                                           Placeholder="e.g., Reports near home" />
+                                           Placeholder="@L["Alert_Message_Placeholder"]" />
                         </RadzenFormField>
 
-                        <RadzenFormField Text="Email for Alerts" Variant="Variant.Outlined">
+                        <RadzenFormField Text="@L["Email_for_Alerts"]" Variant="Variant.Outlined">
                             <RadzenTextBox @bind-Value="@email" Style="width: 100%;" 
                                            Placeholder="your@email.com" />
                             <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-info mt-1">
-                                Stored encrypted at rest.
+                                @L["Email_Encrypted_Note"]
                             </RadzenText>
                         </RadzenFormField>
 
-                        <RadzenButton ButtonType="ButtonType.Submit" Text="CREATE ALERT" 
+                        <RadzenButton ButtonType="ButtonType.Submit" Text="@L["CREATE_ALERT"]" 
                                       Icon="add_alert" ButtonStyle="ButtonStyle.Primary" 
                                       Style="width: 100%;" Disabled="@isSubmitting" />
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenTabsItem>
-            <RadzenTabsItem Text="Active Alerts">
+            <RadzenTabsItem Text="@L["Active_Alerts"]">
                 @if (activeAlerts.Any())
                 {
                     <RadzenDataList Data="@activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
@@ -61,15 +70,21 @@
                             <RadzenCard Class="rz-mb-2 rz-p-2">
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                                     <RadzenStack Gap="0">
-                                        <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@alert.Message</RadzenText>
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                            <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@alert.Message</RadzenText>
+                                            @if (!alert.IsVerified)
+                                            {
+                                                <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
+                                            }
+                                        </RadzenStack>
                                         <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                         <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
-                                                      Click="@(() => ShowOnMap(alert))" ToolTip="Show on Map" />
+                                                      Click="@(() => ShowOnMap(alert))" ToolTip="@L["Show_on_Map"]" />
                                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
-                                                      Click="@(() => DeactivateAlert(alert.Id))" ToolTip="Deactivate" />
+                                                      Click="@(() => DeactivateAlert(alert.Id))" ToolTip="@L["Deactivate"]" />
                                     </RadzenStack>
                                 </RadzenStack>
                             </RadzenCard>
@@ -78,14 +93,14 @@
                 }
                 else
                 {
-                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">No active alerts.</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_active_alerts"]</RadzenText>
                 }
             </RadzenTabsItem>
         </Tabs>
     </RadzenTabs>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
-        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
     </RadzenStack>
 </RadzenStack>
 
@@ -97,6 +112,7 @@
     private Alert newAlert = new Alert { RadiusKm = 5.0 };
     private string email = "";
     private List<Alert> activeAlerts = new();
+    private List<GeocodingResult> geocodingResults = new();
     private bool isSubmitting = false;
     private string? userIdentifier;
 
@@ -111,6 +127,27 @@
             
             await LoadAlerts();
             StateHasChanged();
+        }
+    }
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
+        {
+            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private void OnAddressSelected(object value)
+    {
+        if (value is string address)
+        {
+            var selected = geocodingResults.FirstOrDefault(r => r.Address == address);
+            if (selected != null)
+            {
+                newAlert.Latitude = selected.Latitude;
+                newAlert.Longitude = selected.Longitude;
+            }
         }
     }
 
@@ -164,7 +201,7 @@
 
     private async Task LoadAlerts()
     {
-        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier);
+        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
     }
 
     private string MaskEmail(string? email)

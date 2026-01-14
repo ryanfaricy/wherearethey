@@ -6,18 +6,6 @@ using MimeKit;
 
 namespace WhereAreThey.Services;
 
-public class EmailOptions
-{
-    public string SmtpServer { get; set; } = "";
-    public int SmtpPort { get; set; } = 2525;
-    public string SmtpUser { get; set; } = "";
-    public string SmtpPass { get; set; } = "";
-    public string ApiKey { get; set; } = "";
-    public string FromEmail { get; set; } = "alerts@aretheyhere.com";
-    public string FromName { get; set; } = "AreTheyHere Alerts";
-    public bool EnableSsl { get; set; } = true;
-}
-
 public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailService> logger) : IEmailService
 {
     private readonly EmailOptions _options = options.Value;
@@ -76,8 +64,8 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
             }
 
             // Attempt connection with a single retry to handle transient network blips
-            int maxAttempts = 2;
-            for (int attempt = 1; attempt <= maxAttempts; attempt++)
+            var maxAttempts = 2;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 try
                 {

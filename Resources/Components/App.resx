@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="REPORT" xml:space="preserve">
+    <value>REPORT</value>
+  </data>
+  <data name="ALERTS" xml:space="preserve">
+    <value>ALERTS</value>
+  </data>
+  <data name="DONATE" xml:space="preserve">
+    <value>DONATE</value>
+  </data>
+  <data name="SETTINGS" xml:space="preserve">
+    <value>SETTINGS</value>
+  </data>
+  <data name="HELP" xml:space="preserve">
+    <value>HELP</value>
+  </data>
+  <data name="REFRESH" xml:space="preserve">
+    <value>REFRESH</value>
+  </data>
+  <data name="THEY_ARE_HERE" xml:space="preserve">
+    <value>THEY ARE HERE!</value>
+  </data>
+  <data name="ARE_THEY_HERE" xml:space="preserve">
+    <value>ARE THEY HERE?</value>
+  </data>
+  <data name="Live_Heat_Map" xml:space="preserve">
+    <value>Live Heat Map</value>
+  </data>
+  <data name="Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Anonymous_Profile_ID" xml:space="preserve">
+    <value>Anonymous Profile ID</value>
+  </data>
+  <data name="Profile_ID_Help" xml:space="preserve">
+    <value>This unique ID links alerts to this device. Save it to recover your alerts on another device.</value>
+  </data>
+  <data name="IMPORT_EXISTING_ID" xml:space="preserve">
+    <value>IMPORT EXISTING ID</value>
+  </data>
+  <data name="CANCEL" xml:space="preserve">
+    <value>CANCEL</value>
+  </data>
+  <data name="CLOSE" xml:space="preserve">
+    <value>CLOSE</value>
+  </data>
+  <data name="SAVE_REFRESH" xml:space="preserve">
+    <value>SAVE &amp; REFRESH</value>
+  </data>
+  <data name="Paste_New_ID" xml:space="preserve">
+    <value>Paste New ID</value>
+  </data>
+  <data name="ID_copied" xml:space="preserve">
+    <value>ID copied to clipboard</value>
+  </data>
+  <data name="Invalid_ID_format" xml:space="preserve">
+    <value>Invalid ID format. Must be a GUID.</value>
+  </data>
+  <data name="Quick_Help_Guide" xml:space="preserve">
+    <value>Quick Help Guide</value>
+  </data>
+  <data name="Map_Interactions" xml:space="preserve">
+    <value>Map Interactions</value>
+  </data>
+  <data name="Tap_Heat_Area" xml:space="preserve">
+    <value>Tap a Heat Area</value>
+  </data>
+  <data name="Tap_Heat_Area_Desc" xml:space="preserve">
+    <value>See a summary of reports and alert zones in that area. Zoom in to see individual pins and tap them for specific details. Overlapping pins are automatically grouped.</value>
+  </data>
+  <data name="Tap_Empty_Area" xml:space="preserve">
+    <value>Tap an Empty Area</value>
+  </data>
+  <data name="Tap_Empty_Area_Desc" xml:space="preserve">
+    <value>Quickly set up an alert for that specific spot.</value>
+  </data>
+  <data name="Long_Press" xml:space="preserve">
+    <value>Long-Press / Right-Click</value>
+  </data>
+  <data name="Long_Press_Desc" xml:space="preserve">
+    <value>Report "them" at that exact location.</value>
+  </data>
+  <data name="Orange_Pins" xml:space="preserve">
+    <value>Orange Pins</value>
+  </data>
+  <data name="Orange_Pins_Desc" xml:space="preserve">
+    <value>Your active alerts. Tap to see details or delete the alert zone.</value>
+  </data>
+  <data name="Toolbar_Actions" xml:space="preserve">
+    <value>Toolbar Actions</value>
+  </data>
+  <data name="Report_Desc" xml:space="preserve">
+    <value>Submit a report for your current location.</value>
+  </data>
+  <data name="Alerts_Desc" xml:space="preserve">
+    <value>Manage your radius-based email alerts.</value>
+  </data>
+  <data name="Settings_Desc" xml:space="preserve">
+    <value>Manage your anonymous Profile ID and view app settings.</value>
+  </data>
+  <data name="Donate_Desc" xml:space="preserve">
+    <value>Support AreTheyHere with a donation.</value>
+  </data>
+  <data name="Refresh_Desc" xml:space="preserve">
+    <value>Refresh the heat map with the latest reports.</value>
+  </data>
+  <data name="Sync_Devices" xml:space="preserve">
+    <value>Sync Devices</value>
+  </data>
+  <data name="Sync_Devices_Desc" xml:space="preserve">
+    <value>Copy your Profile ID from Settings to use the same profile on multiple devices.</value>
+  </data>
+  <data name="Privacy_Disclaimer" xml:space="preserve">
+    <value>AreTheyHere is a privacy-first, anonymous tool. People's lives depend on accurate and timely reporting.</value>
+  </data>
+  <data name="PRIVACY" xml:space="preserve">
+    <value>PRIVACY</value>
+  </data>
+  <data name="FEEDBACK" xml:space="preserve">
+    <value>FEEDBACK</value>
+  </data>
+  <data name="GOT_IT" xml:space="preserve">
+    <value>GOT IT</value>
+  </data>
+  <data name="PRIVACY_POLICY" xml:space="preserve">
+    <value>PRIVACY POLICY</value>
+  </data>
+  <data name="Privacy_Title" xml:space="preserve">
+    <value>Privacy Policy</value>
+  </data>
+  <data name="Privacy_Intro" xml:space="preserve">
+    <value>AreTheyHere is built on the principle of radical anonymity and user privacy. We believe that privacy is a fundamental human right, especially in contexts where reporting can have significant consequences.</value>
+  </data>
+  <data name="Privacy_1_Title" xml:space="preserve">
+    <value>1. No Personal Tracking</value>
+  </data>
+  <data name="Privacy_1_Desc" xml:space="preserve">
+    <value>We do not collect or store your IP address, name, phone number, or any other personally identifiable information (PII). Your activity on this platform is linked only to an anonymous Profile ID generated locally on your device.</value>
+  </data>
+  <data name="Privacy_2_Title" xml:space="preserve">
+    <value>2. Location Data</value>
+  </data>
+  <data name="Privacy_2_Desc" xml:space="preserve">
+    <value>When you submit a report, we store the coordinates of the incident and your approximate location at the time of reporting (to prevent spam). This data is never linked to a real identity. Reports expire from public view after {0} hours.</value>
+  </data>
+  <data name="Privacy_3_Title" xml:space="preserve">
+    <value>3. Encrypted Alerts</value>
+  </data>
+  <data name="Privacy_3_Desc" xml:space="preserve">
+    <value>If you sign up for email alerts, your email address is encrypted at rest. We only use it to send you the alerts you've requested. We do not sell or share these emails with any third parties.</value>
+  </data>
+  <data name="Privacy_4_Title" xml:space="preserve">
+    <value>4. Open and Transparent</value>
+  </data>
+  <data name="Privacy_4_Desc" xml:space="preserve">
+    <value>Our goal is to provide a tool for community safety while protecting the individuals who use it. No ads, no trackers, no bullshit.</value>
+  </data>
+  <data name="REPORT_LOCATION" xml:space="preserve">
+    <value>REPORT LOCATION</value>
+  </data>
+  <data name="Report_Coordinates" xml:space="preserve">
+    <value>Report coordinates: {0}</value>
+  </data>
+  <data name="Message_Optional" xml:space="preserve">
+    <value>Message (Optional)</value>
+  </data>
+  <data name="Emergency_Checkbox" xml:space="preserve">
+    <value>This is an emergency</value>
+  </data>
+  <data name="SUBMIT_REPORT" xml:space="preserve">
+    <value>SUBMIT REPORT</value>
+  </data>
+  <data name="Message_Too_Long" xml:space="preserve">
+    <value>Message too long</value>
+  </data>
+  <data name="Message_Too_Long_Detail" xml:space="preserve">
+    <value>Please limit message to 500 characters.</value>
+  </data>
+  <data name="Report_Success" xml:space="preserve">
+    <value>Location reported successfully</value>
+  </data>
+  <data name="Report_Fail" xml:space="preserve">
+    <value>Failed to submit report</value>
+  </data>
+  <data name="Distance_Based_Alerts" xml:space="preserve">
+    <value>Distance-Based Alerts</value>
+  </data>
+  <data name="Create_New" xml:space="preserve">
+    <value>Create New</value>
+  </data>
+  <data name="Active_Alerts" xml:space="preserve">
+    <value>Active Alerts</value>
+  </data>
+  <data name="Latitude" xml:space="preserve">
+    <value>Latitude</value>
+  </data>
+  <data name="Longitude" xml:space="preserve">
+    <value>Longitude</value>
+  </data>
+  <data name="Radius_Km" xml:space="preserve">
+    <value>Radius (km)</value>
+  </data>
+  <data name="Alert_Message" xml:space="preserve">
+    <value>Alert Message</value>
+  </data>
+  <data name="Email_for_Alerts" xml:space="preserve">
+    <value>Email for Alerts</value>
+  </data>
+  <data name="Email_Encrypted_Note" xml:space="preserve">
+    <value>Stored encrypted at rest.</value>
+  </data>
+  <data name="CREATE_ALERT" xml:space="preserve">
+    <value>CREATE ALERT</value>
+  </data>
+  <data name="Pending_Verification" xml:space="preserve">
+    <value>Pending Verification</value>
+  </data>
+  <data name="No_active_alerts" xml:space="preserve">
+    <value>No active alerts.</value>
+  </data>
+  <data name="Email_Required" xml:space="preserve">
+    <value>Email is required</value>
+  </data>
+  <data name="Alert_Created_Success" xml:space="preserve">
+    <value>Alert created successfully</value>
+  </data>
+  <data name="Alert_Deactivated" xml:space="preserve">
+    <value>Alert deactivated</value>
+  </data>
+  <data name="SUPPORT_US" xml:space="preserve">
+    <value>SUPPORT US</value>
+  </data>
+  <data name="Donate_Intro" xml:space="preserve">
+    <value>Your donation helps keep this life-saving service online. People's lives depend on it.</value>
+  </data>
+  <data name="Amount" xml:space="preserve">
+    <value>Amount</value>
+  </data>
+  <data name="Email_Optional" xml:space="preserve">
+    <value>Email (Optional)</value>
+  </data>
+  <data name="DONATE_AMOUNT" xml:space="preserve">
+    <value>DONATE ${0}</value>
+  </data>
+  <data name="Recent" xml:space="preserve">
+    <value>Recent</value>
+  </data>
+  <data name="No_recent_donations" xml:space="preserve">
+    <value>No recent donations.</value>
+  </data>
+  <data name="Minimum_donation" xml:space="preserve">
+    <value>Minimum donation is $1</value>
+  </data>
+  <data name="Donation_Success" xml:space="preserve">
+    <value>Thank you for your support!</value>
+  </data>
+  <data name="Donation_Fail" xml:space="preserve">
+    <value>Donation failed</value>
+  </data>
+  <data name="Feedback_Title" xml:space="preserve">
+    <value>Feedback &amp; Support</value>
+  </data>
+  <data name="Feedback_Intro" xml:space="preserve">
+    <value>Found a bug or have a suggestion for a new feature? Let us know below.</value>
+  </data>
+  <data name="Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="Feedback_Placeholder" xml:space="preserve">
+    <value>Describe the bug or feature request in detail...</value>
+  </data>
+  <data name="SUBMIT" xml:space="preserve">
+    <value>SUBMIT</value>
+  </data>
+  <data name="Feedback_Success" xml:space="preserve">
+    <value>Thank you for your feedback!</value>
+  </data>
+  <data name="Feedback_Fail" xml:space="preserve">
+    <value>Failed to submit feedback</value>
+  </data>
+  <data name="Message_Required" xml:space="preserve">
+    <value>Message is required</value>
+  </data>
+  <data name="Bug" xml:space="preserve">
+    <value>Bug</value>
+  </data>
+  <data name="Feature" xml:space="preserve">
+    <value>Feature</value>
+  </data>
+  <data name="Acquiring_Location" xml:space="preserve">
+    <value>Acquiring GPS Location...</value>
+  </data>
+  <data name="Welcome_Summary" xml:space="preserve">
+    <value>Welcome!</value>
+  </data>
+  <data name="Welcome_Detail" xml:space="preserve">
+    <value>You have a new anonymous profile. See Settings to save your ID for recovery.</value>
+  </data>
+  <data name="AREA_DETAILS" xml:space="preserve">
+    <value>AREA DETAILS</value>
+  </data>
+  <data name="Failed_Location" xml:space="preserve">
+    <value>Failed to get location</value>
+  </data>
+  <data name="Need_Location_Verify" xml:space="preserve">
+    <value>We need your location to verify the report.</value>
+  </data>
+  <data name="Delete_Alert_Confirm" xml:space="preserve">
+    <value>Are you sure you want to delete this alert zone?</value>
+  </data>
+  <data name="Delete_Alert" xml:space="preserve">
+    <value>Delete Alert</value>
+  </data>
+  <data name="Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Alert_Message_Placeholder" xml:space="preserve">
+    <value>e.g., Reports near home</value>
+  </data>
+  <data name="Show_on_Map" xml:space="preserve">
+    <value>Show on Map</value>
+  </data>
+  <data name="Deactivate" xml:space="preserve">
+    <value>Deactivate</value>
+  </data>
+  <data name="Anonymous" xml:space="preserve">
+    <value>Anonymous</value>
+  </data>
+  <data name="Items_at_location" xml:space="preserve">
+    <value>Items at this location</value>
+  </data>
+  <data name="EMERGENCY_REPORT" xml:space="preserve">
+    <value>EMERGENCY REPORT</value>
+  </data>
+  <data name="Report" xml:space="preserve">
+    <value>Report</value>
+  </data>
+  <data name="Alert_Zone" xml:space="preserve">
+    <value>Alert Zone</value>
+  </data>
+  <data name="Radius" xml:space="preserve">
+    <value>Radius</value>
+  </data>
+  <data name="Cooldown_Error" xml:space="preserve">
+    <value>You can only make one report every {0} minutes.</value>
+  </data>
+  <data name="Links_Error" xml:space="preserve">
+    <value>Links are not allowed in reports to prevent spam.</value>
+  </data>
+  <data name="Distance_Error" xml:space="preserve">
+    <value>You can only make a report within {0} miles of your location.</value>
+  </data>
+  <data name="Location_Verify_Error" xml:space="preserve">
+    <value>Unable to verify your current location. Please ensure GPS is enabled.</value>
+  </data>
+  <data name="Feedback_Cooldown_Error" xml:space="preserve">
+    <value>You can only submit one feedback every {0} minutes.</value>
+  </data>
+  <data name="Feedback_Links_Error" xml:space="preserve">
+    <value>Links are not allowed in feedback to prevent spam.</value>
+  </data>
+  <data name="Theme" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Theme_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Alert_Cooldown_Error" xml:space="preserve">
+    <value>You can only create {0} alert zones every {1} minutes.</value>
+  </data>
+  <data name="AntiSpam_Limits_Title" xml:space="preserve">
+    <value>Anti-Spam &amp; Limits</value>
+  </data>
+  <data name="AntiSpam_Limits_Desc" xml:space="preserve">
+    <value>To ensure system reliability, we enforce basic limits:</value>
+  </data>
+  <data name="Limit_Reports" xml:space="preserve">
+    <value>Reports: One every {0} minutes.</value>
+  </data>
+  <data name="Limit_Alerts" xml:space="preserve">
+    <value>Alert Zones: Up to {0} every {1} minutes.</value>
+  </data>
+  <data name="Identifier_Error" xml:space="preserve">
+    <value>Anonymous identifier is missing. Please refresh the page and try again.</value>
+  </data>
+  <data name="INSTALL_APP" xml:space="preserve">
+    <value>INSTALL APP</value>
+  </data>
+  <data name="PWA_Install_Help" xml:space="preserve">
+    <value>Install AreTheyHere on your home screen for faster access and a better experience.</value>
+  </data>
+  <data name="PWA_IOS_Install_Help" xml:space="preserve">
+    <value>To install on iOS: tap the 'Share' button in Safari and select 'Add to Home Screen'.</value>
+  </data>
+  <data name="Approx_Address" xml:space="preserve">
+    <value>Approximate Address</value>
+  </data>
+  <data name="Search_Address" xml:space="preserve">
+    <value>Search Address</value>
+  </data>
+  <data name="Search_Address_Placeholder" xml:space="preserve">
+    <value>Type an address to find coordinates...</value>
+  </data>
+  <data name="New_Report" xml:space="preserve">
+    <value>New Report</value>
+  </data>
+  <data name="New_Report_Notification" xml:space="preserve">
+    <value>New report {0:F1}km away!</value>
+  </data>
+  <data name="VIEW" xml:space="preserve">
+    <value>VIEW</value>
+  </data>
+</root>

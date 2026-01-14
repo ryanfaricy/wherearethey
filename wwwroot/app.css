@@ -75,3 +75,142 @@ h1:focus {
 [data-theme="dark"] .report-normal {
     background-color: rgba(10, 132, 255, 0.2) !important;
 }
+
+@media (max-width: 768px) {
+    .responsive-button-text .rz-button-text {
+        display: none;
+    }
+
+    .main-toolbar {
+        gap: 4px !important;
+        padding: 4px !important;
+        flex-wrap: nowrap !important;
+        overflow-x: hidden;
+    }
+
+    .main-toolbar .rz-button {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        min-width: unset !important;
+    }
+
+    .report-button .rz-button-text {
+        font-size: 0.85rem !important;
+    }
+}
+
+@media (max-width: 380px) {
+    .report-button .rz-button-text {
+        display: none;
+    }
+}
+
+/* User Location Pulse */
+.user-location-pulse {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #2196F3;
+    box-shadow: 0 0 0 rgba(33, 150, 243, 0.4);
+    animation: pulse 2s infinite;
+    border: 2px solid white;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 12px rgba(33, 150, 243, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
+    }
+}
+
+/* Alert Pin */
+.alert-pin-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #ff9800;
+    border: 2px solid white;
+    border-radius: 50%;
+    color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+
+.alert-pin-icon i {
+    font-size: 14px;
+}
+
+/* Map Controls */
+.leaflet-control-locate {
+    background-color: #fff;
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #444;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+    cursor: pointer;
+}
+
+.leaflet-control-locate:hover {
+    background-color: #f4f4f4;
+}
+
+[data-theme="dark"] .leaflet-control-locate {
+    background-color: #333;
+    color: #ccc;
+}
+
+[data-theme="dark"] .leaflet-control-locate:hover {
+    background-color: #444;
+}
+
+/* Map Search and Controls */
+.search-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="dark"] .search-card {
+    background: rgba(40, 40, 40, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .search-input {
+    color: white !important;
+}
+
+[data-theme="dark"] .legend-card {
+    background: rgba(40, 40, 40, 0.85) !important;
+}
+
+[data-theme="dark"] .legend-card .rz-text-caption {
+    color: #ccc !important;
+}
+
+@media (max-width: 768px) {
+    .map-search-container {
+        width: 180px !important;
+    }
+    .map-legend {
+        bottom: 10px !important;
+        left: 5px !important;
+        transform: scale(0.9);
+        transform-origin: bottom left;
+    }
+}
+
+@media (max-width: 480px) {
+    .map-legend {
+        display: none;
+    }
+}

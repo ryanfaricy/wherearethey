@@ -30,7 +30,8 @@ public class DonationServiceTests
     private IConfiguration CreateMockConfiguration()
     {
         var mock = new Mock<IConfiguration>();
-        mock.Setup(c => c["Stripe:SecretKey"]).Returns("sk_test_mock");
+        mock.Setup(c => c["Square:AccessToken"]).Returns("sandbox-mock-token");
+        mock.Setup(c => c["Square:LocationId"]).Returns("mock-location");
         return mock.Object;
     }
 
@@ -40,7 +41,7 @@ public class DonationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new DonationService(factory, CreateMockConfiguration());
+        IDonationService service = new DonationService(factory, CreateMockConfiguration());
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -76,7 +77,7 @@ public class DonationServiceTests
             context.Donations.Add(new Donation
             {
                 Amount = 10,
-                StripePaymentIntentId = piId,
+                ExternalPaymentId = piId,
                 Status = "pending"
             });
             await context.SaveChangesAsync();
@@ -89,7 +90,7 @@ public class DonationServiceTests
         Assert.True(result);
         using (var context = new ApplicationDbContext(options))
         {
-            var updated = await context.Donations.FirstAsync(d => d.StripePaymentIntentId == piId);
+            var updated = await context.Donations.FirstAsync(d => d.ExternalPaymentId == piId);
             Assert.Equal("completed", updated.Status);
         }
     }

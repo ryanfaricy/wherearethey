@@ -1,20 +1,42 @@
-﻿@using WhereAreThey.Components.Pages
+﻿@using System.Globalization
+@using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
-@inject LocationService LocationService
+@inject ILocationService LocationService
+@inject ISettingsService SettingsService
+@inject IStringLocalizer<App> L
 
 <RadzenPanelMenu Style="height: 100%">
-    <RadzenPanelMenuItem Text="ARE THEY HERE?" Icon="visibility" Path="/" />
-    <RadzenPanelMenuItem Text="THEY ARE HERE!" Icon="report_problem" Click="@OnReportClick" />
-    <RadzenPanelMenuItem Text="Alerts" Icon="notifications" Click="@OnAlertsClick" />
-    <RadzenPanelMenuItem Text="Donate" Icon="volunteer_activism" Click="@OnDonateClick" />
-    <RadzenPanelMenuItem Text="Old Home" Icon="history" Path="/home-old" />
+    <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" />
+    <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
+    <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
+    @if (systemSettings.DonationsEnabled)
+    {
+        <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
+    }
 </RadzenPanelMenu>
 
 @code {
+    private string? userIdentifier;
+    private SystemSettings systemSettings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        systemSettings = await SettingsService.GetSettingsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+        }
+    }
+
     private async Task OnReportClick()
     {
         try
@@ -23,19 +45,45 @@
             var report = new LocationReport
             {
                 Latitude = position.Coords.Latitude,
-                Longitude = position.Coords.Longitude
+                Longitude = position.Coords.Longitude,
+                ReporterIdentifier = userIdentifier,
+                ReporterLatitude = position.Coords.Latitude,
+                ReporterLongitude = position.Coords.Longitude
             };
             
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
                 new Dictionary<string, object> { { "report", report } },
-                new DialogOptions { Width = "350px" });
+                new DialogOptions { Width = "500px" });
         }
         catch (Exception)
         {
-            // If location fails, still open dialog but with empty coordinates
+            // Fallback: try to use map center if possible
+            LocationReport? fallbackReport = null;
+            try
+            {
+                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                if (mapState != null)
+                {
+                    fallbackReport = new LocationReport
+                    {
+                        Latitude = mapState.Lat,
+                        Longitude = mapState.Lng,
+                        ReporterIdentifier = userIdentifier,
+                        ReporterLatitude = mapState.Lat,
+                        ReporterLongitude = mapState.Lng
+                    };
+                }
+            }
+            catch { /* Map might not be available */ }
+
+            if (fallbackReport == null)
+            {
+                fallbackReport = new LocationReport { ReporterIdentifier = userIdentifier };
+            }
+
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
-                new Dictionary<string, object> { { "report", new LocationReport() } },
-                new DialogOptions { Width = "350px" });
+                new Dictionary<string, object> { { "report", fallbackReport } },
+                new DialogOptions { Width = "500px" });
         }
     }
 
@@ -57,17 +105,17 @@
             // Ignore if map state cannot be retrieved
         }
 
-        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, new DialogOptions { Width = "350px" });
+        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS", parameters, new DialogOptions { Width = "500px" });
 
         if (result is Alert alert)
         {
-            NavigationManager.NavigateTo($"/?lat={alert.Latitude}&lng={alert.Longitude}&radius={alert.RadiusKm}", forceLoad: true);
+            NavigationManager.NavigateTo($"/?alertId={alert.ExternalId}", forceLoad: true);
         }
     }
 
     private async Task OnDonateClick()
     {
-        await DialogService.OpenAsync<DonateDialog>("DONATE", null, new DialogOptions { Width = "350px" });
+        await DialogService.OpenAsync<DonateDialog>("DONATE", null, new DialogOptions { Width = "500px" });
     }
 
     public class GeolocationPosition
@@ -79,5 +127,6 @@
     {
         public double Latitude { get; set; }
         public double Longitude { get; set; }
+        public double Accuracy { get; set; }
     }
 }

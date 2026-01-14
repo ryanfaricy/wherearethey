@@ -41,6 +41,32 @@ namespace WhereAreThey.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
+            modelBuilder.Entity("WhereAreThey.Models.AdminLoginAttempt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsSuccessful")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IpAddress");
+
+                    b.HasIndex("Timestamp");
+
+                    b.ToTable("AdminLoginAttempts");
+                });
+
             modelBuilder.Entity("WhereAreThey.Models.Alert", b =>
                 {
                     b.Property<int>("Id")
@@ -52,13 +78,24 @@ namespace WhereAreThey.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EmailHash")
+                        .HasColumnType("text");
+
                     b.Property<string>("EncryptedEmail")
                         .HasColumnType("text");
 
                     b.Property<DateTime?>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid>("ExternalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
                     b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsVerified")
                         .HasColumnType("boolean");
 
                     b.Property<double>("Latitude")
@@ -78,9 +115,18 @@ namespace WhereAreThey.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("EmailHash");
+
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
                     b.HasIndex("IsActive");
 
+                    b.HasIndex("IsVerified");
+
                     b.HasIndex("UserIdentifier");
+
+                    b.HasIndex("IsActive", "IsVerified", "Latitude", "Longitude");
 
                     b.ToTable("Alerts");
                 });
@@ -110,11 +156,11 @@ namespace WhereAreThey.Migrations
                     b.Property<string>("DonorName")
                         .HasColumnType("text");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
+                    b.Property<string>("ExternalPaymentId")
                         .HasColumnType("text");
 
-                    b.Property<string>("StripePaymentIntentId")
+                    b.Property<string>("Status")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.HasKey("Id");
@@ -124,6 +170,70 @@ namespace WhereAreThey.Migrations
                     b.ToTable("Donations");
                 });
 
+            modelBuilder.Entity("WhereAreThey.Models.EmailVerification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmailHash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmailHash")
+                        .IsUnique();
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.ToTable("EmailVerifications");
+                });
+
+            modelBuilder.Entity("WhereAreThey.Models.Feedback", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("UserIdentifier")
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserIdentifier");
+
+                    b.ToTable("Feedbacks");
+                });
+
             modelBuilder.Entity("WhereAreThey.Models.LocationReport", b =>
                 {
                     b.Property<int>("Id")
@@ -131,6 +241,11 @@ namespace WhereAreThey.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("ExternalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasDefaultValueSql("gen_random_uuid()");
 
                     b.Property<bool>("IsEmergency")
                         .HasColumnType("boolean");
@@ -147,14 +262,71 @@ namespace WhereAreThey.Migrations
                     b.Property<string>("ReporterIdentifier")
                         .HasColumnType("text");
 
+                    b.Property<double?>("ReporterLatitude")
+                        .HasColumnType("double precision");
+
+                    b.Property<double?>("ReporterLongitude")
+                        .HasColumnType("double precision");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("ExternalId")
+                        .IsUnique();
+
                     b.HasIndex("Timestamp");
 
+                    b.HasIndex("Timestamp", "Latitude", "Longitude");
+
                     b.ToTable("LocationReports");
+                });
+
+            modelBuilder.Entity("WhereAreThey.Models.SystemSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AlertLimitCount")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DataRetentionDays")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("DonationsEnabled")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MapboxToken")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("MaxReportDistanceMiles")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("ReportCooldownMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReportExpiryHours")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Settings");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            AlertLimitCount = 3,
+                            DataRetentionDays = 30,
+                            DonationsEnabled = true,
+                            MaxReportDistanceMiles = 5.0m,
+                            ReportCooldownMinutes = 5,
+                            ReportExpiryHours = 6
+                        });
                 });
 #pragma warning restore 612, 618
         }

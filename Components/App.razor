@@ -1,5 +1,8 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@using System.Globalization
+@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentCulture.TwoLetterISOLanguageName">
 
 <head>
     <meta charset="utf-8" />
@@ -13,6 +16,8 @@
     <link id="radzen-theme" rel="stylesheet" href="_content/Radzen.Blazor/css/material.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
     <script src="theme.js"></script>
     <script>
         // Immediate theme application to prevent flicker
@@ -34,6 +39,9 @@
     </script>
     <ImportMap />
     <link rel="icon" type="image/png" href="favicon.png" />
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#f44336" />
+    <link rel="apple-touch-icon" href="favicon.png" />
     <HeadOutlet @rendermode="InteractiveServer" />
 </head>
 
@@ -44,9 +52,18 @@
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="geolocation.js"></script>
     <script src="heatmap.js"></script>
+    <script src="pwa-utils.js"></script>
+    <script src="square-payments.js"></script>
+    <script src="@(Configuration["Square:Environment"] == "Production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js")"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
 </body>
 
 </html>

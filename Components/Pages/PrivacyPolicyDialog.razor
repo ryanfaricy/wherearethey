@@ -1,0 +1,49 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
+@inject DialogService DialogService
+@inject ISettingsService SettingsService
+@inject IStringLocalizer<App> L
+
+<RadzenStack Gap="1.5rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">@L["Privacy_Title"]</RadzenText>
+
+    <RadzenStack Gap="1rem">
+        <RadzenText TextStyle="TextStyle.Body1">
+            @((MarkupString)L["Privacy_Intro"].Value)
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_1_Title"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2">
+            @((MarkupString)L["Privacy_1_Desc"].Value)
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_2_Title"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2">
+            @((MarkupString)string.Format(L["Privacy_2_Desc"], settings.ReportExpiryHours))
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_3_Title"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2">
+            @((MarkupString)L["Privacy_3_Desc"].Value)
+        </RadzenText>
+
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_4_Title"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body2">
+            @((MarkupString)L["Privacy_4_Desc"].Value)
+        </RadzenText>
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-2">
+        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private SystemSettings settings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        settings = await SettingsService.GetSettingsAsync();
+    }
+}

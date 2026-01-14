@@ -1,0 +1,85 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
+@inject IFeedbackService FeedbackService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject IStringLocalizer<App> L
+
+<RadzenStack Gap="1.5rem" Class="rz-p-4">
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Feedback_Title"]</RadzenText>
+    
+    <RadzenText TextStyle="TextStyle.Body2">
+        @L["Feedback_Intro"]
+    </RadzenText>
+
+    <RadzenTemplateForm Data="@feedback" Submit="@((Feedback args) => SubmitFeedback())">
+        <RadzenStack Gap="1rem">
+            <RadzenFormField Text="@L["Type"]" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenDropDown @bind-Value="@feedback.Type" Data="@feedbackTypes" Style="width: 100%;" />
+            </RadzenFormField>
+
+            <RadzenFormField Text="@L["Message"]" Variant="Variant.Outlined" Style="width: 100%;">
+                <RadzenTextArea @bind-Value="@feedback.Message" Style="width: 100%; height: 150px;" 
+                                Placeholder="@L["Feedback_Placeholder"]" />
+            </RadzenFormField>
+
+            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT"]" 
+                          Icon="send" ButtonStyle="ButtonStyle.Primary" 
+                          Style="width: 100%;" Disabled="@isSubmitting" />
+        </RadzenStack>
+    </RadzenTemplateForm>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+        <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Light" />
+    </RadzenStack>
+</RadzenStack>
+
+@code {
+    private Feedback feedback = new Feedback();
+    private List<string> feedbackTypes = new();
+    private bool isSubmitting = false;
+    private string? userIdentifier;
+
+    protected override void OnInitialized()
+    {
+        feedbackTypes = new() { L["Bug"], L["Feature"] };
+        feedback.Type = L["Bug"];
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            StateHasChanged();
+        }
+    }
+
+    private async Task SubmitFeedback()
+    {
+        if (string.IsNullOrWhiteSpace(feedback.Message))
+        {
+            NotificationService.Notify(NotificationSeverity.Error, L["Message_Required"]);
+            return;
+        }
+
+        isSubmitting = true;
+        try
+        {
+            feedback.UserIdentifier = userIdentifier;
+            await FeedbackService.AddFeedbackAsync(feedback);
+            NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], ex.Message);
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

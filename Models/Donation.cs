@@ -8,6 +8,6 @@ public class Donation
     public string? DonorEmail { get; set; }
     public string? DonorName { get; set; }
     public DateTime CreatedAt { get; set; }
-    public string? StripePaymentIntentId { get; set; }
+    public string? ExternalPaymentId { get; set; }
     public string Status { get; set; } = "pending"; // pending, completed, failed
 }

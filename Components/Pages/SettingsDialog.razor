@@ -1,21 +1,193 @@
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@using WhereAreThey.Services
 @inject DialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject NotificationService NotificationService
+@inject NavigationManager NavigationManager
+@inject IAppThemeService ThemeService
+@inject IStringLocalizer<App> L
+@implements IDisposable
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
-    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">Map Settings</RadzenText>
-    
-    <RadzenFormField Text="Time Range (Last X Hours)" Variant="Variant.Outlined">
-        <RadzenNumeric @bind-Value="@HoursBack" TValue="int" Min="1" Max="168" ShowUpDown="true" Style="width: 100%;" />
-        <RadzenText TextStyle="TextStyle.Caption" Class="mt-1">
-            Show reports from the last @HoursBack hours.
-        </RadzenText>
-    </RadzenFormField>
+    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["SETTINGS"]</RadzenText>
 
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem">
-        <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
-        <RadzenButton Text="APPLY" Click="@(() => DialogService.Close(HoursBack))" ButtonStyle="ButtonStyle.Primary" />
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Language"]</RadzenText>
+        <RadzenDropDown TValue="string" Data="@supportedCultures" 
+                        Value="@currentCulture" Change="@OnCultureChange"
+                        TextProperty="DisplayName" ValueProperty="Name" />
+    </RadzenStack>
+
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Theme"]</RadzenText>
+        <RadzenSelectBar @bind-Value="@CurrentTheme" TValue="AppTheme" Change="@OnThemeChanged" Size="ButtonSize.Small" Variant="Variant.Flat" Style="width: 100%;">
+            <Items>
+                <RadzenSelectBarItem Icon="light_mode" Text="@L["Theme_Light"]" Value="AppTheme.Light" />
+                <RadzenSelectBarItem Icon="dark_mode" Text="@L["Theme_Dark"]" Value="AppTheme.Dark" />
+                <RadzenSelectBarItem Icon="settings_brightness" Text="@L["Theme_System"]" Value="AppTheme.System" />
+            </Items>
+        </RadzenSelectBar>
+    </RadzenStack>
+    
+    @if (!isPwa)
+    {
+        <RadzenStack Gap="0.5rem" Visible="@(isInstallable || isIOS)">
+            <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["INSTALL_APP"]</RadzenText>
+            @if (isInstallable)
+            {
+                <RadzenText TextStyle="TextStyle.Caption">@L["PWA_Install_Help"]</RadzenText>
+                <RadzenButton Text="@L["INSTALL_APP"]" Icon="get_app" Click="@InstallApp" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Style="width: 100%;" />
+            }
+            else if (isIOS)
+            {
+                <RadzenText TextStyle="TextStyle.Caption">@L["PWA_IOS_Install_Help"]</RadzenText>
+            }
+        </RadzenStack>
+    }
+
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Anonymous_Profile_ID"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Caption">
+            @L["Profile_ID_Help"]
+        </RadzenText>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenTextBox Value="@userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
+            <RadzenButton Icon="content_copy" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
+        </RadzenStack>
+
+        @if (!showImport)
+        {
+            <RadzenButton Text="@L["IMPORT_EXISTING_ID"]" Click="@(() => showImport = true)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Text" Size="ButtonSize.Small" Style="justify-content: start; padding-left: 0;" />
+        }
+        else
+        {
+            <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
+                <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenTextBox @bind-Value="@importId" Placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" Style="width: 100%;" />
+                </RadzenFormField>
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Text="@L["CANCEL"]" Click="@(() => { showImport = false; importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
+                    <RadzenButton Text="@L["SAVE_REFRESH"]" Click="@ImportProfile" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
+                </RadzenStack>
+            </RadzenStack>
+        }
+    </RadzenStack>
+
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
+        <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
+        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 
 @code {
-    [Parameter] public int HoursBack { get; set; } = 24;
+    private string userIdentifier = "";
+    private string importId = "";
+    private bool showImport = false;
+    private string currentCulture = CultureInfo.CurrentCulture.Name;
+    private bool isInstallable = false;
+    private bool isPwa = false;
+    private bool isIOS = false;
+    private DotNetObjectReference<SettingsDialog>? objRef;
+
+    private AppTheme CurrentTheme
+    {
+        get => ThemeService.CurrentTheme;
+        set => ThemeService.SetTheme(value);
+    }
+
+    private async Task OnThemeChanged(AppTheme theme)
+    {
+        await JSRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
+    }
+
+    private List<CultureDisplay> supportedCultures = new()
+    {
+        new CultureDisplay { Name = "en", DisplayName = "English" },
+        new CultureDisplay { Name = "es", DisplayName = "Español" },
+        new CultureDisplay { Name = "fr", DisplayName = "Français" },
+        new CultureDisplay { Name = "de", DisplayName = "Deutsch" },
+        new CultureDisplay { Name = "it", DisplayName = "Italiano" },
+        new CultureDisplay { Name = "pt", DisplayName = "Português" },
+        new CultureDisplay { Name = "ru", DisplayName = "Русский" },
+        new CultureDisplay { Name = "zh", DisplayName = "中文" },
+        new CultureDisplay { Name = "ja", DisplayName = "日本語" }
+    };
+
+    private void OnCultureChange(object value)
+    {
+        if (value is string culture)
+        {
+            var uri = new Uri(NavigationManager.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+            var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
+            NavigationManager.NavigateTo("/Culture/Set" + query, forceLoad: true);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            
+            var stored = await JSRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
+            if (Enum.TryParse<AppTheme>(stored, out var theme))
+            {
+                ThemeService.SetTheme(theme);
+            }
+
+            objRef = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", objRef);
+            
+            isPwa = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
+            isIOS = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
+            
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public void SetInstallable(bool installable)
+    {
+        isInstallable = installable;
+        StateHasChanged();
+    }
+
+    private async Task InstallApp()
+    {
+        await JSRuntime.InvokeAsync<bool>("pwaFunctions.showInstallPrompt");
+    }
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+    private async Task CopyId()
+    {
+        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", userIdentifier);
+        NotificationService.Notify(NotificationSeverity.Info, L["ID_copied"]);
+    }
+
+    private async Task ImportProfile()
+    {
+        if (Guid.TryParse(importId, out _))
+        {
+            await JSRuntime.InvokeAsync<bool>("setUserIdentifier", importId);
+            DialogService.Close();
+            // We need a hard refresh to reload everything with the new ID
+            await JSRuntime.InvokeVoidAsync("location.reload");
+        }
+        else
+        {
+            NotificationService.Notify(NotificationSeverity.Error, L["Invalid_ID_format"]);
+        }
+    }
+
+    public class CultureDisplay
+    {
+        public string Name { get; set; } = "";
+        public string DisplayName { get; set; } = "";
+    }
 }
