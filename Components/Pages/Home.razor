@@ -421,16 +421,24 @@
 
     private async Task ProcessReportWithLocation(GeolocationPosition position)
     {
-        var report = new LocationReport
+        await JSRuntime.InvokeVoidAsync("showGhostPin", position.Coords.Latitude, position.Coords.Longitude);
+        try
         {
-            Latitude = position.Coords.Latitude,
-            Longitude = position.Coords.Longitude,
-            ReporterIdentifier = userIdentifier,
-            ReporterLatitude = position.Coords.Latitude,
-            ReporterLongitude = position.Coords.Longitude
-        };
-        
-        await ShowReportDialog(report);
+            var report = new LocationReport
+            {
+                Latitude = position.Coords.Latitude,
+                Longitude = position.Coords.Longitude,
+                ReporterIdentifier = userIdentifier,
+                ReporterLatitude = position.Coords.Latitude,
+                ReporterLongitude = position.Coords.Longitude
+            };
+            
+            await ShowReportDialog(report);
+        }
+        finally
+        {
+            await JSRuntime.InvokeVoidAsync("hideGhostPin");
+        }
     }
 
     private async Task OnFollowMeChange(bool value)
@@ -541,40 +549,49 @@
         // Long-press/right click reveals create report
         // We need user's current location to verify distance
         
-        GeolocationPosition? position = null;
-        if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
+        await JSRuntime.InvokeVoidAsync("showGhostPin", lat, lng);
+        
+        try
         {
-            position = lastKnownPosition;
-        }
+            GeolocationPosition? position = null;
+            if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
+            {
+                position = lastKnownPosition;
+            }
 
-        if (position == null)
-        {
-            isGettingLocation = true;
-            StateHasChanged();
-            try
+            if (position == null)
             {
-                position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-            }
-            catch (Exception)
-            {
-                // Fallback handled below
-            }
-            finally
-            {
-                isGettingLocation = false;
+                isGettingLocation = true;
                 StateHasChanged();
+                try
+                {
+                    position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                }
+                catch (Exception)
+                {
+                    // Fallback handled below
+                }
+                finally
+                {
+                    isGettingLocation = false;
+                    StateHasChanged();
+                }
             }
-        }
 
-        var report = new LocationReport
+            var report = new LocationReport
+            {
+                Latitude = lat,
+                Longitude = lng,
+                ReporterIdentifier = userIdentifier,
+                ReporterLatitude = position?.Coords.Latitude ?? lat,
+                ReporterLongitude = position?.Coords.Longitude ?? lng
+            };
+            await ShowReportDialog(report);
+        }
+        finally
         {
-            Latitude = lat,
-            Longitude = lng,
-            ReporterIdentifier = userIdentifier,
-            ReporterLatitude = position?.Coords.Latitude ?? lat,
-            ReporterLongitude = position?.Coords.Longitude ?? lng
-        };
-        await ShowReportDialog(report);
+            await JSRuntime.InvokeVoidAsync("hideGhostPin");
+        }
     }
 
     [JSInvokable]

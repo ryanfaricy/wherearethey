@@ -12,6 +12,7 @@ let selectedReportId = null;
 let resizeObserver = null;
 let dotNetHelper;
 let isProgrammaticMove = false;
+let ghostMarker = null;
 const PIN_ZOOM_THRESHOLD = 15;
 
 let translations = {};
@@ -29,6 +30,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         reportMarkers = [];
         userLocationMarker = null;
         userLocationCircle = null;
+        ghostMarker = null;
     }
 
     dotNetHelper = helper;
@@ -396,5 +398,30 @@ window.updateUserLocation = function (lat, lng, accuracy) {
             weight: 1,
             interactive: false
         }).addTo(map);
+    }
+};
+
+window.showGhostPin = function (lat, lng) {
+    if (!map) return;
+    
+    if (ghostMarker) {
+        ghostMarker.setLatLng([lat, lng]);
+    } else {
+        ghostMarker = L.circleMarker([lat, lng], {
+            radius: 8,
+            color: '#fff',
+            fillColor: '#f44336',
+            fillOpacity: 0.5,
+            weight: 2,
+            dashArray: '5, 5',
+            interactive: false
+        }).addTo(map);
+    }
+};
+
+window.hideGhostPin = function () {
+    if (map && ghostMarker) {
+        map.removeLayer(ghostMarker);
+        ghostMarker = null;
     }
 };
