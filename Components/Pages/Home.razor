@@ -138,6 +138,25 @@
                     if (mapInitialized)
                     {
                         await JSRuntime.InvokeVoidAsync("addSingleReport", report);
+
+                        // Show toast if not from current user and we have our location
+                        if (report.ReporterIdentifier != userIdentifier && lastKnownPosition != null)
+                        {
+                            var distance = GeoUtils.CalculateDistance(
+                                lastKnownPosition.Coords.Latitude,
+                                lastKnownPosition.Coords.Longitude,
+                                report.Latitude,
+                                report.Longitude);
+
+                            NotificationService.Notify(new NotificationMessage
+                            {
+                                Severity = NotificationSeverity.Info,
+                                Summary = L["New_Report"],
+                                Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
+                                Duration = 10000,
+                                Click = (m) => JSRuntime.InvokeVoidAsync("focusReport", report.Id)
+                            });
+                        }
                     }
                 }
             }

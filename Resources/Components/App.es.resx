@@ -472,4 +472,13 @@
   <data name="Search_Address_Placeholder" xml:space="preserve">
     <value>Escriba una dirección para buscar coordenadas...</value>
   </data>
+  <data name="New_Report" xml:space="preserve">
+    <value>Nuevo Reporte</value>
+  </data>
+  <data name="New_Report_Notification" xml:space="preserve">
+    <value>¡Nuevo reporte a {0:F1}km!</value>
+  </data>
+  <data name="VIEW" xml:space="preserve">
+    <value>VER</value>
+  </data>
 </root>
