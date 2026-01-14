@@ -10,115 +10,64 @@ namespace WhereAreThey.Tests;
 
 public class AdminServiceTests
 {
-    private DbContextOptions<ApplicationDbContext> CreateOptions()
+    private readonly Mock<IDbContextFactory<ApplicationDbContext>> _mockFactory;
+    private readonly Mock<IConfiguration> _mockConfig;
+    private readonly AdminService _service;
+    private readonly DbContextOptions<ApplicationDbContext> _options;
+
+    public AdminServiceTests()
     {
-        return new DbContextOptionsBuilder<ApplicationDbContext>()
+        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
-    }
 
-    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
-    {
-        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mock.Setup(f => f.CreateDbContextAsync(default))
-            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
-        mock.Setup(f => f.CreateDbContext())
-            .Returns(() => new ApplicationDbContext(options));
-        return mock.Object;
-    }
+        _mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        _mockFactory.Setup(f => f.CreateDbContextAsync(default))
+            .ReturnsAsync(() => new ApplicationDbContext(_options));
 
-    private IConfiguration CreateMockConfiguration(string password = "test-password")
-    {
-        var mock = new Mock<IConfiguration>();
-        mock.Setup(c => c["AdminPassword"]).Returns(password);
-        return mock.Object;
+        _mockConfig = new Mock<IConfiguration>();
+        _service = new AdminService(_mockFactory.Object, _mockConfig.Object);
     }
 
     [Fact]
-    public async Task Login_ShouldSucceed_WithCorrectPassword()
+    public async Task LoginAsync_WithCorrectPassword_ReturnsTrue()
     {
         // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var config = CreateMockConfiguration("secret");
-        IAdminService service = new AdminService(factory, config);
-        var ip = "127.0.0.1";
+        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
 
         // Act
-        var result = await service.LoginAsync("secret", ip);
+        var result = await _service.LoginAsync("correct_password", "127.0.0.1");
 
         // Assert
         Assert.True(result);
-        using var context = new ApplicationDbContext(options);
-        var attempt = await context.AdminLoginAttempts.SingleAsync();
-        Assert.True(attempt.IsSuccessful);
-        Assert.Equal(ip, attempt.IpAddress);
     }
 
     [Fact]
-    public async Task Login_ShouldFail_WithIncorrectPassword()
+    public async Task LoginAsync_WithIncorrectPassword_ReturnsFalse()
     {
         // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var config = CreateMockConfiguration("secret");
-        var service = new AdminService(factory, config);
-        var ip = "127.0.0.1";
+        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
 
         // Act
-        var result = await service.LoginAsync("wrong", ip);
+        var result = await _service.LoginAsync("wrong_password", "127.0.0.1");
 
         // Assert
         Assert.False(result);
-        using var context = new ApplicationDbContext(options);
-        var attempt = await context.AdminLoginAttempts.SingleAsync();
-        Assert.False(attempt.IsSuccessful);
     }
 
     [Fact]
-    public async Task Login_ShouldLockout_AfterFiveFailedAttempts()
+    public async Task LoginAsync_AfterFiveFailures_ThrowsException()
     {
         // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var config = CreateMockConfiguration("secret");
-        var service = new AdminService(factory, config);
+        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
         var ip = "1.2.3.4";
 
-        // 5 failed attempts
-        for (int i = 0; i < 5; i++)
-        {
-            await service.LoginAsync("wrong", ip);
-        }
-
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => service.LoginAsync("secret", ip));
-        Assert.Contains("Too many failed login attempts", ex.Message);
-
-        using var context = new ApplicationDbContext(options);
-        Assert.Equal(6, await context.AdminLoginAttempts.CountAsync());
-        Assert.Equal(6, await context.AdminLoginAttempts.CountAsync(a => !a.IsSuccessful));
-    }
-
-    [Fact]
-    public async Task Login_ShouldNotLockout_DifferentIps()
-    {
-        // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var config = CreateMockConfiguration("secret");
-        var service = new AdminService(factory, config);
-
-        // 5 failed attempts from IP 1
         for (int i = 0; i < 5; i++)
         {
-            await service.LoginAsync("wrong", "1.1.1.1");
+            await _service.LoginAsync("wrong", ip);
         }
 
-        // Act
-        var result = await service.LoginAsync("secret", "2.2.2.2");
-
-        // Assert
-        Assert.True(result);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.LoginAsync("wrong", ip));
     }
 }

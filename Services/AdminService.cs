@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using WhereAreThey.Data;
@@ -24,7 +26,23 @@ public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory
         }
 
         var adminPassword = configuration["AdminPassword"];
-        var isSuccessful = !string.IsNullOrEmpty(adminPassword) && password == adminPassword;
+        bool isSuccessful = false;
+        if (!string.IsNullOrEmpty(adminPassword))
+        {
+            var passwordBytes = Encoding.UTF8.GetBytes(password);
+            var adminPasswordBytes = Encoding.UTF8.GetBytes(adminPassword);
+            
+            if (passwordBytes.Length == adminPasswordBytes.Length)
+            {
+                isSuccessful = CryptographicOperations.FixedTimeEquals(passwordBytes, adminPasswordBytes);
+            }
+            else
+            {
+                // To prevent timing leaks of password length, always perform a comparison
+                CryptographicOperations.FixedTimeEquals(adminPasswordBytes, adminPasswordBytes);
+                isSuccessful = false;
+            }
+        }
 
         await RecordAttempt(ipAddress, isSuccessful);
 
