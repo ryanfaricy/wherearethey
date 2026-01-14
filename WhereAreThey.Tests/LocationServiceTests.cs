@@ -107,6 +107,38 @@ public class LocationServiceTests
     }
 
     [Fact]
+    public async Task AddLocationReport_ShouldTriggerOnReportAddedEvent()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport
+        {
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            ReporterLatitude = 40.7128,
+            ReporterLongitude = -74.0060,
+            ReporterIdentifier = "test-user-2",
+            Message = "Test event",
+            IsEmergency = false
+        };
+
+        LocationReport? triggeredReport = null;
+        int triggerCount = 0;
+        service.OnReportAdded += (r) => { triggeredReport = r; triggerCount++; };
+
+        // Act
+        await service.AddLocationReportAsync(report);
+
+        // Assert
+        Assert.Equal(1, triggerCount);
+        Assert.NotNull(triggeredReport);
+        Assert.Equal(report.Message, triggeredReport.Message);
+        Assert.Equal(report.Id, triggeredReport.Id);
+    }
+
+    [Fact]
     public async Task GetRecentReports_ShouldReturnReportsWithinTimeRange()
     {
         // Arrange

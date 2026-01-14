@@ -241,43 +241,70 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
 
     // Create markers for reports
     reports.forEach(r => {
-        const isSelected = r.id === selectedReportId;
-        const color = isSelected ? '#ffeb3b' : (r.isEmergency ? '#f44336' : '#2196f3');
-        const marker = L.circleMarker([r.latitude, r.longitude], {
-            radius: isSelected ? 8 : 6,
-            color: '#fff',
-            fillColor: color,
-            fillOpacity: 0.9,
-            weight: 2
-        });
-
-        marker.reportData = r;
-        marker.on('click', onMarkerClick);
-
-        marker.reportId = r.id;
-
-        const tooltipText = r.message ? 
-            (r.isEmergency ? '🚨 ' + r.message : r.message) : 
-            (r.isEmergency ? '🚨 ' + (translations.EMERGENCY_REPORT || 'EMERGENCY') : (translations.Report || 'Report'));
-
-        marker.bindTooltip(tooltipText, {
-            permanent: false,
-            direction: 'top'
-        });
-
-        reportMarkers.push(marker);
+        addReportMarker(r);
     });
 
     refreshClusterGroup();
     updatePinsVisibility();
+    refreshHeatLayer();
 
-    // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
-    const heatData = reports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
+    if (shouldFitBounds && reports.length > 0) {
+        const bounds = L.latLngBounds(reports.map(r => [r.latitude, r.longitude]));
+        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+    }
+};
+
+window.addSingleReport = function (report) {
+    if (!map) return;
     
-    // High-contrast configuration:
-    // - Increased radius and reduced blur for sharper hotspots
-    // - Higher minOpacity to ensure faint reports are visible
-    // - More aggressive gradient starting earlier
+    // Check if it already exists (to avoid duplicates)
+    if (allReports.some(r => r.id === report.id)) return;
+    
+    allReports.push(report);
+    addReportMarker(report);
+    
+    refreshClusterGroup();
+    updatePinsVisibility();
+    refreshHeatLayer();
+};
+
+function addReportMarker(r) {
+    const isSelected = r.id === selectedReportId;
+    const color = isSelected ? '#ffeb3b' : (r.isEmergency ? '#f44336' : '#2196f3');
+    const marker = L.circleMarker([r.latitude, r.longitude], {
+        radius: isSelected ? 8 : 6,
+        color: '#fff',
+        fillColor: color,
+        fillOpacity: 0.9,
+        weight: 2
+    });
+
+    marker.reportData = r;
+    marker.on('click', onMarkerClick);
+
+    marker.reportId = r.id;
+
+    const tooltipText = r.message ? 
+        (r.isEmergency ? '🚨 ' + r.message : r.message) : 
+        (r.isEmergency ? '🚨 ' + (translations.EMERGENCY_REPORT || 'EMERGENCY') : (translations.Report || 'Report'));
+
+    marker.bindTooltip(tooltipText, {
+        permanent: false,
+        direction: 'top'
+    });
+
+    reportMarkers.push(marker);
+}
+
+function refreshHeatLayer() {
+    if (heatLayer) {
+        map.removeLayer(heatLayer);
+    }
+    
+    // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
+    const heatData = allReports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
+    
+    // High-contrast configuration
     heatLayer = L.heatLayer(heatData, {
         radius: 30,
         blur: 10,
@@ -291,12 +318,7 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
             1.0: 'red'
         }
     }).addTo(map);
-
-    if (shouldFitBounds && reports.length > 0) {
-        const bounds = L.latLngBounds(reports.map(r => [r.latitude, r.longitude]));
-        map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    }
-};
+}
 
 window.selectReport = function(reportId) {
     selectedReportId = reportId;

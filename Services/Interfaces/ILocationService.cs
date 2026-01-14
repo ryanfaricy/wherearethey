@@ -4,7 +4,7 @@ namespace WhereAreThey.Services;
 
 public interface ILocationService
 {
-    event Action? OnReportAdded;
+    event Action<LocationReport?>? OnReportAdded;
     Task<LocationReport> AddLocationReportAsync(LocationReport report);
     Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId);
     Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null);

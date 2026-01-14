@@ -172,3 +172,45 @@ h1:focus {
 [data-theme="dark"] .leaflet-control-locate:hover {
     background-color: #444;
 }
+
+/* Map Search and Controls */
+.search-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+[data-theme="dark"] .search-card {
+    background: rgba(40, 40, 40, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+[data-theme="dark"] .search-input {
+    color: white !important;
+}
+
+[data-theme="dark"] .legend-card {
+    background: rgba(40, 40, 40, 0.85) !important;
+}
+
+[data-theme="dark"] .legend-card .rz-text-caption {
+    color: #ccc !important;
+}
+
+@media (max-width: 768px) {
+    .map-search-container {
+        width: 180px !important;
+    }
+    .map-legend {
+        bottom: 10px !important;
+        left: 5px !important;
+        transform: scale(0.9);
+        transform-origin: bottom left;
+    }
+}
+
+@media (max-width: 480px) {
+    .map-legend {
+        display: none;
+    }
+}

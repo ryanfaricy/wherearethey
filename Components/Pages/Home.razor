@@ -6,6 +6,7 @@
 @using Microsoft.Extensions.Localization
 @inject ILocationService LocationService
 @inject IAlertService AlertService
+@inject IGeocodingService GeocodingService
 @inject NavigationManager NavigationManager
 @inject ISettingsService SettingsService
 @inject IJSRuntime JSRuntime
@@ -34,6 +35,57 @@
     <div style="flex: 1; position: relative;">
         <div id="heatmap" style="height: 100%; width: 100%;"></div>
         
+        <!-- Search Box -->
+        <div style="position: absolute; top: 10px; right: 10px; z-index: 1000; width: 280px;" class="map-search-container">
+            <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
+                <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                                    LoadData="@OnAddressSearch" Change="@OnAddressSelected"
+                                    Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" 
+                                    InputClass="search-input" />
+            </RadzenCard>
+        </div>
+
+        <!-- Floating Controls -->
+        <div style="position: absolute; top: 65px; right: 10px; z-index: 1000;" class="map-floating-controls">
+            <RadzenStack Gap="0.5rem" AlignItems="AlignItems.End">
+                <RadzenToggleButton @bind-Value="@followMe" Icon="my_location" 
+                                    ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
+                                    Size="ButtonSize.Medium" ToolTip="Follow Me" 
+                                    Class="rz-shadow-2 rz-border-radius-1" 
+                                    ToggleButtonStyle="ButtonStyle.Primary" />
+                
+                <RadzenSelectBar @bind-Value="@selectedHours" TValue="int" Change="@LoadReports"
+                                 Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
+                                 Class="rz-shadow-2 time-filter">
+                    <Items>
+                        <RadzenSelectBarItem Text="1h" Value="1" />
+                        <RadzenSelectBarItem Text="4h" Value="4" />
+                        <RadzenSelectBarItem Text="24h" Value="24" />
+                    </Items>
+                </RadzenSelectBar>
+            </RadzenStack>
+        </div>
+
+        <!-- Map Legend -->
+        <div style="position: absolute; bottom: 30px; left: 10px; z-index: 1000;" class="map-legend">
+            <RadzenCard Class="rz-p-2 rz-shadow-2 legend-card shadow-sm" Style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.05);">
+                <RadzenStack Gap="0.25rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: #f44336; border: 1px solid white;"></div>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["EMERGENCY_REPORT"]</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: #2196f3; border: 1px solid white;"></div>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Report"]</RadzenText>
+                    </RadzenStack>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <div style="width: 10px; height: 10px; border-radius: 50%; background: #ff9800; border: 1px solid white;"></div>
+                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Alert_Zone"]</RadzenText>
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+
         @if (isGettingLocation)
         {
             <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
@@ -59,19 +111,40 @@
     private int locationWatchId = -1;
     private GeolocationPosition? lastKnownPosition;
     private DateTime lastLocationUpdate;
+    private bool followMe = false;
+    private int selectedHours = 24;
+    private IEnumerable<GeocodingResult> geocodingResults = new List<GeocodingResult>();
 
     protected override async Task OnInitializedAsync()
     {
         systemSettings = await SettingsService.GetSettingsAsync();
+        selectedHours = systemSettings.ReportExpiryHours;
         await LoadReports();
         LocationService.OnReportAdded += HandleReportAdded;
     }
 
-    private void HandleReportAdded()
+    private void HandleReportAdded(LocationReport? report)
     {
         InvokeAsync(async () =>
         {
-            await LoadReports();
+            if (report != null)
+            {
+                // Incremental update if it matches current time filter
+                var cutoff = DateTime.UtcNow.AddHours(-selectedHours);
+                if (report.Timestamp >= cutoff && !reports.Any(r => r.Id == report.Id))
+                {
+                    reports.Insert(0, report);
+                    if (mapInitialized)
+                    {
+                        await JSRuntime.InvokeVoidAsync("addSingleReport", report);
+                    }
+                }
+            }
+            else
+            {
+                // Fallback for deletions or unknown changes
+                await LoadReports();
+            }
             StateHasChanged();
         });
     }
@@ -96,6 +169,11 @@
             // Check query parameters
             var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
             var query = QueryHelpers.ParseQuery(uri.Query);
+
+            if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
+            {
+                selectedHours = h;
+            }
 
             if (query.TryGetValue("reportId", out var reportIdStr))
             {
@@ -209,7 +287,7 @@
 
     private async Task LoadReports()
     {
-        reports = await LocationService.GetRecentReportsAsync();
+        reports = await LocationService.GetRecentReportsAsync(selectedHours);
         if (mapInitialized)
         {
             await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
@@ -366,6 +444,29 @@
                 position.Coords.Latitude, 
                 position.Coords.Longitude, 
                 position.Coords.Accuracy);
+
+            if (followMe)
+            {
+                await JSRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+            }
+        }
+    }
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter) && args.Filter.Length > 2)
+        {
+            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private async Task OnAddressSelected(object value)
+    {
+        var selected = geocodingResults.FirstOrDefault(r => r.Address == value?.ToString());
+        if (selected != null)
+        {
+            await JSRuntime.InvokeVoidAsync("setMapView", selected.Latitude, selected.Longitude, 2.0); // 2km radius
+            followMe = false; // Disable follow me if user manually searches
         }
     }
 

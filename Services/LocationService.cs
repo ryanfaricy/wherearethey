@@ -17,7 +17,7 @@ public class LocationService(
     ISubmissionValidator validator,
     IStringLocalizer<App> L) : ILocationService
 {
-    public event Action? OnReportAdded;
+    public event Action<LocationReport?>? OnReportAdded;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
@@ -53,7 +53,7 @@ public class LocationService(
         context.LocationReports.Add(report);
         await context.SaveChangesAsync();
 
-        OnReportAdded?.Invoke();
+        OnReportAdded?.Invoke(report);
 
         // Process alerts in the background to not block the reporter
         _ = Task.Run(async () => await reportProcessingService.ProcessReportAsync(report));
@@ -125,7 +125,7 @@ public class LocationService(
         {
             context.LocationReports.Remove(report);
             await context.SaveChangesAsync();
-            OnReportAdded?.Invoke();
+            OnReportAdded?.Invoke(null);
         }
     }
 }
