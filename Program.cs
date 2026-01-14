@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -181,6 +182,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure the HTTP request pipeline.
+var forwardedOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+};
+forwardedOptions.KnownProxies.Clear();
+forwardedOptions.KnownNetworks.Clear();
+app.UseForwardedHeaders(forwardedOptions);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -189,6 +198,19 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseResponseCompression();
+
+// Apex to WWW redirection - must be before HttpsRedirection for efficiency
+app.Use(async (ctx, next) =>
+{
+    if (string.Equals(ctx.Request.Host.Host, "aretheyhere.com", StringComparison.OrdinalIgnoreCase))
+    {
+        var newUrl = "https://www.aretheyhere.com" + ctx.Request.Path + ctx.Request.QueryString;
+        ctx.Response.Redirect(newUrl, permanent: true);
+        return;
+    }
+    await next();
+});
+
 app.UseHttpsRedirection();
 app.UseRateLimiter();
 
@@ -234,7 +256,7 @@ app.MapGet("/api/map/proxy", async (string? reportId, ILocationService locationS
     var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);
     
     // Use the BaseUrl as Referer as requested
-    var referer = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+    var referer = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);

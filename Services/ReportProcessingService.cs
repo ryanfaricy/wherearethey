@@ -25,7 +25,7 @@ public class ReportProcessingService(
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
-            var baseUrl = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+            var baseUrl = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
 
             // Approximate address
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);

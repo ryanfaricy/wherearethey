@@ -95,7 +95,7 @@ public class AlertService(
                 return; // Already verified
             }
 
-            var baseUrl = configuration["BaseUrl"] ?? "https://aretheyhere.com";
+            var baseUrl = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
             var verificationLink = $"{baseUrl}/verify-email?token={verification.Token}";
 
             var subject = "Verify your email for alerts";
