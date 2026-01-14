@@ -6,6 +6,7 @@
 @inject DialogService DialogService
 @inject IJSRuntime JSRuntime
 @inject IConfiguration Configuration
+@inject ILogger<DonateDialog> Logger
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -160,6 +161,7 @@
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, "Payment initialization failed for Square");
                 NotificationService.Notify(NotificationSeverity.Error, "Payment initialization failed", ex.Message);
                 return;
             }
@@ -195,6 +197,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Donation failed for amount {Amount}", donation.Amount);
             NotificationService.Notify(NotificationSeverity.Error, "Donation failed", ex.Message);
         }
         finally

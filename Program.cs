@@ -14,6 +14,13 @@ using WhereAreThey.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.IncludeScopes = true;
+    options.SingleLine = false;
+    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
+});
+
 // Add services to the container.
 var razorComponentsBuilder = builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -89,7 +96,7 @@ if (!string.IsNullOrEmpty(databaseUrl))
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error parsing DATABASE_URL URI: {ex.Message}");
+            Console.WriteLine($"Error parsing DATABASE_URL URI: {ex}");
         }
     }
     else
@@ -106,7 +113,10 @@ if (string.IsNullOrEmpty(connectionString))
 }
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres"));
+{
+    options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres");
+    options.EnableDetailedErrors();
+});
 
 // Add application services
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Singleton);
@@ -155,9 +165,18 @@ var app = builder.Build();
 // Apply any pending migrations
 using (var scope = app.Services.CreateScope())
 {
-    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
-    using var db = factory.CreateDbContext();
-    db.Database.Migrate();
+    try
+    {
+        var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+        using var db = factory.CreateDbContext();
+        db.Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogCritical(ex, "Failed to apply database migrations on startup.");
+        throw;
+    }
 }
 
 // Configure the HTTP request pipeline.

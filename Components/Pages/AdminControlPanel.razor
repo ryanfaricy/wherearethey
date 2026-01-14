@@ -13,6 +13,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IHttpContextAccessor HttpContextAccessor
+@inject ILogger<AdminControlPanel> Logger
 
 <PageTitle>Admin Control Panel</PageTitle>
 
@@ -296,6 +297,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Admin login failed for IP {ClientIp}", clientIp);
             NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
             await LoadData();
         }
@@ -318,18 +320,34 @@
 
     private async Task LoadData()
     {
-        reports = await LocationService.GetAllReportsAsync();
-        alerts = await AlertService.GetAllAlertsAdminAsync();
-        donations = await DonationService.GetAllDonationsAsync();
-        feedbacks = await FeedbackService.GetAllFeedbackAsync();
-        systemSettings = await SettingsService.GetSettingsAsync();
-        loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
+        try
+        {
+            reports = await LocationService.GetAllReportsAsync();
+            alerts = await AlertService.GetAllAlertsAdminAsync();
+            donations = await DonationService.GetAllDonationsAsync();
+            feedbacks = await FeedbackService.GetAllFeedbackAsync();
+            systemSettings = await SettingsService.GetSettingsAsync();
+            loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading admin data");
+            NotificationService.Notify(NotificationSeverity.Error, "Data load failed", ex.Message);
+        }
     }
 
     private async Task SaveSettings()
     {
-        await SettingsService.UpdateSettingsAsync(systemSettings);
-        NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
+        try
+        {
+            await SettingsService.UpdateSettingsAsync(systemSettings);
+            NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save settings");
+            NotificationService.Notify(NotificationSeverity.Error, "Save failed", ex.Message);
+        }
     }
 
     private async Task DeleteReport(int id)
@@ -339,9 +357,17 @@
         
         if (confirm == true)
         {
-            await LocationService.DeleteReportAsync(id);
-            await LoadData();
-            NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
+            try
+            {
+                await LocationService.DeleteReportAsync(id);
+                await LoadData();
+                NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete report {ReportId}", id);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+            }
         }
     }
 
@@ -352,9 +378,17 @@
 
         if (confirm == true)
         {
-            await AlertService.DeleteAlertAsync(id);
-            await LoadData();
-            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+            try
+            {
+                await AlertService.DeleteAlertAsync(id);
+                await LoadData();
+                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+            }
         }
     }
     private async Task DeleteFeedback(int id)
@@ -364,8 +398,17 @@
         
         if (confirm == true)
         {
-            await FeedbackService.DeleteFeedbackAsync(id);
-            await LoadData();
+            try
+            {
+                await FeedbackService.DeleteFeedbackAsync(id);
+                await LoadData();
+                NotificationService.Notify(NotificationSeverity.Success, "Feedback deleted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete feedback {FeedbackId}", id);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+            }
         }
     }
 }
