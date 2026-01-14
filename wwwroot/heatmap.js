@@ -73,6 +73,13 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         updatePinsVisibility();
     });
 
+    map.on('moveend', function() {
+        if (dotNetHelper) {
+            const center = map.getCenter();
+            dotNetHelper.invokeMethodAsync('OnMapMoveEnd', center.lat, center.lng);
+        }
+    });
+
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 

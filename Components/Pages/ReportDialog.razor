@@ -11,17 +11,10 @@
 <RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-            <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+            <RadzenAutoComplete @bind-Value="@approxAddress" Data="@geocodingResults" TextProperty="Address" 
                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                 Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
         </RadzenFormField>
-
-        @if (!string.IsNullOrEmpty(approxAddress))
-        {
-            <RadzenText TextStyle="TextStyle.Caption" Class="rz-color-info" Style="margin-top: -0.5rem;">
-                <b>@L["Approx_Address"]:</b> @approxAddress
-            </RadzenText>
-        }
 
         <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
         

@@ -18,7 +18,7 @@
                 <RadzenTemplateForm Data="@newAlert" Submit="@((Alert args) => CreateAlert())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-                            <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                            <RadzenAutoComplete @bind-Value="@approxAddress" Data="@geocodingResults" TextProperty="Address" 
                                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                                 Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
                         </RadzenFormField>
@@ -116,6 +116,7 @@
     private List<GeocodingResult> geocodingResults = new();
     private bool isSubmitting = false;
     private string? userIdentifier;
+    private string? approxAddress;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -125,6 +126,11 @@
             if (InitialLat.HasValue) newAlert.Latitude = InitialLat.Value;
             if (InitialLng.HasValue) newAlert.Longitude = InitialLng.Value;
             if (InitialRadius.HasValue) newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+
+            if (InitialLat.HasValue && InitialLng.HasValue)
+            {
+                approxAddress = await GeocodingService.ReverseGeocodeAsync(InitialLat.Value, InitialLng.Value);
+            }
             
             await LoadAlerts();
             StateHasChanged();
@@ -148,6 +154,7 @@
             {
                 newAlert.Latitude = selected.Latitude;
                 newAlert.Longitude = selected.Longitude;
+                approxAddress = selected.Address;
             }
         }
     }

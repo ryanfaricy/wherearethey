@@ -40,7 +40,7 @@
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="map-controls-container">
             <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                    <RadzenAutoComplete Data="@geocodingResults" TextProperty="Address" 
+                    <RadzenAutoComplete @bind-Value="@searchAddress" Data="@geocodingResults" TextProperty="Address" 
                                         LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                         Placeholder="@L["Search_Address_Placeholder"]" Style="flex: 1; min-width: 100px;" 
                                         InputClass="search-input" />
@@ -111,6 +111,7 @@
     private DateTime lastLocationUpdate;
     private bool followMe = false;
     private int selectedHours = 24;
+    private string? searchAddress;
     private IEnumerable<GeocodingResult> geocodingResults = new List<GeocodingResult>();
 
     protected override async Task OnInitializedAsync()
@@ -464,6 +465,7 @@
         if (value && lastKnownPosition != null)
         {
             await JSRuntime.InvokeVoidAsync("setMapView", lastKnownPosition.Coords.Latitude, lastKnownPosition.Coords.Longitude, null);
+            searchAddress = await GeocodingService.ReverseGeocodeAsync(lastKnownPosition.Coords.Latitude, lastKnownPosition.Coords.Longitude);
         }
     }
 
@@ -478,8 +480,18 @@
     }
 
     [JSInvokable]
+    public async Task OnMapMoveEnd(double lat, double lng)
+    {
+        if (followMe) return;
+
+        searchAddress = await GeocodingService.ReverseGeocodeAsync(lat, lng);
+        StateHasChanged();
+    }
+
+    [JSInvokable]
     public async Task OnLocationUpdated(GeolocationPosition position)
     {
+        bool isFirstLocation = lastKnownPosition == null;
         lastKnownPosition = position;
         lastLocationUpdate = DateTime.UtcNow;
 
@@ -490,9 +502,16 @@
                 position.Coords.Longitude, 
                 position.Coords.Accuracy);
 
-            if (followMe)
+            if (followMe || isFirstLocation)
             {
                 await JSRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+                
+                // Only reverse geocode if search box is empty or we are following
+                if (string.IsNullOrEmpty(searchAddress) || followMe)
+                {
+                    searchAddress = await GeocodingService.ReverseGeocodeAsync(position.Coords.Latitude, position.Coords.Longitude);
+                    StateHasChanged();
+                }
             }
         }
     }
@@ -510,6 +529,7 @@
         var selected = geocodingResults.FirstOrDefault(r => r.Address == value?.ToString());
         if (selected != null)
         {
+            searchAddress = selected.Address;
             await JSRuntime.InvokeVoidAsync("setMapView", selected.Latitude, selected.Longitude, 2.0); // 2km radius
             followMe = false; // Disable follow me if user manually searches
         }
