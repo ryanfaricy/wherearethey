@@ -27,15 +27,26 @@ window.squarePayments = {
         }
     },
     tokenize: async function () {
-        const result = await card.tokenize();
-        if (result.status === 'OK') {
-            return result.token;
-        } else {
-            let errorMessage = 'Tokenization failed';
-            if (result.errors && result.errors.length > 0) {
-                errorMessage = result.errors[0].message;
+        console.log('Square tokenize called');
+        if (!card) {
+            throw new Error('Payment form not properly initialized. Please refresh the page.');
+        }
+        
+        try {
+            const result = await card.tokenize();
+            console.log('Square tokenize result status:', result.status);
+            if (result.status === 'OK') {
+                return result.token;
+            } else {
+                let errorMessage = 'Tokenization failed';
+                if (result.errors && result.errors.length > 0) {
+                    errorMessage = result.errors[0].message;
+                }
+                throw new Error(errorMessage);
             }
-            throw new Error(errorMessage);
+        } catch (e) {
+            console.error('Square tokenization error:', e);
+            throw e;
         }
     }
 };
