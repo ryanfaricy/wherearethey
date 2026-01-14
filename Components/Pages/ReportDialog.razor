@@ -79,6 +79,7 @@
 
     private async Task SubmitReport()
     {
+        if (isSubmitting) return;
         isSubmitting = true;
         try
         {

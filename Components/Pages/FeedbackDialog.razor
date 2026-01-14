@@ -60,6 +60,8 @@
 
     private async Task SubmitFeedback()
     {
+        if (isSubmitting) return;
+
         if (string.IsNullOrWhiteSpace(feedback.Message))
         {
             NotificationService.Notify(NotificationSeverity.Error, L["Message_Required"]);

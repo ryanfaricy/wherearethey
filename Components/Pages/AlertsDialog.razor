@@ -154,6 +154,8 @@
 
     private async Task CreateAlert()
     {
+        if (isSubmitting) return;
+
         if (string.IsNullOrWhiteSpace(email))
         {
             NotificationService.Notify(NotificationSeverity.Error, "Email is required");

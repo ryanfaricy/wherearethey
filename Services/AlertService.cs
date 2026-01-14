@@ -42,6 +42,7 @@ public class AlertService(
             var isVerified = await context.EmailVerifications
                 .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
 
+            alert.ExternalId = Guid.NewGuid();
             alert.EncryptedEmail = _protector.Protect(email);
             alert.EmailHash = emailHash;
             alert.IsVerified = isVerified;

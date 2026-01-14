@@ -78,10 +78,12 @@ public class AlertServiceTests
         };
 
         // Act
+        var originalExternalId = alert.ExternalId;
         var result = await service.CreateAlertAsync(alert, email);
 
         // Assert
         Assert.NotEqual(0, result.Id);
+        Assert.NotEqual(originalExternalId, result.ExternalId);
         Assert.True(result.IsActive);
         Assert.False(result.IsVerified); // New alerts are not verified by default
         Assert.NotNull(result.EncryptedEmail);

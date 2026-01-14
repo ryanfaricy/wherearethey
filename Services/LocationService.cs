@@ -31,6 +31,7 @@ public class LocationService(
 
             await using var context = await contextFactory.CreateDbContextAsync();
 
+            report.ExternalId = Guid.NewGuid();
             report.Timestamp = DateTime.UtcNow;
             context.LocationReports.Add(report);
             await context.SaveChangesAsync();
