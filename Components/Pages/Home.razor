@@ -21,15 +21,15 @@
 <RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem" Class="rz-p-2 rz-background-color-primary-lighter main-toolbar" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
-        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" />
-        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" IsBusy="@isGettingLocation" />
+        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
         @if (systemSettings.DonationsEnabled)
         {
-            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
         }
-        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
+        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
+        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
     </RadzenStack>
 
     <!-- Map Container -->
@@ -104,6 +104,7 @@
     private SystemSettings systemSettings = new();
     private bool mapInitialized = false;
     private bool isGettingLocation = false;
+    private bool isBusy = false;
     private string? userIdentifier;
     private DotNetObjectReference<Home>? objRef;
     private int locationWatchId = -1;
@@ -305,10 +306,18 @@
 
     private async Task LoadReports()
     {
-        reports = await LocationService.GetRecentReportsAsync(selectedHours);
-        if (mapInitialized)
+        isBusy = true;
+        try
         {
-            await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+            reports = await LocationService.GetRecentReportsAsync(selectedHours);
+            if (mapInitialized)
+            {
+                await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+            }
+        }
+        finally
+        {
+            isBusy = false;
         }
     }
 
@@ -326,69 +335,101 @@
 
     private async Task OnSettingsClick()
     {
-        await DialogService.OpenAsync<SettingsDialog>("SETTINGS",
-            null,
-            new DialogOptions { Width = "400px" });
+        isBusy = true;
+        try
+        {
+            await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"],
+                null,
+                new DialogOptions { Width = "400px" });
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 
     private async Task OnHelpClick()
     {
-        await DialogService.OpenAsync<HelpDialog>("HELP",
-            null,
-            new DialogOptions { Width = "500px" });
+        isBusy = true;
+        try
+        {
+            await DialogService.OpenAsync<HelpDialog>(L["HELP"],
+                null,
+                new DialogOptions { Width = "500px" });
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();
 
     private async Task ShowAlertsDialog(double? lat = null, double? lng = null)
     {
-        var parameters = new Dictionary<string, object>();
+        isBusy = true;
         try
         {
-            if (lat.HasValue && lng.HasValue)
+            var parameters = new Dictionary<string, object>();
+            try
             {
-                parameters.Add("InitialLat", lat.Value);
-                parameters.Add("InitialLng", lng.Value);
-                
-                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
-                if (mapState != null)
+                if (lat.HasValue && lng.HasValue)
                 {
-                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                    parameters.Add("InitialLat", lat.Value);
+                    parameters.Add("InitialLng", lng.Value);
+                    
+                    var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                    if (mapState != null)
+                    {
+                        parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                    }
+                }
+                else
+                {
+                    var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                    if (mapState != null)
+                    {
+                        parameters.Add("InitialLat", mapState.Lat);
+                        parameters.Add("InitialLng", mapState.Lng);
+                        parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                    }
                 }
             }
-            else
+            catch (Exception)
             {
-                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
-                if (mapState != null)
-                {
-                    parameters.Add("InitialLat", mapState.Lat);
-                    parameters.Add("InitialLng", mapState.Lng);
-                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
-                }
+                // Ignore if map state cannot be retrieved
+            }
+
+            var result = await DialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
+                parameters,
+                new DialogOptions { Width = "500px" });
+
+            await LoadUserAlerts();
+
+            if (result is Alert alert)
+            {
+                await JSRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
             }
         }
-        catch (Exception)
+        finally
         {
-            // Ignore if map state cannot be retrieved
-        }
-
-        var result = await DialogService.OpenAsync<AlertsDialog>("ALERTS",
-            parameters,
-            new DialogOptions { Width = "500px" });
-
-        await LoadUserAlerts();
-
-        if (result is Alert alert)
-        {
-            await JSRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
+            isBusy = false;
         }
     }
 
     private async Task OnDonateClick()
     {
-        await DialogService.OpenAsync<DonateDialog>("DONATE",
-            null,
-            new DialogOptions { Width = "500px" });
+        isBusy = true;
+        try
+        {
+            await DialogService.OpenAsync<DonateDialog>(L["DONATE"],
+                null,
+                new DialogOptions { Width = "500px" });
+        }
+        finally
+        {
+            isBusy = false;
+        }
     }
 
     private async Task OnReportClick()

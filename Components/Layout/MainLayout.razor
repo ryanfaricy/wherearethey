@@ -33,6 +33,7 @@
         if (firstRender)
         {
             await JSRuntime.InvokeVoidAsync("themeManager.init");
+            await JSRuntime.InvokeVoidAsync("hideAppLoader");
         }
     }
 }

@@ -32,7 +32,7 @@
             <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
                           Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
-                          Disabled="@isSubmitting" />
+                          IsBusy="@isSubmitting" />
         </RadzenStack>
     </RadzenStack>
 </RadzenTemplateForm>
