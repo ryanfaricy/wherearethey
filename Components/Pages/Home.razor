@@ -52,7 +52,8 @@
                                     ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
                                     Size="ButtonSize.Medium" ToolTip="Follow Me" 
                                     Class="rz-shadow-2 rz-border-radius-1" 
-                                    ToggleButtonStyle="ButtonStyle.Primary" />
+                                    ToggleButtonStyle="ButtonStyle.Primary"
+                                    Change="@OnFollowMeChange" />
                 
                 <RadzenSelectBar @bind-Value="@selectedHours" TValue="int" Change="@LoadReports"
                                  Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
@@ -432,6 +433,24 @@
         await ShowReportDialog(report);
     }
 
+    private async Task OnFollowMeChange(bool value)
+    {
+        if (value && lastKnownPosition != null)
+        {
+            await JSRuntime.InvokeVoidAsync("setMapView", lastKnownPosition.Coords.Latitude, lastKnownPosition.Coords.Longitude, null);
+        }
+    }
+
+    [JSInvokable]
+    public void OnUserInteractedWithMap()
+    {
+        if (followMe)
+        {
+            followMe = false;
+            StateHasChanged();
+        }
+    }
+
     [JSInvokable]
     public async Task OnLocationUpdated(GeolocationPosition position)
     {
@@ -473,6 +492,7 @@
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng, bool force = false)
     {
+        followMe = false;
         if (!force)
         {
             var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");

@@ -11,6 +11,7 @@ let userLocationCircle;
 let selectedReportId = null;
 let resizeObserver = null;
 let dotNetHelper;
+let isProgrammaticMove = false;
 const PIN_ZOOM_THRESHOLD = 15;
 
 let translations = {};
@@ -73,39 +74,11 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 
-    // Add Locate Control
-    const LocateControl = L.Control.extend({
-        options: { position: 'topleft' },
-        onAdd: function (map) {
-            const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
-            const button = L.DomUtil.create('a', 'leaflet-control-locate', container);
-            button.innerHTML = '<i class="rzi" style="font-size: 20px;">my_location</i>';
-            button.title = "Center on my location";
-
-            L.DomEvent.on(button, 'click', function (e) {
-                L.DomEvent.stopPropagation(e);
-                L.DomEvent.preventDefault(e);
-                if (userLocationMarker) {
-                    map.setView(userLocationMarker.getLatLng(), 17);
-                } else {
-                    // If no location yet, try to get it
-                    if (window.getLocation) {
-                        window.getLocation().then(pos => {
-                            window.updateUserLocation(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
-                            map.setView([pos.coords.latitude, pos.coords.longitude], 17);
-                            if (dotNetHelper) {
-                                dotNetHelper.invokeMethodAsync('OnLocationUpdated', pos);
-                            }
-                        }).catch(err => {
-                            console.warn('Could not get location:', err);
-                        });
-                    }
-                }
-            });
-            return container;
+    map.on('movestart', function() {
+        if (!isProgrammaticMove && dotNetHelper) {
+            dotNetHelper.invokeMethodAsync('OnUserInteractedWithMap');
         }
     });
-    map.addControl(new LocateControl());
 
     updateHeatMap(reports, !hasInitialLocation);
     
@@ -250,7 +223,9 @@ window.updateHeatMap = function (reports, shouldFitBounds = true) {
 
     if (shouldFitBounds && reports.length > 0) {
         const bounds = L.latLngBounds(reports.map(r => [r.latitude, r.longitude]));
+        isProgrammaticMove = true;
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        isProgrammaticMove = false;
     }
 };
 
@@ -344,7 +319,9 @@ window.focusReport = function(reportId) {
         if (markerClusterGroup && !map.hasLayer(markerClusterGroup)) {
             map.addLayer(markerClusterGroup);
         }
+        isProgrammaticMove = true;
         map.setView(marker.getLatLng(), 17);
+        isProgrammaticMove = false;
         
         // If the marker is in a cluster, we might need to spiderfy it or just zoom more
         // For now, just trigger the click
@@ -370,6 +347,7 @@ window.getMapState = function() {
 window.setMapView = function (lat, lng, radiusKm) {
     if (!map) return;
     
+    isProgrammaticMove = true;
     // Zoom level 13 is a good default (~5km radius area)
     // If radius is provided, we can try to fit it
     if (radiusKm) {
@@ -381,8 +359,10 @@ window.setMapView = function (lat, lng, radiusKm) {
         const zoom = Math.max(2, Math.min(18, 15 - Math.log2(radiusKm)));
         map.setView([lat, lng], Math.round(zoom));
     } else {
-        map.setView([lat, lng], 13);
+        const currentZoom = map.getZoom();
+        map.setView([lat, lng], currentZoom > 0 ? currentZoom : 13);
     }
+    isProgrammaticMove = false;
 };
 
 window.updateUserLocation = function (lat, lng, accuracy) {
