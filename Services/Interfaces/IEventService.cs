@@ -2,7 +2,7 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services.Interfaces;
 
-public interface IAdminNotificationService
+public interface IEventService
 {
     event Action<LocationReport> OnReportAdded;
     event Action<int> OnReportDeleted;

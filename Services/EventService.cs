@@ -3,7 +3,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-public class AdminNotificationService : IAdminNotificationService
+public class EventService : IEventService
 {
     public event Action<LocationReport>? OnReportAdded;
     public event Action<int>? OnReportDeleted;

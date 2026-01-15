@@ -20,7 +20,7 @@ public class AlertService(
     IDataProtectionProvider provider,
     IEmailService emailService,
     IMediator mediator,
-    IAdminNotificationService adminNotificationService,
+    IEventService eventService,
     IOptions<AppOptions> appOptions,
     ILogger<AlertService> logger,
     IValidator<Alert> validator) : IAlertService
@@ -57,7 +57,7 @@ public class AlertService(
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
 
-            adminNotificationService.NotifyAlertAdded(alert);
+            eventService.NotifyAlertAdded(alert);
             await mediator.Publish(new AlertCreatedEvent(alert, email));
 
             return alert;
@@ -157,7 +157,7 @@ public class AlertService(
         }
 
         await context.SaveChangesAsync();
-        adminNotificationService.NotifyEmailVerified(verification.EmailHash);
+        eventService.NotifyEmailVerified(verification.EmailHash);
         return true;
     }
 
@@ -251,7 +251,7 @@ public class AlertService(
         {
             context.Alerts.Remove(alert);
             await context.SaveChangesAsync();
-            adminNotificationService.NotifyAlertDeleted(id);
+            eventService.NotifyAlertDeleted(id);
         }
     }
 }

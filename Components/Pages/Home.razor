@@ -9,7 +9,7 @@
 @inject NotificationService NotificationService
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
-@inject IAdminNotificationService AdminNotificationService
+@inject IEventService EventService
 @using System.Globalization
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
@@ -123,9 +123,9 @@
         _systemSettings = await SettingsService.GetSettingsAsync();
         _selectedHours = _systemSettings.ReportExpiryHours;
         await LoadReports();
-        ReportService.OnReportAdded += HandleReportAdded;
-        ReportService.OnReportDeleted += HandleReportDeleted;
-        AdminNotificationService.OnSettingsChanged += HandleSettingsChanged;
+        EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportDeleted += HandleReportDeleted;
+        EventService.OnSettingsChanged += HandleSettingsChanged;
     }
 
     private void HandleSettingsChanged(SystemSettings settings)
@@ -716,9 +716,9 @@
 
     public void Dispose()
     {
-        ReportService.OnReportAdded -= HandleReportAdded;
-        ReportService.OnReportDeleted -= HandleReportDeleted;
-        AdminNotificationService.OnSettingsChanged -= HandleSettingsChanged;
+        EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportDeleted -= HandleReportDeleted;
+        EventService.OnSettingsChanged -= HandleSettingsChanged;
         if (_locationWatchId != -1)
         {
             _ = JsRuntime.InvokeVoidAsync("stopWatching", _locationWatchId);

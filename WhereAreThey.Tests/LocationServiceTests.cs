@@ -11,7 +11,7 @@ namespace WhereAreThey.Tests;
 public class LocationServiceTests
 {
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
-    private readonly Mock<IAdminNotificationService> _adminNotificationMock = new();
+    private readonly Mock<IEventService> _eventServiceMock = new();
 
     private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
@@ -32,7 +32,7 @@ public class LocationServiceTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory, _adminNotificationMock.Object);
+        return new SettingsService(factory, _eventServiceMock.Object);
     }
 
     private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)

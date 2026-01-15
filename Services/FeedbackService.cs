@@ -8,11 +8,9 @@ namespace WhereAreThey.Services;
 
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IAdminNotificationService adminNotificationService,
+    IEventService eventService,
     IValidator<Feedback> validator) : IFeedbackService
 {
-    public event Action<Feedback>? OnFeedbackAdded;
-
     public async Task AddFeedbackAsync(Feedback feedback)
     {
         await validator.ValidateAndThrowAsync(feedback);
@@ -22,8 +20,7 @@ public class FeedbackService(
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();
 
-        OnFeedbackAdded?.Invoke(feedback);
-        adminNotificationService.NotifyFeedbackAdded(feedback);
+        eventService.NotifyFeedbackAdded(feedback);
     }
 
     public async Task<List<Feedback>> GetAllFeedbackAsync()
@@ -43,7 +40,7 @@ public class FeedbackService(
         {
             context.Feedbacks.Remove(feedback);
             await context.SaveChangesAsync();
-            adminNotificationService.NotifyFeedbackDeleted(id);
+            eventService.NotifyFeedbackDeleted(id);
         }
     }
 }

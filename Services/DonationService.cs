@@ -11,7 +11,7 @@ namespace WhereAreThey.Services;
 
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
-    IAdminNotificationService adminNotificationService,
+    IEventService eventService,
     IOptions<SquareOptions> squareOptions) : IDonationService
 {
     private readonly SquareOptions _options = squareOptions.Value;
@@ -43,7 +43,7 @@ public class DonationService(
         donation.CreatedAt = DateTime.UtcNow;
         context.Donations.Add(donation);
         await context.SaveChangesAsync();
-        adminNotificationService.NotifyDonationAdded(donation);
+        eventService.NotifyDonationAdded(donation);
         return donation;
     }
 
@@ -57,7 +57,7 @@ public class DonationService(
 
         donation.Status = status;
         await context.SaveChangesAsync();
-        adminNotificationService.NotifyDonationUpdated(donation);
+        eventService.NotifyDonationUpdated(donation);
         return true;
     }
 

@@ -15,20 +15,10 @@ public class ReportService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IMediator mediator,
     ISettingsService settingsService,
-    IAdminNotificationService adminNotificationService,
+    IEventService eventService,
     IValidator<LocationReport> validator,
     ILogger<ReportService> logger) : IReportService
 {
-    /// <summary>
-    /// Event triggered when a new report is added.
-    /// </summary>
-    public event Action<LocationReport>? OnReportAdded;
-
-    /// <summary>
-    /// Event triggered when a report is deleted.
-    /// </summary>
-    public event Action<int>? OnReportDeleted;
-
     /// <summary>
     /// Validates and adds a new location report to the database.
     /// </summary>
@@ -45,11 +35,8 @@ public class ReportService(
             context.LocationReports.Add(report);
             await context.SaveChangesAsync();
 
-            // Notify real-time listeners (Blazor SignalR)
-            OnReportAdded?.Invoke(report);
-            
-            // Notify admin UI
-            adminNotificationService.NotifyReportAdded(report);
+            // Notify global event bus
+            eventService.NotifyReportAdded(report);
 
             try
             {
@@ -123,11 +110,8 @@ public class ReportService(
             context.LocationReports.Remove(report);
             await context.SaveChangesAsync();
             
-            // Notify real-time listeners
-            OnReportDeleted?.Invoke(id);
-            
-            // Notify admin UI
-            adminNotificationService.NotifyReportDeleted(id);
+            // Notify global event bus
+            eventService.NotifyReportDeleted(id);
         }
     }
 }

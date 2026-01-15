@@ -21,9 +21,9 @@ public class SettingsServiceTests
         mockFactory.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(options));
             
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var eventServiceMock = new Mock<IEventService>();
 
-        _service = new SettingsService(mockFactory.Object, adminNotifyMock.Object);
+        _service = new SettingsService(mockFactory.Object, eventServiceMock.Object);
     }
 
     [Fact]

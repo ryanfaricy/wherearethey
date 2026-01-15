@@ -56,14 +56,14 @@ public class FeedbackTests
 
     private static ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory, new Mock<IAdminNotificationService>().Object);
+        return new SettingsService(factory, new Mock<IEventService>().Object);
     }
 
     private IFeedbackService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        return new FeedbackService(factory, new Mock<IAdminNotificationService>().Object, validator);
+        return new FeedbackService(factory, new Mock<IEventService>().Object, validator);
     }
 
     [Fact]

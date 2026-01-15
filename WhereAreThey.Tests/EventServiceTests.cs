@@ -3,13 +3,13 @@ using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests;
 
-public class AdminNotificationServiceTests
+public class EventServiceTests
 {
     [Fact]
     public void NotifyReportAdded_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         LocationReport? receivedReport = null;
         service.OnReportAdded += report => receivedReport = report;
         var report = new LocationReport { Id = 1 };
@@ -25,7 +25,7 @@ public class AdminNotificationServiceTests
     public void NotifyReportDeleted_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         var receivedId = 0;
         service.OnReportDeleted += id => receivedId = id;
 
@@ -40,7 +40,7 @@ public class AdminNotificationServiceTests
     public void NotifyFeedbackAdded_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         Feedback? receivedFeedback = null;
         service.OnFeedbackAdded += f => receivedFeedback = f;
         var feedback = new Feedback { Id = 1 };
@@ -56,7 +56,7 @@ public class AdminNotificationServiceTests
     public void NotifyDonationAdded_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         Donation? receivedDonation = null;
         service.OnDonationAdded += d => receivedDonation = d;
         var donation = new Donation { Id = 1 };
@@ -72,7 +72,7 @@ public class AdminNotificationServiceTests
     public void NotifyAlertAdded_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         Alert? receivedAlert = null;
         service.OnAlertAdded += a => receivedAlert = a;
         var alert = new Alert { Id = 1 };
@@ -88,7 +88,7 @@ public class AdminNotificationServiceTests
     public void NotifySettingsChanged_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         SystemSettings? receivedSettings = null;
         service.OnSettingsChanged += s => receivedSettings = s;
         var settings = new SystemSettings { Id = 1 };
@@ -104,7 +104,7 @@ public class AdminNotificationServiceTests
     public void NotifyAdminLoginAttempt_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         AdminLoginAttempt? receivedAttempt = null;
         service.OnAdminLoginAttempt += a => receivedAttempt = a;
         var attempt = new AdminLoginAttempt { Id = 1 };
@@ -120,7 +120,7 @@ public class AdminNotificationServiceTests
     public void NotifyEmailVerified_ShouldInvokeEvent()
     {
         // Arrange
-        var service = new AdminNotificationService();
+        var service = new EventService();
         string? receivedHash = null;
         service.OnEmailVerified += h => receivedHash = h;
 

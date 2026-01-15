@@ -10,7 +10,7 @@ namespace WhereAreThey.Services;
 
 public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
-    IAdminNotificationService adminNotificationService,
+    IEventService eventService,
     IOptions<AppOptions> appOptions) : IAdminService
 {
     public async Task<bool> LoginAsync(string password, string? ipAddress)
@@ -64,7 +64,7 @@ public class AdminService(
         };
         context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();
-        adminNotificationService.NotifyAdminLoginAttempt(attempt);
+        eventService.NotifyAdminLoginAttempt(attempt);
     }
 
     public async Task<List<AdminLoginAttempt>> GetRecentLoginAttemptsAsync(int count = 50)

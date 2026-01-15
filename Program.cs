@@ -138,7 +138,7 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 
 // Add application services
 builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
-builder.Services.AddSingleton<IAdminNotificationService, AdminNotificationService>();
+builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<IReportService, ReportService>();

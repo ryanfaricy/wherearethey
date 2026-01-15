@@ -20,7 +20,7 @@ public class ReportServiceTests
 {
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
-    private readonly Mock<IAdminNotificationService> _adminNotificationMock = new();
+    private readonly Mock<IEventService> _eventServiceMock = new();
 
     private static IStringLocalizer<App> CreateLocalizer()
     {
@@ -69,7 +69,7 @@ public class ReportServiceTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory, _adminNotificationMock.Object);
+        return new SettingsService(factory, _eventServiceMock.Object);
     }
 
     private IReportService CreateService(IDbContextFactory<ApplicationDbContext> factory)
@@ -77,7 +77,7 @@ public class ReportServiceTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new ReportService(factory, _mediatorMock.Object, settingsService, _adminNotificationMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _mediatorMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class ReportServiceTests
     }
 
     [Fact]
-    public async Task AddReport_ShouldTriggerOnReportAddedEvent()
+    public async Task AddReport_ShouldTriggerAdminNotification()
     {
         // Arrange
         var options = CreateOptions();
@@ -125,18 +125,11 @@ public class ReportServiceTests
             IsEmergency = false
         };
 
-        LocationReport? triggeredReport = null;
-        var triggerCount = 0;
-        service.OnReportAdded += r => { triggeredReport = r; triggerCount++; };
-
         // Act
         await service.AddReportAsync(report);
 
         // Assert
-        Assert.Equal(1, triggerCount);
-        Assert.NotNull(triggeredReport);
-        Assert.Equal(report.Message, triggeredReport.Message);
-        Assert.Equal(report.Id, triggeredReport.Id);
+        _eventServiceMock.Verify(x => x.NotifyReportAdded(It.Is<LocationReport>(r => r.Message == report.Message)), Times.Once);
     }
 
     [Fact]
@@ -225,7 +218,7 @@ public class ReportServiceTests
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
         var appOptions = Options.Create(new AppOptions());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, appOptions, new Mock<ILogger<AlertService>>().Object, alertValidator);
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _eventServiceMock.Object, appOptions, new Mock<ILogger<AlertService>>().Object, alertValidator);
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         var locationService = new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object);
         
@@ -242,7 +235,7 @@ public class ReportServiceTests
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new ReportService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _adminNotificationMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<ReportService>>());
+        var service = new ReportService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _eventServiceMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<ReportService>>());
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";

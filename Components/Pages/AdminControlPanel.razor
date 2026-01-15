@@ -12,7 +12,7 @@
 @inject ILogger<AdminControlPanel> Logger
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
-@inject IAdminNotificationService AdminNotificationService
+@inject IEventService EventService
 @inject IJSRuntime JsRuntime
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using WhereAreThey.Models
@@ -308,17 +308,17 @@
         _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
         UserConnectionService.OnConnectionCountChanged += HandleConnectionCountChanged;
         
-        AdminNotificationService.OnReportAdded += HandleReportAdded;
-        AdminNotificationService.OnReportDeleted += HandleReportDeleted;
-        AdminNotificationService.OnFeedbackAdded += HandleFeedbackAdded;
-        AdminNotificationService.OnFeedbackDeleted += HandleFeedbackDeleted;
-        AdminNotificationService.OnDonationAdded += HandleDonationAdded;
-        AdminNotificationService.OnDonationUpdated += HandleDonationUpdated;
-        AdminNotificationService.OnAlertAdded += HandleAlertAdded;
-        AdminNotificationService.OnAlertDeleted += HandleAlertDeleted;
-        AdminNotificationService.OnSettingsChanged += HandleSettingsChanged;
-        AdminNotificationService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
-        AdminNotificationService.OnEmailVerified += HandleEmailVerified;
+        EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportDeleted += HandleReportDeleted;
+        EventService.OnFeedbackAdded += HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
+        EventService.OnDonationAdded += HandleDonationAdded;
+        EventService.OnDonationUpdated += HandleDonationUpdated;
+        EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertDeleted += HandleAlertDeleted;
+        EventService.OnSettingsChanged += HandleSettingsChanged;
+        EventService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
+        EventService.OnEmailVerified += HandleEmailVerified;
     }
 
     private void HandleConnectionCountChanged()
@@ -468,17 +468,17 @@
     {
         UserConnectionService.OnConnectionCountChanged -= HandleConnectionCountChanged;
         
-        AdminNotificationService.OnReportAdded -= HandleReportAdded;
-        AdminNotificationService.OnReportDeleted -= HandleReportDeleted;
-        AdminNotificationService.OnFeedbackAdded -= HandleFeedbackAdded;
-        AdminNotificationService.OnFeedbackDeleted -= HandleFeedbackDeleted;
-        AdminNotificationService.OnDonationAdded -= HandleDonationAdded;
-        AdminNotificationService.OnDonationUpdated -= HandleDonationUpdated;
-        AdminNotificationService.OnAlertAdded -= HandleAlertAdded;
-        AdminNotificationService.OnAlertDeleted -= HandleAlertDeleted;
-        AdminNotificationService.OnSettingsChanged -= HandleSettingsChanged;
-        AdminNotificationService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
-        AdminNotificationService.OnEmailVerified -= HandleEmailVerified;
+        EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportDeleted -= HandleReportDeleted;
+        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
+        EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnDonationUpdated -= HandleDonationUpdated;
+        EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertDeleted -= HandleAlertDeleted;
+        EventService.OnSettingsChanged -= HandleSettingsChanged;
+        EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
+        EventService.OnEmailVerified -= HandleEmailVerified;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

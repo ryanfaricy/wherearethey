@@ -17,7 +17,7 @@ public class AntiSpamTests
 {
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
-    private readonly Mock<IAdminNotificationService> _adminNotifyMock = new();
+    private readonly Mock<IEventService> _eventServiceMock = new();
 
     private static IStringLocalizer<App> CreateLocalizer()
     {
@@ -69,7 +69,7 @@ public class AntiSpamTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory, _adminNotifyMock.Object);
+        return new SettingsService(factory, _eventServiceMock.Object);
     }
 
     private IReportService CreateService(IDbContextFactory<ApplicationDbContext> factory)
@@ -77,7 +77,7 @@ public class AntiSpamTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new ReportService(factory, _mediatorMock.Object, settingsService, _adminNotifyMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _mediatorMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]

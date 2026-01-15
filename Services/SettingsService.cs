@@ -7,7 +7,7 @@ namespace WhereAreThey.Services;
 
 public class SettingsService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IAdminNotificationService adminNotificationService) : ISettingsService
+    IEventService eventService) : ISettingsService
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private SystemSettings? _cachedSettings;
@@ -69,7 +69,7 @@ public class SettingsService(
             await context.SaveChangesAsync();
             _cachedSettings = settings;
             _lastUpdate = DateTime.UtcNow;
-            adminNotificationService.NotifySettingsChanged(settings);
+            eventService.NotifySettingsChanged(settings);
         }
         finally
         {

@@ -23,8 +23,8 @@ public class AdminServiceTests
         mockFactory.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        _service = new AdminService(mockFactory.Object, adminNotifyMock.Object, Options.Create(_appOptions));
+        var eventServiceMock = new Mock<IEventService>();
+        _service = new AdminService(mockFactory.Object, eventServiceMock.Object, Options.Create(_appOptions));
     }
 
     [Fact]
