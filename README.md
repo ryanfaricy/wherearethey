@@ -21,7 +21,7 @@ A production-ready, mobile-first Blazor Server application for anonymous locatio
 - **Payments**: Square .NET SDK
 - **Maps**: Leaflet & Mapbox API
 - **Concurrency**: `IDbContextFactory` for high-traffic stability (10,000+ connections)
-- **Testing**: xUnit with 60+ comprehensive tests
+- **Testing**: xUnit with 70+ comprehensive tests
 
 ## 🚀 Getting Started
 
@@ -66,7 +66,7 @@ A production-ready, mobile-first Blazor Server application for anonymous locatio
 
 ## 🧪 Testing
 
-The project includes 60+ unit and integration tests covering all critical paths.
+The project includes 70+ unit and integration tests covering all critical paths.
 ```bash
 cd WhereAreThey.Tests
 dotnet test
@@ -130,7 +130,7 @@ For high-concurrency cloud deployments, it is recommended to switch the database
 - `Currency` (Default: USD)
 - `DonorEmail`, `DonorName` (Optional)
 - `CreatedAt` (Indexed)
-- `StripePaymentIntentId`
+- `ExternalPaymentId`
 - `Status` (pending/completed/failed)
 
 ## 🎨 UI/UX Design
@@ -144,9 +144,9 @@ For high-concurrency cloud deployments, it is recommended to switch the database
 ## 🔧 Configuration
 
 ### Secrets Management
-Sensitive data like Stripe and SMTP keys should be stored in .NET User Secrets during development:
+Sensitive data like Square and SMTP keys should be stored in .NET User Secrets during development:
 ```bash
-dotnet user-secrets set "Stripe:SecretKey" "sk_test_..."
+dotnet user-secrets set "Square:AccessToken" "EAAA..."
 ```
 
 ### appsettings.json

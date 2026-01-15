@@ -13,6 +13,9 @@ using WhereAreThey.Events;
 
 namespace WhereAreThey.Services;
 
+/// <summary>
+/// Service for managing location reports.
+/// </summary>
 public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IMediator mediator,
@@ -22,9 +25,21 @@ public class LocationService(
     ILogger<LocationService> logger,
     IStringLocalizer<App> L) : ILocationService
 {
+    /// <summary>
+    /// Event triggered when a new report is added.
+    /// </summary>
     public event Action<LocationReport>? OnReportAdded;
+
+    /// <summary>
+    /// Event triggered when a report is deleted.
+    /// </summary>
     public event Action<int>? OnReportDeleted;
 
+    /// <summary>
+    /// Validates and adds a new location report to the database.
+    /// </summary>
+    /// <param name="report">The report to add.</param>
+    /// <returns>The added report with its generated ID and timestamp.</returns>
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
         try
@@ -38,11 +53,15 @@ public class LocationService(
             context.LocationReports.Add(report);
             await context.SaveChangesAsync();
 
+            // Notify real-time listeners (Blazor SignalR)
             OnReportAdded?.Invoke(report);
+            
+            // Notify admin UI
             adminNotificationService.NotifyReportAdded(report);
 
             try
             {
+                // Publish event for background processing (geocoding, alerts)
                 await mediator.Publish(new ReportAddedEvent(report));
             }
             catch (Exception ex)
@@ -59,6 +78,9 @@ public class LocationService(
         }
     }
 
+    /// <summary>
+    /// Retrieves a report by its public External ID.
+    /// </summary>
     public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -67,6 +89,9 @@ public class LocationService(
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
     }
 
+    /// <summary>
+    /// Gets recent reports based on the configured expiry hours.
+    /// </summary>
     public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -82,6 +107,10 @@ public class LocationService(
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Gets reports within a specific radius of a location.
+    /// Uses bounding box filter followed by Haversine distance calculation for performance.
+    /// </summary>
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -90,7 +119,7 @@ public class LocationService(
         // Use the global expiry setting
         var cutoff = DateTime.UtcNow.AddHours(-settings.ReportExpiryHours);
         
-        // Simple bounding box calculation
+        // Step 1: Simple bounding box calculation to filter at DB level
         var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(latitude, longitude, radiusKm);
 
         var reports = await context.LocationReports
@@ -100,12 +129,16 @@ public class LocationService(
                        r.Longitude >= minLon && r.Longitude <= maxLon)
             .ToListAsync();
 
-        // Filter by actual distance using Haversine formula
+        // Step 2: Filter by actual distance using Haversine formula in memory
         return reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
             .ToList();
     }
 
     // Admin methods
+    
+    /// <summary>
+    /// Gets all reports for administrative management.
+    /// </summary>
     public async Task<List<LocationReport>> GetAllReportsAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -115,6 +148,9 @@ public class LocationService(
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Deletes a report and notifies relevant services.
+    /// </summary>
     public async Task DeleteReportAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -123,7 +159,11 @@ public class LocationService(
         {
             context.LocationReports.Remove(report);
             await context.SaveChangesAsync();
+            
+            // Notify real-time listeners
             OnReportDeleted?.Invoke(id);
+            
+            // Notify admin UI
             adminNotificationService.NotifyReportDeleted(id);
         }
     }

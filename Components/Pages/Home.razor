@@ -188,6 +188,9 @@
         });
     }
 
+    /// <summary>
+    /// Initializes the map and JS interop after the component has rendered.
+    /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -452,6 +455,10 @@
         }
     }
 
+    /// <summary>
+    /// Triggered when the user clicks the "REPORT" button.
+    /// Handles GPS acquisition and shows the report dialog.
+    /// </summary>
     private async Task OnReportClick()
     {
         if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)

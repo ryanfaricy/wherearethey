@@ -60,6 +60,12 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 - **Response Compression**: Enabled for HTTPS to speed up initial load.
 - **High Concurrency**: Kestrel is configured for 10,000+ simultaneous connections.
 
+## 🧪 Testing Strategy
+- **Unit Testing**: Business logic in services and validators is covered by xUnit tests.
+- **Integration Testing**: Database interactions are tested using SQLite in-memory and EF Core In-Memory providers.
+- **Mocking**: `Moq` is used to isolate services from external dependencies like `HttpClient`, `IEmailService`, and `IMediator`.
+- **Validation Testing**: `FluentValidation` rules are extensively tested to ensure anti-spam and security constraints are honored.
+
 ## 🤖 AI Development Guidelines
 1. **Always Use `AsNoTracking()`** for read-only service methods.
 2. **Follow Localization Patterns**: Add new strings to `App.resx` and `App.es.resx`. Use `L["Key"]` in components.

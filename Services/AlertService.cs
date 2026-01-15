@@ -12,6 +12,9 @@ using WhereAreThey.Events;
 
 namespace WhereAreThey.Services;
 
+/// <summary>
+/// Service for managing geographic alerts and email notifications.
+/// </summary>
 public class AlertService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IDataProtectionProvider provider,
@@ -26,6 +29,9 @@ public class AlertService(
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
+    /// <summary>
+    /// Creates a new alert and initiates email verification if necessary.
+    /// </summary>
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         try
@@ -65,6 +71,9 @@ public class AlertService(
         }
     }
 
+    /// <summary>
+    /// Computes a SHA256 hash of an email address for privacy-preserving verification checks.
+    /// </summary>
     public static string ComputeHash(string email)
     {
         var normalizedEmail = email.Trim().ToLowerInvariant();
@@ -73,6 +82,9 @@ public class AlertService(
         return Convert.ToHexString(hash);
     }
 
+    /// <summary>
+    /// Sends a verification email to a new subscriber.
+    /// </summary>
     public async Task SendVerificationEmailAsync(string email, string emailHash)
     {
         try
