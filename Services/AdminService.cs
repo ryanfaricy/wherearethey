@@ -7,7 +7,10 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration) : IAdminService
+public class AdminService(
+    IDbContextFactory<ApplicationDbContext> contextFactory, 
+    IAdminNotificationService adminNotificationService,
+    IConfiguration configuration) : IAdminService
 {
     public async Task<bool> LoginAsync(string password, string? ipAddress)
     {
@@ -52,13 +55,15 @@ public class AdminService(IDbContextFactory<ApplicationDbContext> contextFactory
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        context.AdminLoginAttempts.Add(new AdminLoginAttempt
+        var attempt = new AdminLoginAttempt
         {
             Timestamp = DateTime.UtcNow,
             IpAddress = ipAddress,
             IsSuccessful = isSuccessful
-        });
+        };
+        context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();
+        adminNotificationService.NotifyAdminLoginAttempt(attempt);
     }
 
     public async Task<List<AdminLoginAttempt>> GetRecentLoginAttemptsAsync(int count = 50)

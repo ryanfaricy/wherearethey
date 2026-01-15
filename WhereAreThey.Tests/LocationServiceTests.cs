@@ -73,7 +73,7 @@ public class LocationServiceTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory);
+        return new SettingsService(factory, _adminNotificationMock.Object);
     }
 
     private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)

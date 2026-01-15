@@ -14,6 +14,7 @@
 @inject NotificationService NotificationService
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
+@inject IAdminNotificationService AdminNotificationService
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
@@ -121,50 +122,69 @@
         _selectedHours = _systemSettings.ReportExpiryHours;
         await LoadReports();
         LocationService.OnReportAdded += HandleReportAdded;
+        LocationService.OnReportDeleted += HandleReportDeleted;
+        AdminNotificationService.OnSettingsChanged += HandleSettingsChanged;
     }
 
-    private void HandleReportAdded(LocationReport? report)
+    private void HandleSettingsChanged(SystemSettings settings)
+    {
+        InvokeAsync(() => {
+            _systemSettings = settings;
+            StateHasChanged();
+        });
+    }
+
+    private void HandleReportAdded(LocationReport report)
     {
         InvokeAsync(async () =>
         {
-            if (report != null)
+            // Incremental update if it matches current time filter
+            var cutoff = DateTime.UtcNow.AddHours(-_selectedHours);
+            if (report.Timestamp >= cutoff && !_reports.Any(r => r.Id == report.Id))
             {
-                // Incremental update if it matches current time filter
-                var cutoff = DateTime.UtcNow.AddHours(-_selectedHours);
-                if (report.Timestamp >= cutoff && !_reports.Any(r => r.Id == report.Id))
+                _reports.Insert(0, report);
+                if (_mapInitialized)
                 {
-                    _reports.Insert(0, report);
-                    if (_mapInitialized)
+                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+
+                    // Show toast if not from current user and we have our location
+                    if (report.ReporterIdentifier != _userIdentifier && _lastKnownPosition != null)
                     {
-                        await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+                        var distance = GeoUtils.CalculateDistance(
+                            _lastKnownPosition.Coords.Latitude,
+                            _lastKnownPosition.Coords.Longitude,
+                            report.Latitude,
+                            report.Longitude);
 
-                        // Show toast if not from current user and we have our location
-                        if (report.ReporterIdentifier != _userIdentifier && _lastKnownPosition != null)
+                        NotificationService.Notify(new NotificationMessage
                         {
-                            var distance = GeoUtils.CalculateDistance(
-                                _lastKnownPosition.Coords.Latitude,
-                                _lastKnownPosition.Coords.Longitude,
-                                report.Latitude,
-                                report.Longitude);
-
-                            NotificationService.Notify(new NotificationMessage
-                            {
-                                Severity = NotificationSeverity.Info,
-                                Summary = L["New_Report"],
-                                Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
-                                Duration = 10000,
-                                Click = (m) => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
-                            });
-                        }
+                            Severity = NotificationSeverity.Info,
+                            Summary = L["New_Report"],
+                            Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
+                            Duration = 10000,
+                            Click = (m) => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
+                        });
                     }
                 }
             }
-            else
-            {
-                // Fallback for deletions or unknown changes
-                await LoadReports();
-            }
             StateHasChanged();
+        });
+    }
+
+    private void HandleReportDeleted(int id)
+    {
+        InvokeAsync(async () =>
+        {
+            var report = _reports.FirstOrDefault(r => r.Id == id);
+            if (report != null)
+            {
+                _reports.Remove(report);
+                if (_mapInitialized)
+                {
+                    await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
+                }
+                StateHasChanged();
+            }
         });
     }
 
@@ -718,6 +738,8 @@
     public void Dispose()
     {
         LocationService.OnReportAdded -= HandleReportAdded;
+        LocationService.OnReportDeleted -= HandleReportDeleted;
+        AdminNotificationService.OnSettingsChanged -= HandleSettingsChanged;
         if (_locationWatchId != -1)
         {
             _ = JsRuntime.InvokeVoidAsync("stopWatching", _locationWatchId);

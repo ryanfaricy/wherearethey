@@ -4,7 +4,9 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
-public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFactory) : ISettingsService
+public class SettingsService(
+    IDbContextFactory<ApplicationDbContext> contextFactory,
+    IAdminNotificationService adminNotificationService) : ISettingsService
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private SystemSettings? _cachedSettings;
@@ -66,6 +68,7 @@ public class SettingsService(IDbContextFactory<ApplicationDbContext> contextFact
             await context.SaveChangesAsync();
             _cachedSettings = settings;
             _lastUpdate = DateTime.UtcNow;
+            adminNotificationService.NotifySettingsChanged(settings);
         }
         finally
         {

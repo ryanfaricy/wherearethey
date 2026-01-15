@@ -255,6 +255,25 @@ window.addSingleReport = function (report) {
     refreshHeatLayer();
 };
 
+window.removeSingleReport = function (reportId) {
+    if (!map) return;
+
+    const markerIndex = reportMarkers.findIndex(m => m.reportId === reportId);
+    if (markerIndex !== -1) {
+        const marker = reportMarkers[markerIndex];
+        if (markerClusterGroup) {
+            markerClusterGroup.removeLayer(marker);
+        }
+        reportMarkers.splice(markerIndex, 1);
+    }
+
+    const reportIndex = allReports.findIndex(r => r.id === reportId);
+    if (reportIndex !== -1) {
+        allReports.splice(reportIndex, 1);
+        refreshHeatLayer();
+    }
+};
+
 function createReportIcon(r, isSelected) {
     const type = r.isEmergency ? 'emergency' : 'normal';
     const selectedClass = isSelected ? 'selected' : '';

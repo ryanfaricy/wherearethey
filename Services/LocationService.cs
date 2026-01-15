@@ -22,7 +22,8 @@ public class LocationService(
     ILogger<LocationService> logger,
     IStringLocalizer<App> L) : ILocationService
 {
-    public event Action<LocationReport?>? OnReportAdded;
+    public event Action<LocationReport>? OnReportAdded;
+    public event Action<int>? OnReportDeleted;
 
     public async Task<LocationReport> AddLocationReportAsync(LocationReport report)
     {
@@ -122,7 +123,7 @@ public class LocationService(
         {
             context.LocationReports.Remove(report);
             await context.SaveChangesAsync();
-            OnReportAdded?.Invoke(null);
+            OnReportDeleted?.Invoke(id);
             adminNotificationService.NotifyReportDeleted(id);
         }
     }

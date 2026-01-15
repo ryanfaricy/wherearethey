@@ -71,7 +71,7 @@ public class AntiSpamTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory);
+        return new SettingsService(factory, _adminNotifyMock.Object);
     }
 
     private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)

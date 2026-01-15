@@ -304,11 +304,55 @@
         AdminNotificationService.OnDonationUpdated += HandleDonationUpdated;
         AdminNotificationService.OnAlertAdded += HandleAlertAdded;
         AdminNotificationService.OnAlertDeleted += HandleAlertDeleted;
+        AdminNotificationService.OnSettingsChanged += HandleSettingsChanged;
+        AdminNotificationService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
+        AdminNotificationService.OnEmailVerified += HandleEmailVerified;
     }
 
     private void HandleConnectionCountChanged()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleSettingsChanged(SystemSettings settings)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            _systemSettings = settings;
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAdminLoginAttempt(AdminLoginAttempt attempt)
+    {
+        // Always update login attempts even if not authenticated, as long as we're on the page
+        // (actually usually only authenticated admins see the grid, but if they are on the login screen
+        // it's probably better not to show them live attempts unless they are logged in)
+        if (!_isAuthenticated) 
+        {
+            // If we are NOT authenticated, we might still want to refresh the grid if we just failed a login
+            // but the grid is only visible when _isAuthenticated is true.
+            return;
+        }
+
+        InvokeAsync(() => {
+            _loginAttempts.Insert(0, attempt);
+            if (!attempt.IsSuccessful)
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, "Security Alert", $"Failed login attempt from {attempt.IpAddress}", 7000);
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void HandleEmailVerified(string emailHash)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            NotificationService.Notify(NotificationSeverity.Info, "Email Verified", $"A user has verified their email address.", 5000);
+            // We might want to reload alerts to show the "YES" in the Verified column
+            _ = LoadData(); 
+        });
     }
 
     private void HandleReportAdded(LocationReport report)
@@ -420,6 +464,9 @@
         AdminNotificationService.OnDonationUpdated -= HandleDonationUpdated;
         AdminNotificationService.OnAlertAdded -= HandleAlertAdded;
         AdminNotificationService.OnAlertDeleted -= HandleAlertDeleted;
+        AdminNotificationService.OnSettingsChanged -= HandleSettingsChanged;
+        AdminNotificationService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
+        AdminNotificationService.OnEmailVerified -= HandleEmailVerified;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

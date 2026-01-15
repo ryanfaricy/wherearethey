@@ -56,7 +56,7 @@ public class FeedbackTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory);
+        return new SettingsService(factory, new Mock<IAdminNotificationService>().Object);
     }
 
     [Fact]

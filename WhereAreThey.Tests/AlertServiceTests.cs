@@ -51,7 +51,7 @@ public class AlertServiceTests
 
     private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory);
+        return new SettingsService(factory, _adminNotifyMock.Object);
     }
 
     private IAlertService CreateService(IDbContextFactory<ApplicationDbContext> factory)

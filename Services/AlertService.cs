@@ -147,6 +147,7 @@ public class AlertService(
         }
 
         await context.SaveChangesAsync();
+        adminNotificationService.NotifyEmailVerified(verification.EmailHash);
         return true;
     }
 

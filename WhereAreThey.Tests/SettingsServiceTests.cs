@@ -10,6 +10,7 @@ namespace WhereAreThey.Tests;
 public class SettingsServiceTests
 {
     private readonly Mock<IDbContextFactory<ApplicationDbContext>> _mockFactory;
+    private readonly Mock<IAdminNotificationService> _adminNotifyMock;
     private readonly SettingsService _service;
     private readonly DbContextOptions<ApplicationDbContext> _options;
 
@@ -22,8 +23,10 @@ public class SettingsServiceTests
         _mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
         _mockFactory.Setup(f => f.CreateDbContextAsync(default))
             .ReturnsAsync(() => new ApplicationDbContext(_options));
+            
+        _adminNotifyMock = new Mock<IAdminNotificationService>();
 
-        _service = new SettingsService(_mockFactory.Object);
+        _service = new SettingsService(_mockFactory.Object, _adminNotifyMock.Object);
     }
 
     [Fact]

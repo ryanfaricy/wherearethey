@@ -11,6 +11,7 @@ namespace WhereAreThey.Tests;
 public class AdminServiceTests
 {
     private readonly Mock<IDbContextFactory<ApplicationDbContext>> _mockFactory;
+    private readonly Mock<IAdminNotificationService> _adminNotifyMock;
     private readonly Mock<IConfiguration> _mockConfig;
     private readonly AdminService _service;
     private readonly DbContextOptions<ApplicationDbContext> _options;
@@ -25,8 +26,9 @@ public class AdminServiceTests
         _mockFactory.Setup(f => f.CreateDbContextAsync(default))
             .ReturnsAsync(() => new ApplicationDbContext(_options));
 
+        _adminNotifyMock = new Mock<IAdminNotificationService>();
         _mockConfig = new Mock<IConfiguration>();
-        _service = new AdminService(_mockFactory.Object, _mockConfig.Object);
+        _service = new AdminService(_mockFactory.Object, _adminNotifyMock.Object, _mockConfig.Object);
     }
 
     [Fact]
