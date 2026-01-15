@@ -499,4 +499,22 @@
   <data name="ID_Required" xml:space="preserve">
     <value>ID is required</value>
   </data>
+  <data name="What_Is_This_Title" xml:space="preserve">
+    <value>What is AreTheyHere?</value>
+  </data>
+  <data name="What_Is_This_Desc" xml:space="preserve">
+    <value>AreTheyHere is a community-driven, anonymous incident reporting platform designed for real-time crisis response. It allows users to report and visualize local incidents on a live heat map, helping everyone stay informed and safe during emergencies.</value>
+  </data>
+  <data name="Map_Controls_Title" xml:space="preserve">
+    <value>Map Controls</value>
+  </data>
+  <data name="Search_Address_Desc" xml:space="preserve">
+    <value>Search for a specific address or location to move the map.</value>
+  </data>
+  <data name="Follow_Me_Desc" xml:space="preserve">
+    <value>Keep the map centered on your current location as you move.</value>
+  </data>
+  <data name="Time_Filters_Desc" xml:space="preserve">
+    <value>Filter reports by how recently they were submitted (1h, 2h, etc.).</value>
+  </data>
 </root>

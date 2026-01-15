@@ -351,6 +351,9 @@ h1:focus {
 }
 
 /* Responsive Dialogs */
+.rz-dialog-wrapper {
+    z-index: 2000 !important;
+}
 @media (max-width: 768px) {
     .rz-dialog {
         top: 56px !important;

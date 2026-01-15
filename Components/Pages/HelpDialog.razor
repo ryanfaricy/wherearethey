@@ -7,6 +7,13 @@
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
+    <RadzenStack Gap="0.5rem">
+        <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">@L["What_Is_This_Title"]</RadzenText>
+        <RadzenText TextStyle="TextStyle.Body1">@L["What_Is_This_Desc"]</RadzenText>
+    </RadzenStack>
+
+    <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 0;" />
+
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold; color: var(--rz-primary);">@L["Quick_Help_Guide"]</RadzenText>
 
     <RadzenStack Gap="1rem">
@@ -38,6 +45,27 @@
             <RadzenText TextStyle="TextStyle.Body2">
                 <b>@L["Orange_Pins"]:</b> @L["Orange_Pins_Desc"]
             </RadzenText>
+        </RadzenStack>
+    </RadzenStack>
+
+    <hr style="border: none; border-top: 1px solid var(--rz-divider); margin: 1rem 0;" />
+
+    <RadzenStack Gap="1rem">
+        <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">@L["Map_Controls_Title"]</RadzenText>
+        
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="search" Style="color: var(--rz-base);" />
+            <RadzenText TextStyle="TextStyle.Body2">@L["Search_Address_Desc"]</RadzenText>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="my_location" Style="color: var(--rz-primary);" />
+            <RadzenText TextStyle="TextStyle.Body2">@L["Follow_Me_Desc"]</RadzenText>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="schedule" Style="color: var(--rz-info);" />
+            <RadzenText TextStyle="TextStyle.Body2">@L["Time_Filters_Desc"]</RadzenText>
         </RadzenStack>
     </RadzenStack>
 
