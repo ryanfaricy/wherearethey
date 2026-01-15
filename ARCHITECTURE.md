@@ -59,6 +59,10 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 ### 2. UI & Assets
 - **Response Compression**: Enabled for HTTPS to speed up initial load.
 - **High Concurrency**: Kestrel is configured for 10,000+ simultaneous connections.
+- **Mobile Connectivity Optimization**: 
+  - **Circuit Retention**: Server-side circuits are retained for 5 minutes during disconnects to support app switching on mobile.
+  - **SignalR Resiliency**: Increased `ClientTimeoutInterval` (60s) and `HandshakeTimeout` (30s) to handle flaky mobile networks.
+  - **Subtle Reconnection**: A 2-second delay and pill-shaped bottom notification replace the standard disruptive reconnection modal.
 
 ## 🧪 Testing Strategy
 - **Unit Testing**: Business logic in services and validators is covered by xUnit tests.

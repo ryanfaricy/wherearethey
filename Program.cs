@@ -26,7 +26,21 @@ builder.Logging.AddSimpleConsole(options =>
 
 // Add services to the container.
 var razorComponentsBuilder = builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
+    .AddInteractiveServerComponents()
+    .AddHubOptions(options =>
+    {
+        // Increase timeouts for SignalR to be more resilient on mobile networks
+        options.ClientTimeoutInterval = TimeSpan.FromSeconds(60);
+        options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+        options.KeepAliveInterval = TimeSpan.FromSeconds(15);
+    })
+    .AddCircuitOptions(options =>
+    {
+        // Increase the allowed disconnect window for better mobile experience
+        // This allows the server to keep the circuit alive longer while the app is in background
+        options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(5);
+        options.JSInteropDefaultCallTimeout = TimeSpan.FromSeconds(30);
+    });
 
 if (!builder.Environment.IsProduction())
 {

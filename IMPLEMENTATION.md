@@ -18,6 +18,7 @@ A production-ready, mobile-first Blazor Server application for emergency locatio
 - [x] **Security Hardening**: Anti-spam limits, distance verification, and admin brute-force protection.
 - [x] **Admin Control Panel**: Centralized management of all system data and settings.
 - [x] **High Concurrency**: Configured for 10,000+ simultaneous connections.
+- [x] **Mobile Optimization**: 5-minute circuit retention and subtle reconnection UI for better iOS/Android app switching experience.
 - [x] **Performance Tuning**: `AsNoTracking()` and database-level bounding box filters.
 
 ### 📊 Technical Metrics

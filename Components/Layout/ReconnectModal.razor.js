@@ -8,12 +8,24 @@ retryButton.addEventListener("click", retry);
 const resumeButton = document.getElementById("components-resume-button");
 resumeButton.addEventListener("click", resume);
 
+let showTimeout;
+
 function handleReconnectStateChanged(event) {
     if (event.detail.state === "show") {
-        reconnectModal.showModal();
+        // Delay showing the UI to avoid flickering during brief disconnects (like quick app switching on iOS)
+        showTimeout = setTimeout(() => {
+            reconnectModal.show();
+        }, 2000);
     } else if (event.detail.state === "hide") {
-        reconnectModal.close();
+        clearTimeout(showTimeout);
+        if (reconnectModal.open) {
+            reconnectModal.close();
+        }
     } else if (event.detail.state === "failed") {
+        clearTimeout(showTimeout);
+        if (!reconnectModal.open) {
+            reconnectModal.show();
+        }
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     } else if (event.detail.state === "rejected") {
         location.reload();
