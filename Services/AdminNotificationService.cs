@@ -1,4 +1,5 @@
 using WhereAreThey.Models;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 

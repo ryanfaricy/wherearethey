@@ -6,13 +6,14 @@ using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests;
 
 public class FeedbackTests
 {
-    private IStringLocalizer<App> CreateLocalizer()
+    private static IStringLocalizer<App> CreateLocalizer()
     {
         var mock = new Mock<IStringLocalizer<App>>();
         mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => 
@@ -36,26 +37,33 @@ public class FeedbackTests
         });
         return mock.Object;
     }
-    private DbContextOptions<ApplicationDbContext> CreateOptions()
+    private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
     }
 
-    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
         var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mock.Setup(f => f.CreateDbContextAsync(default))
+        mock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
         mock.Setup(f => f.CreateDbContext())
             .Returns(() => new ApplicationDbContext(options));
         return mock.Object;
     }
 
-    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    private static ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
         return new SettingsService(factory, new Mock<IAdminNotificationService>().Object);
+    }
+
+    private IFeedbackService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        var settingsService = CreateSettingsService(factory);
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
+        return new FeedbackService(factory, new Mock<IAdminNotificationService>().Object, validator);
     }
 
     [Fact]
@@ -64,10 +72,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback = new Feedback
         {
             Type = "Bug",
@@ -90,10 +95,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
@@ -111,10 +113,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback = new Feedback 
         { 
             Type = "Feature", 
@@ -133,10 +132,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.AddFeedbackAsync(feedback);
@@ -156,10 +152,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback = new Feedback 
         { 
             Type = "Bug", 
@@ -181,10 +174,7 @@ public class FeedbackTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var settingsService = CreateSettingsService(factory);
-        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var service = CreateService(factory);
         var feedback1 = new Feedback { Type = "Bug", Message = "[AUTO-REPORTED] Error 1", UserIdentifier = "system" };
         var feedback2 = new Feedback { Type = "Bug", Message = "[AUTO-REPORTED] Error 2", UserIdentifier = "system" };
 

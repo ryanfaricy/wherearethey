@@ -1,7 +1,6 @@
 using System.Globalization;
-using GeoTimeZone;
-using TimeZoneConverter;
 using WhereAreThey.Models;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
@@ -9,6 +8,7 @@ public class ReportProcessingService(
     IServiceProvider serviceProvider,
     IConfiguration configuration,
     ISettingsService settingsService,
+    ILocationService locationService,
     ILogger<ReportProcessingService> logger) : IReportProcessingService
 {
     public async Task ProcessReportAsync(LocationReport report)
@@ -29,23 +29,7 @@ public class ReportProcessingService(
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
 
             // Determine local time
-            string localTimeStr;
-            try
-            {
-                var tzResult = TimeZoneLookup.GetTimeZone(report.Latitude, report.Longitude);
-                var tzInfo = TZConvert.GetTimeZoneInfo(tzResult.Result);
-                
-                var utcTime = report.Timestamp.Kind == DateTimeKind.Utc 
-                    ? report.Timestamp 
-                    : DateTime.SpecifyKind(report.Timestamp, DateTimeKind.Utc);
-                
-                var localTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, tzInfo);
-                localTimeStr = $"{localTime:g} ({tzResult.Result})";
-            }
-            catch
-            {
-                localTimeStr = $"{report.Timestamp:g} UTC";
-            }
+            var localTimeStr = locationService.GetFormattedLocalTime(report.Latitude, report.Longitude, report.Timestamp);
 
             // Map thumbnail
             var mapThumbnailHtml = "";
@@ -76,7 +60,7 @@ public class ReportProcessingService(
                         <p><a href='{heatMapUrl}'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
-                    await emailService.SendEmailAsync(email!, subject, body);
+                    await emailService.SendEmailAsync(email, subject, body);
                 }
                 else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
                 {

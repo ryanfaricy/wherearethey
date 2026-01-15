@@ -1,14 +1,14 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
-@using WhereAreThey.Services
-@inject ILocationService LocationService
+@using WhereAreThey.Services.Interfaces
+@inject IReportService ReportService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
-<RadzenTemplateForm Data="@Report" Submit="@((LocationReport args) => SubmitReport())">
+<RadzenTemplateForm Data="@Report" Submit="@((LocationReport _) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
             <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
@@ -82,7 +82,7 @@
         _isSubmitting = true;
         try
         {
-            await LocationService.AddLocationReportAsync(Report);
+            await ReportService.AddReportAsync(Report);
             NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
             DialogService.Close(true);
         }

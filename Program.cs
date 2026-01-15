@@ -11,6 +11,7 @@ using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,7 +76,7 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 builder.Services.AddHttpClient();
 
 // Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WhereAreThey.Program).Assembly));
 
 // Add Email services
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
@@ -132,10 +133,11 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 });
 
 // Add application services
-builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Singleton);
+builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
 builder.Services.AddSingleton<IAdminNotificationService, AdminNotificationService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
+builder.Services.AddSingleton<IReportService, ReportService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();
 builder.Services.AddScoped<CircuitHandler, UserConnectionCircuitHandler>();
@@ -190,7 +192,7 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Exception ex)
     {
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<WhereAreThey.Program>>();
         logger.LogCritical(ex, "Failed to apply database migrations on startup.");
         throw;
     }
@@ -253,11 +255,11 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, ILocationService locationService, ISettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
 
-    var report = await locationService.GetReportByExternalIdAsync(rGuid);
+    var report = await reportService.GetReportByExternalIdAsync(rGuid);
     if (report == null) return Results.NotFound();
 
     var httpClient = httpClientFactory.CreateClient();
@@ -294,4 +296,7 @@ app.MapGet("/.well-known/web-app-origin-association", (IWebHostEnvironment env) 
 
 app.Run();
 
-public partial class Program { }
+namespace WhereAreThey
+{
+    public partial class Program { }
+}

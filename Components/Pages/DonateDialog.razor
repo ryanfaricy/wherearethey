@@ -1,6 +1,6 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
-@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @inject IDonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -19,7 +19,7 @@
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
             <RadzenTabsItem Text="@L["DONATE"]">
-                <RadzenTemplateForm Data="@_donation" Submit="@((Donation args) => ProcessDonation())">
+                <RadzenTemplateForm Data="@_donation" Submit="@((Donation _) => ProcessDonation())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined" Component="Amount" Style="width: 100%;">
                             <ChildContent>

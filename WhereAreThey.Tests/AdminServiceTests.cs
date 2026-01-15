@@ -3,30 +3,28 @@ using Microsoft.Extensions.Configuration;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
 public class AdminServiceTests
 {
-    private readonly Mock<IDbContextFactory<ApplicationDbContext>> _mockFactory;
-    private readonly Mock<IAdminNotificationService> _adminNotifyMock;
     private readonly Mock<IConfiguration> _mockConfig;
     private readonly AdminService _service;
-    private readonly DbContextOptions<ApplicationDbContext> _options;
 
     public AdminServiceTests()
     {
-        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        _mockFactory.Setup(f => f.CreateDbContextAsync(default))
-            .ReturnsAsync(() => new ApplicationDbContext(_options));
+        var mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mockFactory.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
+            .ReturnsAsync(() => new ApplicationDbContext(options));
 
-        _adminNotifyMock = new Mock<IAdminNotificationService>();
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
         _mockConfig = new Mock<IConfiguration>();
-        _service = new AdminService(_mockFactory.Object, _adminNotifyMock.Object, _mockConfig.Object);
+        _service = new AdminService(mockFactory.Object, adminNotifyMock.Object, _mockConfig.Object);
     }
 
     [Fact]

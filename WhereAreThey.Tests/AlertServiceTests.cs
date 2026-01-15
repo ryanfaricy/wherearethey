@@ -11,6 +11,7 @@ using WhereAreThey.Data;
 using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests;
@@ -28,20 +29,20 @@ public class AlertServiceTests
     public AlertServiceTests()
     {
         _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => new LocalizedString(key, key));
-        _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] args) => new LocalizedString(key, key));
+        _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] _) => new LocalizedString(key, key));
     }
 
-    private DbContextOptions<ApplicationDbContext> CreateOptions()
+    private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
     }
 
-    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
         var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mock.Setup(f => f.CreateDbContextAsync(default))
+        mock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
         mock.Setup(f => f.CreateDbContext())
             .Returns(() => new ApplicationDbContext(options));
@@ -57,7 +58,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _adminNotifyMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _adminNotifyMock.Object, _configurationMock.Object, _loggerMock.Object, validator);
     }
 
     [Fact]
@@ -103,8 +104,8 @@ public class AlertServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        
-        using (var context = new ApplicationDbContext(options))
+
+        await using (var context = new ApplicationDbContext(options))
         {
             var activeAlert = new Alert
             {
@@ -148,8 +149,8 @@ public class AlertServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        
-        using (var context = new ApplicationDbContext(options))
+
+        await using (var context = new ApplicationDbContext(options))
         {
             context.Alerts.Add(new Alert
             {
@@ -184,7 +185,7 @@ public class AlertServiceTests
         await service.SendVerificationEmailAsync(email, AlertService.ComputeHash(email));
 
         string? token;
-        using (var context = new ApplicationDbContext(options))
+        await using (var context = new ApplicationDbContext(options))
         {
             var verification = await context.EmailVerifications.FirstAsync();
             token = verification.Token;
@@ -197,7 +198,7 @@ public class AlertServiceTests
         // Assert
         Assert.True(result1);
         Assert.True(result2); // Should still return true if already verified
-        using (var context = new ApplicationDbContext(options))
+        await using (var context = new ApplicationDbContext(options))
         {
             var updatedAlert = await context.Alerts.FindAsync(alert.Id);
             Assert.True(updatedAlert!.IsVerified);
@@ -216,7 +217,7 @@ public class AlertServiceTests
         var service = CreateService(factory);
         
         int alertId;
-        using (var context = new ApplicationDbContext(options))
+        await using (var context = new ApplicationDbContext(options))
         {
             var alert = new Alert
             {
@@ -238,7 +239,7 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result);
-        using (var context = new ApplicationDbContext(options))
+        await using (var context = new ApplicationDbContext(options))
         {
             var deactivatedAlert = await context.Alerts.FindAsync(alertId);
             Assert.False(deactivatedAlert!.IsActive);
@@ -253,8 +254,8 @@ public class AlertServiceTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         
-        var validAlertId = 0;
-        using (var context = new ApplicationDbContext(options))
+        int validAlertId;
+        await using (var context = new ApplicationDbContext(options))
         {
             var expiredAlert = new Alert
             {
@@ -301,8 +302,8 @@ public class AlertServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        
-        using (var context = new ApplicationDbContext(options))
+
+        await using (var context = new ApplicationDbContext(options))
         {
             var alert = new Alert
             {
@@ -340,7 +341,7 @@ public class AlertServiceTests
         var userId1 = "user1";
         var userId2 = "user2";
 
-        using (var context = new ApplicationDbContext(options))
+        await using (var context = new ApplicationDbContext(options))
         {
             context.Alerts.Add(new Alert
             {
@@ -424,11 +425,9 @@ public class AlertServiceTests
 
         // Assert
         Assert.Equal(160.9, result.RadiusKm);
-        using (var context = new ApplicationDbContext(options))
-        {
-            var savedAlert = await context.Alerts.FindAsync(result.Id);
-            Assert.Equal(160.9, savedAlert!.RadiusKm);
-        }
+        await using var context = new ApplicationDbContext(options);
+        var savedAlert = await context.Alerts.FindAsync(result.Id);
+        Assert.Equal(160.9, savedAlert!.RadiusKm);
     }
 
     [Fact]
@@ -462,7 +461,7 @@ public class AlertServiceTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ValidationException>(() => 
+        await Assert.ThrowsAsync<ValidationException>(() => 
             service.CreateAlertAsync(alert4, email));
         
         _localizerMock.Verify(l => l["Alert_Cooldown_Error"], Times.AtLeastOnce);

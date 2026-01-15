@@ -4,7 +4,7 @@ using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
-using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests;
@@ -20,15 +20,17 @@ public class LocationReportValidatorTests
         _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns(new LocalizedString("key", "error message"));
     }
 
-    private async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
+    private static async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
     {
+        await Task.CompletedTask;
+        
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         
         var context = new ApplicationDbContext(options);
         var factoryMock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        factoryMock.Setup(f => f.CreateDbContextAsync(default)).ReturnsAsync(() => new ApplicationDbContext(options));
+        factoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None)).ReturnsAsync(() => new ApplicationDbContext(options));
 
         return (context, factoryMock.Object);
     }

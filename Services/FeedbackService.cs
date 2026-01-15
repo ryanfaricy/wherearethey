@@ -1,18 +1,15 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
-using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    ISettingsService settingsService,
     IAdminNotificationService adminNotificationService,
-    IValidator<Feedback> validator,
-    IStringLocalizer<App> L) : IFeedbackService
+    IValidator<Feedback> validator) : IFeedbackService
 {
     public event Action<Feedback>? OnFeedbackAdded;
 

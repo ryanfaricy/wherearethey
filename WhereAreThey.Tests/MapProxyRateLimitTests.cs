@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using WhereAreThey.Models;
-using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
@@ -19,16 +19,16 @@ public class MapProxyRateLimitTests : IClassFixture<WebApplicationFactory<Progra
             builder.ConfigureTestServices(services =>
             {
                 // Mock dependencies needed by the endpoint to avoid hitting DB/External APIs
-                var locationServiceMock = new Mock<ILocationService>();
+                var reportServiceMock = new Mock<IReportService>();
                 var settingsServiceMock = new Mock<ISettingsService>();
 
-                locationServiceMock.Setup(s => s.GetReportByExternalIdAsync(It.IsAny<Guid>()))
+                reportServiceMock.Setup(s => s.GetReportByExternalIdAsync(It.IsAny<Guid>()))
                     .ReturnsAsync(new LocationReport { Latitude = 0, Longitude = 0 });
 
                 settingsServiceMock.Setup(s => s.GetSettingsAsync())
                     .ReturnsAsync(new SystemSettings { MapboxToken = "test-token" });
 
-                services.AddSingleton(locationServiceMock.Object);
+                services.AddSingleton(reportServiceMock.Object);
                 services.AddSingleton(settingsServiceMock.Object);
                 
                 // We don't necessarily need to mock HttpClient for the rate limit test 

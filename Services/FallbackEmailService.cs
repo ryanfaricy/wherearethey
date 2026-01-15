@@ -1,3 +1,5 @@
+using WhereAreThey.Services.Interfaces;
+
 namespace WhereAreThey.Services;
 
 public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILogger<FallbackEmailService> logger) : IEmailService

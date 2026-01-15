@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
@@ -16,7 +17,7 @@ public class ProgramTests
 
         // Register same services as in Program.cs
         builder.Services.AddLogging();
-        builder.Services.Configure<EmailOptions>(options => { });
+        builder.Services.Configure<EmailOptions>(_ => { });
         
         builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
         builder.Services.AddTransient<SmtpEmailService>();

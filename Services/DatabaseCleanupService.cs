@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 

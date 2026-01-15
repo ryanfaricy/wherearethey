@@ -1,7 +1,7 @@
 using Square.Models;
 using WhereAreThey.Models;
 
-namespace WhereAreThey.Services;
+namespace WhereAreThey.Services.Interfaces;
 
 public interface IDonationService
 {

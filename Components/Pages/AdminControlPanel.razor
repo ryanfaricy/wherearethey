@@ -1,5 +1,5 @@
 @page "/cp"
-@inject ILocationService LocationService
+@inject IReportService ReportService
 @inject IAlertService AlertService
 @inject IDonationService DonationService
 @inject IFeedbackService FeedbackService
@@ -13,11 +13,11 @@
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
 @inject IAdminNotificationService AdminNotificationService
-@inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -115,7 +115,7 @@
                             <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location" Visible="@(!_isMobile)">
                                 <Template Context="report">
-                                    @(report.ReporterLatitude.HasValue ? $"{report.ReporterLatitude.Value:F4}, {report.ReporterLongitude.Value:F4}" : "N/A")
+                                    @report.Coordinates()
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency" Width="100px">
@@ -305,7 +305,7 @@
 
     protected override void OnInitialized()
     {
-        _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+        _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
         UserConnectionService.OnConnectionCountChanged += HandleConnectionCountChanged;
         
         AdminNotificationService.OnReportAdded += HandleReportAdded;
@@ -372,7 +372,7 @@
         if (!_isAuthenticated) return;
         InvokeAsync(() => {
             _reports.Insert(0, report);
-            NotificationService.Notify(NotificationSeverity.Info, "New Report", report.Message, 5000);
+            NotificationService.Notify(NotificationSeverity.Info, "New Report", report.Message ?? "Report", 5000);
             StateHasChanged();
         });
     }
@@ -486,7 +486,7 @@
         if (firstRender)
         {
             var result = await SessionStorage.GetAsync<bool>("isAdmin");
-            if (result.Success && result.Value)
+            if (result is { Success: true, Value: true })
             {
                 _isAuthenticated = true;
                 await LoadData();
@@ -538,7 +538,7 @@
     {
         try
         {
-            _reports = await LocationService.GetAllReportsAsync();
+            _reports = await ReportService.GetAllReportsAsync();
             _alerts = await AlertService.GetAllAlertsAdminAsync();
             _donations = await DonationService.GetAllDonationsAsync();
             _feedbacks = await FeedbackService.GetAllFeedbackAsync();
@@ -575,7 +575,7 @@
         {
             try
             {
-                await LocationService.DeleteReportAsync(id);
+                await ReportService.DeleteReportAsync(id);
                 await LoadData();
                 NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
             }

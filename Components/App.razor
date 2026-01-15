@@ -4,11 +4,12 @@
 <html lang="@CultureInfo.CurrentCulture.TwoLetterISOLanguageName">
 
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="description" content="Live anonymous incident reporting and heat map." />
-    <base href="/" />
-    <ResourcePreloader />
+    <title>AreTheyHere</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+    <meta name="description" content="Live anonymous incident reporting and heat map."/>
+    <base href="/"/>
+    <ResourcePreloader/>
     <script>
         // Pre-render theme detection to prevent flicker
         (function() {
@@ -30,15 +31,18 @@
             document.head.appendChild(style);
         })();
     </script>
-    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
-    <link rel="stylesheet" href="@Assets["app.css"]" />
-    <link rel="stylesheet" href="@Assets["WhereAreThey.styles.css"]" />
+    <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]"/>
+    <link rel="stylesheet" href="@Assets["app.css"]"/>
+    <link rel="stylesheet" href="@Assets["WhereAreThey.styles.css"]"/>
+    @* ReSharper disable Html.PathError *@
     <link id="radzen-base-theme" rel="stylesheet" href="_content/Radzen.Blazor/css/material-base.css">
     <link id="radzen-theme" rel="stylesheet" href="_content/Radzen.Blazor/css/material.css">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
+    @* ReSharper disable once Html.AttributeValueNotResolved *@
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
           integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+    @* ReSharper restore Html.PathError *@
     <script src="theme.js"></script>
     <script src="time-utils.js"></script>
     <script>
@@ -53,28 +57,28 @@
             }
         })();
     </script>
-    <ImportMap />
-    <link rel="icon" type="image/png" href="favicon.png" />
-    <link rel="manifest" href="manifest.json" />
-    <meta name="theme-color" content="#f44336" />
-    <link rel="apple-touch-icon" href="favicon.png" />
+    <ImportMap/>
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <link rel="manifest" href="manifest.json"/>
+    <meta name="theme-color" content="#f44336"/>
+    <link rel="apple-touch-icon" href="favicon.png"/>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="AreTheyHere">
 
     <!-- Social Media Meta Tags -->
-    <meta property="og:title" content="AreTheyHere - Live Heat Map" />
-    <meta property="og:description" content="Live anonymous incident reporting and heat map." />
-    <meta property="og:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png" />
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="@(Configuration["BaseUrl"] ?? "https://www.aretheyhere.com")" />
-    
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="AreTheyHere - Live Heat Map" />
-    <meta name="twitter:description" content="Live anonymous incident reporting and heat map." />
-    <meta name="twitter:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png" />
+    <meta property="og:title" content="AreTheyHere - Live Heat Map"/>
+    <meta property="og:description" content="Live anonymous incident reporting and heat map."/>
+    <meta property="og:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png"/>
+    <meta property="og:type" content="website"/>
+    <meta property="og:url" content="@(Configuration["BaseUrl"] ?? "https://www.aretheyhere.com")"/>
 
-    <HeadOutlet @rendermode="InteractiveServer" />
+    <meta name="twitter:card" content="summary"/>
+    <meta name="twitter:title" content="AreTheyHere - Live Heat Map"/>
+    <meta name="twitter:description" content="Live anonymous incident reporting and heat map."/>
+    <meta name="twitter:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png"/>
+
+    <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
 
 <body>
@@ -85,11 +89,14 @@
     <Routes @rendermode="InteractiveServer" />
     <ReconnectModal />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
+    @* ReSharper disable Html.PathError *@
     <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+    @* ReSharper disable once Html.AttributeValueNotResolved *@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
             integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    @* ReSharper restore Html.PathError *@
     <script src="geolocation.js"></script>
     <script src="heatmap.js"></script>
     <script src="pwa-utils.js"></script>

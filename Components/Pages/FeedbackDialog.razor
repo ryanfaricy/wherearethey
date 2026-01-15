@@ -1,6 +1,6 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
-@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @inject IFeedbackService FeedbackService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -15,7 +15,7 @@
         @L["Feedback_Intro"]
     </RadzenText>
 
-    <RadzenTemplateForm Data="@_feedback" Submit="@((Feedback args) => SubmitFeedback())">
+    <RadzenTemplateForm Data="@_feedback" Submit="@((Feedback _) => SubmitFeedback())">
         <RadzenStack Gap="1rem">
             <RadzenFormField Text="@L["Type"]" Variant="Variant.Outlined" Style="width: 100%;">
                 <RadzenDropDown @bind-Value="@_feedback.Type" Data="@_feedbackTypes" Style="width: 100%;" />

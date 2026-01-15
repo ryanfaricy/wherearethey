@@ -1,0 +1,316 @@
+using MediatR;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
+using Moq;
+using WhereAreThey.Components;
+using WhereAreThey.Data;
+using WhereAreThey.Events;
+using WhereAreThey.Models;
+using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
+using WhereAreThey.Validators;
+
+namespace WhereAreThey.Tests;
+
+public class ReportServiceTests
+{
+    private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<ILogger<ReportService>> _loggerMock = new();
+    private readonly Mock<IAdminNotificationService> _adminNotificationMock = new();
+    private readonly Mock<IConfiguration> _configurationMock = new();
+
+    private static IStringLocalizer<App> CreateLocalizer()
+    {
+        var mock = new Mock<IStringLocalizer<App>>();
+        mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => 
+        {
+            var val = key switch
+            {
+                "Links_Error" => "Links are not allowed in reports to prevent spam.",
+                "Location_Verify_Error" => "Unable to verify your current location. Please ensure GPS is enabled.",
+                "Cooldown_Error" => "You can only make one report every {0} minutes.",
+                "Distance_Error" => "You can only make a report within {0} miles of your location.",
+                _ => key
+            };
+            return new LocalizedString(key, val);
+        });
+        mock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] args) => 
+        {
+            var val = key switch
+            {
+                "Cooldown_Error" => "You can only make one report every {0} minutes.",
+                "Distance_Error" => "You can only make a report within {0} miles of your location.",
+                _ => key
+            };
+            return new LocalizedString(key, string.Format(val, args));
+        });
+        return mock.Object;
+    }
+
+    private static DbContextOptions<ApplicationDbContext> CreateOptions()
+    {
+        return new DbContextOptionsBuilder<ApplicationDbContext>()
+            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .Options;
+    }
+
+    private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    {
+        var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
+        mock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
+            .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
+        mock.Setup(f => f.CreateDbContext())
+            .Returns(() => new ApplicationDbContext(options));
+        return mock.Object;
+    }
+
+    private ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        return new SettingsService(factory, _adminNotificationMock.Object);
+    }
+
+    private IReportService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    {
+        var localizer = CreateLocalizer();
+        var settingsService = CreateSettingsService(factory);
+        var validator = new LocationReportValidator(factory, settingsService, localizer);
+        return new ReportService(factory, _mediatorMock.Object, settingsService, _adminNotificationMock.Object, validator, _loggerMock.Object);
+    }
+
+    [Fact]
+    public async Task AddReport_ShouldAddReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport
+        {
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            ReporterLatitude = 40.7128,
+            ReporterLongitude = -74.0060,
+            ReporterIdentifier = "test-user",
+            Message = "Test location",
+            IsEmergency = false
+        };
+
+        // Act
+        var result = await service.AddReportAsync(report);
+
+        // Assert
+        Assert.NotEqual(0, result.Id);
+        Assert.Equal(40.7128, result.Latitude);
+        Assert.True(result.Timestamp <= DateTime.UtcNow);
+    }
+
+    [Fact]
+    public async Task AddReport_ShouldTriggerOnReportAddedEvent()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport
+        {
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            ReporterLatitude = 40.7128,
+            ReporterLongitude = -74.0060,
+            ReporterIdentifier = "test-user-2",
+            Message = "Test event",
+            IsEmergency = false
+        };
+
+        LocationReport? triggeredReport = null;
+        var triggerCount = 0;
+        service.OnReportAdded += r => { triggeredReport = r; triggerCount++; };
+
+        // Act
+        await service.AddReportAsync(report);
+
+        // Assert
+        Assert.Equal(1, triggerCount);
+        Assert.NotNull(triggeredReport);
+        Assert.Equal(report.Message, triggeredReport.Message);
+        Assert.Equal(report.Id, triggeredReport.Id);
+    }
+
+    [Fact]
+    public async Task GetRecentReports_ShouldReturnReportsWithinTimeRange()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+
+        await using (var context = new ApplicationDbContext(options))
+        {
+            var oldReport = new LocationReport
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                Timestamp = DateTime.UtcNow.AddHours(-48)
+            };
+            
+            var recentReport = new LocationReport
+            {
+                Latitude = 41.0,
+                Longitude = -75.0,
+                Timestamp = DateTime.UtcNow.AddHours(-2)
+            };
+
+            context.LocationReports.Add(oldReport);
+            context.LocationReports.Add(recentReport);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var results = await service.GetRecentReportsAsync(24);
+
+        // Assert
+        Assert.Single(results);
+        Assert.Equal(41.0, results[0].Latitude);
+    }
+
+    [Fact]
+    public async Task GetRecentReports_ShouldReturnEmptyIfFutureCutoff()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+
+        await using (var context = new ApplicationDbContext(options))
+        {
+            context.LocationReports.Add(new LocationReport { Timestamp = DateTime.UtcNow });
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var results = await service.GetRecentReportsAsync(-1); // hours = -1
+
+        // Assert
+        Assert.Empty(results);
+    }
+
+    [Fact]
+    public async Task AddReport_ShouldTriggerAlerts()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
+
+        // Act
+        await service.AddReportAsync(report);
+
+        // Assert
+        _mediatorMock.Verify(x => x.Publish(It.IsAny<ReportAddedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AddReport_Integration_ShouldSendEmailToAlertSubscribers()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var dataProtectionProvider = new EphemeralDataProtectionProvider();
+        var emailServiceMock = new Mock<IEmailService>();
+        var settingsService = CreateSettingsService(factory);
+        var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, _configurationMock.Object, new Mock<ILogger<AlertService>>().Object, alertValidator);
+        var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
+        var locationService = new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object);
+        
+        var services = new ServiceCollection();
+        services.AddSingleton<IAlertService>(alertService);
+        services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton<IGeocodingService>(geocodingService);
+        services.AddSingleton<ILocationService>(locationService);
+        services.AddSingleton(_configurationMock.Object);
+        services.AddSingleton(settingsService);
+        services.AddSingleton(CreateLocalizer());
+        services.AddLogging();
+        services.AddSingleton<IReportProcessingService, ReportProcessingService>();
+        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        var serviceProvider = services.BuildServiceProvider();
+
+        var service = new ReportService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _adminNotificationMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<ReportService>>());
+        
+        // User B sets up an alert
+        var userBEmail = "userB@example.com";
+        var alert = new Alert 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            RadiusKm = 10.0, 
+            IsActive = true,
+            UserIdentifier = "UserB",
+            Message = "UserB's Area"
+        };
+        await alertService.CreateAlertAsync(alert, userBEmail);
+
+        // Manually verify the alert for the test
+        await using (var context = new ApplicationDbContext(options))
+        {
+            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB");
+            savedAlert.IsVerified = true;
+            await context.SaveChangesAsync();
+        }
+
+        // User A reports something nearby (roughly 1.1km away)
+        var report = new LocationReport 
+        { 
+            Latitude = 40.01, 
+            Longitude = -74.0,
+            ReporterLatitude = 40.01,
+            ReporterLongitude = -74.0,
+            ReporterIdentifier = "test-user",
+            Message = "Alert trigger message",
+            IsEmergency = true
+        };
+
+        // Act
+        await service.AddReportAsync(report);
+
+        // Wait for background task
+        await Task.Delay(1000);
+
+        // Assert
+        emailServiceMock.Verify(x => x.SendEmailAsync(
+            It.Is<string>(s => s == userBEmail),
+            It.Is<string>(s => s.Contains("EMERGENCY")),
+            It.Is<string>(b => b.Contains("Alert trigger message"))), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetReportByExternalId_ShouldReturnCorrectReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.LocationReports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetReportByExternalIdAsync(report.ExternalId);
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal(report.Id, result.Id);
+        Assert.Equal(report.ExternalId, result.ExternalId);
+    }
+}

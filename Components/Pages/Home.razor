@@ -1,5 +1,5 @@
 @page "/"
-@inject ILocationService LocationService
+@inject IReportService ReportService
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
 @inject NavigationManager NavigationManager
@@ -15,6 +15,7 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
@@ -122,8 +123,8 @@
         _systemSettings = await SettingsService.GetSettingsAsync();
         _selectedHours = _systemSettings.ReportExpiryHours;
         await LoadReports();
-        LocationService.OnReportAdded += HandleReportAdded;
-        LocationService.OnReportDeleted += HandleReportDeleted;
+        ReportService.OnReportAdded += HandleReportAdded;
+        ReportService.OnReportDeleted += HandleReportDeleted;
         AdminNotificationService.OnSettingsChanged += HandleSettingsChanged;
     }
 
@@ -163,7 +164,7 @@
                             Summary = L["New_Report"],
                             Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
                             Duration = 10000,
-                            Click = m => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
+                            Click = _ => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
                         });
                     }
                 }
@@ -228,7 +229,7 @@
             {
                 if (Guid.TryParse(reportIdStr, out var rGuid))
                 {
-                    var report = await LocationService.GetReportByExternalIdAsync(rGuid);
+                    var report = await ReportService.GetReportByExternalIdAsync(rGuid);
                     if (report != null)
                     {
                         focusReportId = report.Id;
@@ -338,7 +339,7 @@
 
     private async Task LoadReports()
     {
-        _reports = await LocationService.GetRecentReportsAsync(_selectedHours);
+        _reports = await ReportService.GetRecentReportsAsync(_selectedHours);
         if (_mapInitialized)
         {
             await JsRuntime.InvokeVoidAsync("updateHeatMap", _reports);
@@ -715,8 +716,8 @@
 
     public void Dispose()
     {
-        LocationService.OnReportAdded -= HandleReportAdded;
-        LocationService.OnReportDeleted -= HandleReportDeleted;
+        ReportService.OnReportAdded -= HandleReportAdded;
+        ReportService.OnReportDeleted -= HandleReportDeleted;
         AdminNotificationService.OnSettingsChanged -= HandleSettingsChanged;
         if (_locationWatchId != -1)
         {

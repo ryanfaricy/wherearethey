@@ -19,7 +19,8 @@ This document provides a high-level overview of the application architecture, da
 ## 🧩 Key Components & Services
 
 ### Services
-- **LocationService (Singleton)**: Manages incident reports. Provides a real-time `OnReportAdded` event for incremental client updates. Delegates post-submission tasks to `IReportProcessingService`.
+- **ReportService (Singleton)**: Manages the lifecycle of incident reports (Add, Get, Delete). Provides real-time `OnReportAdded` and `OnReportDeleted` events for UI updates.
+- **LocationService (Singleton)**: Handles specialized spatial and geographic logic, such as radius searches and local time formatting based on coordinates.
 - **ReportProcessingService (Singleton)**: Handles background processing for new reports, including alert matching, geocoding, and email notifications.
 - **AlertService (Scoped)**: Manages distance-based user alerts. Handles email encryption at rest using the Data Protection API.
 - **SettingsService (Singleton)**: Manages global system settings (limits, tokens, toggle features) with a 1-minute memory cache.

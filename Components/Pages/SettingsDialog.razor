@@ -8,6 +8,7 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Helpers
 @using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -105,7 +106,7 @@
 
             @if (_showImport)
             {
-                <RadzenTemplateForm TItem="ImportRequest" Data="@_importRequest" Submit="@((ImportRequest args) => ImportProfile())">
+                <RadzenTemplateForm TItem="ImportRequest" Data="@_importRequest" Submit="@((ImportRequest _) => ImportProfile())">
                     <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
                         <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
                             <ChildContent>

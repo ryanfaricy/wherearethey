@@ -4,11 +4,10 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Localization;
-using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Events;
 using WhereAreThey.Models;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
@@ -23,9 +22,7 @@ public class AlertService(
     IAdminNotificationService adminNotificationService,
     IConfiguration configuration,
     ILogger<AlertService> logger,
-    ISettingsService settingsService,
-    IValidator<Alert> validator,
-    IStringLocalizer<App> L) : IAlertService
+    IValidator<Alert> validator) : IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 

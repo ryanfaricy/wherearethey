@@ -1,6 +1,6 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
-@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -16,7 +16,7 @@
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
             <RadzenTabsItem Text="@L["Create_New"]">
-                <RadzenTemplateForm Data="@_newAlert" Submit="@((Alert args) => CreateAlert())">
+                <RadzenTemplateForm Data="@_newAlert" Submit="@((Alert _) => CreateAlert())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
                             <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 

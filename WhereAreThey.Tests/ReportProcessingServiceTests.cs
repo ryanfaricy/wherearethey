@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
@@ -15,6 +16,7 @@ public class ReportProcessingServiceTests
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IGeocodingService> _geocodingServiceMock = new();
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
+    private readonly Mock<ILocationService> _locationServiceMock = new();
 
     private IReportProcessingService CreateService(IServiceProvider serviceProvider)
     {
@@ -22,6 +24,7 @@ public class ReportProcessingServiceTests
             serviceProvider,
             _configurationMock.Object,
             _settingsServiceMock.Object,
+            _locationServiceMock.Object,
             _loggerMock.Object);
     }
 

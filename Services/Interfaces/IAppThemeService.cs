@@ -1,4 +1,4 @@
-namespace WhereAreThey.Services;
+namespace WhereAreThey.Services.Interfaces;
 
 public interface IAppThemeService
 {

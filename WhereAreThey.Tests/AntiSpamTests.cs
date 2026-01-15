@@ -1,7 +1,6 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -9,6 +8,7 @@ using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests;
@@ -16,11 +16,10 @@ namespace WhereAreThey.Tests;
 public class AntiSpamTests
 {
     private readonly Mock<IMediator> _mediatorMock = new();
-    private readonly Mock<ILogger<LocationService>> _loggerMock = new();
+    private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IAdminNotificationService> _adminNotifyMock = new();
-    private readonly Mock<IConfiguration> _configurationMock = new();
 
-    private IStringLocalizer<App> CreateLocalizer()
+    private static IStringLocalizer<App> CreateLocalizer()
     {
         var mock = new Mock<IStringLocalizer<App>>();
         mock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => 
@@ -51,17 +50,17 @@ public class AntiSpamTests
         return mock.Object;
     }
 
-    private DbContextOptions<ApplicationDbContext> CreateOptions()
+    private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
     }
 
-    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
         var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mock.Setup(f => f.CreateDbContextAsync(default))
+        mock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
         mock.Setup(f => f.CreateDbContext())
             .Returns(() => new ApplicationDbContext(options));
@@ -73,16 +72,16 @@ public class AntiSpamTests
         return new SettingsService(factory, _adminNotifyMock.Object);
     }
 
-    private ILocationService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    private IReportService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new LocationService(factory, _mediatorMock.Object, settingsService, _adminNotifyMock.Object, validator, _loggerMock.Object, localizer);
+        return new ReportService(factory, _mediatorMock.Object, settingsService, _adminNotifyMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]
-    public async Task AddLocationReport_ShouldFail_WhenTooFarFromReporter()
+    public async Task AddReport_ShouldFail_WhenTooFarFromReporter()
     {
         // Arrange
         var options = CreateOptions();
@@ -99,12 +98,12 @@ public class AntiSpamTests
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
         Assert.Contains("5.0 miles", ex.Message);
     }
 
     [Fact]
-    public async Task AddLocationReport_ShouldFail_WhenReportingTooFrequently()
+    public async Task AddReport_ShouldFail_WhenReportingTooFrequently()
     {
         // Arrange
         var options = CreateOptions();
@@ -130,15 +129,15 @@ public class AntiSpamTests
         };
 
         // Act
-        await service.AddLocationReportAsync(report1);
+        await service.AddReportAsync(report1);
         
         // Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report2));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report2));
         Assert.Contains("5 minutes", ex.Message);
     }
 
     [Fact]
-    public async Task AddLocationReport_ShouldFail_WhenMessageContainsLinks()
+    public async Task AddReport_ShouldFail_WhenMessageContainsLinks()
     {
         // Arrange
         var options = CreateOptions();
@@ -156,7 +155,7 @@ public class AntiSpamTests
         };
 
         // Act & Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
         Assert.Contains("Links are not allowed", ex.Message);
     }
 
@@ -167,8 +166,8 @@ public class AntiSpamTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        
-        using (var context = new ApplicationDbContext(options))
+
+        await using (var context = new ApplicationDbContext(options))
         {
             // Report from 12 hours ago
             context.LocationReports.Add(new LocationReport 
@@ -216,8 +215,8 @@ public class AntiSpamTests
 
         // Assert
         Assert.False(retrieved.DonationsEnabled);
-        
-        using (var context = new ApplicationDbContext(options))
+
+        await using (var context = new ApplicationDbContext(options))
         {
             // Report from 12 hours ago - should now be included
             context.LocationReports.Add(new LocationReport 
@@ -236,9 +235,9 @@ public class AntiSpamTests
         
         // Check cooldown
         var report = new LocationReport { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
-        await service.AddLocationReportAsync(report);
+        await service.AddReportAsync(report);
         
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
+        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
         Assert.Contains("10 minutes", ex.Message);
 
         // Check distance
@@ -248,7 +247,7 @@ public class AntiSpamTests
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
             Timestamp = DateTime.UtcNow 
         };
-        var exDist = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(farReport));
+        var exDist = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(farReport));
         Assert.Contains("50.0 miles", exDist.Message);
     }
 }

@@ -5,6 +5,7 @@ using Moq;
 using Moq.Protected;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 

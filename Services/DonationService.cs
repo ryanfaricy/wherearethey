@@ -3,6 +3,7 @@ using Square;
 using Square.Models;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
+using WhereAreThey.Services.Interfaces;
 using Environment = Square.Environment;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 

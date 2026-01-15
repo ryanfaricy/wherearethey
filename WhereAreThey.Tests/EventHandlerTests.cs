@@ -2,7 +2,7 @@ using Moq;
 using WhereAreThey.Events;
 using WhereAreThey.Events.Handlers;
 using WhereAreThey.Models;
-using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 

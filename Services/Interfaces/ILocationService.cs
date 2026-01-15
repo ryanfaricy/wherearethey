@@ -1,15 +1,9 @@
 using WhereAreThey.Models;
 
-namespace WhereAreThey.Services;
+namespace WhereAreThey.Services.Interfaces;
 
 public interface ILocationService
 {
-    event Action<LocationReport>? OnReportAdded;
-    event Action<int>? OnReportDeleted;
-    Task<LocationReport> AddLocationReportAsync(LocationReport report);
-    Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId);
-    Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null);
     Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm);
-    Task<List<LocationReport>> GetAllReportsAsync();
-    Task DeleteReportAsync(int id);
+    string GetFormattedLocalTime(double latitude, double longitude, DateTime utcTimestamp);
 }

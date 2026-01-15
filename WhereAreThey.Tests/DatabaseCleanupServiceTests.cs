@@ -6,6 +6,7 @@ using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
@@ -14,7 +15,7 @@ public class DatabaseCleanupServiceTests
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<ILogger<DatabaseCleanupService>> _loggerMock = new();
 
-    private async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
+    private static async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
     {
         var connection = new SqliteConnection("DataSource=:memory:");
         await connection.OpenAsync();
@@ -26,7 +27,7 @@ public class DatabaseCleanupServiceTests
         await context.Database.EnsureCreatedAsync();
 
         var factoryMock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        factoryMock.Setup(f => f.CreateDbContextAsync(default))
+        factoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
         return (context, factoryMock.Object);
