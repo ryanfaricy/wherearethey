@@ -67,23 +67,29 @@
                         <RadzenButton Icon="content_copy" Click="@(() => CopyToClipboard(_generatedPassphrase))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["Copy_to_Clipboard"]" />
                         <RadzenButton Icon="refresh" Click="@RegeneratePassphrase" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["REFRESH"]" />
                     </RadzenStack>
-                    <RadzenButton Text="@L["Use_Generated_Passphrase"]" Click="@(() => UsePassphrase(_generatedPassphrase, true))" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Style="width: 100%;" />
+                    <RadzenButton Text="@L["Use_Generated_Passphrase"]" Click="@(() => UsePassphrase(_generatedPassphrase, true))" 
+                                  ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Style="width: 100%;" 
+                                  IsBusy="@_isBusy" />
                 </RadzenStack>
 
                 <RadzenStack Gap="0.5rem">
                     <RadzenText TextStyle="TextStyle.Overline">@L["Option_2_Existing"]</RadzenText>
-                    <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => UsePassphrase(_importId, false))">
+                    <RadzenTemplateForm TItem="ImportRequest" Data="@_importRequest" Submit="@((ImportRequest args) => UsePassphrase(args.Passphrase, false))">
                         <RadzenStack Gap="0.5rem">
                             <RadzenFormField Text="@L["Enter_Existing_Passphrase"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
                                 <ChildContent>
-                                    <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
+                                    <RadzenTextBox Name="ImportId" @bind-Value="@_importRequest.Passphrase" 
+                                                   @oninput="@(args => _importRequest.Passphrase = args.Value?.ToString() ?? "")"
+                                                   Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
                                 </ChildContent>
                                 <Helper>
                                     <RadzenRequiredValidator Component="ImportId" Text="@L["Passphrase_Required"]" />
                                     <RadzenLengthValidator Component="ImportId" Min="8" Max="100" Text="@L["Passphrase_Length_Error"]" />
                                 </Helper>
                             </RadzenFormField>
-                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["IMPORT"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Style="width: 100%;" />
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["IMPORT"]" 
+                                          ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Style="width: 100%;" 
+                                          IsBusy="@_isBusy" />
                         </RadzenStack>
                     </RadzenTemplateForm>
                 </RadzenStack>
@@ -99,11 +105,13 @@
 
             @if (_showImport)
             {
-                <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => ImportProfile())">
+                <RadzenTemplateForm TItem="ImportRequest" Data="@_importRequest" Submit="@((ImportRequest args) => ImportProfile())">
                     <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
                         <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
+                                <RadzenTextBox Name="ImportId" @bind-Value="@_importRequest.Passphrase" 
+                                               @oninput="@(args => _importRequest.Passphrase = args.Value?.ToString() ?? "")"
+                                               Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
                             </ChildContent>
                             <Helper>
                                 <RadzenRequiredValidator Component="ImportId" Text="@L["Passphrase_Required"]" />
@@ -111,8 +119,10 @@
                             </Helper>
                         </RadzenFormField>
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                            <RadzenButton Text="@L["CANCEL"]" Click="@(() => { _showImport = false; _importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
-                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SAVE_REFRESH"]" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
+                            <RadzenButton Text="@L["CANCEL"]" Click="@(() => { _showImport = false; _importRequest.Passphrase = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SAVE_REFRESH"]" 
+                                          ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" 
+                                          IsBusy="@_isBusy" />
                         </RadzenStack>
                     </RadzenStack>
                 </RadzenTemplateForm>
@@ -130,10 +140,15 @@
 </RadzenStack>
 
 @code {
+    private class ImportRequest
+    {
+        public string Passphrase { get; set; } = "";
+    }
+    private ImportRequest _importRequest = new();
     private string _userIdentifier = "";
     private string _generatedPassphrase = "";
-    private string _importId = "";
     private bool _showImport;
+    private bool _isBusy;
     private readonly string _currentCulture = CultureInfo.CurrentCulture.Name;
     private bool _isInstallable;
     private bool _isPwa;
@@ -210,14 +225,23 @@
     private async Task UsePassphrase(string id, bool isNew = false)
     {
         if (string.IsNullOrWhiteSpace(id) || id.Length < 8) return;
+        if (_isBusy) return;
 
-        await JsRuntime.InvokeAsync<bool>("setUserIdentifier", id);
-        if (isNew)
+        _isBusy = true;
+        try
         {
-            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "user-identifier-new", "true");
+            await JsRuntime.InvokeAsync<bool>("setUserIdentifier", id);
+            if (isNew)
+            {
+                await JsRuntime.InvokeVoidAsync("localStorage.setItem", "user-identifier-new", "true");
+            }
+            DialogService.Close(id);
+            await JsRuntime.InvokeVoidAsync("location.reload");
         }
-        DialogService.Close(id);
-        await JsRuntime.InvokeVoidAsync("location.reload");
+        finally
+        {
+            _isBusy = false;
+        }
     }
 
     [JSInvokable]
@@ -250,12 +274,21 @@
 
     private async Task ImportProfile()
     {
-        if (string.IsNullOrWhiteSpace(_importId) || _importId.Length < 8) return;
+        if (string.IsNullOrWhiteSpace(_importRequest.Passphrase) || _importRequest.Passphrase.Length < 8) return;
+        if (_isBusy) return;
 
-        await JsRuntime.InvokeAsync<bool>("setUserIdentifier", _importId);
-        DialogService.Close();
-        // We need a hard refresh to reload everything with the new ID
-        await JsRuntime.InvokeVoidAsync("location.reload");
+        _isBusy = true;
+        try
+        {
+            await JsRuntime.InvokeAsync<bool>("setUserIdentifier", _importRequest.Passphrase);
+            DialogService.Close();
+            // We need a hard refresh to reload everything with the new ID
+            await JsRuntime.InvokeVoidAsync("location.reload");
+        }
+        finally
+        {
+            _isBusy = false;
+        }
     }
 
     public class CultureDisplay
