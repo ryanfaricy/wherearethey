@@ -18,7 +18,7 @@ public class FallbackEmailServiceTests
             .ThrowsAsync(new Exception("Service 1 failed"));
             
         var loggerMock = new Mock<ILogger<FallbackEmailService>>();
-        var fallbackService = new FallbackEmailService(new[] { service1.Object, service2.Object }, loggerMock.Object);
+        var fallbackService = new FallbackEmailService([service1.Object, service2.Object], loggerMock.Object);
 
         // Act
         await fallbackService.SendEmailAsync("test@example.com", "Sub", "Body");
@@ -36,7 +36,7 @@ public class FallbackEmailServiceTests
         var service2 = new Mock<IEmailService>();
         
         var loggerMock = new Mock<ILogger<FallbackEmailService>>();
-        var fallbackService = new FallbackEmailService(new[] { service1.Object, service2.Object }, loggerMock.Object);
+        var fallbackService = new FallbackEmailService([service1.Object, service2.Object], loggerMock.Object);
 
         // Act
         await fallbackService.SendEmailAsync("test@example.com", "Sub", "Body");
@@ -59,7 +59,7 @@ public class FallbackEmailServiceTests
             .ThrowsAsync(new Exception("Fail 2"));
             
         var loggerMock = new Mock<ILogger<FallbackEmailService>>();
-        var fallbackService = new FallbackEmailService(new[] { service1.Object, service2.Object }, loggerMock.Object);
+        var fallbackService = new FallbackEmailService([service1.Object, service2.Object], loggerMock.Object);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<AggregateException>(() => fallbackService.SendEmailAsync("test@example.com", "Sub", "Body"));
@@ -77,7 +77,7 @@ public class FallbackEmailServiceTests
             .ThrowsAsync(new InvalidOperationException("Not configured"));
             
         var loggerMock = new Mock<ILogger<FallbackEmailService>>();
-        var fallbackService = new FallbackEmailService(new[] { service1.Object, service2.Object }, loggerMock.Object);
+        var fallbackService = new FallbackEmailService([service1.Object, service2.Object], loggerMock.Object);
 
         // Act
         await fallbackService.SendEmailAsync("test@example.com", "Sub", "Body");

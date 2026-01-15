@@ -13,14 +13,14 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
     public LocationReportValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
-        IStringLocalizer<App> L)
+        IStringLocalizer<App> l)
     {
         RuleFor(x => x.ReporterIdentifier)
-            .NotEmpty().WithMessage(L["Identifier_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"]);
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
-            .WithMessage(L["Links_Error"]);
+            .WithMessage(l["Links_Error"]);
 
         RuleFor(x => x)
             .CustomAsync(async (report, context, cancellation) =>
@@ -36,7 +36,7 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
 
                 if (hasRecent)
                 {
-                    context.AddFailure(nameof(report.ReporterIdentifier), string.Format(L["Cooldown_Error"], settings.ReportCooldownMinutes));
+                    context.AddFailure(nameof(report.ReporterIdentifier), string.Format(l["Cooldown_Error"], settings.ReportCooldownMinutes));
                 }
 
                 // Distance check
@@ -48,12 +48,12 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                     var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
                     if (distance > maxDistanceKm)
                     {
-                        context.AddFailure(nameof(report.Latitude), string.Format(L["Distance_Error"], settings.MaxReportDistanceMiles));
+                        context.AddFailure(nameof(report.Latitude), string.Format(l["Distance_Error"], settings.MaxReportDistanceMiles));
                     }
                 }
                 else
                 {
-                    context.AddFailure(nameof(report.ReporterLatitude), L["Location_Verify_Error"]);
+                    context.AddFailure(nameof(report.ReporterLatitude), l["Location_Verify_Error"]);
                 }
             });
     }

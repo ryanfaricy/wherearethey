@@ -4,7 +4,7 @@
 @inject IFeedbackService FeedbackService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @inject ILogger<FeedbackDialog> Logger
 @inject IStringLocalizer<App> L
 
@@ -15,15 +15,15 @@
         @L["Feedback_Intro"]
     </RadzenText>
 
-    <RadzenTemplateForm Data="@feedback" Submit="@((Feedback args) => SubmitFeedback())">
+    <RadzenTemplateForm Data="@_feedback" Submit="@((Feedback args) => SubmitFeedback())">
         <RadzenStack Gap="1rem">
             <RadzenFormField Text="@L["Type"]" Variant="Variant.Outlined" Style="width: 100%;">
-                <RadzenDropDown @bind-Value="@feedback.Type" Data="@feedbackTypes" Style="width: 100%;" />
+                <RadzenDropDown @bind-Value="@_feedback.Type" Data="@_feedbackTypes" Style="width: 100%;" />
             </RadzenFormField>
 
             <RadzenFormField Text="@L["Message"]" Variant="Variant.Outlined" Component="FeedbackMessage" Style="width: 100%;">
                 <ChildContent>
-                    <RadzenTextArea Name="FeedbackMessage" @bind-Value="@feedback.Message" Style="width: 100%; height: 150px;" 
+                    <RadzenTextArea Name="FeedbackMessage" @bind-Value="@_feedback.Message" Style="width: 100%; height: 150px;" 
                                     Placeholder="@L["Feedback_Placeholder"]" />
                 </ChildContent>
                 <Helper>
@@ -33,7 +33,7 @@
 
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT"]" 
                           Icon="send" ButtonStyle="ButtonStyle.Primary" 
-                          Style="width: 100%;" Disabled="@isSubmitting" />
+                          Style="width: 100%;" Disabled="@_isSubmitting" />
         </RadzenStack>
     </RadzenTemplateForm>
 
@@ -43,22 +43,22 @@
 </RadzenStack>
 
 @code {
-    private Feedback feedback = new Feedback();
-    private List<string> feedbackTypes = new();
-    private bool isSubmitting = false;
-    private string? userIdentifier;
+    private Feedback _feedback = new Feedback();
+    private List<string> _feedbackTypes = [];
+    private bool _isSubmitting = false;
+    private string? _userIdentifier;
 
     protected override void OnInitialized()
     {
-        feedbackTypes = new() { L["Bug"], L["Feature"] };
-        feedback.Type = L["Bug"];
+        _feedbackTypes = [L["Bug"], L["Feature"]];
+        _feedback.Type = L["Bug"];
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
 
             StateHasChanged();
         }
@@ -66,13 +66,13 @@
 
     private async Task SubmitFeedback()
     {
-        if (isSubmitting) return;
+        if (_isSubmitting) return;
 
-        isSubmitting = true;
+        _isSubmitting = true;
         try
         {
-            feedback.UserIdentifier = userIdentifier;
-            await FeedbackService.AddFeedbackAsync(feedback);
+            _feedback.UserIdentifier = _userIdentifier;
+            await FeedbackService.AddFeedbackAsync(_feedback);
             NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
             DialogService.Close(true);
         }
@@ -83,7 +83,7 @@
         }
         finally
         {
-            isSubmitting = false;
+            _isSubmitting = false;
         }
     }
 }

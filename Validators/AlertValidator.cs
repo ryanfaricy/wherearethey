@@ -13,14 +13,14 @@ public class AlertValidator : AbstractValidator<Alert>
     public AlertValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
-        IStringLocalizer<App> L)
+        IStringLocalizer<App> l)
     {
         RuleFor(x => x.UserIdentifier)
-            .NotEmpty().WithMessage(L["Identifier_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"]);
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
-            .WithMessage(L["Links_Error"]);
+            .WithMessage(l["Links_Error"]);
 
         RuleFor(x => x)
             .CustomAsync(async (alert, context, cancellation) =>
@@ -36,7 +36,7 @@ public class AlertValidator : AbstractValidator<Alert>
 
                 if (recentCount >= settings.AlertLimitCount)
                 {
-                    context.AddFailure(nameof(alert.UserIdentifier), string.Format(L["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
+                    context.AddFailure(nameof(alert.UserIdentifier), string.Format(l["Alert_Cooldown_Error"], settings.AlertLimitCount, settings.ReportCooldownMinutes));
                 }
             });
     }

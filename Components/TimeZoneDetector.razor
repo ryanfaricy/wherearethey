@@ -1,5 +1,5 @@
 @using WhereAreThey.Services
-@inject IJSRuntime JS
+@inject IJSRuntime Js
 @inject UserTimeZoneService TimeZoneService
 
 @code {
@@ -9,7 +9,7 @@
         {
             try
             {
-                var timeZoneId = await JS.InvokeAsync<string>("timeUtils.getTimeZone");
+                var timeZoneId = await Js.InvokeAsync<string>("timeUtils.getTimeZone");
                 if (!string.IsNullOrEmpty(timeZoneId))
                 {
                     TimeZoneService.SetTimeZone(timeZoneId);

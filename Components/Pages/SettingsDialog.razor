@@ -2,7 +2,7 @@
 @using System.Globalization
 @using WhereAreThey.Services
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IAppThemeService ThemeService
@@ -14,8 +14,8 @@
 
     <RadzenStack Gap="0.5rem">
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Language"]</RadzenText>
-        <RadzenDropDown TValue="string" Data="@supportedCultures" 
-                        Value="@currentCulture" Change="@OnCultureChange"
+        <RadzenDropDown TValue="string" Data="@_supportedCultures" 
+                        Value="@_currentCulture" Change="@OnCultureChange"
                         TextProperty="DisplayName" ValueProperty="Name" />
     </RadzenStack>
 
@@ -30,16 +30,16 @@
         </RadzenSelectBar>
     </RadzenStack>
     
-    @if (!isPwa)
+    @if (!_isPwa)
     {
-        <RadzenStack Gap="0.5rem" Visible="@(isInstallable || isIOS)">
+        <RadzenStack Gap="0.5rem" Visible="@(_isInstallable || _isIos)">
             <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["INSTALL_APP"]</RadzenText>
-            @if (isInstallable)
+            @if (_isInstallable)
             {
                 <RadzenText TextStyle="TextStyle.Caption">@L["PWA_Install_Help"]</RadzenText>
                 <RadzenButton Text="@L["INSTALL_APP"]" Icon="get_app" Click="@InstallApp" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Style="width: 100%;" />
             }
-            else if (isIOS)
+            else if (_isIos)
             {
                 <RadzenText TextStyle="TextStyle.Caption">@L["PWA_IOS_Install_Help"]</RadzenText>
             }
@@ -53,18 +53,18 @@
         </RadzenText>
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-            <RadzenTextBox Value="@userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
+            <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
             <RadzenButton Icon="content_copy" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
-            <RadzenButton Text="@L["IMPORT"]" Click="@(() => showImport = !showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
+            <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
         </RadzenStack>
 
-        @if (showImport)
+        @if (_showImport)
         {
-            <RadzenTemplateForm TItem="string" Data="@importId" Submit="@((string args) => ImportProfile())">
+            <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => ImportProfile())">
                 <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
                     <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
                         <ChildContent>
-                            <RadzenTextBox Name="ImportId" @bind-Value="@importId" Placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" Style="width: 100%;" />
+                            <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" Style="width: 100%;" />
                         </ChildContent>
                         <Helper>
                             <RadzenRequiredValidator Component="ImportId" Text="@L["ID_Required"]" />
@@ -72,7 +72,7 @@
                         </Helper>
                     </RadzenFormField>
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                        <RadzenButton Text="@L["CANCEL"]" Click="@(() => { showImport = false; importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
+                        <RadzenButton Text="@L["CANCEL"]" Click="@(() => { _showImport = false; _importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
                         <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SAVE_REFRESH"]" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
                     </RadzenStack>
                 </RadzenStack>
@@ -87,14 +87,14 @@
 </RadzenStack>
 
 @code {
-    private string userIdentifier = "";
-    private string importId = "";
-    private bool showImport = false;
-    private string currentCulture = CultureInfo.CurrentCulture.Name;
-    private bool isInstallable = false;
-    private bool isPwa = false;
-    private bool isIOS = false;
-    private DotNetObjectReference<SettingsDialog>? objRef;
+    private string _userIdentifier = "";
+    private string _importId = "";
+    private bool _showImport = false;
+    private string _currentCulture = CultureInfo.CurrentCulture.Name;
+    private bool _isInstallable = false;
+    private bool _isPwa = false;
+    private bool _isIos = false;
+    private DotNetObjectReference<SettingsDialog>? _objRef;
 
     private AppTheme CurrentTheme
     {
@@ -104,11 +104,11 @@
 
     private async Task OnThemeChanged(AppTheme theme)
     {
-        await JSRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
+        await JsRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
     }
 
-    private List<CultureDisplay> supportedCultures = new()
-    {
+    private List<CultureDisplay> _supportedCultures =
+    [
         new CultureDisplay { Name = "en", DisplayName = "English" },
         new CultureDisplay { Name = "es", DisplayName = "Español" },
         new CultureDisplay { Name = "fr", DisplayName = "Français" },
@@ -118,7 +118,7 @@
         new CultureDisplay { Name = "ru", DisplayName = "Русский" },
         new CultureDisplay { Name = "zh", DisplayName = "中文" },
         new CultureDisplay { Name = "ja", DisplayName = "日本語" }
-    };
+    ];
 
     private void OnCultureChange(object value)
     {
@@ -134,19 +134,19 @@
     {
         if (firstRender)
         {
-            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
             
-            var stored = await JSRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
+            var stored = await JsRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
             if (Enum.TryParse<AppTheme>(stored, out var theme))
             {
                 ThemeService.SetTheme(theme);
             }
 
-            objRef = DotNetObjectReference.Create(this);
-            await JSRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", objRef);
+            _objRef = DotNetObjectReference.Create(this);
+            await JsRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", _objRef);
             
-            isPwa = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
-            isIOS = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
+            _isPwa = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
+            _isIos = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
             
             StateHasChanged();
         }
@@ -155,32 +155,32 @@
     [JSInvokable]
     public void SetInstallable(bool installable)
     {
-        isInstallable = installable;
+        _isInstallable = installable;
         StateHasChanged();
     }
 
     private async Task InstallApp()
     {
-        await JSRuntime.InvokeAsync<bool>("pwaFunctions.showInstallPrompt");
+        await JsRuntime.InvokeAsync<bool>("pwaFunctions.showInstallPrompt");
     }
 
     public void Dispose()
     {
-        objRef?.Dispose();
+        _objRef?.Dispose();
     }
 
     private async Task CopyId()
     {
-        await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", userIdentifier);
+        await JsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _userIdentifier);
         NotificationService.Notify(NotificationSeverity.Info, L["ID_copied"]);
     }
 
     private async Task ImportProfile()
     {
-        await JSRuntime.InvokeAsync<bool>("setUserIdentifier", importId);
+        await JsRuntime.InvokeAsync<bool>("setUserIdentifier", _importId);
         DialogService.Close();
         // We need a hard refresh to reload everything with the new ID
-        await JSRuntime.InvokeVoidAsync("location.reload");
+        await JsRuntime.InvokeVoidAsync("location.reload");
     }
 
     public class CultureDisplay

@@ -8,7 +8,6 @@
 @inject IFeedbackService FeedbackService
 @inject IAdminService AdminService
 @inject ISettingsService SettingsService
-@inject IConfiguration Configuration
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -19,14 +18,14 @@
 <PageTitle>Admin Control Panel</PageTitle>
 
 <div class="rz-p-4">
-    @if (!isAuthenticated)
+    @if (!_isAuthenticated)
     {
         <div class="d-flex justify-content-center align-items-center" style="height: 70vh;">
             <RadzenCard Style="width: 400px;">
                 <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Admin Login</RadzenText>
                 <RadzenStack Gap="1rem">
                     <RadzenFormField Text="Password">
-                        <RadzenPassword @bind-Value="@passwordInput" @onkeypress="@OnKeyPress" />
+                        <RadzenPassword @bind-Value="@_passwordInput" @onkeypress="@OnKeyPress" />
                     </RadzenFormField>
                     <RadzenButton Text="LOGIN" Click="@Login" ButtonStyle="ButtonStyle.Primary" />
                 </RadzenStack>
@@ -47,31 +46,31 @@
                         <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@reports.Count</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@_reports.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@alerts.Count(a => a.IsActive)</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@_alerts.Count(a => a.IsActive)</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@_donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="3">
                             <RadzenCard Class="rz-variant-flat rz-background-color-secondary-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Feedback Items</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@feedbacks.Count</RadzenText>
+                                <RadzenText TextStyle="TextStyle.H3">@_feedbacks.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                     </RadzenRow>
 
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
-                    <RadzenDataGrid Data="@loginAttempts.Take(5)" TItem="AdminLoginAttempt">
+                    <RadzenDataGrid Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
@@ -90,7 +89,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="REPORTS" Icon="report_problem">
-                    <RadzenDataGrid Data="@reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                    <RadzenDataGrid Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
@@ -127,7 +126,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="ALERTS" Icon="notifications">
-                    <RadzenDataGrid Data="@alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                    <RadzenDataGrid Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Width="70px" />
                             <RadzenDataGridColumn TItem="Alert" Title="Email">
@@ -159,7 +158,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="DONATIONS" Icon="volunteer_activism">
-                    <RadzenDataGrid Data="@donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                    <RadzenDataGrid Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                                 <Template Context="donation">
@@ -183,7 +182,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="FEEDBACK" Icon="chat">
-                    <RadzenDataGrid Data="@feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                    <RadzenDataGrid Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" />
                             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
@@ -209,7 +208,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="LOGINS" Icon="security">
-                    <RadzenDataGrid Data="@loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                    <RadzenDataGrid Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
@@ -232,32 +231,32 @@
                         <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
                         <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
                             <RadzenFormField Text="Report Expiry (Hours)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@systemSettings.ReportExpiryHours" TValue="int" Min="1" Max="168" />
+                                <RadzenNumeric @bind-Value="@_systemSettings.ReportExpiryHours" TValue="int" Min="1" Max="168" />
                                 <RadzenText TextStyle="TextStyle.Caption">Reports disappear from public view after this many hours.</RadzenText>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Submission Cooldown (Minutes)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@systemSettings.ReportCooldownMinutes" TValue="int" Min="1" Max="60" />
+                                <RadzenNumeric @bind-Value="@_systemSettings.ReportCooldownMinutes" TValue="int" Min="1" Max="60" />
                                 <RadzenText TextStyle="TextStyle.Caption">Time users must wait between submitting reports or feedback.</RadzenText>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Alert Creation Limit" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@systemSettings.AlertLimitCount" TValue="int" Min="1" Max="100" />
+                                <RadzenNumeric @bind-Value="@_systemSettings.AlertLimitCount" TValue="int" Min="1" Max="100" />
                                 <RadzenText TextStyle="TextStyle.Caption">Number of alerts a user can create within the cooldown period.</RadzenText>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Max Report Distance (Miles)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
+                                <RadzenNumeric @bind-Value="@_systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
                                 <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
                             </RadzenFormField>
 
                             <RadzenFormField Text="Mapbox Token (Optional)" Variant="Variant.Outlined">
-                                <RadzenTextBox @bind-Value="@systemSettings.MapboxToken" />
+                                <RadzenTextBox @bind-Value="@_systemSettings.MapboxToken" />
                                 <RadzenText TextStyle="TextStyle.Caption">Required for map thumbnails in alert emails. Leave empty to disable thumbnails.</RadzenText>
                             </RadzenFormField>
 
                             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                <RadzenSwitch @bind-Value="@systemSettings.DonationsEnabled" />
+                                <RadzenSwitch @bind-Value="@_systemSettings.DonationsEnabled" />
                                 <RadzenLabel Text="Enable Public Donations" />
                             </RadzenStack>
 
@@ -271,19 +270,19 @@
 </div>
 
 @code {
-    private bool isAuthenticated = false;
-    private string passwordInput = "";
-    private List<LocationReport> reports = new();
-    private List<Alert> alerts = new();
-    private List<Donation> donations = new();
-    private List<Feedback> feedbacks = new();
-    private List<AdminLoginAttempt> loginAttempts = new();
-    private SystemSettings systemSettings = new();
-    private string? clientIp;
+    private bool _isAuthenticated = false;
+    private string _passwordInput = "";
+    private List<LocationReport> _reports = new();
+    private List<Alert> _alerts = new();
+    private List<Donation> _donations = new();
+    private List<Feedback> _feedbacks = new();
+    private List<AdminLoginAttempt> _loginAttempts = new();
+    private SystemSettings _systemSettings = new();
+    private string? _clientIp;
 
     protected override void OnInitialized()
     {
-        clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
+        _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -293,7 +292,7 @@
             var result = await SessionStorage.GetAsync<bool>("isAdmin");
             if (result.Success && result.Value)
             {
-                isAuthenticated = true;
+                _isAuthenticated = true;
                 await LoadData();
                 StateHasChanged();
             }
@@ -304,9 +303,9 @@
     {
         try
         {
-            if (await AdminService.LoginAsync(passwordInput, clientIp))
+            if (await AdminService.LoginAsync(_passwordInput, _clientIp))
             {
-                isAuthenticated = true;
+                _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
                 await LoadData();
             }
@@ -318,7 +317,7 @@
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Admin login failed for IP {ClientIp}", clientIp);
+            Logger.LogError(ex, "Admin login failed for IP {ClientIp}", _clientIp);
             NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
             await LoadData();
         }
@@ -326,8 +325,8 @@
 
     private async Task Logout()
     {
-        isAuthenticated = false;
-        passwordInput = "";
+        _isAuthenticated = false;
+        _passwordInput = "";
         await SessionStorage.DeleteAsync("isAdmin");
     }
 
@@ -343,12 +342,12 @@
     {
         try
         {
-            reports = await LocationService.GetAllReportsAsync();
-            alerts = await AlertService.GetAllAlertsAdminAsync();
-            donations = await DonationService.GetAllDonationsAsync();
-            feedbacks = await FeedbackService.GetAllFeedbackAsync();
-            systemSettings = await SettingsService.GetSettingsAsync();
-            loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
+            _reports = await LocationService.GetAllReportsAsync();
+            _alerts = await AlertService.GetAllAlertsAdminAsync();
+            _donations = await DonationService.GetAllDonationsAsync();
+            _feedbacks = await FeedbackService.GetAllFeedbackAsync();
+            _systemSettings = await SettingsService.GetSettingsAsync();
+            _loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
         }
         catch (Exception ex)
         {
@@ -361,7 +360,7 @@
     {
         try
         {
-            await SettingsService.UpdateSettingsAsync(systemSettings);
+            await SettingsService.UpdateSettingsAsync(_systemSettings);
             NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
         }
         catch (Exception ex)

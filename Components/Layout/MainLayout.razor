@@ -1,14 +1,14 @@
-﻿@inject IJSRuntime JSRuntime
+﻿@inject IJSRuntime JsRuntime
 @inherits LayoutComponentBase
 
 <RadzenLayout style="position: relative">
     <RadzenHeader Style="z-index: 1002;">
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
-            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenSidebarToggle Click="@(() => _sidebarExpanded = !_sidebarExpanded)" />
             <RadzenLabel Text="AreTheyHere" Style="margin-left: 1rem; font-size: 1.5rem; font-weight: bold;" />
         </RadzenStack>
     </RadzenHeader>
-    <RadzenSidebar Responsive="false" @bind-Expanded="@sidebarExpanded" style="position: absolute; z-index: 1001; width: 250px; top: 0; bottom: 0; left: 0;">
+    <RadzenSidebar Responsive="false" @bind-Expanded="@_sidebarExpanded" style="position: absolute; z-index: 1001; width: 250px; top: 0; bottom: 0; left: 0;">
         <NavMenu />
     </RadzenSidebar>
     <RadzenBody Style="position: relative">
@@ -26,14 +26,14 @@
 </div>
 
 @code {
-    bool sidebarExpanded = false;
+    bool _sidebarExpanded = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await JSRuntime.InvokeVoidAsync("themeManager.init");
-            await JSRuntime.InvokeVoidAsync("hideAppLoader");
+            await JsRuntime.InvokeVoidAsync("themeManager.init");
+            await JsRuntime.InvokeVoidAsync("hideAppLoader");
         }
     }
 }

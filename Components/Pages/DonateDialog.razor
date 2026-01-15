@@ -4,7 +4,7 @@
 @inject IDonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @inject IConfiguration Configuration
 @inject ILogger<DonateDialog> Logger
 @inject IStringLocalizer<App> L
@@ -19,14 +19,14 @@
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
             <RadzenTabsItem Text="@L["DONATE"]">
-                <RadzenTemplateForm Data="@donation" Submit="@((Donation args) => ProcessDonation())">
+                <RadzenTemplateForm Data="@_donation" Submit="@((Donation args) => ProcessDonation())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Amount"]" Variant="Variant.Outlined" Component="Amount" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenNumeric Name="Amount" @bind-Value="@donation.Amount" TValue="decimal" 
+                                <RadzenNumeric Name="Amount" @bind-Value="@_donation.Amount" TValue="decimal" 
                                                Min="1" Max="10000" ShowUpDown="false" 
                                                Format="$0.00" Style="width: 100%; font-size: 1.25rem; font-weight: bold;" 
-                                               Disabled="@isProcessing" />
+                                               Disabled="@_isProcessing" />
                             </ChildContent>
                             <Helper>
                                 <RadzenNumericRangeValidator Component="Amount" Min="1" Max="10000" Text="@L["Amount_Range_Error"]" />
@@ -35,24 +35,24 @@
 
                         <div class="row g-2">
                             <div class="col-3">
-                                <RadzenButton Text="$5" Click="@(() => donation.Amount = 5)" 
+                                <RadzenButton Text="$5" Click="@(() => _donation.Amount = 5)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
-                                              Disabled="@isProcessing" />
+                                              Disabled="@_isProcessing" />
                             </div>
                             <div class="col-3">
-                                <RadzenButton Text="$10" Click="@(() => donation.Amount = 10)" 
+                                <RadzenButton Text="$10" Click="@(() => _donation.Amount = 10)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
-                                              Disabled="@isProcessing" />
+                                              Disabled="@_isProcessing" />
                             </div>
                             <div class="col-3">
-                                <RadzenButton Text="$25" Click="@(() => donation.Amount = 25)" 
+                                <RadzenButton Text="$25" Click="@(() => _donation.Amount = 25)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
-                                              Disabled="@isProcessing" />
+                                              Disabled="@_isProcessing" />
                             </div>
                             <div class="col-3">
-                                <RadzenButton Text="$50" Click="@(() => donation.Amount = 50)" 
+                                <RadzenButton Text="$50" Click="@(() => _donation.Amount = 50)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
-                                              Disabled="@isProcessing" />
+                                              Disabled="@_isProcessing" />
                             </div>
                         </div>
 
@@ -60,10 +60,10 @@
 
                         <RadzenFormField Text="@L["Email_Optional"]" Variant="Variant.Outlined" Component="DonorEmail" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenTextBox Name="DonorEmail" @bind-Value="@donation.DonorEmail" 
+                                <RadzenTextBox Name="DonorEmail" @bind-Value="@_donation.DonorEmail" 
                                                Placeholder="your@email.com" 
                                                Style="width: 100%;" 
-                                               Disabled="@isProcessing" />
+                                               Disabled="@_isProcessing" />
                             </ChildContent>
                             <Helper>
                                 <RadzenEmailValidator Component="DonorEmail" Text="@L["Invalid_Email"]" />
@@ -71,18 +71,18 @@
                         </RadzenFormField>
 
                         <RadzenButton ButtonType="ButtonType.Submit" 
-                                      Text="@(string.Format(L["DONATE_AMOUNT"], donation.Amount.ToString("F2")))" 
+                                      Text="@(string.Format(L["DONATE_AMOUNT"], _donation.Amount.ToString("F2")))" 
                                       Icon="volunteer_activism" 
                                       ButtonStyle="ButtonStyle.Success" 
                                       Style="width: 100%; font-weight: bold;" 
-                                      IsBusy="@isProcessing" />
+                                      IsBusy="@_isProcessing" />
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenTabsItem>
             <RadzenTabsItem Text="@L["Recent"]">
-                @if (recentDonations.Any())
+                @if (_recentDonations.Any())
                 {
-                    <RadzenDataList Data="@recentDonations" TItem="DonationDisplay" PageSize="4">
+                    <RadzenDataList Data="@_recentDonations" TItem="DonationDisplay" PageSize="4">
                         <Template Context="d">
                             <div class="d-flex justify-content-between align-items-center mb-2 p-2 rz-border-radius-2" style="background-color: var(--rz-success-lighter);">
                                 <div>
@@ -108,14 +108,14 @@
 </RadzenStack>
 
 @code {
-    private Donation donation = new Donation { Amount = 10 };
-    private List<DonationDisplay> recentDonations = new();
-    private bool isProcessing = false;
+    private Donation _donation = new Donation { Amount = 10 };
+    private List<DonationDisplay> _recentDonations = new();
+    private bool _isProcessing = false;
 
     protected override async Task OnInitializedAsync()
     {
         var donations = await DonationService.GetAllDonationsAsync();
-        recentDonations = donations
+        _recentDonations = donations
             .Where(d => d.Status == "completed")
             .Take(10)
             .Select(d => new DonationDisplay 
@@ -144,16 +144,16 @@
             
             if (!string.IsNullOrEmpty(appId) && !string.IsNullOrEmpty(locId))
             {
-                await JSRuntime.InvokeAsync<bool>("squarePayments.initialize", appId, locId);
+                await JsRuntime.InvokeAsync<bool>("squarePayments.initialize", appId, locId);
             }
         }
     }
 
     private async Task ProcessDonation()
     {
-        if (isProcessing) return;
+        if (_isProcessing) return;
 
-        isProcessing = true;
+        _isProcessing = true;
         StateHasChanged();
         try
         {
@@ -161,7 +161,7 @@
             string token;
             try
             {
-                token = await JSRuntime.InvokeAsync<string>("squarePayments.tokenize");
+                token = await JsRuntime.InvokeAsync<string>("squarePayments.tokenize");
             }
             catch (Exception ex)
             {
@@ -171,7 +171,7 @@
             }
 
             // 2. Create payment on backend
-            var response = await DonationService.CreateSquarePaymentAsync(donation.Amount, token);
+            var response = await DonationService.CreateSquarePaymentAsync(_donation.Amount, token);
             
             if (response.Errors != null && response.Errors.Any())
             {
@@ -180,33 +180,33 @@
             }
 
             // 3. Record donation
-            donation.Status = "completed";
-            donation.ExternalPaymentId = response.Payment.Id;
-            await DonationService.RecordDonationAsync(donation);
+            _donation.Status = "completed";
+            _donation.ExternalPaymentId = response.Payment.Id;
+            await DonationService.RecordDonationAsync(_donation);
 
             NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
             
-            var displayName = string.IsNullOrWhiteSpace(donation.DonorName) ? "Anonymous" : donation.DonorName;
-            recentDonations.Insert(0, new DonationDisplay 
+            var displayName = string.IsNullOrWhiteSpace(_donation.DonorName) ? "Anonymous" : _donation.DonorName;
+            _recentDonations.Insert(0, new DonationDisplay 
             { 
                 DisplayName = displayName, 
-                Amount = donation.Amount, 
+                Amount = _donation.Amount, 
                 TimeAgo = "just now" 
             });
 
-            donation = new Donation { Amount = 10 };
+            _donation = new Donation { Amount = 10 };
             
             // Close the dialog after successful payment
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Donation failed for amount {Amount}", donation.Amount);
+            Logger.LogError(ex, "Donation failed for amount {Amount}", _donation.Amount);
             NotificationService.Notify(NotificationSeverity.Error, "Donation failed", ex.Message);
         }
         finally
         {
-            isProcessing = false;
+            _isProcessing = false;
         }
     }
 

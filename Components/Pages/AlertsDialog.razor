@@ -5,7 +5,7 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
 
@@ -15,10 +15,10 @@
     <RadzenTabs RenderMode="TabRenderMode.Client">
         <Tabs>
             <RadzenTabsItem Text="@L["Create_New"]">
-                <RadzenTemplateForm Data="@newAlert" Submit="@((Alert args) => CreateAlert())">
+                <RadzenTemplateForm Data="@_newAlert" Submit="@((Alert args) => CreateAlert())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-                            <RadzenAutoComplete @bind-Value="@approxAddress" Data="@geocodingResults" TextProperty="Address" 
+                            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
                                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                                 Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
                         </RadzenFormField>
@@ -26,13 +26,13 @@
                         <div class="row">
                             <div class="col-6">
                                 <RadzenFormField Text="@L["Latitude"]" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <RadzenNumeric @bind-Value="@newAlert.Latitude" TValue="double" 
+                                    <RadzenNumeric @bind-Value="@_newAlert.Latitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
                             </div>
                             <div class="col-6">
                                 <RadzenFormField Text="@L["Longitude"]" Variant="Variant.Outlined" Style="width: 100%;">
-                                    <RadzenNumeric @bind-Value="@newAlert.Longitude" TValue="double" 
+                                    <RadzenNumeric @bind-Value="@_newAlert.Longitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
                             </div>
@@ -40,7 +40,7 @@
 
                         <RadzenFormField Text="@L["Radius_Km"]" Variant="Variant.Outlined" Component="RadiusKm" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenNumeric Name="RadiusKm" @bind-Value="@newAlert.RadiusKm" TValue="double" 
+                                <RadzenNumeric Name="RadiusKm" @bind-Value="@_newAlert.RadiusKm" TValue="double" 
                                                Min="0.1m" Max="160.9m" ShowUpDown="true" 
                                                Step="0.5m" Style="width: 100%;" />
                             </ChildContent>
@@ -51,7 +51,7 @@
 
                         <RadzenFormField Text="@L["Alert_Message"]" Variant="Variant.Outlined" Component="AlertMessage" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenTextBox Name="AlertMessage" @bind-Value="@newAlert.Message" Style="width: 100%;" 
+                                <RadzenTextBox Name="AlertMessage" @bind-Value="@_newAlert.Message" Style="width: 100%;" 
                                                Placeholder="@L["Alert_Message_Placeholder"]" MaxLength="100" />
                             </ChildContent>
                             <Helper>
@@ -61,7 +61,7 @@
 
                         <RadzenFormField Text="@L["Email_for_Alerts"]" Variant="Variant.Outlined" Component="Email" Style="width: 100%;">
                             <ChildContent>
-                                <RadzenTextBox Name="Email" @bind-Value="@email" Style="width: 100%;" 
+                                <RadzenTextBox Name="Email" @bind-Value="@_email" Style="width: 100%;" 
                                                Placeholder="your@email.com" />
                             </ChildContent>
                             <Helper>
@@ -72,14 +72,14 @@
 
                         <RadzenButton ButtonType="ButtonType.Submit" Text="@L["CREATE_ALERT"]" 
                                       Icon="add_alert" ButtonStyle="ButtonStyle.Primary" 
-                                      Style="width: 100%;" IsBusy="@isSubmitting" />
+                                      Style="width: 100%;" IsBusy="@_isSubmitting" />
                     </RadzenStack>
                 </RadzenTemplateForm>
             </RadzenTabsItem>
             <RadzenTabsItem Text="@L["Active_Alerts"]">
-                @if (activeAlerts.Any())
+                @if (_activeAlerts.Any())
                 {
-                    <RadzenDataList Data="@activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
+                    <RadzenDataList Data="@_activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
                         <Template Context="alert">
                             <RadzenCard Class="rz-mb-2 rz-p-2">
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
@@ -123,26 +123,26 @@
     [Parameter] public double? InitialLng { get; set; }
     [Parameter] public double? InitialRadius { get; set; }
 
-    private Alert newAlert = new Alert { RadiusKm = 5.0 };
-    private string email = "";
-    private List<Alert> activeAlerts = new();
-    private List<GeocodingResult> geocodingResults = new();
-    private bool isSubmitting = false;
-    private string? userIdentifier;
-    private string? approxAddress;
+    private Alert _newAlert = new Alert { RadiusKm = 5.0 };
+    private string _email = "";
+    private List<Alert> _activeAlerts = new();
+    private List<GeocodingResult> _geocodingResults = new();
+    private bool _isSubmitting = false;
+    private string? _userIdentifier;
+    private string? _approxAddress;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
-            if (InitialLat.HasValue) newAlert.Latitude = InitialLat.Value;
-            if (InitialLng.HasValue) newAlert.Longitude = InitialLng.Value;
-            if (InitialRadius.HasValue) newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            if (InitialLat.HasValue) _newAlert.Latitude = InitialLat.Value;
+            if (InitialLng.HasValue) _newAlert.Longitude = InitialLng.Value;
+            if (InitialRadius.HasValue) _newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
 
             if (InitialLat.HasValue && InitialLng.HasValue)
             {
-                approxAddress = await GeocodingService.ReverseGeocodeAsync(InitialLat.Value, InitialLng.Value);
+                _approxAddress = await GeocodingService.ReverseGeocodeAsync(InitialLat.Value, InitialLng.Value);
             }
             
             await LoadAlerts();
@@ -155,7 +155,7 @@
     {
         if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
         {
-            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
         }
     }
 
@@ -163,40 +163,40 @@
     {
         if (value is string address)
         {
-            var selected = geocodingResults.FirstOrDefault(r => r.Address == address);
+            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
             if (selected != null)
             {
-                newAlert.Latitude = selected.Latitude;
-                newAlert.Longitude = selected.Longitude;
-                approxAddress = selected.Address;
+                _newAlert.Latitude = selected.Latitude;
+                _newAlert.Longitude = selected.Longitude;
+                _approxAddress = selected.Address;
             }
         }
     }
 
     private async Task CreateAlert()
     {
-        if (isSubmitting) return;
+        if (_isSubmitting) return;
 
-        isSubmitting = true;
+        _isSubmitting = true;
         try
         {
-            newAlert.UserIdentifier = userIdentifier;
-            await AlertService.CreateAlertAsync(newAlert, email);
+            _newAlert.UserIdentifier = _userIdentifier;
+            await AlertService.CreateAlertAsync(_newAlert, _email);
             NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
             
-            newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = userIdentifier };
-            email = "";
+            _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
+            _email = "";
             await LoadAlerts();
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to create alert for email {Email}", email);
+            Logger.LogError(ex, "Failed to create alert for email {Email}", _email);
             NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", ex.Message);
         }
         finally
         {
-            isSubmitting = false;
+            _isSubmitting = false;
         }
     }
 
@@ -222,10 +222,10 @@
 
     private async Task LoadAlerts()
     {
-        activeAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
+        _activeAlerts = await AlertService.GetActiveAlertsAsync(_userIdentifier, onlyVerified: false);
     }
 
-    private string MaskEmail(string? email)
+    private static string MaskEmail(string? email)
     {
         if (string.IsNullOrEmpty(email)) return "Unknown";
         var parts = email.Split('@');

@@ -21,11 +21,10 @@ public class ProgramTests
         builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
         builder.Services.AddTransient<SmtpEmailService>();
         builder.Services.AddScoped<IEmailService>(sp => 
-            new FallbackEmailService(new IEmailService[] 
-            {
+            new FallbackEmailService([
                 sp.GetRequiredService<MicrosoftGraphEmailService>(),
                 sp.GetRequiredService<SmtpEmailService>()
-            }, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackEmailService>>()));
+            ], sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackEmailService>>()));
 
         // Act
         var app = builder.Build();

@@ -5,14 +5,15 @@ namespace WhereAreThey.Models
     public static class DialogConfigs
     {
         /// <summary>
-        /// Standard 500px width dialog configuration, non-draggable and non-resizable.
+        /// Standard 500px width dialog configuration, non-draggable, non-resizable.
         /// </summary>
         public static DialogOptions Default => new DialogOptions
         {
-            Width = "500px",
-            CloseDialogOnOverlayClick = true,
+            AutoFocusFirstElement = false,
+            CloseDialogOnOverlayClick = false,
             Draggable = false,
-            Resizable = false
+            Resizable = false,
+            Width = "500px",
         };
     }
 }

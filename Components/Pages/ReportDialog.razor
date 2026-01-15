@@ -8,19 +8,19 @@
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
-<RadzenTemplateForm Data="@report" Submit="@((LocationReport args) => SubmitReport())">
+<RadzenTemplateForm Data="@Report" Submit="@((LocationReport args) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-            <RadzenAutoComplete @bind-Value="@approxAddress" Data="@geocodingResults" TextProperty="Address" 
+            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                 Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
         </RadzenFormField>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
+        <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
             <ChildContent>
-                <RadzenTextArea Name="Message" @bind-Value="@report.Message" Rows="3" 
+                <RadzenTextArea Name="Message" @bind-Value="@Report.Message" Rows="3" 
                                 Style="width: 100%;" MaxLength="500" />
             </ChildContent>
             <Helper>
@@ -29,7 +29,7 @@
         </RadzenFormField>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-            <RadzenCheckBox @bind-Value="@report.IsEmergency" TValue="bool" Name="IsEmergency" />
+            <RadzenCheckBox @bind-Value="@Report.IsEmergency" TValue="bool" Name="IsEmergency" />
             <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
@@ -37,27 +37,27 @@
             <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
                           Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
-                          IsBusy="@isSubmitting" />
+                          IsBusy="@_isSubmitting" />
         </RadzenStack>
     </RadzenStack>
 </RadzenTemplateForm>
 
 @code {
-    [Parameter] public LocationReport report { get; set; } = new();
-    private bool isSubmitting = false;
-    private string? approxAddress;
-    private List<GeocodingResult> geocodingResults = new();
+    [Parameter] public LocationReport Report { get; set; } = new();
+    private bool _isSubmitting = false;
+    private string? _approxAddress;
+    private List<GeocodingResult> _geocodingResults = new();
 
     protected override async Task OnInitializedAsync()
     {
-        approxAddress = await GeocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
+        _approxAddress = await GeocodingService.ReverseGeocodeAsync(Report.Latitude, Report.Longitude);
     }
 
     private async Task OnAddressSearch(LoadDataArgs args)
     {
         if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
         {
-            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
         }
     }
 
@@ -65,34 +65,34 @@
     {
         if (value is string address)
         {
-            var selected = geocodingResults.FirstOrDefault(r => r.Address == address);
+            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
             if (selected != null)
             {
-                report.Latitude = selected.Latitude;
-                report.Longitude = selected.Longitude;
-                approxAddress = selected.Address;
+                Report.Latitude = selected.Latitude;
+                Report.Longitude = selected.Longitude;
+                _approxAddress = selected.Address;
             }
         }
     }
 
     private async Task SubmitReport()
     {
-        if (isSubmitting) return;
-        isSubmitting = true;
+        if (_isSubmitting) return;
+        _isSubmitting = true;
         try
         {
-            await LocationService.AddLocationReportAsync(report);
+            await LocationService.AddLocationReportAsync(Report);
             NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to submit report at {Lat}, {Lng}", report.Latitude, report.Longitude);
+            Logger.LogError(ex, "Failed to submit report at {Lat}, {Lng}", Report.Latitude, Report.Longitude);
             NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], ex.Message);
         }
         finally
         {
-            isSubmitting = false;
+            _isSubmitting = false;
         }
     }
 }

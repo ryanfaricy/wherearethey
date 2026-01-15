@@ -9,7 +9,7 @@
 @inject IGeocodingService GeocodingService
 @inject NavigationManager NavigationManager
 @inject ISettingsService SettingsService
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject ILogger<Home> Logger
@@ -21,15 +21,15 @@
 <RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem" Class="rz-p-2 rz-background-color-primary-lighter main-toolbar" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
-        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" IsBusy="@isGettingLocation" />
-        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
-        @if (systemSettings.DonationsEnabled)
+        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" IsBusy="@_isGettingLocation" />
+        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@_isBusy" />
+        @if (_systemSettings.DonationsEnabled)
         {
-            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
+            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@_isBusy" />
         }
-        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
-        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
-        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@isBusy" />
+        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@_isBusy" />
+        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@_isBusy" />
+        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" IsBusy="@_isBusy" />
     </RadzenStack>
 
     <!-- Map Container -->
@@ -40,24 +40,24 @@
         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="map-controls-container">
             <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
                 <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                    <RadzenAutoComplete @bind-Value="@searchAddress" Data="@geocodingResults" TextProperty="Address" 
+                    <RadzenAutoComplete @bind-Value="@_searchAddress" Data="@_geocodingResults" TextProperty="Address" 
                                         LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                         Placeholder="@L["Search_Address_Placeholder"]" Style="flex: 1; min-width: 100px;" 
                                         InputClass="search-input" />
                     
-                    <RadzenToggleButton @bind-Value="@followMe" Icon="my_location" 
+                    <RadzenToggleButton @bind-Value="@_followMe" Icon="my_location" 
                                         ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
                                         Size="ButtonSize.Medium" ToolTip="Follow Me" 
                                         ToggleButtonStyle="ButtonStyle.Primary"
                                         Change="@OnFollowMeChange" />
                     
-                    <RadzenSelectBar @bind-Value="@selectedHours" TValue="int" Change="@LoadReports"
+                    <RadzenSelectBar @bind-Value="@_selectedHours" TValue="int" Change="@LoadReports"
                                      Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
                                      Class="time-filter">
                         <Items>
                             <RadzenSelectBarItem Text="1h" Value="1" />
                             <RadzenSelectBarItem Text="2h" Value="2" />
-                            <RadzenSelectBarItem Text="@($"{systemSettings.ReportExpiryHours}h")" Value="@systemSettings.ReportExpiryHours" />
+                            <RadzenSelectBarItem Text="@($"{_systemSettings.ReportExpiryHours}h")" Value="@_systemSettings.ReportExpiryHours" />
                         </Items>
                     </RadzenSelectBar>
                 </RadzenStack>
@@ -84,7 +84,7 @@
             </RadzenCard>
         </RadzenStack>
 
-        @if (isGettingLocation)
+        @if (_isGettingLocation)
         {
             <RadzenStack Style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
                 <RadzenCard Class="rz-shadow-10">
@@ -99,26 +99,26 @@
 </RadzenStack>
 
 @code {
-    private List<LocationReport> reports = new();
-    private List<Alert> userAlerts = new();
-    private SystemSettings systemSettings = new();
-    private bool mapInitialized = false;
-    private bool isGettingLocation = false;
-    private bool isBusy = false;
-    private string? userIdentifier;
-    private DotNetObjectReference<Home>? objRef;
-    private int locationWatchId = -1;
-    private GeolocationPosition? lastKnownPosition;
-    private DateTime lastLocationUpdate;
-    private bool followMe = false;
-    private int selectedHours = 24;
-    private string? searchAddress;
-    private IEnumerable<GeocodingResult> geocodingResults = new List<GeocodingResult>();
+    private List<LocationReport> _reports = new();
+    private List<Alert> _userAlerts = new();
+    private SystemSettings _systemSettings = new();
+    private bool _mapInitialized = false;
+    private bool _isGettingLocation = false;
+    private bool _isBusy = false;
+    private string? _userIdentifier;
+    private DotNetObjectReference<Home>? _objRef;
+    private int _locationWatchId = -1;
+    private GeolocationPosition? _lastKnownPosition;
+    private DateTime _lastLocationUpdate;
+    private bool _followMe = false;
+    private int _selectedHours = 24;
+    private string? _searchAddress;
+    private IEnumerable<GeocodingResult> _geocodingResults = new List<GeocodingResult>();
 
     protected override async Task OnInitializedAsync()
     {
-        systemSettings = await SettingsService.GetSettingsAsync();
-        selectedHours = systemSettings.ReportExpiryHours;
+        _systemSettings = await SettingsService.GetSettingsAsync();
+        _selectedHours = _systemSettings.ReportExpiryHours;
         await LoadReports();
         LocationService.OnReportAdded += HandleReportAdded;
     }
@@ -130,20 +130,20 @@
             if (report != null)
             {
                 // Incremental update if it matches current time filter
-                var cutoff = DateTime.UtcNow.AddHours(-selectedHours);
-                if (report.Timestamp >= cutoff && !reports.Any(r => r.Id == report.Id))
+                var cutoff = DateTime.UtcNow.AddHours(-_selectedHours);
+                if (report.Timestamp >= cutoff && !_reports.Any(r => r.Id == report.Id))
                 {
-                    reports.Insert(0, report);
-                    if (mapInitialized)
+                    _reports.Insert(0, report);
+                    if (_mapInitialized)
                     {
-                        await JSRuntime.InvokeVoidAsync("addSingleReport", report);
+                        await JsRuntime.InvokeVoidAsync("addSingleReport", report);
 
                         // Show toast if not from current user and we have our location
-                        if (report.ReporterIdentifier != userIdentifier && lastKnownPosition != null)
+                        if (report.ReporterIdentifier != _userIdentifier && _lastKnownPosition != null)
                         {
                             var distance = GeoUtils.CalculateDistance(
-                                lastKnownPosition.Coords.Latitude,
-                                lastKnownPosition.Coords.Longitude,
+                                _lastKnownPosition.Coords.Latitude,
+                                _lastKnownPosition.Coords.Longitude,
                                 report.Latitude,
                                 report.Longitude);
 
@@ -153,7 +153,7 @@
                                 Summary = L["New_Report"],
                                 Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
                                 Duration = 10000,
-                                Click = (m) => JSRuntime.InvokeVoidAsync("focusReport", report.Id)
+                                Click = (m) => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
                             });
                         }
                     }
@@ -172,13 +172,13 @@
     {
         if (firstRender)
         {
-            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
             
-            var isNew = await JSRuntime.InvokeAsync<bool>("isNewUser");
+            var isNew = await JsRuntime.InvokeAsync<bool>("isNewUser");
             
             await LoadUserAlerts();
             
-            objRef = DotNetObjectReference.Create(this);
+            _objRef = DotNetObjectReference.Create(this);
             
             double initialLat = 0;
             double initialLng = 0;
@@ -191,7 +191,7 @@
 
             if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
             {
-                selectedHours = h;
+                _selectedHours = h;
             }
 
             if (query.TryGetValue("reportId", out var reportIdStr))
@@ -240,9 +240,9 @@
             {
                 try
                 {
-                    isGettingLocation = true;
+                    _isGettingLocation = true;
                     StateHasChanged();
-                    var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                    var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
                     initialLat = position.Coords.Latitude;
                     initialLng = position.Coords.Longitude;
                 }
@@ -252,7 +252,7 @@
                 }
                 finally
                 {
-                    isGettingLocation = false;
+                    _isGettingLocation = false;
                     StateHasChanged();
                 }
             }
@@ -267,12 +267,12 @@
                 DELETE = L["DELETE"].Value
             };
 
-            await JSRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, reports, objRef, userAlerts, jsTranslations);
-            mapInitialized = true;
+            await JsRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, _reports, _objRef, _userAlerts, jsTranslations);
+            _mapInitialized = true;
 
             try
             {
-                locationWatchId = await JSRuntime.InvokeAsync<int>("watchLocation", objRef);
+                _locationWatchId = await JsRuntime.InvokeAsync<int>("watchLocation", _objRef);
             }
             catch (Exception ex)
             {
@@ -281,11 +281,11 @@
 
             if (focusReportId.HasValue)
             {
-                await JSRuntime.InvokeVoidAsync("focusReport", focusReportId.Value);
+                await JsRuntime.InvokeVoidAsync("focusReport", focusReportId.Value);
             }
             else if (initialRadius.HasValue)
             {
-                await JSRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
+                await JsRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
             }
 
             if (isNew)
@@ -306,36 +306,36 @@
 
     private async Task LoadReports()
     {
-        isBusy = true;
+        _isBusy = true;
         try
         {
-            reports = await LocationService.GetRecentReportsAsync(selectedHours);
-            if (mapInitialized)
+            _reports = await LocationService.GetRecentReportsAsync(_selectedHours);
+            if (_mapInitialized)
             {
-                await JSRuntime.InvokeVoidAsync("updateHeatMap", reports);
+                await JsRuntime.InvokeVoidAsync("updateHeatMap", _reports);
             }
         }
         finally
         {
-            isBusy = false;
+            _isBusy = false;
         }
     }
 
     private async Task LoadUserAlerts()
     {
-        if (!string.IsNullOrEmpty(userIdentifier))
+        if (!string.IsNullOrEmpty(_userIdentifier))
         {
-            userAlerts = await AlertService.GetActiveAlertsAsync(userIdentifier, onlyVerified: false);
-            if (mapInitialized)
+            _userAlerts = await AlertService.GetActiveAlertsAsync(_userIdentifier, onlyVerified: false);
+            if (_mapInitialized)
             {
-                await JSRuntime.InvokeVoidAsync("updateAlerts", userAlerts);
+                await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
             }
         }
     }
 
     private async Task OnSettingsClick()
     {
-        isBusy = true;
+        _isBusy = true;
         try
         {
             await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"],
@@ -344,13 +344,13 @@
         }
         finally
         {
-            isBusy = false;
+            _isBusy = false;
         }
     }
 
     private async Task OnHelpClick()
     {
-        isBusy = true;
+        _isBusy = true;
         try
         {
             await DialogService.OpenAsync<HelpDialog>(L["HELP"],
@@ -359,7 +359,7 @@
         }
         finally
         {
-            isBusy = false;
+            _isBusy = false;
         }
     }
 
@@ -367,7 +367,7 @@
 
     private async Task ShowAlertsDialog(double? lat = null, double? lng = null)
     {
-        isBusy = true;
+        _isBusy = true;
         try
         {
             var parameters = new Dictionary<string, object>();
@@ -378,7 +378,7 @@
                     parameters.Add("InitialLat", lat.Value);
                     parameters.Add("InitialLng", lng.Value);
                     
-                    var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                    var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
                     if (mapState != null)
                     {
                         parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
@@ -386,7 +386,7 @@
                 }
                 else
                 {
-                    var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                    var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
                     if (mapState != null)
                     {
                         parameters.Add("InitialLat", mapState.Lat);
@@ -408,18 +408,18 @@
 
             if (result is Alert alert)
             {
-                await JSRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
+                await JsRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
             }
         }
         finally
         {
-            isBusy = false;
+            _isBusy = false;
         }
     }
 
     private async Task OnDonateClick()
     {
-        isBusy = true;
+        _isBusy = true;
         try
         {
             await DialogService.OpenAsync<DonateDialog>(L["DONATE"],
@@ -428,23 +428,23 @@
         }
         finally
         {
-            isBusy = false;
+            _isBusy = false;
         }
     }
 
     private async Task OnReportClick()
     {
-        if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
+        if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)
         {
-            await ProcessReportWithLocation(lastKnownPosition);
+            await ProcessReportWithLocation(_lastKnownPosition);
             return;
         }
 
-        isGettingLocation = true;
+        _isGettingLocation = true;
         StateHasChanged();
         try
         {
-            var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
             await ProcessReportWithLocation(position);
         }
         catch (Exception ex)
@@ -453,7 +453,7 @@
             // Fallback: use map center instead of showing an error
             try
             {
-                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
                 if (mapState != null)
                 {
                     await ProcessReportWithLocation(new GeolocationPosition 
@@ -474,21 +474,21 @@
         }
         finally
         {
-            isGettingLocation = false;
+            _isGettingLocation = false;
             StateHasChanged();
         }
     }
 
     private async Task ProcessReportWithLocation(GeolocationPosition position)
     {
-        await JSRuntime.InvokeVoidAsync("showGhostPin", position.Coords.Latitude, position.Coords.Longitude);
+        await JsRuntime.InvokeVoidAsync("showGhostPin", position.Coords.Latitude, position.Coords.Longitude);
         try
         {
             var report = new LocationReport
             {
                 Latitude = position.Coords.Latitude,
                 Longitude = position.Coords.Longitude,
-                ReporterIdentifier = userIdentifier,
+                ReporterIdentifier = _userIdentifier,
                 ReporterLatitude = position.Coords.Latitude,
                 ReporterLongitude = position.Coords.Longitude
             };
@@ -497,25 +497,25 @@
         }
         finally
         {
-            await JSRuntime.InvokeVoidAsync("hideGhostPin");
+            await JsRuntime.InvokeVoidAsync("hideGhostPin");
         }
     }
 
     private async Task OnFollowMeChange(bool value)
     {
-        if (value && lastKnownPosition != null)
+        if (value && _lastKnownPosition != null)
         {
-            await JSRuntime.InvokeVoidAsync("setMapView", lastKnownPosition.Coords.Latitude, lastKnownPosition.Coords.Longitude, null);
-            searchAddress = await GeocodingService.ReverseGeocodeAsync(lastKnownPosition.Coords.Latitude, lastKnownPosition.Coords.Longitude);
+            await JsRuntime.InvokeVoidAsync("setMapView", _lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+            _searchAddress = await GeocodingService.ReverseGeocodeAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude);
         }
     }
 
     [JSInvokable]
     public void OnUserInteractedWithMap()
     {
-        if (followMe)
+        if (_followMe)
         {
-            followMe = false;
+            _followMe = false;
             StateHasChanged();
         }
     }
@@ -523,34 +523,34 @@
     [JSInvokable]
     public async Task OnMapMoveEnd(double lat, double lng)
     {
-        if (followMe) return;
+        if (_followMe) return;
 
-        searchAddress = await GeocodingService.ReverseGeocodeAsync(lat, lng);
+        _searchAddress = await GeocodingService.ReverseGeocodeAsync(lat, lng);
         StateHasChanged();
     }
 
     [JSInvokable]
     public async Task OnLocationUpdated(GeolocationPosition position)
     {
-        bool isFirstLocation = lastKnownPosition == null;
-        lastKnownPosition = position;
-        lastLocationUpdate = DateTime.UtcNow;
+        bool isFirstLocation = _lastKnownPosition == null;
+        _lastKnownPosition = position;
+        _lastLocationUpdate = DateTime.UtcNow;
 
-        if (mapInitialized)
+        if (_mapInitialized)
         {
-            await JSRuntime.InvokeVoidAsync("updateUserLocation", 
+            await JsRuntime.InvokeVoidAsync("updateUserLocation", 
                 position.Coords.Latitude, 
                 position.Coords.Longitude, 
                 position.Coords.Accuracy);
 
-            if (followMe || isFirstLocation)
+            if (_followMe || isFirstLocation)
             {
-                await JSRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+                await JsRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
                 
                 // Only reverse geocode if search box is empty or we are following
-                if (string.IsNullOrEmpty(searchAddress) || followMe)
+                if (string.IsNullOrEmpty(_searchAddress) || _followMe)
                 {
-                    searchAddress = await GeocodingService.ReverseGeocodeAsync(position.Coords.Latitude, position.Coords.Longitude);
+                    _searchAddress = await GeocodingService.ReverseGeocodeAsync(position.Coords.Latitude, position.Coords.Longitude);
                     StateHasChanged();
                 }
             }
@@ -561,26 +561,26 @@
     {
         if (!string.IsNullOrEmpty(args.Filter) && args.Filter.Length > 2)
         {
-            geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
         }
     }
 
     private async Task OnAddressSelected(object value)
     {
-        var selected = geocodingResults.FirstOrDefault(r => r.Address == value?.ToString());
+        var selected = _geocodingResults.FirstOrDefault(r => r.Address == value?.ToString());
         if (selected != null)
         {
-            searchAddress = selected.Address;
-            await JSRuntime.InvokeVoidAsync("setMapView", selected.Latitude, selected.Longitude, 2.0); // 2km radius
-            followMe = false; // Disable follow me if user manually searches
+            _searchAddress = selected.Address;
+            await JsRuntime.InvokeVoidAsync("setMapView", selected.Latitude, selected.Longitude, 2.0); // 2km radius
+            _followMe = false; // Disable follow me if user manually searches
         }
     }
 
     [JSInvokable]
     public async Task OnMapClick(double lat, double lng, bool force = false)
     {
-        followMe = false;
-        var zoom = await JSRuntime.InvokeAsync<double>("getZoomLevel");
+        _followMe = false;
+        var zoom = await JsRuntime.InvokeAsync<double>("getZoomLevel");
 
         // Find reports within a certain radius
         // - Marker clicks (force): 50m
@@ -600,12 +600,12 @@
             searchRadiusKm = 5.0;
         }
 
-        var nearbyReports = reports
+        var nearbyReports = _reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
             .OrderByDescending(r => r.Timestamp)
             .ToList();
 
-        var nearbyAlerts = userAlerts
+        var nearbyAlerts = _userAlerts
             .Where(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude) <= searchRadiusKm)
             .ToList();
 
@@ -614,7 +614,7 @@
             // If it's a single report, highlight it immediately for better feedback
             if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
             {
-                await JSRuntime.InvokeVoidAsync("selectReport", nearbyReports[0].Id);
+                await JsRuntime.InvokeVoidAsync("selectReport", nearbyReports[0].Id);
             }
 
             // Tapping on a blob or marker reveals area details
@@ -644,23 +644,23 @@
         // Long-press/right click reveals create report
         // We need user's current location to verify distance
         
-        await JSRuntime.InvokeVoidAsync("showGhostPin", lat, lng);
+        await JsRuntime.InvokeVoidAsync("showGhostPin", lat, lng);
         
         try
         {
             GeolocationPosition? position = null;
-            if (lastKnownPosition != null && (DateTime.UtcNow - lastLocationUpdate).TotalSeconds < 30)
+            if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)
             {
-                position = lastKnownPosition;
+                position = _lastKnownPosition;
             }
 
             if (position == null)
             {
-                isGettingLocation = true;
+                _isGettingLocation = true;
                 StateHasChanged();
                 try
                 {
-                    position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+                    position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
                 }
                 catch (Exception)
                 {
@@ -668,7 +668,7 @@
                 }
                 finally
                 {
-                    isGettingLocation = false;
+                    _isGettingLocation = false;
                     StateHasChanged();
                 }
             }
@@ -677,7 +677,7 @@
             {
                 Latitude = lat,
                 Longitude = lng,
-                ReporterIdentifier = userIdentifier,
+                ReporterIdentifier = _userIdentifier,
                 ReporterLatitude = position?.Coords.Latitude ?? lat,
                 ReporterLongitude = position?.Coords.Longitude ?? lng
             };
@@ -685,7 +685,7 @@
         }
         finally
         {
-            await JSRuntime.InvokeVoidAsync("hideGhostPin");
+            await JsRuntime.InvokeVoidAsync("hideGhostPin");
         }
     }
 
@@ -718,11 +718,11 @@
     public void Dispose()
     {
         LocationService.OnReportAdded -= HandleReportAdded;
-        if (locationWatchId != -1)
+        if (_locationWatchId != -1)
         {
-            _ = JSRuntime.InvokeVoidAsync("stopWatching", locationWatchId);
+            _ = JsRuntime.InvokeVoidAsync("stopWatching", _locationWatchId);
         }
-        objRef?.Dispose();
+        _objRef?.Dispose();
     }
 
     public class GeolocationPosition

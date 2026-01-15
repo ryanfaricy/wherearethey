@@ -20,7 +20,7 @@
 
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_2_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">
-            @((MarkupString)string.Format(L["Privacy_2_Desc"], settings.ReportExpiryHours))
+            @((MarkupString)string.Format(L["Privacy_2_Desc"], _settings.ReportExpiryHours))
         </RadzenText>
 
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["Privacy_3_Title"]</RadzenText>
@@ -40,10 +40,10 @@
 </RadzenStack>
 
 @code {
-    private SystemSettings settings = new();
+    private SystemSettings _settings = new();
 
     protected override async Task OnInitializedAsync()
     {
-        settings = await SettingsService.GetSettingsAsync();
+        _settings = await SettingsService.GetSettingsAsync();
     }
 }

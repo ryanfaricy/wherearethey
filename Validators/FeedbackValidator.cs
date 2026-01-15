@@ -13,14 +13,14 @@ public class FeedbackValidator : AbstractValidator<Feedback>
     public FeedbackValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
-        IStringLocalizer<App> L)
+        IStringLocalizer<App> l)
     {
         RuleFor(x => x.UserIdentifier)
-            .NotEmpty().WithMessage(L["Identifier_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"]);
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
-            .WithMessage(L["Feedback_Links_Error"]);
+            .WithMessage(l["Feedback_Links_Error"]);
 
         RuleFor(x => x)
             .CustomAsync(async (feedback, context, cancellation) =>
@@ -36,7 +36,7 @@ public class FeedbackValidator : AbstractValidator<Feedback>
 
                 if (hasRecent)
                 {
-                    context.AddFailure(nameof(feedback.UserIdentifier), string.Format(L["Feedback_Cooldown_Error"], settings.ReportCooldownMinutes));
+                    context.AddFailure(nameof(feedback.UserIdentifier), string.Format(l["Feedback_Cooldown_Error"], settings.ReportCooldownMinutes));
                 }
             });
     }

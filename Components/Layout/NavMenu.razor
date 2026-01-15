@@ -5,8 +5,7 @@
 @using Microsoft.Extensions.Localization
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
-@inject ILocationService LocationService
+@inject IJSRuntime JsRuntime
 @inject ISettingsService SettingsService
 @inject IStringLocalizer<App> L
 
@@ -14,26 +13,26 @@
     <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" />
     <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
     <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
-    @if (systemSettings.DonationsEnabled)
+    @if (_systemSettings.DonationsEnabled)
     {
         <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
     }
 </RadzenPanelMenu>
 
 @code {
-    private string? userIdentifier;
-    private SystemSettings systemSettings = new();
+    private string? _userIdentifier;
+    private SystemSettings _systemSettings = new();
 
     protected override async Task OnInitializedAsync()
     {
-        systemSettings = await SettingsService.GetSettingsAsync();
+        _systemSettings = await SettingsService.GetSettingsAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            userIdentifier = await JSRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
         }
     }
 
@@ -41,12 +40,12 @@
     {
         try
         {
-            var position = await JSRuntime.InvokeAsync<GeolocationPosition>("getLocation");
+            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
             var report = new LocationReport
             {
                 Latitude = position.Coords.Latitude,
                 Longitude = position.Coords.Longitude,
-                ReporterIdentifier = userIdentifier,
+                ReporterIdentifier = _userIdentifier,
                 ReporterLatitude = position.Coords.Latitude,
                 ReporterLongitude = position.Coords.Longitude
             };
@@ -61,14 +60,14 @@
             LocationReport? fallbackReport = null;
             try
             {
-                var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
                 if (mapState != null)
                 {
                     fallbackReport = new LocationReport
                     {
                         Latitude = mapState.Lat,
                         Longitude = mapState.Lng,
-                        ReporterIdentifier = userIdentifier,
+                        ReporterIdentifier = _userIdentifier,
                         ReporterLatitude = mapState.Lat,
                         ReporterLongitude = mapState.Lng
                     };
@@ -76,10 +75,7 @@
             }
             catch { /* Map might not be available */ }
 
-            if (fallbackReport == null)
-            {
-                fallbackReport = new LocationReport { ReporterIdentifier = userIdentifier };
-            }
+            fallbackReport ??= new LocationReport { ReporterIdentifier = _userIdentifier };
 
             await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
                 new Dictionary<string, object> { { "report", fallbackReport } },
@@ -92,7 +88,7 @@
         var parameters = new Dictionary<string, object>();
         try
         {
-            var mapState = await JSRuntime.InvokeAsync<MapState>("getMapState");
+            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
             if (mapState != null)
             {
                 parameters.Add("InitialLat", mapState.Lat);

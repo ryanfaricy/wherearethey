@@ -56,7 +56,7 @@
             <RadzenText TextStyle="TextStyle.Body2">@L["Alerts_Desc"]</RadzenText>
         </RadzenStack>
 
-        @if (settings.DonationsEnabled)
+        @if (_settings.DonationsEnabled)
         {
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
                 <RadzenIcon Icon="volunteer_activism" Style="color: var(--rz-success);" />
@@ -106,9 +106,9 @@
         <RadzenText TextStyle="TextStyle.Subtitle2" Style="font-weight: bold;">@L["AntiSpam_Limits_Title"]</RadzenText>
         <RadzenText TextStyle="TextStyle.Body2">@L["AntiSpam_Limits_Desc"]</RadzenText>
         <RadzenStack Gap="0.25rem" Class="rz-pl-4">
-            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Limit_Reports"].Value, settings.ReportCooldownMinutes)</RadzenText>
-            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Limit_Alerts"].Value, settings.AlertLimitCount, settings.ReportCooldownMinutes)</RadzenText>
-            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Report_Expiry"].Value, settings.ReportExpiryHours)</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Limit_Reports"].Value, _settings.ReportCooldownMinutes)</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Limit_Alerts"].Value, _settings.AlertLimitCount, _settings.ReportCooldownMinutes)</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">• @string.Format(L["Report_Expiry"].Value, _settings.ReportExpiryHours)</RadzenText>
         </RadzenStack>
     </RadzenStack>
 
@@ -126,11 +126,11 @@
 </RadzenStack>
 
 @code {
-    private SystemSettings settings = new();
+    private SystemSettings _settings = new();
 
     protected override async Task OnInitializedAsync()
     {
-        settings = await SettingsService.GetSettingsAsync();
+        _settings = await SettingsService.GetSettingsAsync();
     }
 
     private async Task ShowPrivacyPolicy()

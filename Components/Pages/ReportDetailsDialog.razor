@@ -105,7 +105,7 @@
     </RadzenTabs>
 
     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-3">
-        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close(alertDeleted))" ButtonStyle="ButtonStyle.Primary" />
+        <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close(_alertDeleted))" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
 
@@ -113,7 +113,7 @@
     [Parameter] public List<LocationReport> Reports { get; set; } = new();
     [Parameter] public List<Alert> Alerts { get; set; } = new();
 
-    private bool alertDeleted = false;
+    private bool _alertDeleted = false;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
@@ -128,7 +128,7 @@
         {
             await AlertService.DeactivateAlertAsync(alert.Id);
             Alerts.Remove(alert);
-            alertDeleted = true;
+            _alertDeleted = true;
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
             StateHasChanged();
         }

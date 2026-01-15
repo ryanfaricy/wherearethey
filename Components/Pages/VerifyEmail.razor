@@ -7,19 +7,19 @@
     <div class="row justify-content-center">
         <div class="col-md-6 text-center">
             <RadzenCard>
-                @if (isVerifying)
+                @if (_isVerifying)
                 {
                     <RadzenProgressBar Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
                     <RadzenText TextStyle="TextStyle.H6" Class="mt-3">Verifying your email...</RadzenText>
                 }
-                else if (isVerified)
+                else if (_isVerified)
                 {
                     <RadzenIcon Icon="check_circle" Style="font-size: 4rem; color: var(--rz-success);" />
                     <RadzenText TextStyle="TextStyle.H5" Class="mt-3" Style="font-weight: bold;">Email Verified!</RadzenText>
                     <RadzenText TextStyle="TextStyle.Body1" Class="mt-2">Your email has been successfully verified. You will now receive alerts for your signed-up areas.</RadzenText>
                     <RadzenButton Text="GO TO HEAT MAP" Click="@(() => NavigationManager.NavigateTo("/"))" ButtonStyle="ButtonStyle.Primary" Class="mt-4" />
                 }
-                else if (isError)
+                else if (_isError)
                 {
                     <RadzenIcon Icon="error" Style="font-size: 4rem; color: var(--rz-danger);" />
                     <RadzenText TextStyle="TextStyle.H5" Class="mt-3" Style="font-weight: bold;">Verification Failed</RadzenText>
@@ -42,15 +42,15 @@
     [SupplyParameterFromQuery]
     public string? Token { get; set; }
 
-    private bool isVerifying = false;
-    private bool isVerified = false;
-    private bool isError = false;
+    private bool _isVerifying = false;
+    private bool _isVerified = false;
+    private bool _isError = false;
 
     protected override void OnInitialized()
     {
         if (string.IsNullOrEmpty(Token))
         {
-            isError = true;
+            _isError = true;
         }
     }
 
@@ -58,25 +58,25 @@
     {
         if (string.IsNullOrEmpty(Token)) return;
 
-        isVerifying = true;
-        isError = false;
+        _isVerifying = true;
+        _isError = false;
         
         try
         {
-            isVerified = await AlertService.VerifyEmailAsync(Token);
-            if (!isVerified)
+            _isVerified = await AlertService.VerifyEmailAsync(Token);
+            if (!_isVerified)
             {
-                isError = true;
+                _isError = true;
             }
         }
         catch
         {
-            isVerified = false;
-            isError = true;
+            _isVerified = false;
+            _isError = true;
         }
         finally
         {
-            isVerifying = false;
+            _isVerifying = false;
         }
     }
 }

@@ -48,7 +48,7 @@ builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
     options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
-        new[] { "image/svg+xml" });
+        ["image/svg+xml"]);
 });
 builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
 {
@@ -73,11 +73,10 @@ builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
 });
 builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
-    new FallbackEmailService(new IEmailService[] 
-    {
+    new FallbackEmailService([
         sp.GetRequiredService<MicrosoftGraphEmailService>(),
         sp.GetRequiredService<SmtpEmailService>()
-    }, sp.GetRequiredService<ILogger<FallbackEmailService>>()));
+    ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
 // Add DbContextFactory with PostgreSQL
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");

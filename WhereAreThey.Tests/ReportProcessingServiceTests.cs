@@ -45,7 +45,7 @@ public class ReportProcessingServiceTests
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
         _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
-            .ReturnsAsync(new List<Alert> { alert });
+            .ReturnsAsync([alert]);
         _alertServiceMock.Setup(a => a.DecryptEmail(alert.EncryptedEmail)).Returns("test@example.com");
         _geocodingServiceMock.Setup(g => g.ReverseGeocodeAsync(report.Latitude, report.Longitude))
             .ReturnsAsync("123 Test St");
