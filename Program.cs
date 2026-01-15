@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
@@ -124,6 +125,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Si
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
+builder.Services.AddSingleton<UserConnectionService>();
+builder.Services.AddScoped<CircuitHandler, UserConnectionCircuitHandler>();
 builder.Services.AddScoped<IAlertService, AlertService>();
 builder.Services.AddScoped<IDonationService, DonationService>();
 builder.Services.AddScoped<IFeedbackService, FeedbackService>();
