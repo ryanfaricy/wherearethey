@@ -93,7 +93,11 @@
                 <RadzenCard Class="rz-shadow-10">
                     <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
                         <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-                        <RadzenText TextStyle="TextStyle.Body1">Acquiring GPS Location...</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Body1">@L["Acquiring_Location"]</RadzenText>
+                        @if (_showManualPick)
+                        {
+                            <RadzenButton Text="@L["Manual_Pick"]" Click="@HandleManualPick" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Size="ButtonSize.Small" />
+                        }
                     </RadzenStack>
                 </RadzenCard>
             </RadzenStack>
@@ -108,6 +112,8 @@
     private SystemSettings _systemSettings = new();
     private bool _mapInitialized;
     private bool _isGettingLocation;
+    private bool _showManualPick;
+    private TaskCompletionSource<GeolocationPosition?>? _manualPickTcs;
     private string? _userIdentifier;
     private DotNetObjectReference<Home>? _objRef;
     private int _locationWatchId = -1;
@@ -304,22 +310,11 @@
 
             if (initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {
-                try
+                var position = await GetLocationWithFallback(allowManual: false);
+                if (position != null)
                 {
-                    _isGettingLocation = true;
-                    StateHasChanged();
-                    var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
                     initialLat = position.Coords.Latitude;
                     initialLng = position.Coords.Longitude;
-                }
-                catch (Exception)
-                {
-                    // Fallback to (0,0) if location access denied or fails
-                }
-                finally
-                {
-                    _isGettingLocation = false;
-                    StateHasChanged();
                 }
             }
 
@@ -474,16 +469,14 @@
             return;
         }
 
-        _isGettingLocation = true;
-        StateHasChanged();
-        try
+        var position = await GetLocationWithFallback(allowManual: true);
+        if (position != null)
         {
-            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
             await ProcessReportWithLocation(position);
         }
-        catch (Exception ex)
+        else
         {
-            Logger.LogWarning(ex, "Failed to get browser location, attempting fallback to map center");
+            Logger.LogWarning("Failed to get browser location, attempting fallback to map center");
             // Fallback: use map center instead of showing an error
             try
             {
@@ -497,19 +490,14 @@
                 }
                 else
                 {
-                    NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", ex.Message);
+                    NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", "Could not determine map center");
                 }
             }
             catch (Exception exFallback)
             {
                 Logger.LogError(exFallback, "Fallback to map center also failed");
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", ex.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", "An unexpected error occurred");
             }
-        }
-        finally
-        {
-            _isGettingLocation = false;
-            StateHasChanged();
         }
     }
 
@@ -690,21 +678,7 @@
 
             if (position == null)
             {
-                _isGettingLocation = true;
-                StateHasChanged();
-                try
-                {
-                    position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-                }
-                catch (Exception)
-                {
-                    // Fallback handled below
-                }
-                finally
-                {
-                    _isGettingLocation = false;
-                    StateHasChanged();
-                }
+                position = await GetLocationWithFallback(allowManual: true);
             }
 
             var report = new LocationReport
@@ -746,6 +720,73 @@
         if (result == true)
         {
             await LoadReports();
+        }
+    }
+
+    private async Task HandleManualPick()
+    {
+        try
+        {
+            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            if (mapState != null)
+            {
+                _manualPickTcs?.TrySetResult(new GeolocationPosition 
+                { 
+                    Coords = new GeolocationCoordinates { Latitude = mapState.Lat, Longitude = mapState.Lng } 
+                });
+            }
+            else
+            {
+                _manualPickTcs?.TrySetResult(null);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get map state for manual pick");
+            _manualPickTcs?.TrySetResult(null);
+        }
+    }
+
+    private async Task<GeolocationPosition?> GetLocationWithFallback(bool allowManual = true)
+    {
+        _isGettingLocation = true;
+        _showManualPick = false;
+        _manualPickTcs = new TaskCompletionSource<GeolocationPosition?>();
+        StateHasChanged();
+
+        using var cts = new CancellationTokenSource();
+        var locationTask = JsRuntime.InvokeAsync<GeolocationPosition>("getLocation").AsTask();
+        var timerTask = Task.Delay(7000, cts.Token);
+
+        try
+        {
+            var firstTask = await Task.WhenAny(locationTask, timerTask);
+            if (firstTask == timerTask && !locationTask.IsCompleted)
+            {
+                _showManualPick = allowManual;
+                StateHasChanged();
+
+                var secondTask = await Task.WhenAny(locationTask, _manualPickTcs.Task);
+                if (secondTask == _manualPickTcs.Task)
+                {
+                    cts.Cancel();
+                    return await _manualPickTcs.Task;
+                }
+            }
+
+            cts.Cancel();
+            return await locationTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get location");
+            return null;
+        }
+        finally
+        {
+            _isGettingLocation = false;
+            _showManualPick = false;
+            StateHasChanged();
         }
     }
 

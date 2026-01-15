@@ -556,4 +556,7 @@
   <data name="Something_Went_Wrong_Detail" xml:space="preserve">
     <value>The application encountered an error and may not work as expected.</value>
   </data>
+  <data name="Manual_Pick" xml:space="preserve">
+    <value>Manual Pick</value>
+  </data>
 </root>

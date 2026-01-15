@@ -532,4 +532,7 @@
   <data name="Something_Went_Wrong_Detail" xml:space="preserve">
     <value>La aplicación encontró un error y es posible que no funcione como se esperaba.</value>
   </data>
+  <data name="Manual_Pick" xml:space="preserve">
+    <value>Selección Manual</value>
+  </data>
 </root>
