@@ -89,3 +89,35 @@ window.isNewUser = function () {
     }
     return isNew;
 };
+
+window.copyUserIdentifier = function () {
+    const id = localStorage.getItem('user-identifier');
+    if (id) {
+        if (!navigator.clipboard) {
+            const textArea = document.createElement("textarea");
+            textArea.value = id;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+            return;
+        }
+        navigator.clipboard.writeText(id).catch(err => {
+            console.error('Failed to copy ID: ', err);
+            const textArea = document.createElement("textarea");
+            textArea.value = id;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (fallbackErr) {
+                console.error('Fallback copy failed', fallbackErr);
+            }
+            document.body.removeChild(textArea);
+        });
+    }
+};

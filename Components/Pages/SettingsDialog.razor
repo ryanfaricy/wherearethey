@@ -54,7 +54,7 @@
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
             <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
-            <RadzenButton Icon="content_copy" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
+            <RadzenButton Icon="content_copy" onclick="copyUserIdentifier()" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
             <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
         </RadzenStack>
 
@@ -169,9 +169,8 @@
         _objRef?.Dispose();
     }
 
-    private async Task CopyId()
+    private void CopyId()
     {
-        await JsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _userIdentifier);
         NotificationService.Notify(NotificationSeverity.Info, L["ID_copied"]);
     }
 
