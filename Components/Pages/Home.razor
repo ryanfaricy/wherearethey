@@ -22,7 +22,7 @@
 
 <RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="@(_isMobile ? "4px" : "0.5rem")" Class="@(_isMobile ? "rz-p-1 rz-background-color-primary-lighter" : "rz-p-2 rz-background-color-primary-lighter")" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="@(_isMobile ? "4px" : "0.5rem")" Class="@(_isMobile ? "rz-p-1 rz-background-color-primary-lighter main-toolbar" : "rz-p-2 rz-background-color-primary-lighter main-toolbar")" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10; touch-action: none;">
         <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
         <RadzenButton Text="@(_isMobile ? "" : L["ALERTS"])" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         @if (_systemSettings.DonationsEnabled)

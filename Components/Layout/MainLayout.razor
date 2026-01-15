@@ -3,7 +3,7 @@
 @inject IJSRuntime JsRuntime
 @inherits LayoutComponentBase
 
-<RadzenLayout style="position: relative">
+<RadzenLayout Class="rz-vh-100" Style="position: relative; overflow: hidden;">
     <RadzenHeader Style="z-index: 1002;">
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
             <RadzenSidebarToggle Click="@(() => _sidebarExpanded = !_sidebarExpanded)" />
@@ -13,7 +13,7 @@
     <RadzenSidebar Responsive="false" @bind-Expanded="@_sidebarExpanded" style="position: absolute; z-index: 1001; width: 250px; top: 0; bottom: 0; left: 0;">
         <NavMenu />
     </RadzenSidebar>
-    <RadzenBody Style="position: relative">
+    <RadzenBody Style="position: relative; overflow-y: auto;">
         <GlobalErrorBoundary>
             @Body
         </GlobalErrorBoundary>
