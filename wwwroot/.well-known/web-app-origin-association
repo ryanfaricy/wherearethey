@@ -1,0 +1,10 @@
+{
+  "web_apps": [
+    {
+      "manifest": "https://www.aretheyhere.com/manifest.json",
+      "details": {
+        "paths": ["*"]
+      }
+    }
+  ]
+}

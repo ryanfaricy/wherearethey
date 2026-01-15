@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 using System.Globalization;
 using System.Threading.RateLimiting;
 using FluentValidation;
@@ -266,6 +267,16 @@ app.MapGet("/api/map/proxy", async (string? reportId, ILocationService locationS
     var stream = await response.Content.ReadAsStreamAsync();
     return Results.Stream(stream, contentType);
 }).RequireRateLimiting("MapProxyPolicy");
+
+// App Association Files for Universal Links / App Links
+app.MapGet("/.well-known/apple-app-site-association", (IWebHostEnvironment env) => 
+    Results.File(Path.Combine(env.WebRootPath, ".well-known", "apple-app-site-association"), "application/json"));
+
+app.MapGet("/.well-known/assetlinks.json", (IWebHostEnvironment env) => 
+    Results.File(Path.Combine(env.WebRootPath, ".well-known", "assetlinks.json"), "application/json"));
+
+app.MapGet("/.well-known/web-app-origin-association", (IWebHostEnvironment env) => 
+    Results.File(Path.Combine(env.WebRootPath, ".well-known", "web-app-origin-association"), "application/json"));
 
 app.Run();
 

@@ -6,6 +6,21 @@
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "display_override": [
+    "standalone",
+    "window-controls-overlay"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "url_handlers": [
+    {
+      "origin": "https://www.aretheyhere.com"
+    },
+    {
+      "origin": "https://aretheyhere.com"
+    }
+  ],
   "background_color": "#ffffff",
   "theme_color": "#f44336",
   "icons": [
