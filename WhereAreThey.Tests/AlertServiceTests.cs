@@ -378,6 +378,153 @@ public class AlertServiceTests
         Assert.Null(result);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void DecryptEmail_ShouldReturnNullForNullOrEmptyInput(string? input)
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        
+        // Act
+        var result = service.DecryptEmail(input);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public void ComputeHash_ShouldBeConsistentAndNormalized()
+    {
+        // Arrange
+        var email1 = "Test@Example.Com ";
+        var email2 = "test@example.com";
+
+        // Act
+        var hash1 = AlertService.ComputeHash(email1);
+        var hash2 = AlertService.ComputeHash(email2);
+
+        // Assert
+        Assert.Equal(hash1, hash2);
+        Assert.Equal(64, hash1.Length); // SHA256 hex string
+    }
+
+    [Fact]
+    public async Task VerifyEmailAsync_ShouldHandleInvalidToken()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+
+        // Act
+        var result = await service.VerifyEmailAsync("non-existent-token");
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task VerifyEmailAsync_ShouldMarkAlertsAsVerified()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var email = "verify@example.com";
+        var emailHash = AlertService.ComputeHash(email);
+        var token = "secret-token";
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.EmailVerifications.Add(new EmailVerification
+            {
+                EmailHash = emailHash,
+                Token = token,
+                CreatedAt = DateTime.UtcNow
+            });
+            context.Alerts.Add(new Alert
+            {
+                EmailHash = emailHash,
+                IsVerified = false,
+                Latitude = 0, Longitude = 0, RadiusKm = 1
+            });
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.VerifyEmailAsync(token);
+
+        // Assert
+        Assert.True(result);
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var alert = await context.Alerts.FirstAsync(a => a.EmailHash == emailHash);
+            Assert.True(alert.IsVerified);
+            var verification = await context.EmailVerifications.FirstAsync(v => v.EmailHash == emailHash);
+            Assert.NotNull(verification.VerifiedAt);
+        }
+    }
+
+    [Fact]
+    public async Task GetMatchingAlerts_ShouldNotReturnUnverifiedAlerts()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+
+        await using (var context = new ApplicationDbContext(options))
+        {
+            context.Alerts.Add(new Alert
+            {
+                Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0,
+                IsActive = true, IsVerified = false,
+                CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+            });
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var matches = await service.GetMatchingAlertsAsync(40.0, -74.0);
+
+        // Assert
+        Assert.Empty(matches);
+    }
+
+    [Fact]
+    public async Task CreateAlert_ShouldUseExistingVerification_WhenEmailAlreadyVerified()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var email = "already-verified@example.com";
+        var emailHash = AlertService.ComputeHash(email);
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.EmailVerifications.Add(new EmailVerification
+            {
+                EmailHash = emailHash,
+                Token = "token",
+                VerifiedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow.AddDays(-1)
+            });
+            await context.SaveChangesAsync();
+        }
+
+        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1, UserIdentifier = "verified-user" };
+
+        // Act
+        var result = await service.CreateAlertAsync(alert, email);
+
+        // Assert
+        Assert.True(result.IsVerified);
+    }
+
     [Fact]
     public async Task GetAlertByExternalId_ShouldReturnCorrectAlert()
     {
