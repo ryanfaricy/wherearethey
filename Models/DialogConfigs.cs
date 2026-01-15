@@ -13,6 +13,8 @@ namespace WhereAreThey.Models
             CloseDialogOnOverlayClick = false,
             Draggable = false,
             Resizable = false,
+            ShowClose = true,
+            ShowTitle = true,
             Width = "500px",
         };
     }
