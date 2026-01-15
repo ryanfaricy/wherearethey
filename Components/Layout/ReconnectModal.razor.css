@@ -45,6 +45,12 @@
     transform: translateY(20px) scale(0.9);
 }
 
+[data-theme="dark"] #components-reconnect-modal {
+    background-color: rgba(30, 30, 30, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
 #components-reconnect-modal[open] {
     display: block;
     opacity: 1;
@@ -69,6 +75,10 @@
     font-weight: 500;
     color: #444;
     white-space: nowrap;
+}
+
+[data-theme="dark"] #components-reconnect-modal p {
+    color: #eee;
 }
 
 #components-reconnect-modal button {

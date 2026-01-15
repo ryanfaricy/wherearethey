@@ -9,6 +9,27 @@
     <meta name="description" content="Live anonymous incident reporting and heat map." />
     <base href="/" />
     <ResourcePreloader />
+    <script>
+        // Pre-render theme detection to prevent flicker
+        (function() {
+            const stored = localStorage.getItem('app-theme');
+            let actualTheme = 'light';
+            if (!stored || stored === 'System' || stored === '2') {
+                actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            } else if (stored === 'Dark' || stored === '1') {
+                actualTheme = 'dark';
+            }
+            document.documentElement.setAttribute('data-theme', actualTheme);
+            
+            // Apply immediate background color to avoid white flash
+            const style = document.createElement('style');
+            style.id = 'theme-immediate-style';
+            style.textContent = actualTheme === 'dark' 
+                ? 'html, body { background-color: #121212 !important; color: white !important; }' 
+                : 'html, body { background-color: #ffffff !important; color: black !important; }';
+            document.head.appendChild(style);
+        })();
+    </script>
     <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["WhereAreThey.styles.css"]" />
@@ -21,20 +42,14 @@
     <script src="theme.js"></script>
     <script src="time-utils.js"></script>
     <script>
-        // Immediate theme application to prevent flicker
+        // Secondary theme application for Radzen links
         (function() {
-            const stored = localStorage.getItem('app-theme');
-            let actualTheme = 'light';
-            if (!stored || stored === 'System' || stored === '2') {
-                actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            } else if (stored === 'Dark' || stored === '1') {
-                actualTheme = 'dark';
-            }
-            
-            document.documentElement.setAttribute('data-theme', actualTheme);
-            if (actualTheme === 'dark') {
-                document.getElementById('radzen-base-theme').href = '_content/Radzen.Blazor/css/material-dark-base.css';
-                document.getElementById('radzen-theme').href = '_content/Radzen.Blazor/css/material-dark.css';
+            const theme = document.documentElement.getAttribute('data-theme');
+            if (theme === 'dark') {
+                const baseTheme = document.getElementById('radzen-base-theme');
+                const themeLink = document.getElementById('radzen-theme');
+                if (baseTheme) baseTheme.href = '_content/Radzen.Blazor/css/material-dark-base.css';
+                if (themeLink) themeLink.href = '_content/Radzen.Blazor/css/material-dark.css';
             }
         })();
     </script>

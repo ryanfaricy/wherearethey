@@ -2,6 +2,19 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* Global Theme Fallbacks to prevent flicker */
+html[data-theme="dark"], 
+html[data-theme="dark"] body {
+    background-color: #121212;
+    color: white;
+}
+
+html[data-theme="light"], 
+html[data-theme="light"] body {
+    background-color: #ffffff;
+    color: black;
+}
+
 a, .btn-link {
     color: #006bb7;
 }

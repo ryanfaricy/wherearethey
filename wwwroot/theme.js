@@ -16,11 +16,23 @@ window.themeManager = {
         const themeLink = document.getElementById('radzen-theme');
         
         if (actualTheme === 'dark') {
-            baseThemeLink.href = '_content/Radzen.Blazor/css/material-dark-base.css';
-            themeLink.href = '_content/Radzen.Blazor/css/material-dark.css';
+            const darkBase = '_content/Radzen.Blazor/css/material-dark-base.css';
+            const darkTheme = '_content/Radzen.Blazor/css/material-dark.css';
+            if (baseThemeLink && !baseThemeLink.getAttribute('href').includes(darkBase)) {
+                baseThemeLink.href = darkBase;
+            }
+            if (themeLink && !themeLink.getAttribute('href').includes(darkTheme)) {
+                themeLink.href = darkTheme;
+            }
         } else {
-            baseThemeLink.href = '_content/Radzen.Blazor/css/material-base.css';
-            themeLink.href = '_content/Radzen.Blazor/css/material.css';
+            const lightBase = '_content/Radzen.Blazor/css/material-base.css';
+            const lightTheme = '_content/Radzen.Blazor/css/material.css';
+            if (baseThemeLink && !baseThemeLink.getAttribute('href').includes(lightBase)) {
+                baseThemeLink.href = lightBase;
+            }
+            if (themeLink && !themeLink.getAttribute('href').includes(lightTheme)) {
+                themeLink.href = lightTheme;
+            }
         }
         
         // Notify leaflet if it exists
@@ -35,6 +47,15 @@ window.themeManager = {
     init: function () {
         const theme = this.getStoredTheme();
         this.setTheme(theme);
+        
+        // Remove immediate style now that Radzen themes are being loaded
+        // We delay this slightly to ensure the browser has time to parse the new Radzen CSS
+        setTimeout(() => {
+            const immediateStyle = document.getElementById('theme-immediate-style');
+            if (immediateStyle) {
+                immediateStyle.remove();
+            }
+        }, 500);
         
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
             const stored = localStorage.getItem('app-theme');
