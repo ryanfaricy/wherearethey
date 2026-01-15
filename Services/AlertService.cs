@@ -210,7 +210,7 @@ public class AlertService(
 
         alert.IsActive = false;
         await context.SaveChangesAsync();
-        eventService.NotifyAlertDeleted(id);
+        eventService.NotifyAlertUpdated(alert);
         return true;
     }
 

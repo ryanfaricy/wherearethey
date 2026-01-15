@@ -1,14 +1,18 @@
+using Moq;
 using WhereAreThey.Services;
+using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests;
 
 public class AppThemeServiceTests
 {
+    private readonly Mock<IEventService> _mockEventService = new();
+
     [Fact]
     public void SetTheme_ShouldUpdateCurrentTheme()
     {
         // Arrange
-        var service = new AppThemeService();
+        var service = new AppThemeService(_mockEventService.Object);
 
         // Act
         service.SetTheme(AppTheme.Dark);
@@ -21,30 +25,27 @@ public class AppThemeServiceTests
     public void SetTheme_ShouldTriggerEventWhenThemeChanges()
     {
         // Arrange
-        var service = new AppThemeService();
-        var eventTriggered = false;
-        service.OnThemeChanged += () => eventTriggered = true;
+        var service = new AppThemeService(_mockEventService.Object);
 
         // Act
         service.SetTheme(AppTheme.Dark);
 
         // Assert
-        Assert.True(eventTriggered);
+        _mockEventService.Verify(x => x.NotifyThemeChanged(), Times.Once);
     }
 
     [Fact]
     public void SetTheme_ShouldNotTriggerEventWhenThemeIsSame()
     {
         // Arrange
-        var service = new AppThemeService();
+        var service = new AppThemeService(_mockEventService.Object);
         service.SetTheme(AppTheme.Light);
-        var eventTriggered = false;
-        service.OnThemeChanged += () => eventTriggered = true;
+        _mockEventService.Invocations.Clear();
 
         // Act
         service.SetTheme(AppTheme.Light);
 
         // Assert
-        Assert.False(eventTriggered);
+        _mockEventService.Verify(x => x.NotifyThemeChanged(), Times.Never);
     }
 }

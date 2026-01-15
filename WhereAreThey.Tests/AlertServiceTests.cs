@@ -633,7 +633,7 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result);
-        _eventServiceMock.Verify(x => x.NotifyAlertDeleted(alert.Id), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyAlertUpdated(It.Is<Alert>(a => a.Id == alert.Id)), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())
         {

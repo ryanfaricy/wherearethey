@@ -306,8 +306,8 @@
     protected override void OnInitialized()
     {
         _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
-        UserConnectionService.OnConnectionCountChanged += HandleConnectionCountChanged;
         
+        EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
         EventService.OnReportAdded += HandleReportAdded;
         EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
@@ -315,6 +315,7 @@
         EventService.OnDonationAdded += HandleDonationAdded;
         EventService.OnDonationUpdated += HandleDonationUpdated;
         EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertUpdated += HandleAlertUpdated;
         EventService.OnAlertDeleted += HandleAlertDeleted;
         EventService.OnSettingsChanged += HandleSettingsChanged;
         EventService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
@@ -451,6 +452,20 @@
         });
     }
 
+    private void HandleAlertUpdated(Alert alert)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var existing = _alerts.FirstOrDefault(a => a.Id == alert.Id);
+            if (existing != null)
+            {
+                var index = _alerts.IndexOf(existing);
+                _alerts[index] = alert;
+                StateHasChanged();
+            }
+        });
+    }
+
     private void HandleAlertDeleted(int id)
     {
         if (!_isAuthenticated) return;
@@ -466,7 +481,7 @@
 
     public void Dispose()
     {
-        UserConnectionService.OnConnectionCountChanged -= HandleConnectionCountChanged;
+        EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
         
         EventService.OnReportAdded -= HandleReportAdded;
         EventService.OnReportDeleted -= HandleReportDeleted;
@@ -475,6 +490,7 @@
         EventService.OnDonationAdded -= HandleDonationAdded;
         EventService.OnDonationUpdated -= HandleDonationUpdated;
         EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertUpdated -= HandleAlertUpdated;
         EventService.OnAlertDeleted -= HandleAlertDeleted;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
         EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
