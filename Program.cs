@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
+using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 
@@ -79,6 +81,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WhereAreThey.Program).Assembly));
 
 // Add Email services
+builder.Services.Configure<AppOptions>(builder.Configuration);
+builder.Services.Configure<SquareOptions>(builder.Configuration.GetSection("Square"));
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
 builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
@@ -255,7 +259,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IConfiguration configuration, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> appOptions, IHttpClientFactory httpClientFactory) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
 
@@ -273,7 +277,7 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
     var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);
     
     // Use the BaseUrl as Referer as requested
-    var referer = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
+    var referer = appOptions.Value.BaseUrl;
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);

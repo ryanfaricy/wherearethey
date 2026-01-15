@@ -1,4 +1,5 @@
 using System.Globalization;
+using Microsoft.Extensions.Options;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
@@ -6,7 +7,7 @@ namespace WhereAreThey.Services;
 
 public class ReportProcessingService(
     IServiceProvider serviceProvider,
-    IConfiguration configuration,
+    IOptions<AppOptions> appOptions,
     ISettingsService settingsService,
     ILocationService locationService,
     ILogger<ReportProcessingService> logger) : IReportProcessingService
@@ -23,7 +24,7 @@ public class ReportProcessingService(
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
-            var baseUrl = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
+            var baseUrl = appOptions.Value.BaseUrl;
 
             // Approximate address
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);

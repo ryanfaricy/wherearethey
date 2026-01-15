@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -10,7 +10,6 @@ namespace WhereAreThey.Tests;
 
 public class ReportProcessingServiceTests
 {
-    private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<ReportProcessingService>> _loggerMock = new();
     private readonly Mock<IAlertService> _alertServiceMock = new();
     private readonly Mock<IEmailService> _emailServiceMock = new();
@@ -22,7 +21,7 @@ public class ReportProcessingServiceTests
     {
         return new ReportProcessingService(
             serviceProvider,
-            _configurationMock.Object,
+            Options.Create(new AppOptions()),
             _settingsServiceMock.Object,
             _locationServiceMock.Object,
             _loggerMock.Object);

@@ -2,9 +2,9 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
@@ -22,7 +22,6 @@ public class AlertServiceTests
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<IAdminNotificationService> _adminNotifyMock = new();
-    private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
 
@@ -58,7 +57,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _adminNotifyMock.Object, _configurationMock.Object, _loggerMock.Object, validator);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _adminNotifyMock.Object, Options.Create(new AppOptions()), _loggerMock.Object, validator);
     }
 
     [Fact]

@@ -4,6 +4,7 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
 using WhereAreThey.Events;
 using WhereAreThey.Models;
@@ -20,7 +21,7 @@ public class AlertService(
     IEmailService emailService,
     IMediator mediator,
     IAdminNotificationService adminNotificationService,
-    IConfiguration configuration,
+    IOptions<AppOptions> appOptions,
     ILogger<AlertService> logger,
     IValidator<Alert> validator) : IAlertService
 {
@@ -106,7 +107,7 @@ public class AlertService(
                 return; // Already verified
             }
 
-            var baseUrl = configuration["BaseUrl"] ?? "https://www.aretheyhere.com";
+            var baseUrl = appOptions.Value.BaseUrl;
             var verificationLink = $"{baseUrl}/verify-email?token={verification.Token}";
 
             var subject = "Verify your email for alerts";

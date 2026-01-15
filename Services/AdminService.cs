@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
@@ -10,7 +11,7 @@ namespace WhereAreThey.Services;
 public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IAdminNotificationService adminNotificationService,
-    IConfiguration configuration) : IAdminService
+    IOptions<AppOptions> appOptions) : IAdminService
 {
     public async Task<bool> LoginAsync(string password, string? ipAddress)
     {
@@ -28,7 +29,7 @@ public class AdminService(
             throw new InvalidOperationException("Too many failed login attempts from this IP. Please try again in 15 minutes.");
         }
 
-        var adminPassword = configuration["AdminPassword"];
+        var adminPassword = appOptions.Value.AdminPassword;
         var isSuccessful = false;
         if (!string.IsNullOrEmpty(adminPassword))
         {

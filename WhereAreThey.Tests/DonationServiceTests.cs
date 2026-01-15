@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -27,12 +27,13 @@ public class DonationServiceTests
         return mock.Object;
     }
 
-    private static IConfiguration CreateMockConfiguration()
+    private static IOptions<SquareOptions> CreateOptionsWrapper()
     {
-        var mock = new Mock<IConfiguration>();
-        mock.Setup(c => c["Square:AccessToken"]).Returns("sandbox-mock-token");
-        mock.Setup(c => c["Square:LocationId"]).Returns("mock-location");
-        return mock.Object;
+        return Options.Create(new SquareOptions
+        {
+            AccessToken = "sandbox-mock-token",
+            LocationId = "mock-location"
+        });
     }
 
     [Fact]
@@ -42,7 +43,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var adminNotifyMock = new Mock<IAdminNotificationService>();
-        IDonationService service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
+        IDonationService service = new DonationService(factory, adminNotifyMock.Object, CreateOptionsWrapper());
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -71,7 +72,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
+        var service = new DonationService(factory, adminNotifyMock.Object, CreateOptionsWrapper());
         var piId = "pi_123";
 
         await using (var context = new ApplicationDbContext(options))
@@ -104,7 +105,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var adminNotifyMock = new Mock<IAdminNotificationService>();
-        var service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
+        var service = new DonationService(factory, adminNotifyMock.Object, CreateOptionsWrapper());
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");

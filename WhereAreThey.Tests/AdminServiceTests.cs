@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Data;
+using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 
@@ -9,7 +10,7 @@ namespace WhereAreThey.Tests;
 
 public class AdminServiceTests
 {
-    private readonly Mock<IConfiguration> _mockConfig;
+    private readonly AppOptions _appOptions = new();
     private readonly AdminService _service;
 
     public AdminServiceTests()
@@ -23,15 +24,14 @@ public class AdminServiceTests
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
         var adminNotifyMock = new Mock<IAdminNotificationService>();
-        _mockConfig = new Mock<IConfiguration>();
-        _service = new AdminService(mockFactory.Object, adminNotifyMock.Object, _mockConfig.Object);
+        _service = new AdminService(mockFactory.Object, adminNotifyMock.Object, Options.Create(_appOptions));
     }
 
     [Fact]
     public async Task LoginAsync_WithCorrectPassword_ReturnsTrue()
     {
         // Arrange
-        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
+        _appOptions.AdminPassword = "correct_password";
 
         // Act
         var result = await _service.LoginAsync("correct_password", "127.0.0.1");
@@ -44,7 +44,7 @@ public class AdminServiceTests
     public async Task LoginAsync_WithIncorrectPassword_ReturnsFalse()
     {
         // Arrange
-        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
+        _appOptions.AdminPassword = "correct_password";
 
         // Act
         var result = await _service.LoginAsync("wrong_password", "127.0.0.1");
@@ -57,7 +57,7 @@ public class AdminServiceTests
     public async Task LoginAsync_AfterFiveFailures_ThrowsException()
     {
         // Arrange
-        _mockConfig.Setup(c => c["AdminPassword"]).Returns("correct_password");
+        _appOptions.AdminPassword = "correct_password";
         var ip = "1.2.3.4";
 
         // Act & Assert

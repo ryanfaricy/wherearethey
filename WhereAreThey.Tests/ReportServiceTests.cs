@@ -1,10 +1,10 @@
 using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
@@ -21,7 +21,6 @@ public class ReportServiceTests
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IAdminNotificationService> _adminNotificationMock = new();
-    private readonly Mock<IConfiguration> _configurationMock = new();
 
     private static IStringLocalizer<App> CreateLocalizer()
     {
@@ -225,7 +224,8 @@ public class ReportServiceTests
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, _configurationMock.Object, new Mock<ILogger<AlertService>>().Object, alertValidator);
+        var appOptions = Options.Create(new AppOptions());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, appOptions, new Mock<ILogger<AlertService>>().Object, alertValidator);
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         var locationService = new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object);
         
@@ -234,7 +234,7 @@ public class ReportServiceTests
         services.AddSingleton(emailServiceMock.Object);
         services.AddSingleton<IGeocodingService>(geocodingService);
         services.AddSingleton<ILocationService>(locationService);
-        services.AddSingleton(_configurationMock.Object);
+        services.AddSingleton(appOptions);
         services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
         services.AddLogging();

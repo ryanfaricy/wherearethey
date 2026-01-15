@@ -1,5 +1,8 @@
 ﻿@using System.Globalization
-@inject IConfiguration Configuration
+@using Microsoft.Extensions.Options
+@using WhereAreThey.Models
+@inject IOptions<AppOptions> AppOptions
+@inject IOptions<SquareOptions> SquareOptions
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentCulture.TwoLetterISOLanguageName">
 
@@ -69,14 +72,14 @@
     <!-- Social Media Meta Tags -->
     <meta property="og:title" content="AreTheyHere - Live Heat Map"/>
     <meta property="og:description" content="Live anonymous incident reporting and heat map."/>
-    <meta property="og:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png"/>
+    <meta property="og:image" content="@(AppOptions.Value.BaseUrl.TrimEnd('/'))/favicon.png"/>
     <meta property="og:type" content="website"/>
-    <meta property="og:url" content="@(Configuration["BaseUrl"] ?? "https://www.aretheyhere.com")"/>
+    <meta property="og:url" content="@AppOptions.Value.BaseUrl"/>
 
     <meta name="twitter:card" content="summary"/>
     <meta name="twitter:title" content="AreTheyHere - Live Heat Map"/>
     <meta name="twitter:description" content="Live anonymous incident reporting and heat map."/>
-    <meta name="twitter:image" content="@((Configuration["BaseUrl"] ?? "https://www.aretheyhere.com").TrimEnd('/'))/favicon.png"/>
+    <meta name="twitter:image" content="@(AppOptions.Value.BaseUrl.TrimEnd('/'))/favicon.png"/>
 
     <HeadOutlet @rendermode="InteractiveServer"/>
 </head>
@@ -101,7 +104,7 @@
     <script src="heatmap.js"></script>
     <script src="pwa-utils.js"></script>
     <script src="square-payments.js"></script>
-    <script src="@(Configuration["Square:Environment"] == "Production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js")"></script>
+    <script src="@(SquareOptions.Value.Environment == "Production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js")"></script>
     <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('service-worker.js');

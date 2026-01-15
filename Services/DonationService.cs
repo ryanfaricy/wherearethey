@@ -1,22 +1,23 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Square;
 using Square.Models;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 using Environment = Square.Environment;
-using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace WhereAreThey.Services;
 
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IAdminNotificationService adminNotificationService,
-    IConfiguration configuration) : IDonationService
+    IOptions<SquareOptions> squareOptions) : IDonationService
 {
+    private readonly SquareOptions _options = squareOptions.Value;
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
-        .AccessToken(configuration["Square:AccessToken"] ?? "")
-        .Environment(configuration["Square:Environment"] == "Production" ? Environment.Production : Environment.Sandbox)
+        .AccessToken(squareOptions.Value.AccessToken)
+        .Environment(squareOptions.Value.Environment == "Production" ? Environment.Production : Environment.Sandbox)
         .Build();
 
     public async Task<CreatePaymentResponse> CreateSquarePaymentAsync(decimal amount, string sourceId)
@@ -29,7 +30,7 @@ public class DonationService(
         var body = new CreatePaymentRequest.Builder(sourceId, Guid.NewGuid().ToString())
             .AmountMoney(amountMoney)
             .Autocomplete(true)
-            .LocationId(configuration["Square:LocationId"] ?? "")
+            .LocationId(_options.LocationId)
             .Build();
 
         var result = await _squareClient.PaymentsApi.CreatePaymentAsync(body);
