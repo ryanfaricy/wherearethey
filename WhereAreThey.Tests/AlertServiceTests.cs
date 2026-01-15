@@ -612,4 +612,61 @@ public class AlertServiceTests
         
         _localizerMock.Verify(l => l["Alert_Cooldown_Error"], Times.AtLeastOnce);
     }
+
+    [Fact]
+    public async Task DeactivateAlert_ShouldNotifyEventService()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1, IsActive = true };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.DeactivateAlertAsync(alert.Id);
+
+        // Assert
+        Assert.True(result);
+        _eventServiceMock.Verify(x => x.NotifyAlertDeleted(alert.Id), Times.Once);
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var updated = await context.Alerts.FindAsync(alert.Id);
+            Assert.False(updated!.IsActive);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteAlert_ShouldNotifyEventService()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1 };
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Alerts.Add(alert);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        await service.DeleteAlertAsync(alert.Id);
+
+        // Assert
+        _eventServiceMock.Verify(x => x.NotifyAlertDeleted(alert.Id), Times.Once);
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var deleted = await context.Alerts.FindAsync(alert.Id);
+            Assert.Null(deleted);
+        }
+    }
 }

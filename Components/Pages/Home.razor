@@ -125,6 +125,8 @@
         await LoadReports();
         EventService.OnReportAdded += HandleReportAdded;
         EventService.OnReportDeleted += HandleReportDeleted;
+        EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertDeleted += HandleAlertDeleted;
         EventService.OnSettingsChanged += HandleSettingsChanged;
     }
 
@@ -184,6 +186,39 @@
                 if (_mapInitialized)
                 {
                     await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
+                }
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleAlertAdded(Alert alert)
+    {
+        InvokeAsync(async () =>
+        {
+            if (alert.UserIdentifier == _userIdentifier && _userAlerts.All(a => a.Id != alert.Id))
+            {
+                _userAlerts.Add(alert);
+                if (_mapInitialized)
+                {
+                    await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                }
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleAlertDeleted(int id)
+    {
+        InvokeAsync(async () =>
+        {
+            var alert = _userAlerts.FirstOrDefault(a => a.Id == id);
+            if (alert != null)
+            {
+                _userAlerts.Remove(alert);
+                if (_mapInitialized)
+                {
+                    await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
                 }
                 StateHasChanged();
             }
@@ -718,6 +753,8 @@
     {
         EventService.OnReportAdded -= HandleReportAdded;
         EventService.OnReportDeleted -= HandleReportDeleted;
+        EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertDeleted -= HandleAlertDeleted;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
         if (_locationWatchId != -1)
         {

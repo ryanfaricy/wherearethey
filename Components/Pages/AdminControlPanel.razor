@@ -105,7 +105,7 @@
                 <RadzenTabsItem Text="@(_isMobile ? "" : "REPORTS")" Icon="report_problem">
                     <RadzenDataGrid Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
                                 <Template Context="report">
                                     @TimeZoneService.FormatLocal(report.Timestamp)
@@ -118,7 +118,7 @@
                                     @report.Coordinates()
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency" Width="100px">
+                            <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency">
                                 <Template Context="report">
                                     <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
                                                  Text="@(report.IsEmergency ? "YES" : "NO")" />
@@ -129,7 +129,7 @@
                                     @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Width="110px" Filterable="false" Sortable="false">
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Filterable="false" Sortable="false">
                                 <Template Context="report">
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                         <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
@@ -146,26 +146,26 @@
                 <RadzenTabsItem Text="@(_isMobile ? "" : "ALERTS")" Icon="notifications">
                     <RadzenDataGrid Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
+                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Alert" Title="Email">
                                 <Template Context="alert">
                                     @AlertService.DecryptEmail(alert.EncryptedEmail)
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified" Width="100px">
+                            <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
                                 <Template Context="alert">
                                     <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
                                                  Text="@(alert.IsVerified ? "YES" : "NO")" />
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active" Width="100px">
+                            <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active">
                                 <Template Context="alert">
                                     <RadzenBadge BadgeStyle="@(alert.IsActive ? BadgeStyle.Info : BadgeStyle.Secondary)" 
                                                  Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Width="100px" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Width="110px" Filterable="false" Sortable="false">
+                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Visible="@(!_isMobile)" />
+                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
                                 <Template Context="alert">
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                                         <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
@@ -206,20 +206,20 @@
                 <RadzenTabsItem Text="@(_isMobile ? "" : "FEEDBACK")" Icon="chat">
                     <RadzenDataGrid Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
                                 <Template Context="feedback">
                                     @TimeZoneService.FormatLocal(feedback.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type" Width="100px">
+                            <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">
                                 <Template Context="fb">
                                     <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
                             <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Feedback" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                            <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
                                 <Template Context="fb">
                                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                                   Click="@(() => DeleteFeedback(fb.Id))" />
