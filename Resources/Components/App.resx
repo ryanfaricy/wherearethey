@@ -544,4 +544,16 @@
   <data name="Passphrase_Required" xml:space="preserve">
     <value>Passphrase is required</value>
   </data>
+  <data name="Unhandled_Error_Occurred" xml:space="preserve">
+    <value>An unexpected error has occurred.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Something_Went_Wrong" xml:space="preserve">
+    <value>Something went wrong</value>
+  </data>
+  <data name="Something_Went_Wrong_Detail" xml:space="preserve">
+    <value>The application encountered an error and may not work as expected.</value>
+  </data>
 </root>

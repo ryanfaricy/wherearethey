@@ -520,4 +520,16 @@
   <data name="Time_Filters_Desc" xml:space="preserve">
     <value>Filtre los reportes por qué tan recientemente fueron enviados (1h, 2h, etc.).</value>
   </data>
+  <data name="Unhandled_Error_Occurred" xml:space="preserve">
+    <value>Se ha producido un error inesperado.</value>
+  </data>
+  <data name="Reload" xml:space="preserve">
+    <value>Recargar</value>
+  </data>
+  <data name="Something_Went_Wrong" xml:space="preserve">
+    <value>Algo salió mal</value>
+  </data>
+  <data name="Something_Went_Wrong_Detail" xml:space="preserve">
+    <value>La aplicación encontró un error y es posible que no funcione como se esperaba.</value>
+  </data>
 </root>

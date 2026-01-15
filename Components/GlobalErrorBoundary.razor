@@ -1,0 +1,74 @@
+@using Microsoft.Extensions.Logging
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using Microsoft.Extensions.Localization
+@inherits ErrorBoundary
+@inject IFeedbackService FeedbackService
+@inject ILogger<GlobalErrorBoundary> Logger
+@inject IJSRuntime JsRuntime
+@inject IStringLocalizer<App> L
+
+@if (CurrentException is null)
+{
+    @ChildContent
+}
+else
+{
+    @if (ErrorContent is not null)
+    {
+        @ErrorContent(CurrentException)
+    }
+    else
+    {
+        <div class="rz-p-12 rz-text-align-center">
+            <RadzenCard Variant="Variant.Flat" Style="max-width: 500px; margin: 2rem auto; border: 1px solid var(--rz-danger-lighter); box-shadow: var(--rz-shadow-10);">
+                <RadzenStack Gap="1.5rem">
+                    <RadzenIcon Icon="error_outline" Style="font-size: 4rem; color: var(--rz-danger);" />
+                    <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Something_Went_Wrong"]</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Body1">@L["Something_Went_Wrong_Detail"]</RadzenText>
+                    <RadzenButton Text="@L["Reload"]" Click="@(() => JsRuntime.InvokeVoidAsync("location.reload"))" ButtonStyle="ButtonStyle.Primary" Icon="refresh" />
+                </RadzenStack>
+            </RadzenCard>
+        </div>
+    }
+}
+
+@code {
+    protected override async Task OnErrorAsync(Exception exception)
+    {
+        // 1. Log the exception
+        Logger.LogError(exception, "Unhandled exception caught by GlobalErrorBoundary");
+
+        // 2. Auto-report to system as feedback
+        try
+        {
+            string? userIdentifier = null;
+            try 
+            {
+                userIdentifier = await JsRuntime.InvokeAsync<string?>("getUserIdentifier");
+            } 
+            catch 
+            { 
+                // JS interop might fail if circuit is broken or during pre-render
+            }
+
+            var feedback = new Feedback
+            {
+                Type = "Bug",
+                Message = $"[AUTO-REPORTED] {exception.GetType().Name}: {exception.Message}\n\nStack Trace:\n{exception.StackTrace}",
+                UserIdentifier = userIdentifier ?? "system"
+            };
+            await FeedbackService.AddFeedbackAsync(feedback);
+        }
+        catch (Exception ex)
+        {
+            // Fail silently to avoid infinite error loops
+            Logger.LogError(ex, "Failed to auto-report exception");
+        }
+    }
+    
+    public void Recover()
+    {
+        base.Recover();
+    }
+}

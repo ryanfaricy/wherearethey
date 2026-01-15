@@ -1,4 +1,6 @@
-﻿@inject IJSRuntime JsRuntime
+﻿@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<App> L
+@inject IJSRuntime JsRuntime
 @inherits LayoutComponentBase
 
 <RadzenLayout style="position: relative">
@@ -12,7 +14,9 @@
         <NavMenu />
     </RadzenSidebar>
     <RadzenBody Style="position: relative">
-        @Body
+        <GlobalErrorBoundary>
+            @Body
+        </GlobalErrorBoundary>
     </RadzenBody>
 </RadzenLayout>
 
@@ -20,8 +24,8 @@
 <TimeZoneDetector />
 
 <div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
+    @L["Unhandled_Error_Occurred"]
+    <a href="." class="reload">@L["Reload"]</a>
     <span class="dismiss">🗙</span>
 </div>
 

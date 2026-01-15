@@ -19,12 +19,14 @@ public class FeedbackValidator : AbstractValidator<Feedback>
             .NotEmpty().WithMessage(l["Identifier_Error"]);
 
         RuleFor(x => x.Message)
-            .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
+            .Must(m => string.IsNullOrEmpty(m) || m.StartsWith("[AUTO-REPORTED]") || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
             .WithMessage(l["Feedback_Links_Error"]);
 
         RuleFor(x => x)
             .CustomAsync(async (feedback, context, cancellation) =>
             {
+                if (feedback.Message.StartsWith("[AUTO-REPORTED]")) return;
+
                 var settings = await settingsService.GetSettingsAsync();
 
                 // Cooldown check

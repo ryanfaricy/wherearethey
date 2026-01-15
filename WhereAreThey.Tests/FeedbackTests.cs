@@ -149,4 +149,51 @@ public class FeedbackTests
         var all = await service.GetAllFeedbackAsync();
         Assert.Empty(all);
     }
+
+    [Fact]
+    public async Task AddFeedback_ShouldSucceed_WhenAutoReportedContainsLinks()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var settingsService = CreateSettingsService(factory);
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var feedback = new Feedback 
+        { 
+            Type = "Bug", 
+            Message = "[AUTO-REPORTED] Exception at http://localhost:5000/stacktrace", 
+            UserIdentifier = "system" 
+        };
+
+        // Act
+        await service.AddFeedbackAsync(feedback);
+
+        // Assert
+        var all = await service.GetAllFeedbackAsync();
+        Assert.Single(all);
+    }
+
+    [Fact]
+    public async Task AddFeedback_ShouldSucceed_WhenAutoReportedIsFrequent()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var settingsService = CreateSettingsService(factory);
+        var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
+        var feedback1 = new Feedback { Type = "Bug", Message = "[AUTO-REPORTED] Error 1", UserIdentifier = "system" };
+        var feedback2 = new Feedback { Type = "Bug", Message = "[AUTO-REPORTED] Error 2", UserIdentifier = "system" };
+
+        // Act
+        await service.AddFeedbackAsync(feedback1);
+        await service.AddFeedbackAsync(feedback2);
+
+        // Assert
+        var all = await service.GetAllFeedbackAsync();
+        Assert.Equal(2, all.Count);
+    }
 }
