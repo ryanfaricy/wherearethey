@@ -15,6 +15,7 @@
 @inject ILogger<AdminControlPanel> Logger
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
+@inject IAdminNotificationService AdminNotificationService
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -294,6 +295,15 @@
     {
         _clientIp = HttpContextAccessor.HttpContext?.Connection?.RemoteIpAddress?.ToString();
         UserConnectionService.OnConnectionCountChanged += HandleConnectionCountChanged;
+        
+        AdminNotificationService.OnReportAdded += HandleReportAdded;
+        AdminNotificationService.OnReportDeleted += HandleReportDeleted;
+        AdminNotificationService.OnFeedbackAdded += HandleFeedbackAdded;
+        AdminNotificationService.OnFeedbackDeleted += HandleFeedbackDeleted;
+        AdminNotificationService.OnDonationAdded += HandleDonationAdded;
+        AdminNotificationService.OnDonationUpdated += HandleDonationUpdated;
+        AdminNotificationService.OnAlertAdded += HandleAlertAdded;
+        AdminNotificationService.OnAlertDeleted += HandleAlertDeleted;
     }
 
     private void HandleConnectionCountChanged()
@@ -301,9 +311,115 @@
         InvokeAsync(StateHasChanged);
     }
 
+    private void HandleReportAdded(LocationReport report)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            _reports.Insert(0, report);
+            NotificationService.Notify(NotificationSeverity.Info, "New Report", report.Message, 5000);
+            StateHasChanged();
+        });
+    }
+
+    private void HandleReportDeleted(int id)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var report = _reports.FirstOrDefault(r => r.Id == id);
+            if (report != null)
+            {
+                _reports.Remove(report);
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleFeedbackAdded(Feedback feedback)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            _feedbacks.Insert(0, feedback);
+            NotificationService.Notify(NotificationSeverity.Info, "New Feedback", feedback.Type, 5000);
+            StateHasChanged();
+        });
+    }
+
+    private void HandleFeedbackDeleted(int id)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var fb = _feedbacks.FirstOrDefault(f => f.Id == id);
+            if (fb != null)
+            {
+                _feedbacks.Remove(fb);
+                StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleDonationAdded(Donation donation)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            _donations.Insert(0, donation);
+            NotificationService.Notify(NotificationSeverity.Success, "New Donation Received", $"{donation.Amount} {donation.Currency}", 7000);
+            StateHasChanged();
+        });
+    }
+
+    private void HandleDonationUpdated(Donation donation)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var existing = _donations.FirstOrDefault(d => d.Id == donation.Id || (donation.ExternalPaymentId != null && d.ExternalPaymentId == donation.ExternalPaymentId));
+            if (existing != null)
+            {
+                var index = _donations.IndexOf(existing);
+                _donations[index] = donation;
+            }
+            else
+            {
+                _donations.Insert(0, donation);
+            }
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAlertAdded(Alert alert)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            _alerts.Insert(0, alert);
+            NotificationService.Notify(NotificationSeverity.Info, "New Alert Created", "A user signed up for notifications.", 5000);
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAlertDeleted(int id)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var alert = _alerts.FirstOrDefault(a => a.Id == id);
+            if (alert != null)
+            {
+                _alerts.Remove(alert);
+                StateHasChanged();
+            }
+        });
+    }
+
     public void Dispose()
     {
         UserConnectionService.OnConnectionCountChanged -= HandleConnectionCountChanged;
+        
+        AdminNotificationService.OnReportAdded -= HandleReportAdded;
+        AdminNotificationService.OnReportDeleted -= HandleReportDeleted;
+        AdminNotificationService.OnFeedbackAdded -= HandleFeedbackAdded;
+        AdminNotificationService.OnFeedbackDeleted -= HandleFeedbackDeleted;
+        AdminNotificationService.OnDonationAdded -= HandleDonationAdded;
+        AdminNotificationService.OnDonationUpdated -= HandleDonationUpdated;
+        AdminNotificationService.OnAlertAdded -= HandleAlertAdded;
+        AdminNotificationService.OnAlertDeleted -= HandleAlertDeleted;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

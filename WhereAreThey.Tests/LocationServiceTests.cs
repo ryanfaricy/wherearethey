@@ -21,6 +21,7 @@ public class LocationServiceTests
 {
     private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
+    private readonly Mock<IAdminNotificationService> _adminNotificationMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _alertLoggerMock = new();
     private readonly Mock<IReportProcessingService> _reportProcessingMock = new();
@@ -80,7 +81,7 @@ public class LocationServiceTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new LocationService(factory, _mediatorMock.Object, settingsService, validator, _loggerMock.Object, localizer);
+        return new LocationService(factory, _mediatorMock.Object, settingsService, _adminNotificationMock.Object, validator, _loggerMock.Object, localizer);
     }
 
     [Fact]
@@ -321,7 +322,7 @@ public class LocationServiceTests
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -336,7 +337,7 @@ public class LocationServiceTests
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _adminNotificationMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";
@@ -395,7 +396,7 @@ public class LocationServiceTests
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -410,7 +411,7 @@ public class LocationServiceTests
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _adminNotificationMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
         
         var userBEmail = "userB@example.com";
         var alertMessage = "This is my custom alert message";
@@ -512,7 +513,7 @@ public class LocationServiceTests
         var customBaseUrl = "https://custom.example.com";
         _configurationMock.Setup(x => x["BaseUrl"]).Returns(customBaseUrl);
         
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
+        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _adminNotificationMock.Object, _configurationMock.Object, _alertLoggerMock.Object, settingsService, alertValidator, CreateLocalizer());
         var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
         
         var services = new ServiceCollection();
@@ -527,7 +528,7 @@ public class LocationServiceTests
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
+        var service = new LocationService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _adminNotificationMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<LocationService>>(), CreateLocalizer());
         
         var userEmail = "test@example.com";
         var alert = new Alert 

@@ -122,14 +122,15 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 
 // Add application services
 builder.Services.AddValidatorsFromAssemblyContaining<Program>(ServiceLifetime.Singleton);
+builder.Services.AddSingleton<IAdminNotificationService, AdminNotificationService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();
 builder.Services.AddScoped<CircuitHandler, UserConnectionCircuitHandler>();
 builder.Services.AddScoped<IAlertService, AlertService>();
-builder.Services.AddScoped<IDonationService, DonationService>();
-builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+builder.Services.AddSingleton<IDonationService, DonationService>();
+builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddScoped<UserTimeZoneService>();

@@ -17,6 +17,7 @@ public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IMediator mediator,
     ISettingsService settingsService,
+    IAdminNotificationService adminNotificationService,
     IValidator<LocationReport> validator,
     ILogger<LocationService> logger,
     IStringLocalizer<App> L) : ILocationService
@@ -37,6 +38,7 @@ public class LocationService(
             await context.SaveChangesAsync();
 
             OnReportAdded?.Invoke(report);
+            adminNotificationService.NotifyReportAdded(report);
 
             try
             {
@@ -121,6 +123,7 @@ public class LocationService(
             context.LocationReports.Remove(report);
             await context.SaveChangesAsync();
             OnReportAdded?.Invoke(null);
+            adminNotificationService.NotifyReportDeleted(id);
         }
     }
 }

@@ -16,8 +16,9 @@ namespace WhereAreThey.Tests;
 
 public class AntiSpamTests
 {
-    private readonly Mock<IServiceProvider> _serviceProviderMock = new();
+    private readonly Mock<IMediator> _mediatorMock = new();
     private readonly Mock<ILogger<LocationService>> _loggerMock = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifyMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
 
     private IStringLocalizer<App> CreateLocalizer()
@@ -78,8 +79,7 @@ public class AntiSpamTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        var mediatorMock = new Mock<IMediator>();
-        return new LocationService(factory, mediatorMock.Object, settingsService, validator, _loggerMock.Object, localizer);
+        return new LocationService(factory, _mediatorMock.Object, settingsService, _adminNotifyMock.Object, validator, _loggerMock.Object, localizer);
     }
 
     [Fact]

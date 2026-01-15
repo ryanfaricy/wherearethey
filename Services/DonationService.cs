@@ -9,7 +9,10 @@ using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace WhereAreThey.Services;
 
-public class DonationService(IDbContextFactory<ApplicationDbContext> contextFactory, IConfiguration configuration) : IDonationService
+public class DonationService(
+    IDbContextFactory<ApplicationDbContext> contextFactory, 
+    IAdminNotificationService adminNotificationService,
+    IConfiguration configuration) : IDonationService
 {
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
         .AccessToken(configuration["Square:AccessToken"] ?? "")
@@ -39,6 +42,7 @@ public class DonationService(IDbContextFactory<ApplicationDbContext> contextFact
         donation.CreatedAt = DateTime.UtcNow;
         context.Donations.Add(donation);
         await context.SaveChangesAsync();
+        adminNotificationService.NotifyDonationAdded(donation);
         return donation;
     }
 
@@ -52,6 +56,7 @@ public class DonationService(IDbContextFactory<ApplicationDbContext> contextFact
 
         donation.Status = status;
         await context.SaveChangesAsync();
+        adminNotificationService.NotifyDonationUpdated(donation);
         return true;
     }
 

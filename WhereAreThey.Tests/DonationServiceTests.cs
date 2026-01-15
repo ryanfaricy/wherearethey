@@ -41,7 +41,8 @@ public class DonationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        IDonationService service = new DonationService(factory, CreateMockConfiguration());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        IDonationService service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -69,7 +70,8 @@ public class DonationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new DonationService(factory, CreateMockConfiguration());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
         var piId = "pi_123";
         
         using (var context = new ApplicationDbContext(options))
@@ -101,7 +103,8 @@ public class DonationServiceTests
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
-        var service = new DonationService(factory, CreateMockConfiguration());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new DonationService(factory, adminNotifyMock.Object, CreateMockConfiguration());
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");

@@ -67,7 +67,8 @@ public class FeedbackTests
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
         var feedback = new Feedback
         {
             Type = "Bug",
@@ -92,7 +93,8 @@ public class FeedbackTests
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
         var feedback1 = new Feedback { Type = "Bug", Message = "Msg 1", UserIdentifier = "UserA" };
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
@@ -112,7 +114,8 @@ public class FeedbackTests
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
         var feedback = new Feedback 
         { 
             Type = "Feature", 
@@ -133,7 +136,8 @@ public class FeedbackTests
         var factory = CreateFactory(options);
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        var service = new FeedbackService(factory, settingsService, validator, CreateLocalizer());
+        var adminNotifyMock = new Mock<IAdminNotificationService>();
+        var service = new FeedbackService(factory, settingsService, adminNotifyMock.Object, validator, CreateLocalizer());
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.AddFeedbackAsync(feedback);

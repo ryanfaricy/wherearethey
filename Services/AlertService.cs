@@ -17,6 +17,7 @@ public class AlertService(
     IDataProtectionProvider provider,
     IEmailService emailService,
     IMediator mediator,
+    IAdminNotificationService adminNotificationService,
     IConfiguration configuration,
     ILogger<AlertService> logger,
     ISettingsService settingsService,
@@ -52,6 +53,7 @@ public class AlertService(
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
 
+            adminNotificationService.NotifyAlertAdded(alert);
             await mediator.Publish(new AlertCreatedEvent(alert, email));
 
             return alert;
@@ -238,6 +240,7 @@ public class AlertService(
         {
             context.Alerts.Remove(alert);
             await context.SaveChangesAsync();
+            adminNotificationService.NotifyAlertDeleted(id);
         }
     }
 }

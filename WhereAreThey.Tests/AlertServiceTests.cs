@@ -21,6 +21,7 @@ public class AlertServiceTests
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<IAdminNotificationService> _adminNotifyMock = new();
     private readonly Mock<IConfiguration> _configurationMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
@@ -57,7 +58,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _adminNotifyMock.Object, _configurationMock.Object, _loggerMock.Object, settingsService, validator, _localizerMock.Object);
     }
 
     [Fact]
