@@ -20,11 +20,11 @@
 
 <PageTitle>Admin Control Panel</PageTitle>
 
-<div class="rz-p-4">
+<div class="rz-p-2 rz-p-md-4">
     @if (!_isAuthenticated)
     {
         <div class="d-flex justify-content-center align-items-center" style="height: 70vh;">
-            <RadzenCard Style="width: 400px;">
+            <RadzenCard Style="max-width: 400px; width: 100%;">
                 <RadzenText TextStyle="TextStyle.H5" Class="rz-mb-4">Admin Login</RadzenText>
                 <RadzenStack Gap="1rem">
                     <RadzenFormField Text="Password">
@@ -37,31 +37,32 @@
     }
     else
     {
+        <RadzenMediaQuery Query="(max-width: 768px)" Change=@(args => _isMobile = args) />
         <div class="d-flex justify-content-between align-items-center rz-mb-4">
-            <RadzenText TextStyle="TextStyle.H4">Control Panel</RadzenText>
+            <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H4)">Control Panel</RadzenText>
             <RadzenButton Text="LOGOUT" Click="@Logout" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
         </div>
 
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
-                <RadzenTabsItem Text="OVERVIEW" Icon="dashboard">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "OVERVIEW")" Icon="dashboard">
                     <RadzenRow>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenCard Class="rz-variant-flat rz-background-color-primary-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Connected Users</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@UserConnectionService.ConnectionCount</RadzenText>
+                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@UserConnectionService.ConnectionCount</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@_reports.Count</RadzenText>
+                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_reports.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="4">
                             <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@_alerts.Count(a => a.IsActive)</RadzenText>
+                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_alerts.Count(a => a.IsActive)</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                     </RadzenRow>
@@ -69,26 +70,26 @@
                         <RadzenColumn Size="12" SizeMD="6">
                             <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@_donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
+                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                         <RadzenColumn Size="12" SizeMD="6">
                             <RadzenCard Class="rz-variant-flat rz-background-color-secondary-lighter">
                                 <RadzenText TextStyle="TextStyle.Subtitle2">Feedback Items</RadzenText>
-                                <RadzenText TextStyle="TextStyle.H3">@_feedbacks.Count</RadzenText>
+                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_feedbacks.Count</RadzenText>
                             </RadzenCard>
                         </RadzenColumn>
                     </RadzenRow>
 
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
-                    <RadzenDataGrid Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt">
+                    <RadzenDataGrid Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
                                     @TimeZoneService.FormatLocal(attempt.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
                                 <Template Context="attempt">
                                     <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
@@ -99,18 +100,18 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="REPORTS" Icon="report_problem">
-                    <RadzenDataGrid Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "REPORTS")" Icon="report_problem">
+                    <RadzenDataGrid Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
                                 <Template Context="report">
                                     @TimeZoneService.FormatLocal(report.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" />
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location">
+                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" Visible="@(!_isMobile)" />
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location" Visible="@(!_isMobile)">
                                 <Template Context="report">
                                     @(report.ReporterLatitude.HasValue ? $"{report.ReporterLatitude.Value:F4}, {report.ReporterLongitude.Value:F4}" : "N/A")
                                 </Template>
@@ -121,7 +122,7 @@
                                                  Text="@(report.IsEmergency ? "YES" : "NO")" />
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Location">
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Location" Visible="@(!_isMobile)">
                                 <Template Context="report">
                                     @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
                                 </Template>
@@ -136,10 +137,10 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="ALERTS" Icon="notifications">
-                    <RadzenDataGrid Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "ALERTS")" Icon="notifications">
+                    <RadzenDataGrid Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Alert" Title="Email">
                                 <Template Context="alert">
                                     @AlertService.DecryptEmail(alert.EncryptedEmail)
@@ -157,7 +158,7 @@
                                                  Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Width="100px" />
+                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Width="100px" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Alert" Title="Actions" Width="100px" Filterable="false" Sortable="false">
                                 <Template Context="alert">
                                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
@@ -168,15 +169,15 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="DONATIONS" Icon="volunteer_activism">
-                    <RadzenDataGrid Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "DONATIONS")" Icon="volunteer_activism">
+                    <RadzenDataGrid Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                                 <Template Context="donation">
                                     @TimeZoneService.FormatLocal(donation.CreatedAt)
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" />
+                            <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
                                 <Template Context="donation">
                                     @donation.Amount @donation.Currency.ToUpper()
@@ -192,10 +193,10 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="FEEDBACK" Icon="chat">
-                    <RadzenDataGrid Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "FEEDBACK")" Icon="chat">
+                    <RadzenDataGrid Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
                                 <Template Context="feedback">
                                     @TimeZoneService.FormatLocal(feedback.Timestamp)
@@ -207,7 +208,7 @@
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Feedback" Title="Actions" Width="100px" Filterable="false" Sortable="false">
                                 <Template Context="fb">
                                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
@@ -218,15 +219,15 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="LOGINS" Icon="security">
-                    <RadzenDataGrid Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "LOGINS")" Icon="security">
+                    <RadzenDataGrid Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
                                     @TimeZoneService.FormatLocal(attempt.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
+                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
                                 <Template Context="attempt">
                                     <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
@@ -237,7 +238,7 @@
                     </RadzenDataGrid>
                 </RadzenTabsItem>
 
-                <RadzenTabsItem Text="SETTINGS" Icon="settings">
+                <RadzenTabsItem Text="@(_isMobile ? "" : "SETTINGS")" Icon="settings">
                     <RadzenCard>
                         <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
                         <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
@@ -281,6 +282,7 @@
 </div>
 
 @code {
+    private bool _isMobile;
     private bool _isAuthenticated;
     private string _passwordInput = "";
     private List<LocationReport> _reports = new();
