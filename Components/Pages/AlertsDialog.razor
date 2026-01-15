@@ -20,7 +20,8 @@
                         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
                             <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
                                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
+                                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;"
+                                                InputType="search" />
                         </RadzenFormField>
 
                         <div class="row">

@@ -44,7 +44,7 @@
                     <RadzenAutoComplete @bind-Value="@_searchAddress" Data="@_geocodingResults" TextProperty="Address" 
                                         LoadData="@OnAddressSearch" Change="@OnAddressSelected"
                                         Placeholder="@L["Search_Address_Placeholder"]" Style="flex: 1; min-width: 100px;" 
-                                        InputClass="search-input" />
+                                        InputClass="search-input" InputType="search" />
                     
                     <RadzenToggleButton @bind-Value="@_followMe" Icon="my_location" 
                                         ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 

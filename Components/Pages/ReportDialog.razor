@@ -13,7 +13,8 @@
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
             <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
+                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;"
+                                InputType="search" />
         </RadzenFormField>
 
         <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
