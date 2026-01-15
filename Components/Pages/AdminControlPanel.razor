@@ -13,6 +13,8 @@
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
 @inject IAdminNotificationService AdminNotificationService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using WhereAreThey.Models
 @using WhereAreThey.Services
@@ -127,10 +129,14 @@
                                     @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
                                 </Template>
                             </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Width="110px" Filterable="false" Sortable="false">
                                 <Template Context="report">
-                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                                  Click="@(() => DeleteReport(report.Id))" />
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                                      Click="@(() => OpenOnMap(report))" ToolTip="Show on Map" />
+                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                      Click="@(() => DeleteReport(report.Id))" />
+                                    </RadzenStack>
                                 </Template>
                             </RadzenDataGridColumn>
                         </Columns>
@@ -159,10 +165,14 @@
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Width="100px" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Width="100px" Filterable="false" Sortable="false">
+                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Width="110px" Filterable="false" Sortable="false">
                                 <Template Context="alert">
-                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                                  Click="@(() => DeleteAlert(alert.Id))" />
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                                      Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
+                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                                      Click="@(() => DeleteAlert(alert.Id))" />
+                                    </RadzenStack>
                                 </Template>
                             </RadzenDataGridColumn>
                         </Columns>
@@ -616,5 +626,17 @@
                 NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
             }
         }
+    }
+
+    private async Task OpenOnMap(LocationReport report)
+    {
+        var url = $"/?reportId={report.ExternalId}";
+        await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
+    private async Task OpenOnMap(Alert alert)
+    {
+        var url = $"/?alertId={alert.ExternalId}";
+        await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
     }
 }
