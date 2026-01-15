@@ -132,7 +132,7 @@
 
     @if (!string.IsNullOrEmpty(_userIdentifier))
     {
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="rz-mt-2">
             <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
         </RadzenStack>

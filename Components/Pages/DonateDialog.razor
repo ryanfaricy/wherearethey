@@ -33,28 +33,28 @@
                             </Helper>
                         </RadzenFormField>
 
-                        <div class="row g-2">
-                            <div class="col-3">
+                        <RadzenRow Gap="0.5rem">
+                            <RadzenColumn Size="3">
                                 <RadzenButton Text="$5" Click="@(() => _donation.Amount = 5)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
                                               Disabled="@_isProcessing" />
-                            </div>
-                            <div class="col-3">
+                            </RadzenColumn>
+                            <RadzenColumn Size="3">
                                 <RadzenButton Text="$10" Click="@(() => _donation.Amount = 10)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
                                               Disabled="@_isProcessing" />
-                            </div>
-                            <div class="col-3">
+                            </RadzenColumn>
+                            <RadzenColumn Size="3">
                                 <RadzenButton Text="$25" Click="@(() => _donation.Amount = 25)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
                                               Disabled="@_isProcessing" />
-                            </div>
-                            <div class="col-3">
+                            </RadzenColumn>
+                            <RadzenColumn Size="3">
                                 <RadzenButton Text="$50" Click="@(() => _donation.Amount = 50)" 
                                               ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Style="width: 100%;" 
                                               Disabled="@_isProcessing" />
-                            </div>
-                        </div>
+                            </RadzenColumn>
+                        </RadzenRow>
 
                         <div id="card-container" style="min-height: 80px; margin-bottom: 1rem;"></div>
 
@@ -84,13 +84,13 @@
                 {
                     <RadzenDataList Data="@_recentDonations" TItem="DonationDisplay" PageSize="4">
                         <Template Context="d">
-                            <div class="d-flex justify-content-between align-items-center mb-2 p-2 rz-border-radius-2" style="background-color: var(--rz-success-lighter);">
-                                <div>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Class="rz-mb-2 rz-p-2 rz-border-radius-2" Style="background-color: var(--rz-success-lighter);">
+                                <RadzenStack Gap="0">
                                     <RadzenText TextStyle="TextStyle.Body2" Style="font-weight: bold; margin-bottom: 0;">@(d.DisplayName == "Anonymous" ? L["Anonymous"] : d.DisplayName)</RadzenText>
                                     <RadzenText TextStyle="TextStyle.Caption" Style="margin-bottom: 0;">@d.TimeAgo</RadzenText>
-                                </div>
+                                </RadzenStack>
                                 <RadzenBadge Text="@($"${d.Amount:F0}")" BadgeStyle="BadgeStyle.Success" />
-                            </div>
+                            </RadzenStack>
                         </Template>
                     </RadzenDataList>
                 }

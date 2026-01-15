@@ -8,6 +8,7 @@
 @inject IJSRuntime JsRuntime
 @inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
+<RadzenMediaQuery Query="(max-width: 768px)" Change=@(args => _isMobile = args) />
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Distance_Based_Alerts"]</RadzenText>
@@ -24,20 +25,20 @@
                                                 InputType="search" />
                         </RadzenFormField>
 
-                        <div class="row">
-                            <div class="col-6">
+                        <RadzenRow Gap="1rem">
+                            <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenFormField Text="@L["Latitude"]" Variant="Variant.Outlined" Style="width: 100%;">
                                     <RadzenNumeric @bind-Value="@_newAlert.Latitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
-                            </div>
-                            <div class="col-6">
+                            </RadzenColumn>
+                            <RadzenColumn Size="12" SizeSM="6">
                                 <RadzenFormField Text="@L["Longitude"]" Variant="Variant.Outlined" Style="width: 100%;">
                                     <RadzenNumeric @bind-Value="@_newAlert.Longitude" TValue="double" 
                                                    ShowUpDown="false" Style="width: 100%;" />
                                 </RadzenFormField>
-                            </div>
-                        </div>
+                            </RadzenColumn>
+                        </RadzenRow>
 
                         <RadzenFormField Text="@L["Radius_Km"]" Variant="Variant.Outlined" Component="RadiusKm" Style="width: 100%;">
                             <ChildContent>
@@ -83,9 +84,9 @@
                     <RadzenDataList Data="@_activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
                         <Template Context="alert">
                             <RadzenCard Class="rz-mb-2 rz-p-2">
-                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                <RadzenStack Orientation="@(_isMobile ? Orientation.Vertical : Orientation.Horizontal)" JustifyContent="JustifyContent.SpaceBetween" AlignItems="@(_isMobile ? AlignItems.Start : AlignItems.Center)" Gap="@(_isMobile ? "1rem" : "0.5rem")">
                                     <RadzenStack Gap="0">
-                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
                                             <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@alert.Message</RadzenText>
                                             @if (!alert.IsVerified)
                                             {
@@ -95,7 +96,7 @@
                                         <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="@(_isMobile ? JustifyContent.End : JustifyContent.Start)" Class="@(_isMobile ? "rz-w-100" : "")">
                                         <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
                                                       Click="@(() => ShowOnMap(alert))" ToolTip="@L["Show_on_Map"]" />
                                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
@@ -120,6 +121,7 @@
 </RadzenStack>
 
 @code {
+    private bool _isMobile;
     [Parameter] public double? InitialLat { get; set; }
     [Parameter] public double? InitialLng { get; set; }
     [Parameter] public double? InitialRadius { get; set; }

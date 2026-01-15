@@ -18,19 +18,20 @@
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
+<RadzenMediaQuery Query="(max-width: 768px)" Change=@(args => _isMobile = args) />
 
 <RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem" Class="rz-p-2 rz-background-color-primary-lighter main-toolbar" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
-        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" class="report-button" />
-        <RadzenButton Text="@L["ALERTS"]" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="@(_isMobile ? "4px" : "0.5rem")" Class="@(_isMobile ? "rz-p-1 rz-background-color-primary-lighter" : "rz-p-2 rz-background-color-primary-lighter")" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10;">
+        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
+        <RadzenButton Text="@(_isMobile ? "" : L["ALERTS"])" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         @if (_systemSettings.DonationsEnabled)
         {
-            <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+            <RadzenButton Text="@(_isMobile ? "" : L["DONATE"])" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
         }
-        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@(() => OnSettingsClick(false))" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
-        <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@(_isMobile ? "" : L["SETTINGS"])" Icon="settings" Click="@(() => OnSettingsClick(false))" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Text="@(_isMobile ? "" : L["HELP"])" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+        <RadzenButton Text="@(_isMobile ? "" : L["REFRESH"])" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
     </RadzenStack>
 
     <!-- Map Container -->
@@ -70,15 +71,15 @@
             <RadzenCard Class="rz-p-2 rz-shadow-2 legend-card shadow-sm" Style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.05);">
                 <RadzenStack Gap="0.25rem">
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #f44336; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"></div>
+                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #f44336; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
                         <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["EMERGENCY_REPORT"]</RadzenText>
                     </RadzenStack>
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #2196f3; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"></div>
+                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #2196f3; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
                         <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Report"]</RadzenText>
                     </RadzenStack>
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <div style="width: 12px; height: 12px; border-radius: 50%; background: #ff9800; border: 1px solid white; box-shadow: 0 1px 2px rgba(0,0,0,0.2);"></div>
+                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #ff9800; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
                         <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Alert_Zone"]</RadzenText>
                     </RadzenStack>
                 </RadzenStack>
@@ -100,6 +101,7 @@
 </RadzenStack>
 
 @code {
+    private bool _isMobile;
     private List<LocationReport> _reports = new();
     private List<Alert> _userAlerts = new();
     private SystemSettings _systemSettings = new();

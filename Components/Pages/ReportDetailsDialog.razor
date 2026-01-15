@@ -36,7 +36,7 @@
                                 <Template Context="r">
                                     @if (r.IsEmergency)
                                     {
-                                        <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
+                                        <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
                                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                                                 <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
                                                 <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
@@ -49,7 +49,7 @@
                                     }
                                     else
                                     {
-                                        <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid var(--rz-info);">
+                                        <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid var(--rz-info);">
                                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
                                                 <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
                                             </RadzenStack>
@@ -81,7 +81,7 @@
                         <div style="max-height: 300px; overflow-y: auto;">
                             <RadzenDataList Data="@Alerts" TItem="Alert">
                                 <Template Context="a">
-                                    <RadzenCard Class="rz-p-2 mb-1" Style="border-left: 4px solid #ff9800;">
+                                    <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid #ff9800;">
                                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                                             <RadzenStack Gap="0">
                                                 <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@GetAlertName(a)</RadzenText>
@@ -104,7 +104,7 @@
         </Tabs>
     </RadzenTabs>
 
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="mt-3">
+    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="rz-mt-3">
         <RadzenButton Text="CLOSE" Click="@(() => DialogService.Close(_alertDeleted))" ButtonStyle="ButtonStyle.Primary" />
     </RadzenStack>
 </RadzenStack>
