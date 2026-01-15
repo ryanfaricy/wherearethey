@@ -68,7 +68,7 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 ## 🧪 Testing Strategy
 - **Unit Testing**: Business logic in services and validators is covered by xUnit tests.
 - **Integration Testing**: Database interactions are tested using SQLite in-memory and EF Core In-Memory providers.
-- **Mocking**: `Moq` is used to isolate services from external dependencies like `HttpClient`, `IEmailService`, and `IMediator`.
+- **Mocking**: `Moq` is used to isolate services from external dependencies like `HttpClient`, `IEmailService`, and `IBackgroundJobClient`.
 - **Validation Testing**: `FluentValidation` rules are extensively tested to ensure anti-spam and security constraints are honored.
 
 ## 🤖 AI Development Guidelines

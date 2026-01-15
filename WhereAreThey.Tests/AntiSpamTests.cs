@@ -1,5 +1,5 @@
 using FluentValidation;
-using MediatR;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
@@ -15,7 +15,7 @@ namespace WhereAreThey.Tests;
 
 public class AntiSpamTests
 {
-    private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
 
@@ -77,7 +77,7 @@ public class AntiSpamTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new ReportService(factory, _mediatorMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]

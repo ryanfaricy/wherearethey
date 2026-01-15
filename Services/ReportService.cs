@@ -1,8 +1,7 @@
 using FluentValidation;
-using MediatR;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
-using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
@@ -13,7 +12,7 @@ namespace WhereAreThey.Services;
 /// </summary>
 public class ReportService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
-    IMediator mediator,
+    IBackgroundJobClient backgroundJobClient,
     ISettingsService settingsService,
     IEventService eventService,
     IValidator<LocationReport> validator,
@@ -40,12 +39,12 @@ public class ReportService(
 
             try
             {
-                // Publish event for background processing (geocoding, alerts)
-                await mediator.Publish(new ReportAddedEvent(report));
+                // Enqueue background processing (geocoding, alerts) using Hangfire
+                backgroundJobClient.Enqueue<IReportProcessingService>(service => service.ProcessReportAsync(report));
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error publishing report added event");
+                logger.LogError(ex, "Error enqueuing report processing job");
             }
 
             return report;

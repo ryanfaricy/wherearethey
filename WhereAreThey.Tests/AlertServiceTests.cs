@@ -1,5 +1,7 @@
 using FluentValidation;
-using MediatR;
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -8,7 +10,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
-using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -20,7 +21,7 @@ public class AlertServiceTests
 {
     private readonly IDataProtectionProvider _dataProtectionProvider = new EphemeralDataProtectionProvider();
     private readonly Mock<IEmailService> _emailServiceMock = new();
-    private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
@@ -57,7 +58,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _mediatorMock.Object, _eventServiceMock.Object, Options.Create(new AppOptions()), _loggerMock.Object, validator);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _backgroundJobClientMock.Object, _eventServiceMock.Object, Options.Create(new AppOptions()), _loggerMock.Object, validator);
     }
 
     [Fact]
@@ -90,10 +91,10 @@ public class AlertServiceTests
         Assert.NotEqual(email, result.EncryptedEmail);
         Assert.Equal(email, service.DecryptEmail(result.EncryptedEmail));
         
-        // Verify event was published
-        _mediatorMock.Verify(x => x.Publish(
-            It.Is<AlertCreatedEvent>(e => e.Alert.Id == result.Id && e.Email == email),
-            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify background job was enqueued
+        _backgroundJobClientMock.Verify(x => x.Create(
+            It.Is<Job>(job => job.Method.Name == nameof(IAlertService.SendVerificationEmailAsync) && (string)job.Args[0] == email),
+            It.IsAny<EnqueuedState>()), Times.Once);
     }
 
     [Fact]
@@ -523,6 +524,11 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result.IsVerified);
+        
+        // Verify background job was NOT enqueued since already verified
+        _backgroundJobClientMock.Verify(x => x.Create(
+            It.IsAny<Job>(),
+            It.IsAny<EnqueuedState>()), Times.Never);
     }
 
     [Fact]

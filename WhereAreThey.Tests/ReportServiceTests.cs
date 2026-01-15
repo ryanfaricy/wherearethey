@@ -1,4 +1,6 @@
-using MediatR;
+using Hangfire;
+using Hangfire.Common;
+using Hangfire.States;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,7 +10,6 @@ using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
-using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -18,7 +19,7 @@ namespace WhereAreThey.Tests;
 
 public class ReportServiceTests
 {
-    private readonly Mock<IMediator> _mediatorMock = new();
+    private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
 
@@ -77,7 +78,7 @@ public class ReportServiceTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new LocationReportValidator(factory, settingsService, localizer);
-        return new ReportService(factory, _mediatorMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]
@@ -203,7 +204,9 @@ public class ReportServiceTests
         await service.AddReportAsync(report);
 
         // Assert
-        _mediatorMock.Verify(x => x.Publish(It.IsAny<ReportAddedEvent>(), It.IsAny<CancellationToken>()), Times.Once);
+        _backgroundJobClientMock.Verify(x => x.Create(
+            It.Is<Job>(job => job.Method.Name == nameof(IReportProcessingService.ProcessReportAsync) && job.Args[0] == report),
+            It.IsAny<EnqueuedState>()), Times.Once);
     }
 
     [Fact]
@@ -218,24 +221,35 @@ public class ReportServiceTests
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
         var appOptions = Options.Create(new AppOptions());
-        var alertService = new AlertService(factory, dataProtectionProvider, emailServiceMock.Object, _mediatorMock.Object, _eventServiceMock.Object, appOptions, new Mock<ILogger<AlertService>>().Object, alertValidator);
-        var geocodingService = new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object);
-        var locationService = new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object);
+        var backgroundJobClientMock = new Mock<IBackgroundJobClient>();
         
         var services = new ServiceCollection();
-        services.AddSingleton<IAlertService>(alertService);
         services.AddSingleton(emailServiceMock.Object);
-        services.AddSingleton<IGeocodingService>(geocodingService);
-        services.AddSingleton<ILocationService>(locationService);
         services.AddSingleton(appOptions);
         services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
+        services.AddSingleton(backgroundJobClientMock.Object);
         services.AddLogging();
+        services.AddSingleton<IGeocodingService>(new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object));
+        services.AddSingleton<ILocationService>(new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object));
         services.AddSingleton<IReportProcessingService, ReportProcessingService>();
-        services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+        
+        // Circular dependency handling: AlertService needs IBackgroundJobClient
+        services.AddSingleton<IAlertService>(sp => new AlertService(factory, dataProtectionProvider, sp.GetRequiredService<IEmailService>(), sp.GetRequiredService<IBackgroundJobClient>(), _eventServiceMock.Object, sp.GetRequiredService<IOptions<AppOptions>>(), new Mock<ILogger<AlertService>>().Object, alertValidator));
+        
         var serviceProvider = services.BuildServiceProvider();
 
-        var service = new ReportService(factory, serviceProvider.GetRequiredService<IMediator>(), settingsService, _eventServiceMock.Object, reportValidator, serviceProvider.GetRequiredService<ILogger<ReportService>>());
+        // Setup background job client to execute synchronously for the test
+        backgroundJobClientMock.Setup(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()))
+            .Callback<Job, IState>((job, state) =>
+            {
+                var instance = serviceProvider.GetRequiredService(job.Type);
+                var task = (Task)job.Method.Invoke(instance, job.Args.ToArray())!;
+                task.GetAwaiter().GetResult();
+            });
+
+        var service = new ReportService(factory, backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, reportValidator, new Mock<ILogger<ReportService>>().Object);
+        var alertService = serviceProvider.GetRequiredService<IAlertService>();
         
         // User B sets up an alert
         var userBEmail = "userB@example.com";

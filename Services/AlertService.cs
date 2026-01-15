@@ -1,12 +1,11 @@
 using System.Security.Cryptography;
 using System.Text;
 using FluentValidation;
-using MediatR;
+using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
-using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
@@ -19,7 +18,7 @@ public class AlertService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IDataProtectionProvider provider,
     IEmailService emailService,
-    IMediator mediator,
+    IBackgroundJobClient backgroundJobClient,
     IEventService eventService,
     IOptions<AppOptions> appOptions,
     ILogger<AlertService> logger,
@@ -58,7 +57,11 @@ public class AlertService(
             await context.SaveChangesAsync();
 
             eventService.NotifyAlertAdded(alert);
-            await mediator.Publish(new AlertCreatedEvent(alert, email));
+            
+            if (!alert.IsVerified)
+            {
+                backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash));
+            }
 
             return alert;
         }

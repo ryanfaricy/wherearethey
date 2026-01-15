@@ -2,6 +2,8 @@ using System.Globalization;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
 using FluentValidation;
+using Hangfire;
+using Hangfire.PostgreSql;
 using Microsoft.AspNetCore.Components.Server.Circuits;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -77,9 +79,6 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 // Add HttpClient for proxy and other services
 builder.Services.AddHttpClient();
 
-// Add MediatR
-builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(WhereAreThey.Program).Assembly));
-
 // Add Email services
 builder.Services.Configure<AppOptions>(builder.Configuration);
 builder.Services.Configure<SquareOptions>(builder.Configuration.GetSection("Square"));
@@ -135,6 +134,19 @@ builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
     options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres");
     options.EnableDetailedErrors();
 });
+
+// Add Hangfire
+builder.Services.AddHangfire(config =>
+{
+    config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+        .UseSimpleAssemblyNameTypeSerializer()
+        .UseRecommendedSerializerSettings()
+        .UsePostgreSqlStorage(options =>
+        {
+            options.UseNpgsqlConnection(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres");
+        });
+});
+builder.Services.AddHangfireServer();
 
 // Add application services
 builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
