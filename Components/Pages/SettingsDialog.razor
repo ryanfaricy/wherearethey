@@ -54,7 +54,13 @@
             @L["Profile_ID_Help"]
         </RadzenText>
         
-        @if (string.IsNullOrEmpty(_userIdentifier))
+        @if (!_isLoaded)
+        {
+            <RadzenStack AlignItems="AlignItems.Center" Class="rz-p-4">
+                <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+            </RadzenStack>
+        }
+        else if (string.IsNullOrEmpty(_userIdentifier))
         {
             <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat" Shade="Shade.Lighter">
                 @L["New_Profile_Prompt"]
@@ -150,6 +156,7 @@
     private string _generatedPassphrase = "";
     private bool _showImport;
     private bool _isBusy;
+    private bool _isLoaded;
     private readonly string _currentCulture = CultureInfo.CurrentCulture.Name;
     private bool _isInstallable;
     private bool _isPwa;
@@ -194,27 +201,33 @@
     {
         if (firstRender)
         {
-            _userIdentifier = await JsRuntime.InvokeAsync<string?>("getUserIdentifier") ?? "";
-            
-            if (string.IsNullOrEmpty(_userIdentifier))
+            try
             {
-                _generatedPassphrase = PassphraseGenerator.Generate();
-            }
+                _userIdentifier = await JsRuntime.InvokeAsync<string?>("getUserIdentifier") ?? "";
+                
+                if (string.IsNullOrEmpty(_userIdentifier))
+                {
+                    _generatedPassphrase = PassphraseGenerator.Generate();
+                }
 
-            var stored = await JsRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
-            if (Enum.TryParse<AppTheme>(stored, out var theme))
+                var stored = await JsRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
+                if (Enum.TryParse<AppTheme>(stored, out var theme))
+                {
+                    ThemeService.SetTheme(theme);
+                }
+
+                _objRef = DotNetObjectReference.Create(this);
+                await JsRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", _objRef);
+                await JsRuntime.InvokeVoidAsync("registerSettingsHelper", _objRef);
+                
+                _isPwa = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
+                _isIos = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
+            }
+            finally
             {
-                ThemeService.SetTheme(theme);
+                _isLoaded = true;
+                StateHasChanged();
             }
-
-            _objRef = DotNetObjectReference.Create(this);
-            await JsRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", _objRef);
-            await JsRuntime.InvokeVoidAsync("registerSettingsHelper", _objRef);
-            
-            _isPwa = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
-            _isIos = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
-            
-            StateHasChanged();
         }
     }
 
