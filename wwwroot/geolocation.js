@@ -90,34 +90,55 @@ window.isNewUser = function () {
     return isNew;
 };
 
+let dotNetSettingsHelper;
+
+window.registerSettingsHelper = function (helper) {
+    dotNetSettingsHelper = helper;
+};
+
 window.copyUserIdentifier = function () {
     const id = localStorage.getItem('user-identifier');
+    console.log('Attempting to copy ID:', id);
     if (id) {
-        if (!navigator.clipboard) {
-            const textArea = document.createElement("textarea");
-            textArea.value = id;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-            } catch (err) {
-                console.error('Fallback copy failed', err);
+        const performCopy = (text) => {
+            if (!navigator.clipboard) {
+                console.log('Navigator.clipboard not available, using fallback');
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    console.log('Fallback copy successful');
+                    if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
+                }
+                document.body.removeChild(textArea);
+                return;
             }
-            document.body.removeChild(textArea);
-            return;
-        }
-        navigator.clipboard.writeText(id).catch(err => {
-            console.error('Failed to copy ID: ', err);
-            const textArea = document.createElement("textarea");
-            textArea.value = id;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
-                document.execCommand('copy');
-            } catch (fallbackErr) {
-                console.error('Fallback copy failed', fallbackErr);
-            }
-            document.body.removeChild(textArea);
-        });
+            navigator.clipboard.writeText(text).then(() => {
+                console.log('Clipboard copy successful');
+                if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+            }).catch(err => {
+                console.error('Failed to copy ID: ', err);
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    console.log('Fallback copy successful after clipboard failure');
+                    if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed', fallbackErr);
+                }
+                document.body.removeChild(textArea);
+            });
+        };
+
+        performCopy(id);
+    } else {
+        console.warn('No ID found in localStorage to copy');
     }
 };

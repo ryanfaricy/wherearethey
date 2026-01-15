@@ -54,7 +54,12 @@
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
             <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
-            <RadzenButton Icon="content_copy" onclick="copyUserIdentifier()" Click="@CopyId" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="Copy to Clipboard" />
+            <button type="button" class="rz-button rz-button-sm rz-variant-flat rz-info rz-shade-default" 
+                    onclick="copyUserIdentifier()"
+                    style="padding: 0; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; border-radius: 4px;"
+                    title="Copy to Clipboard">
+                <i class="rzi" style="font-size: 1.25rem;">content_copy</i>
+            </button>
             <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
         </RadzenStack>
 
@@ -144,6 +149,7 @@
 
             _objRef = DotNetObjectReference.Create(this);
             await JsRuntime.InvokeVoidAsync("pwaFunctions.registerHelper", _objRef);
+            await JsRuntime.InvokeVoidAsync("registerSettingsHelper", _objRef);
             
             _isPwa = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
             _isIos = await JsRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
@@ -169,7 +175,8 @@
         _objRef?.Dispose();
     }
 
-    private void CopyId()
+    [JSInvokable]
+    public void NotifyCopied()
     {
         NotificationService.Notify(NotificationSeverity.Info, L["ID_copied"]);
     }
