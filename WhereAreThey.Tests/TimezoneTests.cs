@@ -1,6 +1,5 @@
 using GeoTimeZone;
 using TimeZoneConverter;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

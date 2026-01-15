@@ -1,12 +1,9 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

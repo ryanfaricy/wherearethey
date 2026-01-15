@@ -66,12 +66,19 @@ window.stopWatching = function (watchId) {
 
 window.getUserIdentifier = function () {
     let id = localStorage.getItem('user-identifier');
-    if (!id) {
-        id = crypto.randomUUID();
-        localStorage.setItem('user-identifier', id);
-        localStorage.setItem('user-identifier-new', 'true');
-    }
     return id;
+};
+
+window.generatePassphrase = function () {
+    const adjectives = ["swift", "brave", "bright", "calm", "cool", "eager", "fancy", "grand", "happy", "jolly", "kind", "lucky", "noble", "proud", "quick", "rare", "sharp", "smart", "vast", "wise", "bold", "crisp", "fast", "green", "light", "pure", "safe", "warm", "wild", "young", "fierce", "gentle", "silent", "ancient", "modern", "vibrant", "mighty", "humble", "stellar", "cosmic", "icy", "fiery", "golden", "silver", "azure", "crimson", "hidden", "secret", "mystic", "loyal", "shiny", "glossy", "rough", "smooth", "narrow", "broad", "tall", "short", "deep", "dark", "stable", "vivid", "pious"];
+    const nouns = ["river", "mountain", "forest", "ocean", "valley", "desert", "island", "garden", "meadow", "harbor", "eagle", "dolphin", "tiger", "falcon", "wolf", "deer", "panda", "koala", "otter", "seal", "star", "moon", "sun", "cloud", "rain", "wind", "snow", "leaf", "tree", "flower", "stream", "peak", "woods", "tide", "canyon", "dune", "reef", "orchard", "field", "bay", "hawk", "whale", "lion", "owl", "bear", "elk", "lynx", "fox", "badger", "comet", "planet", "nebula", "storm", "mist", "gale", "frost", "root", "branch", "bloom", "stone", "rock", "path", "trail", "bridge", "gate", "tower", "shield", "spirit"];
+    
+    const adj1 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const adj2 = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    const num = Math.floor(Math.random() * 90) + 10;
+    
+    return `${adj1}-${adj2}-${noun}-${num}`;
 };
 
 window.setUserIdentifier = function (id) {
@@ -96,17 +103,29 @@ window.registerSettingsHelper = function (helper) {
     dotNetSettingsHelper = helper;
 };
 
-window.copyUserIdentifier = function () {
-    const id = localStorage.getItem('user-identifier');
-    console.log('Attempting to copy ID:', id);
-    if (id) {
-        const performCopy = (text) => {
+window.copyToClipboard = function (text) {
+    console.log('Attempting to copy to clipboard');
+    if (text) {
+        const performCopy = (textToCopy) => {
             if (!navigator.clipboard) {
                 console.log('Navigator.clipboard not available, using fallback');
                 const textArea = document.createElement("textarea");
-                textArea.value = text;
+                textArea.value = textToCopy;
+                // Ensure the textarea is not visible but part of the DOM
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                textArea.style.width = '2em';
+                textArea.style.height = '2em';
+                textArea.style.padding = '0';
+                textArea.style.border = 'none';
+                textArea.style.outline = 'none';
+                textArea.style.boxShadow = 'none';
+                textArea.style.background = 'transparent';
                 document.body.appendChild(textArea);
+                textArea.focus();
                 textArea.select();
+                textArea.setSelectionRange(0, 999999);
                 try {
                     document.execCommand('copy');
                     console.log('Fallback copy successful');
@@ -117,15 +136,27 @@ window.copyUserIdentifier = function () {
                 document.body.removeChild(textArea);
                 return;
             }
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(textToCopy).then(() => {
                 console.log('Clipboard copy successful');
                 if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
             }).catch(err => {
-                console.error('Failed to copy ID: ', err);
+                console.error('Failed to copy: ', err);
                 const textArea = document.createElement("textarea");
-                textArea.value = text;
+                textArea.value = textToCopy;
+                textArea.style.position = "fixed";
+                textArea.style.left = "-9999px";
+                textArea.style.top = "0";
+                textArea.style.width = '2em';
+                textArea.style.height = '2em';
+                textArea.style.padding = '0';
+                textArea.style.border = 'none';
+                textArea.style.outline = 'none';
+                textArea.style.boxShadow = 'none';
+                textArea.style.background = 'transparent';
                 document.body.appendChild(textArea);
+                textArea.focus();
                 textArea.select();
+                textArea.setSelectionRange(0, 999999);
                 try {
                     document.execCommand('copy');
                     console.log('Fallback copy successful after clipboard failure');
@@ -137,8 +168,11 @@ window.copyUserIdentifier = function () {
             });
         };
 
-        performCopy(id);
-    } else {
-        console.warn('No ID found in localStorage to copy');
+        performCopy(text);
     }
+};
+
+window.copyUserIdentifier = function () {
+    const id = localStorage.getItem('user-identifier');
+    window.copyToClipboard(id);
 };

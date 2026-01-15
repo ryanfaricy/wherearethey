@@ -1,7 +1,4 @@
 @page "/cp"
-@using WhereAreThey.Models
-@using WhereAreThey.Services
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject ILocationService LocationService
 @inject IAlertService AlertService
 @inject IDonationService DonationService
@@ -16,6 +13,9 @@
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
 @inject IAdminNotificationService AdminNotificationService
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using WhereAreThey.Models
+@using WhereAreThey.Services
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -85,7 +85,7 @@
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
-                                    @TimeZoneService.FormatLocal(attempt.Timestamp, "g")
+                                    @TimeZoneService.FormatLocal(attempt.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
@@ -105,11 +105,11 @@
                             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Width="70px" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
                                 <Template Context="report">
-                                    @TimeZoneService.FormatLocal(report.Timestamp, "g")
+                                    @TimeZoneService.FormatLocal(report.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter ID" />
+                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" />
                             <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location">
                                 <Template Context="report">
                                     @(report.ReporterLatitude.HasValue ? $"{report.ReporterLatitude.Value:F4}, {report.ReporterLongitude.Value:F4}" : "N/A")
@@ -173,7 +173,7 @@
                         <Columns>
                             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                                 <Template Context="donation">
-                                    @TimeZoneService.FormatLocal(donation.CreatedAt, "g")
+                                    @TimeZoneService.FormatLocal(donation.CreatedAt)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" />
@@ -198,7 +198,7 @@
                             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Width="70px" />
                             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
                                 <Template Context="feedback">
-                                    @TimeZoneService.FormatLocal(feedback.Timestamp, "g")
+                                    @TimeZoneService.FormatLocal(feedback.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type" Width="100px">
@@ -207,7 +207,7 @@
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User ID" />
+                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" />
                             <RadzenDataGridColumn TItem="Feedback" Title="Actions" Width="100px" Filterable="false" Sortable="false">
                                 <Template Context="fb">
                                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
@@ -223,7 +223,7 @@
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
-                                    @TimeZoneService.FormatLocal(attempt.Timestamp, "g")
+                                    @TimeZoneService.FormatLocal(attempt.Timestamp)
                                 </Template>
                             </RadzenDataGridColumn>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
@@ -281,7 +281,7 @@
 </div>
 
 @code {
-    private bool _isAuthenticated = false;
+    private bool _isAuthenticated;
     private string _passwordInput = "";
     private List<LocationReport> _reports = new();
     private List<Alert> _alerts = new();
@@ -349,7 +349,7 @@
     {
         if (!_isAuthenticated) return;
         InvokeAsync(() => {
-            NotificationService.Notify(NotificationSeverity.Info, "Email Verified", $"A user has verified their email address.", 5000);
+            NotificationService.Notify(NotificationSeverity.Info, "Email Verified", "A user has verified their email address.", 5000);
             // We might want to reload alerts to show the "YES" in the Verified column
             _ = LoadData(); 
         });

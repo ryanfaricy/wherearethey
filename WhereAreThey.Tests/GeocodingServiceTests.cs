@@ -5,7 +5,6 @@ using Moq;
 using Moq.Protected;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

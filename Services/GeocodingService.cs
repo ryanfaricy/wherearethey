@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using WhereAreThey.Models;
 
@@ -12,8 +13,8 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
 
         try
         {
-            var latStr = latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
-            var lngStr = longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var latStr = latitude.ToString(CultureInfo.InvariantCulture);
+            var lngStr = longitude.ToString(CultureInfo.InvariantCulture);
             var url = $"https://api.mapbox.com/geocoding/v5/mapbox.places/{lngStr},{latStr}.json?access_token={settings.MapboxToken}&types=address,poi,neighborhood&limit=1";
             
             var response = await httpClient.GetAsync(url);

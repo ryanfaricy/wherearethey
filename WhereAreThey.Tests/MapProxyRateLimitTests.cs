@@ -1,11 +1,10 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
-using WhereAreThey.Services;
 using WhereAreThey.Models;
-using Xunit;
-using Microsoft.AspNetCore.TestHost;
+using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests;
 
@@ -48,7 +47,7 @@ public class MapProxyRateLimitTests : IClassFixture<WebApplicationFactory<Progra
 
         // Act & Assert
         // We set the limit to 30 per minute in Program.cs
-        for (int i = 0; i < 30; i++)
+        for (var i = 0; i < 30; i++)
         {
             var response = await client.GetAsync(url);
             // We don't care about the success of the proxy itself, just that it's not rate limited yet.

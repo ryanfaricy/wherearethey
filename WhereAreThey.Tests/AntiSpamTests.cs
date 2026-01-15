@@ -1,16 +1,15 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
-using Xunit;
-using MediatR;
 
 namespace WhereAreThey.Tests;
 
@@ -118,7 +117,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA"
+            ReporterIdentifier = "UserA-Passphrase"
         };
 
         var report2 = new LocationReport
@@ -127,7 +126,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA"
+            ReporterIdentifier = "UserA-Passphrase"
         };
 
         // Act
@@ -152,7 +151,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA",
+            ReporterIdentifier = "UserA-Passphrase",
             Message = "Check out my site: https://spam.com"
         };
 
@@ -236,7 +235,7 @@ public class AntiSpamTests
         Assert.Single(results);
         
         // Check cooldown
-        var report = new LocationReport { ReporterIdentifier = "UserB", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
+        var report = new LocationReport { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
         await service.AddLocationReportAsync(report);
         
         var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddLocationReportAsync(report));
@@ -244,7 +243,7 @@ public class AntiSpamTests
 
         // Check distance
         var farReport = new LocationReport { 
-            ReporterIdentifier = "UserC", 
+            ReporterIdentifier = "UserC-Passphrase", 
             Latitude = 40, Longitude = -74, 
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
             Timestamp = DateTime.UtcNow 

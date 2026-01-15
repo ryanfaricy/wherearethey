@@ -16,7 +16,8 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
         IStringLocalizer<App> l)
     {
         RuleFor(x => x.ReporterIdentifier)
-            .NotEmpty().WithMessage(l["Identifier_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"])
+            .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"]);
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))

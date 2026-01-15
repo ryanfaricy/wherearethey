@@ -39,9 +39,7 @@ public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILog
             logger.LogCritical("All configured email providers failed. Total attempts: {Count}", exceptions.Count);
             throw new AggregateException("All configured email providers failed to send the email.", exceptions);
         }
-        else
-        {
-            logger.LogWarning("None of the email providers were configured. Email to {To} was NOT sent.", to);
-        }
+
+        logger.LogWarning("None of the email providers were configured. Email to {To} was NOT sent.", to);
     }
 }

@@ -1,6 +1,6 @@
+@using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services
-@using Microsoft.Extensions.Localization
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -123,11 +123,11 @@
     [Parameter] public double? InitialLng { get; set; }
     [Parameter] public double? InitialRadius { get; set; }
 
-    private Alert _newAlert = new Alert { RadiusKm = 5.0 };
+    private Alert _newAlert = new() { RadiusKm = 5.0 };
     private string _email = "";
     private List<Alert> _activeAlerts = new();
     private List<GeocodingResult> _geocodingResults = new();
-    private bool _isSubmitting = false;
+    private bool _isSubmitting;
     private string? _userIdentifier;
     private string? _approxAddress;
 

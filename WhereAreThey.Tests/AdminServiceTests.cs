@@ -2,9 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using WhereAreThey.Data;
-using WhereAreThey.Models;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -65,7 +63,7 @@ public class AdminServiceTests
         var ip = "1.2.3.4";
 
         // Act & Assert
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             await _service.LoginAsync("wrong", ip);
         }

@@ -4,7 +4,6 @@ using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

@@ -1,12 +1,13 @@
-@using Microsoft.Extensions.Localization
-@using System.Globalization
-@using WhereAreThey.Services
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
 @inject NotificationService NotificationService
 @inject NavigationManager NavigationManager
 @inject IAppThemeService ThemeService
 @inject IStringLocalizer<App> L
+@using System.Globalization
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Helpers
+@using WhereAreThey.Services
 @implements IDisposable
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -52,53 +53,91 @@
             @L["Profile_ID_Help"]
         </RadzenText>
         
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-            <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
-            <button type="button" class="rz-button rz-button-sm rz-variant-flat rz-info rz-shade-default" 
-                    onclick="copyUserIdentifier()"
-                    style="padding: 0; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; border-radius: 4px;"
-                    title="Copy to Clipboard">
-                <i class="rzi" style="font-size: 1.25rem;">content_copy</i>
-            </button>
-            <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
-        </RadzenStack>
-
-        @if (_showImport)
+        @if (string.IsNullOrEmpty(_userIdentifier))
         {
-            <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => ImportProfile())">
-                <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
-                    <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
-                        <ChildContent>
-                            <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" Style="width: 100%;" />
-                        </ChildContent>
-                        <Helper>
-                            <RadzenRequiredValidator Component="ImportId" Text="@L["ID_Required"]" />
-                            <RadzenRegexValidator Component="ImportId" Pattern="^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$" Text="@L["Invalid_ID_format"]" />
-                        </Helper>
-                    </RadzenFormField>
-                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                        <RadzenButton Text="@L["CANCEL"]" Click="@(() => { _showImport = false; _importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
-                        <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SAVE_REFRESH"]" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
+            <RadzenAlert AlertStyle="AlertStyle.Info" ShowIcon="true" Variant="Variant.Flat" Shade="Shade.Lighter">
+                @L["New_Profile_Prompt"]
+            </RadzenAlert>
+
+            <RadzenStack Gap="1rem" Class="rz-p-4 rz-background-color-base-100 rz-border-radius-2">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Overline">@L["Option_1_Generated"]</RadzenText>
+                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                        <RadzenTextBox Value="@_generatedPassphrase" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 1rem; text-align: center; border-style: dashed;" />
+                        <RadzenButton Icon="content_copy" Click="@(() => CopyToClipboard(_generatedPassphrase))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["Copy_to_Clipboard"]" />
+                        <RadzenButton Icon="refresh" Click="@RegeneratePassphrase" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["REFRESH"]" />
                     </RadzenStack>
+                    <RadzenButton Text="@L["Use_Generated_Passphrase"]" Click="@(() => UsePassphrase(_generatedPassphrase, true))" ButtonStyle="ButtonStyle.Primary" Variant="Variant.Flat" Style="width: 100%;" />
                 </RadzenStack>
-            </RadzenTemplateForm>
+
+                <RadzenStack Gap="0.5rem">
+                    <RadzenText TextStyle="TextStyle.Overline">@L["Option_2_Existing"]</RadzenText>
+                    <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => UsePassphrase(_importId, false))">
+                        <RadzenStack Gap="0.5rem">
+                            <RadzenFormField Text="@L["Enter_Existing_Passphrase"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
+                                <ChildContent>
+                                    <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="ImportId" Text="@L["Passphrase_Required"]" />
+                                    <RadzenLengthValidator Component="ImportId" Min="8" Max="100" Text="@L["Passphrase_Length_Error"]" />
+                                </Helper>
+                            </RadzenFormField>
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["IMPORT"]" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Style="width: 100%;" />
+                        </RadzenStack>
+                    </RadzenTemplateForm>
+                </RadzenStack>
+            </RadzenStack>
+        }
+        else
+        {
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
+                <RadzenButton Icon="content_copy" Click="@(() => CopyToClipboard(_userIdentifier))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["Copy_to_Clipboard"]" />
+                <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
+            </RadzenStack>
+
+            @if (_showImport)
+            {
+                <RadzenTemplateForm TItem="string" Data="@_importId" Submit="@((string args) => ImportProfile())">
+                    <RadzenStack Gap="0.5rem" Class="rz-p-2 rz-background-color-base-100 rz-border-radius-2">
+                        <RadzenFormField Text="@L["Paste_New_ID"]" Variant="Variant.Outlined" Component="ImportId" Style="width: 100%;">
+                            <ChildContent>
+                                <RadzenTextBox Name="ImportId" @bind-Value="@_importId" Placeholder="@L["Passphrase_Placeholder"]" Style="width: 100%;" />
+                            </ChildContent>
+                            <Helper>
+                                <RadzenRequiredValidator Component="ImportId" Text="@L["Passphrase_Required"]" />
+                                <RadzenLengthValidator Component="ImportId" Min="8" Max="100" Text="@L["Passphrase_Length_Error"]" />
+                            </Helper>
+                        </RadzenFormField>
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Text="@L["CANCEL"]" Click="@(() => { _showImport = false; _importId = ""; })" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" Style="flex: 1;" />
+                            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SAVE_REFRESH"]" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Style="flex: 1;" />
+                        </RadzenStack>
+                    </RadzenStack>
+                </RadzenTemplateForm>
+            }
         }
     </RadzenStack>
 
-    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
-        <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
-        <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
-    </RadzenStack>
+    @if (!string.IsNullOrEmpty(_userIdentifier))
+    {
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Gap="1rem" Class="mt-2">
+            <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(null))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton Text="@L["CLOSE"]" Click="@(() => DialogService.Close())" ButtonStyle="ButtonStyle.Primary" />
+        </RadzenStack>
+    }
 </RadzenStack>
 
 @code {
     private string _userIdentifier = "";
+    private string _generatedPassphrase = "";
     private string _importId = "";
-    private bool _showImport = false;
-    private string _currentCulture = CultureInfo.CurrentCulture.Name;
-    private bool _isInstallable = false;
-    private bool _isPwa = false;
-    private bool _isIos = false;
+    private bool _showImport;
+    private readonly string _currentCulture = CultureInfo.CurrentCulture.Name;
+    private bool _isInstallable;
+    private bool _isPwa;
+    private bool _isIos;
     private DotNetObjectReference<SettingsDialog>? _objRef;
 
     private AppTheme CurrentTheme
@@ -112,17 +151,17 @@
         await JsRuntime.InvokeVoidAsync("themeManager.setTheme", theme.ToString());
     }
 
-    private List<CultureDisplay> _supportedCultures =
+    private readonly List<CultureDisplay> _supportedCultures =
     [
-        new CultureDisplay { Name = "en", DisplayName = "English" },
-        new CultureDisplay { Name = "es", DisplayName = "Español" },
-        new CultureDisplay { Name = "fr", DisplayName = "Français" },
-        new CultureDisplay { Name = "de", DisplayName = "Deutsch" },
-        new CultureDisplay { Name = "it", DisplayName = "Italiano" },
-        new CultureDisplay { Name = "pt", DisplayName = "Português" },
-        new CultureDisplay { Name = "ru", DisplayName = "Русский" },
-        new CultureDisplay { Name = "zh", DisplayName = "中文" },
-        new CultureDisplay { Name = "ja", DisplayName = "日本語" }
+        new() { Name = "en", DisplayName = "English" },
+        new() { Name = "es", DisplayName = "Español" },
+        new() { Name = "fr", DisplayName = "Français" },
+        new() { Name = "de", DisplayName = "Deutsch" },
+        new() { Name = "it", DisplayName = "Italiano" },
+        new() { Name = "pt", DisplayName = "Português" },
+        new() { Name = "ru", DisplayName = "Русский" },
+        new() { Name = "zh", DisplayName = "中文" },
+        new() { Name = "ja", DisplayName = "日本語" }
     ];
 
     private void OnCultureChange(object value)
@@ -139,8 +178,13 @@
     {
         if (firstRender)
         {
-            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await JsRuntime.InvokeAsync<string?>("getUserIdentifier") ?? "";
             
+            if (string.IsNullOrEmpty(_userIdentifier))
+            {
+                _generatedPassphrase = PassphraseGenerator.Generate();
+            }
+
             var stored = await JsRuntime.InvokeAsync<string>("themeManager.getStoredTheme");
             if (Enum.TryParse<AppTheme>(stored, out var theme))
             {
@@ -156,6 +200,24 @@
             
             StateHasChanged();
         }
+    }
+
+    private void RegeneratePassphrase()
+    {
+        _generatedPassphrase = PassphraseGenerator.Generate();
+    }
+
+    private async Task UsePassphrase(string id, bool isNew = false)
+    {
+        if (string.IsNullOrWhiteSpace(id) || id.Length < 8) return;
+
+        await JsRuntime.InvokeAsync<bool>("setUserIdentifier", id);
+        if (isNew)
+        {
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "user-identifier-new", "true");
+        }
+        DialogService.Close(id);
+        await JsRuntime.InvokeVoidAsync("location.reload");
     }
 
     [JSInvokable]
@@ -175,6 +237,11 @@
         _objRef?.Dispose();
     }
 
+    private async Task CopyToClipboard(string text)
+    {
+        await JsRuntime.InvokeVoidAsync("copyToClipboard", text);
+    }
+
     [JSInvokable]
     public void NotifyCopied()
     {
@@ -183,6 +250,8 @@
 
     private async Task ImportProfile()
     {
+        if (string.IsNullOrWhiteSpace(_importId) || _importId.Length < 8) return;
+
         await JsRuntime.InvokeAsync<bool>("setUserIdentifier", _importId);
         DialogService.Close();
         // We need a hard refresh to reload everything with the new ID

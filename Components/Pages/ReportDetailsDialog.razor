@@ -27,7 +27,7 @@
                     @if (Reports.Any())
                     {
                         <RadzenText TextStyle="TextStyle.Caption">
-                            <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentTimestamp, "g") 
+                            <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentTimestamp) 
                             <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
                         </RadzenText>
 
@@ -113,7 +113,7 @@
     [Parameter] public List<LocationReport> Reports { get; set; } = new();
     [Parameter] public List<Alert> Alerts { get; set; } = new();
 
-    private bool _alertDeleted = false;
+    private bool _alertDeleted;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;

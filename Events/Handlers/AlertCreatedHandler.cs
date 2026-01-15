@@ -1,5 +1,4 @@
 using MediatR;
-using WhereAreThey.Events;
 using WhereAreThey.Services;
 
 namespace WhereAreThey.Events.Handlers;

@@ -1,5 +1,5 @@
-using WhereAreThey.Models;
 using Square.Models;
+using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 

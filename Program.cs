@@ -1,19 +1,16 @@
-using Microsoft.AspNetCore.Components.Server.Circuits;
-using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.EntityFrameworkCore;
-using System.IO;
 using System.Globalization;
+using System.IO.Compression;
 using System.Threading.RateLimiting;
 using FluentValidation;
+using Microsoft.AspNetCore.Components.Server.Circuits;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
-using WhereAreThey.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -67,11 +64,11 @@ builder.Services.AddResponseCompression(options =>
 });
 builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
 {
-    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+    options.Level = CompressionLevel.Fastest;
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 {
-    options.Level = System.IO.Compression.CompressionLevel.Fastest;
+    options.Level = CompressionLevel.Fastest;
 });
 
 // Add HttpClient for proxy and other services

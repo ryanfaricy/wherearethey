@@ -1,6 +1,6 @@
+@using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services
-@using Microsoft.Extensions.Localization
 @inject ILocationService LocationService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -44,7 +44,7 @@
 
 @code {
     [Parameter] public LocationReport Report { get; set; } = new();
-    private bool _isSubmitting = false;
+    private bool _isSubmitting;
     private string? _approxAddress;
     private List<GeocodingResult> _geocodingResults = new();
 

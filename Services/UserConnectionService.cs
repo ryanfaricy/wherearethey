@@ -2,7 +2,7 @@ namespace WhereAreThey.Services;
 
 public class UserConnectionService
 {
-    private int _connectionCount = 0;
+    private int _connectionCount;
 
     public int ConnectionCount => Math.Max(0, _connectionCount);
 

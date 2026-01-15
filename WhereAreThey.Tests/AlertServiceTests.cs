@@ -1,18 +1,17 @@
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Moq;
+using WhereAreThey.Components;
 using WhereAreThey.Data;
+using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
-using Xunit;
-using Microsoft.Extensions.Localization;
-using WhereAreThey.Components;
-using MediatR;
-using WhereAreThey.Events;
 
 namespace WhereAreThey.Tests;
 
@@ -446,7 +445,7 @@ public class AlertServiceTests
             .Returns(new LocalizedString("Alert_Cooldown_Error", "You can only create {0} alert zones every {1} minutes."));
 
         // Create 3 alerts (the default limit)
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             await service.CreateAlertAsync(new Alert
             {

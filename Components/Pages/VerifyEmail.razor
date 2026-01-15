@@ -42,9 +42,9 @@
     [SupplyParameterFromQuery]
     public string? Token { get; set; }
 
-    private bool _isVerifying = false;
-    private bool _isVerified = false;
-    private bool _isError = false;
+    private bool _isVerifying;
+    private bool _isVerified;
+    private bool _isError;
 
     protected override void OnInitialized()
     {

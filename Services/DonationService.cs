@@ -1,10 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using WhereAreThey.Data;
-using WhereAreThey.Models;
 using Square;
 using Square.Models;
-
+using WhereAreThey.Data;
+using WhereAreThey.Models;
+using Environment = Square.Environment;
 using IConfiguration = Microsoft.Extensions.Configuration.IConfiguration;
 
 namespace WhereAreThey.Services;
@@ -16,7 +15,7 @@ public class DonationService(
 {
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
         .AccessToken(configuration["Square:AccessToken"] ?? "")
-        .Environment(configuration["Square:Environment"] == "Production" ? Square.Environment.Production : Square.Environment.Sandbox)
+        .Environment(configuration["Square:Environment"] == "Production" ? Environment.Production : Environment.Sandbox)
         .Build();
 
     public async Task<CreatePaymentResponse> CreateSquarePaymentAsync(decimal amount, string sourceId)

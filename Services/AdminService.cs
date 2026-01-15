@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 
@@ -29,7 +28,7 @@ public class AdminService(
         }
 
         var adminPassword = configuration["AdminPassword"];
-        bool isSuccessful = false;
+        var isSuccessful = false;
         if (!string.IsNullOrEmpty(adminPassword))
         {
             var passwordBytes = Encoding.UTF8.GetBytes(password);

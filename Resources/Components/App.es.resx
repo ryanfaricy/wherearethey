@@ -89,13 +89,13 @@
     <value>Idioma</value>
   </data>
   <data name="Anonymous_Profile_ID" xml:space="preserve">
-    <value>ID de Perfil Anónimo</value>
+    <value>Frase de contraseña de Perfil Anónimo</value>
   </data>
   <data name="Profile_ID_Help" xml:space="preserve">
-    <value>Este ID único vincula las alertas con este dispositivo. Guárdelo para recuperar sus alertas en otro dispositivo.</value>
+    <value>Esta frase de contraseña única vincula las alertas con este dispositivo. Guárdela para recuperar sus alertas en otro dispositivo.</value>
   </data>
   <data name="IMPORT_EXISTING_ID" xml:space="preserve">
-    <value>IMPORTAR ID EXISTENTE</value>
+    <value>IMPORTAR FRASE DE CONTRASEÑA EXISTENTE</value>
   </data>
   <data name="IMPORT" xml:space="preserve">
     <value>IMPORTAR</value>
@@ -106,17 +106,20 @@
   <data name="CLOSE" xml:space="preserve">
     <value>CERRAR</value>
   </data>
+  <data name="Copy_to_Clipboard" xml:space="preserve">
+    <value>Copiar al portapapeles</value>
+  </data>
   <data name="SAVE_REFRESH" xml:space="preserve">
     <value>GUARDAR Y ACTUALIZAR</value>
   </data>
   <data name="Paste_New_ID" xml:space="preserve">
-    <value>Pegar Nuevo ID</value>
+    <value>Pegar Nueva Frase de contraseña</value>
   </data>
   <data name="ID_copied" xml:space="preserve">
-    <value>ID copiado al portapapeles</value>
+    <value>Frase de contraseña copiada al portapapeles</value>
   </data>
   <data name="Invalid_ID_format" xml:space="preserve">
-    <value>Formato de ID inválido. Debe ser un GUID.</value>
+    <value>Formato de frase de contraseña inválido.</value>
   </data>
   <data name="Quick_Help_Guide" xml:space="preserve">
     <value>Guía de Ayuda Rápida</value>
@@ -158,7 +161,7 @@
     <value>Gestione sus alertas de correo electrónico basadas en el radio.</value>
   </data>
   <data name="Settings_Desc" xml:space="preserve">
-    <value>Gestione su ID de perfil anónimo y vea la configuración de la aplicación.</value>
+    <value>Gestione su frase de contraseña de perfil anónimo y vea la configuración de la aplicación.</value>
   </data>
   <data name="Donate_Desc" xml:space="preserve">
     <value>Apoya a AreTheyHere con una donación.</value>
@@ -170,7 +173,7 @@
     <value>Sincronizar Dispositivos</value>
   </data>
   <data name="Sync_Devices_Desc" xml:space="preserve">
-    <value>Copie su ID de perfil desde Ajustes para usar el mismo perfil en varios dispositivos.</value>
+    <value>Copie su frase de contraseña de perfil desde Ajustes para usar el mismo perfil en varios dispositivos.</value>
   </data>
   <data name="Privacy_Disclaimer" xml:space="preserve">
     <value>AreTheyHere es una herramienta anónima que prioriza la privacidad. Las vidas de las personas dependen de informes precisos y oportunos.</value>
@@ -197,7 +200,7 @@
     <value>1. Sin Rastreo Personal</value>
   </data>
   <data name="Privacy_1_Desc" xml:space="preserve">
-    <value>No recopilamos ni almacenamos su dirección IP, nombre, número de teléfono ni ninguna otra información de identificación personal (PII). Su actividad en esta plataforma está vinculada únicamente a un ID de perfil anónimo generado localmente en su dispositivo.</value>
+    <value>No recopilamos ni almacenamos su dirección IP, nombre, número de teléfono ni ninguna otra información de identificación personal (PII). Su actividad en esta plataforma está vinculada únicamente a una frase de contraseña de perfil anónimo generada localmente en su dispositivo.</value>
   </data>
   <data name="Privacy_2_Title" xml:space="preserve">
     <value>2. Datos de Ubicación</value>
@@ -359,7 +362,7 @@
     <value>¡Bienvenido!</value>
   </data>
   <data name="Welcome_Detail" xml:space="preserve">
-    <value>Tiene un nuevo perfil anónimo. Consulte Ajustes para guardar su ID para recuperación.</value>
+    <value>Tiene un nuevo perfil anónimo. Consulte Ajustes para guardar su frase de contraseña para la recuperación.</value>
   </data>
   <data name="AREA_DETAILS" xml:space="preserve">
     <value>DETALLES DEL ÁREA</value>
@@ -458,7 +461,7 @@
     <value>Caducidad del Informe: Los informes desaparecen después de {0} horas.</value>
   </data>
   <data name="Identifier_Error" xml:space="preserve">
-    <value>Falta el identificador anónimo. Por favor, actualice la página e intente de nuevo.</value>
+    <value>Falta la frase de contraseña anónima. Por favor, actualice la página e inténtelo de nuevo.</value>
   </data>
   <data name="INSTALL_APP" xml:space="preserve">
     <value>INSTALAR APP</value>
@@ -497,7 +500,7 @@
     <value>La cantidad debe estar entre $1 y $10,000</value>
   </data>
   <data name="ID_Required" xml:space="preserve">
-    <value>El ID es obligatorio</value>
+    <value>La frase de contraseña es obligatoria</value>
   </data>
   <data name="What_Is_This_Title" xml:space="preserve">
     <value>¿Qué es AreTheyHere?</value>

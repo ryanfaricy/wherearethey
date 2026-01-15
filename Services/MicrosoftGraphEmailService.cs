@@ -28,7 +28,7 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
             {
                 message = new
                 {
-                    subject = subject,
+                    subject,
                     body = new
                     {
                         contentType = "HTML",

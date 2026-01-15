@@ -1,14 +1,14 @@
-using FluentValidation;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.EntityFrameworkCore;
-using WhereAreThey.Data;
-using WhereAreThey.Models;
 using System.Security.Cryptography;
 using System.Text;
+using FluentValidation;
+using MediatR;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
-using MediatR;
+using WhereAreThey.Data;
 using WhereAreThey.Events;
+using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 

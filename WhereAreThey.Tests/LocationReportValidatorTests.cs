@@ -1,4 +1,3 @@
-using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Moq;
@@ -7,7 +6,6 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -127,6 +125,23 @@ public class LocationReportValidatorTests
     }
 
     [Fact]
+    public async Task Validator_ShouldFail_WhenIdentifierTooShort()
+    {
+        // Arrange
+        var (_, factory) = await CreateContextAndFactoryAsync();
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var report = new LocationReport { ReporterIdentifier = "short" };
+
+        // Act
+        var result = await validator.ValidateAsync(report);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(LocationReport.ReporterIdentifier));
+    }
+
+    [Fact]
     public async Task Validator_ShouldSucceed_WhenValid()
     {
         // Arrange
@@ -136,7 +151,7 @@ public class LocationReportValidatorTests
         
         var report = new LocationReport 
         { 
-            ReporterIdentifier = "user",
+            ReporterIdentifier = "valid-passphrase-123",
             Latitude = 40.7128, Longitude = -74.0060,
             ReporterLatitude = 40.7129, ReporterLongitude = -74.0061
         };

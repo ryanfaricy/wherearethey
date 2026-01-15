@@ -1,6 +1,6 @@
+@using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services
-@using Microsoft.Extensions.Localization
 @inject IDonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -108,9 +108,9 @@
 </RadzenStack>
 
 @code {
-    private Donation _donation = new Donation { Amount = 10 };
+    private Donation _donation = new() { Amount = 10 };
     private List<DonationDisplay> _recentDonations = new();
-    private bool _isProcessing = false;
+    private bool _isProcessing;
 
     protected override async Task OnInitializedAsync()
     {

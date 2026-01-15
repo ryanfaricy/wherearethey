@@ -1,3 +1,4 @@
+using System.Reflection;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -5,7 +6,6 @@ using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -92,7 +92,7 @@ public class DatabaseCleanupServiceTests
         public async Task PublicCleanupDatabaseAsync()
         {
             // Use reflection to call the private method CleanupDatabaseAsync
-            var method = typeof(DatabaseCleanupService).GetMethod("CleanupDatabaseAsync", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var method = typeof(DatabaseCleanupService).GetMethod("CleanupDatabaseAsync", BindingFlags.NonPublic | BindingFlags.Instance);
             await (Task)method!.Invoke(this, null)!;
         }
     }

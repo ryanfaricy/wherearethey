@@ -1,15 +1,11 @@
 using FluentValidation;
-using System.Globalization;
-using GeoTimeZone;
-using TimeZoneConverter;
+using MediatR;
 using Microsoft.EntityFrameworkCore;
-using WhereAreThey.Data;
-using WhereAreThey.Models;
-
 using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
-using MediatR;
+using WhereAreThey.Data;
 using WhereAreThey.Events;
+using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -24,7 +24,7 @@ public class ProgramTests
             new FallbackEmailService([
                 sp.GetRequiredService<MicrosoftGraphEmailService>(),
                 sp.GetRequiredService<SmtpEmailService>()
-            ], sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<FallbackEmailService>>()));
+            ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
         // Act
         var app = builder.Build();

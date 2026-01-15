@@ -1,9 +1,4 @@
 @page "/"
-@using System.Globalization
-@using WhereAreThey.Models
-@using WhereAreThey.Services
-@using Microsoft.AspNetCore.WebUtilities
-@using Microsoft.Extensions.Localization
 @inject ILocationService LocationService
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
@@ -15,6 +10,11 @@
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
 @inject IAdminNotificationService AdminNotificationService
+@using System.Globalization
+@using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Models
+@using WhereAreThey.Services
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
@@ -28,7 +28,7 @@
         {
             <RadzenButton Text="@L["DONATE"]" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         }
-        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
+        <RadzenButton Text="@L["SETTINGS"]" Icon="settings" Click="@(() => OnSettingsClick(false))" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         <RadzenButton Text="@L["HELP"]" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
         <RadzenButton Text="@L["REFRESH"]" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" class="responsive-button-text" />
     </RadzenStack>
@@ -103,14 +103,14 @@
     private List<LocationReport> _reports = new();
     private List<Alert> _userAlerts = new();
     private SystemSettings _systemSettings = new();
-    private bool _mapInitialized = false;
-    private bool _isGettingLocation = false;
+    private bool _mapInitialized;
+    private bool _isGettingLocation;
     private string? _userIdentifier;
     private DotNetObjectReference<Home>? _objRef;
     private int _locationWatchId = -1;
     private GeolocationPosition? _lastKnownPosition;
     private DateTime _lastLocationUpdate;
-    private bool _followMe = false;
+    private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
     private IEnumerable<GeocodingResult> _geocodingResults = new List<GeocodingResult>();
@@ -139,7 +139,7 @@
         {
             // Incremental update if it matches current time filter
             var cutoff = DateTime.UtcNow.AddHours(-_selectedHours);
-            if (report.Timestamp >= cutoff && !_reports.Any(r => r.Id == report.Id))
+            if (report.Timestamp >= cutoff && _reports.All(r => r.Id != report.Id))
             {
                 _reports.Insert(0, report);
                 if (_mapInitialized)
@@ -161,7 +161,7 @@
                             Summary = L["New_Report"],
                             Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
                             Duration = 10000,
-                            Click = (m) => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
+                            Click = m => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
                         });
                     }
                 }
@@ -195,6 +195,11 @@
         if (firstRender)
         {
             _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            
+            if (string.IsNullOrEmpty(_userIdentifier))
+            {
+                await OnSettingsClick(true);
+            }
             
             var isNew = await JsRuntime.InvokeAsync<bool>("isNewUser");
             
@@ -315,8 +320,8 @@
                 NotificationService.Notify(new NotificationMessage 
                 { 
                     Severity = NotificationSeverity.Info, 
-                    Summary = "Welcome!", 
-                    Detail = "You have a new anonymous profile. See Settings to save your ID for recovery.",
+                    Summary = L["Welcome_Summary"], 
+                    Detail = L["Welcome_Detail"],
                     Duration = 10000
                 });
 
@@ -347,11 +352,13 @@
         }
     }
 
-    private async Task OnSettingsClick()
+    private async Task OnSettingsClick(bool force = false)
     {
+        var options = force ? DialogConfigs.NonCloseable : DialogConfigs.Default;
+
         await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"],
             null,
-            DialogConfigs.Default);
+            options);
     }
 
     private async Task OnHelpClick()
@@ -518,7 +525,7 @@
     [JSInvokable]
     public async Task OnLocationUpdated(GeolocationPosition position)
     {
-        bool isFirstLocation = _lastKnownPosition == null;
+        var isFirstLocation = _lastKnownPosition == null;
         _lastKnownPosition = position;
         _lastLocationUpdate = DateTime.UtcNow;
 

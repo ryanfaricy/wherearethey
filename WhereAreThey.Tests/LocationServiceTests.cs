@@ -1,19 +1,17 @@
-using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
+using WhereAreThey.Events;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
-using Xunit;
-using MediatR;
-using WhereAreThey.Events;
 
 namespace WhereAreThey.Tests;
 
@@ -130,8 +128,8 @@ public class LocationServiceTests
         };
 
         LocationReport? triggeredReport = null;
-        int triggerCount = 0;
-        service.OnReportAdded += (r) => { triggeredReport = r; triggerCount++; };
+        var triggerCount = 0;
+        service.OnReportAdded += r => { triggeredReport = r; triggerCount++; };
 
         // Act
         await service.AddLocationReportAsync(report);
@@ -421,7 +419,7 @@ public class LocationServiceTests
             Longitude = -74.0, 
             RadiusKm = 10.0, 
             IsActive = true,
-            UserIdentifier = "UserB",
+            UserIdentifier = "UserB-Passphrase",
             Message = alertMessage
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
@@ -429,7 +427,7 @@ public class LocationServiceTests
         // Manually verify the alert for the test
         using (var context = new ApplicationDbContext(options))
         {
-            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB");
+            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB-Passphrase");
             savedAlert.IsVerified = true;
             await context.SaveChangesAsync();
         }
@@ -440,7 +438,7 @@ public class LocationServiceTests
             Longitude = -74.0,
             ReporterLatitude = 40.01,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA",
+            ReporterIdentifier = "UserA-Passphrase",
             Message = "Something happened",
             IsEmergency = false
         };
@@ -538,7 +536,7 @@ public class LocationServiceTests
             RadiusKm = 10.0, 
             IsActive = true,
             IsVerified = true,
-            UserIdentifier = "UserB"
+            UserIdentifier = "UserB-Passphrase"
         };
         
         await using (var context = await factory.CreateDbContextAsync())

@@ -7,7 +7,6 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Validators;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

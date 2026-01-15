@@ -1,9 +1,7 @@
 using System.Globalization;
-using Microsoft.Extensions.Localization;
-using WhereAreThey.Components;
-using WhereAreThey.Models;
-using TimeZoneConverter;
 using GeoTimeZone;
+using TimeZoneConverter;
+using WhereAreThey.Models;
 
 namespace WhereAreThey.Services;
 
