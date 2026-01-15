@@ -90,11 +90,11 @@ window.setUserIdentifier = function (id) {
 };
 
 window.isNewUser = function () {
-    const isNew = localStorage.getItem('user-identifier-new') === 'true';
-    if (isNew) {
-        localStorage.removeItem('user-identifier-new');
-    }
-    return isNew;
+    return localStorage.getItem('user-identifier-new') === 'true';
+};
+
+window.clearNewUserFlag = function () {
+    localStorage.removeItem('user-identifier-new');
 };
 
 let dotNetSettingsHelper;

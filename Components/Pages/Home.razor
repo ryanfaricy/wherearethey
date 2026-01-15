@@ -201,6 +201,7 @@
             if (string.IsNullOrEmpty(_userIdentifier))
             {
                 await OnSettingsClick(true);
+                return; // The dialog will trigger a reload, so we should not continue in this instance
             }
             
             var isNew = await JsRuntime.InvokeAsync<bool>("isNewUser");
@@ -319,6 +320,8 @@
 
             if (isNew)
             {
+                await JsRuntime.InvokeVoidAsync("clearNewUserFlag");
+                
                 NotificationService.Notify(new NotificationMessage 
                 { 
                     Severity = NotificationSeverity.Info, 
