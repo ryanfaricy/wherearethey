@@ -5,7 +5,6 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IJSRuntime JSRuntime
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
@@ -14,8 +13,7 @@
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
             <RadzenAutoComplete @bind-Value="@approxAddress" Data="@geocodingResults" TextProperty="Address" 
                                 LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" 
-                                TabIndex="2" />
+                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;" />
         </RadzenFormField>
 
         <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{report.Latitude.ToString("F6")}, {report.Longitude.ToString("F6")}</b>"))</RadzenText>
@@ -23,7 +21,7 @@
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
             <ChildContent>
                 <RadzenTextArea Name="Message" @bind-Value="@report.Message" Rows="3" 
-                                Style="width: 100%;" MaxLength="500" TabIndex="3" />
+                                Style="width: 100%;" MaxLength="500" />
             </ChildContent>
             <Helper>
                 <RadzenLengthValidator Component="Message" Max="500" Text="@L["Message_Too_Long_Detail"]" />
@@ -31,57 +29,28 @@
         </RadzenFormField>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-            <RadzenCheckBox @bind-Value="@report.IsEmergency" TValue="bool" Name="IsEmergency" TabIndex="4" />
+            <RadzenCheckBox @bind-Value="@report.IsEmergency" TValue="bool" Name="IsEmergency" />
             <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="mt-3" JustifyContent="JustifyContent.End">
-            <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" TabIndex="5" />
-            <RadzenButton @ref="submitButton" ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
+            <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
                           Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
-                          IsBusy="@isSubmitting" TabIndex="1" />
+                          IsBusy="@isSubmitting" />
         </RadzenStack>
     </RadzenStack>
 </RadzenTemplateForm>
 
 @code {
     [Parameter] public LocationReport report { get; set; } = new();
-    private RadzenButton? submitButton;
     private bool isSubmitting = false;
     private string? approxAddress;
     private List<GeocodingResult> geocodingResults = new();
 
-    protected override Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync()
     {
-        // Address loading moved to OnAfterRenderAsync to ensure focus priority.
-        // RadzenAutoComplete may steal focus when its value is populated.
-        return Task.CompletedTask;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
-            
-            // Preliminary focus
-            await Task.Delay(200);
-            if (submitButton != null)
-            {
-                await submitButton.Element.FocusAsync();
-            }
-
-            // Load address and update UI
-            approxAddress = await GeocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
-            StateHasChanged();
-
-            // Final focus attempt after address is loaded to override any automatic focus on the input
-            await Task.Delay(500);
-            if (submitButton != null)
-            {
-                await submitButton.Element.FocusAsync();
-            }
-        }
+        approxAddress = await GeocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
     }
 
     private async Task OnAddressSearch(LoadDataArgs args)

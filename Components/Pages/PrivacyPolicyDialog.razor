@@ -3,7 +3,6 @@
 @using Microsoft.Extensions.Localization
 @inject DialogService DialogService
 @inject ISettingsService SettingsService
-@inject IJSRuntime JSRuntime
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -46,13 +45,5 @@
     protected override async Task OnInitializedAsync()
     {
         settings = await SettingsService.GetSettingsAsync();
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
-        }
     }
 }

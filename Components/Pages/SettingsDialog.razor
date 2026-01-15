@@ -148,7 +148,6 @@
             isPwa = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
             isIOS = await JSRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
             
-            await JSRuntime.InvokeVoidAsync("fixDialogScroll");
             StateHasChanged();
         }
     }
