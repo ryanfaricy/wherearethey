@@ -18,6 +18,7 @@
                 @AlertService.DecryptEmail(alert.EncryptedEmail)
             </Template>
         </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Alert" Property="Message" Title="Message" />
         <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
             <Template Context="alert">
                 <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
