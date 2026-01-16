@@ -316,27 +316,33 @@ function addReportMarker(r) {
 }
 
 function refreshHeatLayer() {
-    if (heatLayer) {
-        map.removeLayer(heatLayer);
-    }
-    
-    // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
-    const heatData = allReports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
-    
-    // High-contrast configuration
-    heatLayer = L.heatLayer(heatData, {
-        radius: 30,
-        blur: 10,
-        maxZoom: 17,
-        minOpacity: 0.5,
-        gradient: {
-            0.2: 'blue',
-            0.4: 'cyan',
-            0.6: 'lime',
-            0.8: 'yellow',
-            1.0: 'red'
+    if (!map) return;
+
+    try {
+        if (heatLayer) {
+            map.removeLayer(heatLayer);
         }
-    }).addTo(map);
+
+        // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
+        const heatData = allReports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
+
+        // High-contrast configuration
+        heatLayer = L.heatLayer(heatData, {
+            radius: 30,
+            blur: 10,
+            maxZoom: 17,
+            minOpacity: 0.5,
+            gradient: {
+                0.2: 'blue',
+                0.4: 'cyan',
+                0.6: 'lime',
+                0.8: 'yellow',
+                1.0: 'red'
+            }
+        }).addTo(map);
+    } catch (e) {
+        console.error('Heatmap error:', e);
+    }
 }
 
 window.selectReport = function(reportId) {
