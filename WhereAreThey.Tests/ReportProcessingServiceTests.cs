@@ -64,7 +64,7 @@ public class ReportProcessingServiceTests
     }
 
     [Fact]
-    public async Task ProcessReport_ShouldHandleExceptionsGracefully()
+    public async Task ProcessReport_ShouldThrowAndLogExceptions()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -78,7 +78,7 @@ public class ReportProcessingServiceTests
         var exception = await Record.ExceptionAsync(() => service.ProcessReportAsync(report));
 
         // Assert
-        Assert.Null(exception);
+        Assert.NotNull(exception);
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Error,

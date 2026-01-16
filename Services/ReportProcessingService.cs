@@ -80,6 +80,7 @@ public class ReportProcessingService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Error processing alerts for report {ReportId}", report.Id);
+            throw;
         }
     }
 }
