@@ -108,6 +108,7 @@
 
 @code {
     private bool _isMobile;
+    private bool _disposed;
     private List<LocationReport> _reports = new();
     private List<Alert> _userAlerts = new();
     private SystemSettings _systemSettings = new();
@@ -127,14 +128,21 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _systemSettings = await SettingsService.GetSettingsAsync();
-        _selectedHours = _systemSettings.ReportExpiryHours;
-        await LoadReports();
+        // Subscribe early to ensure unsubscription in Dispose
         EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportUpdated += HandleReportUpdated;
         EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertUpdated += HandleAlertUpdated;
         EventService.OnAlertDeleted += HandleAlertDeleted;
         EventService.OnSettingsChanged += HandleSettingsChanged;
+
+        _systemSettings = await SettingsService.GetSettingsAsync();
+        if (_disposed) return;
+
+        _selectedHours = _systemSettings.ReportExpiryHours;
+        await LoadReports();
+        if (_disposed) return;
     }
 
     private void HandleSettingsChanged(SystemSettings settings)
@@ -195,6 +203,30 @@
         });
     }
 
+    private void HandleReportUpdated(LocationReport report)
+    {
+        InvokeAsync(async () =>
+        {
+            var existing = _reports.FirstOrDefault(r => r.Id == report.Id);
+            if (existing != null)
+            {
+                var index = _reports.IndexOf(existing);
+                _reports[index] = report;
+                if (_mapInitialized)
+                {
+                    // Map update: remove and re-add for simplicity if no specific update function exists
+                    await JsRuntime.InvokeVoidAsync("removeSingleReport", report.Id);
+                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+                }
+                StateHasChanged();
+            }
+            else
+            {
+                HandleReportAdded(report);
+            }
+        });
+    }
+
     private void HandleReportDeleted(int id)
     {
         InvokeAsync(async () =>
@@ -224,6 +256,38 @@
                     await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
                 }
                 StateHasChanged();
+            }
+        });
+    }
+
+    private void HandleAlertUpdated(Alert alert)
+    {
+        InvokeAsync(async () =>
+        {
+            if (alert.UserIdentifier == _userIdentifier)
+            {
+                var index = _userAlerts.FindIndex(a => a.Id == alert.Id);
+                if (index != -1)
+                {
+                    if (alert.IsActive)
+                    {
+                        _userAlerts[index] = alert;
+                    }
+                    else
+                    {
+                        _userAlerts.RemoveAt(index);
+                    }
+
+                    if (_mapInitialized)
+                    {
+                        await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                    }
+                    StateHasChanged();
+                }
+                else if (alert.IsActive)
+                {
+                    HandleAlertAdded(alert);
+                }
             }
         });
     }
@@ -806,11 +870,17 @@
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
+
         EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportUpdated -= HandleReportUpdated;
         EventService.OnReportDeleted -= HandleReportDeleted;
         EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertUpdated -= HandleAlertUpdated;
         EventService.OnAlertDeleted -= HandleAlertDeleted;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
+
         if (_locationWatchId != -1)
         {
             _ = JsRuntime.InvokeVoidAsync("stopWatching", _locationWatchId);

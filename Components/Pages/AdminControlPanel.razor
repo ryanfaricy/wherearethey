@@ -293,6 +293,7 @@
 
 @code {
     private bool _isMobile;
+    private bool _disposed;
     private bool _isAuthenticated;
     private string _passwordInput = "";
     private List<LocationReport> _reports = new();
@@ -307,8 +308,10 @@
     {
         _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
         
+        // Subscribe to ALL events in IEventService to ensure full coverage and prevent leaks via mismatched disposal
         EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
         EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportUpdated += HandleReportUpdated;
         EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
         EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
@@ -320,6 +323,7 @@
         EventService.OnSettingsChanged += HandleSettingsChanged;
         EventService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
         EventService.OnEmailVerified += HandleEmailVerified;
+        EventService.OnThemeChanged += HandleThemeChanged;
     }
 
     private void HandleConnectionCountChanged()
@@ -368,6 +372,11 @@
         });
     }
 
+    private void HandleThemeChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
     private void HandleReportAdded(LocationReport report)
     {
         if (!_isAuthenticated) return;
@@ -375,6 +384,19 @@
             _reports.Insert(0, report);
             NotificationService.Notify(NotificationSeverity.Info, "New Report", report.Message ?? "Report", 5000);
             StateHasChanged();
+        });
+    }
+
+    private void HandleReportUpdated(LocationReport report)
+    {
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            var index = _reports.FindIndex(r => r.Id == report.Id);
+            if (index != -1)
+            {
+                _reports[index] = report;
+                StateHasChanged();
+            }
         });
     }
 
@@ -481,9 +503,12 @@
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
+
         EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
-        
         EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportUpdated -= HandleReportUpdated;
         EventService.OnReportDeleted -= HandleReportDeleted;
         EventService.OnFeedbackAdded -= HandleFeedbackAdded;
         EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
@@ -495,6 +520,7 @@
         EventService.OnSettingsChanged -= HandleSettingsChanged;
         EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
         EventService.OnEmailVerified -= HandleEmailVerified;
+        EventService.OnThemeChanged -= HandleThemeChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
