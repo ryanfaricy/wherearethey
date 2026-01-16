@@ -27,6 +27,8 @@ This document provides a high-level overview of the application architecture, da
 - **Validators (Singleton)**: FluentValidation classes (`LocationReportValidator`, `AlertValidator`, `FeedbackValidator`) encapsulate complex validation logic for reports, alerts, and feedback.
 - **AdminService (Scoped)**: Manages admin authentication and brute-force protection (IP tracking and lockout).
 - **DonationService (Scoped)**: Manages Square payment processing and recording.
+- **MapService (Scoped)**: Encapsulates Leaflet.js interop for heatmap and marker management.
+- **ClientStorageService (Scoped)**: Manages browser local storage and client-side state (UserIdentifier).
 - **GeocodingService (Scoped)**: Interface with Mapbox for forward (address to coords) and reverse (coords to address) geocoding.
 - **EmailService (Scoped)**: A fallback chain: `MicrosoftGraphEmailService` -> `SmtpEmailService`.
 

@@ -2,7 +2,7 @@
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Services
 @inject IReportService ReportService
-@inject IJSRuntime JsRuntime
+@inject IMapService MapService
 @inject ILogger<AdminMapFeed> Logger
 @inject UserTimeZoneService TimeZoneService
 @inject IEventService EventService
@@ -100,7 +100,7 @@
                 Alert_Zone = "Alert Zone"
             };
 
-            await JsRuntime.InvokeVoidAsync("initHeatMap", "admin-map", lat, lng, _reports, _objRef, null, jsTranslations);
+            await MapService.InitMapAsync("admin-map", lat, lng, _reports, _objRef, null!, jsTranslations);
             _mapInitialized = true;
         }
         catch (Exception ex)
@@ -113,7 +113,7 @@
     {
         if (_mapInitialized)
         {
-            await JsRuntime.InvokeVoidAsync("focusReport", report.Id);
+            await MapService.FocusReportAsync(report.Id);
         }
     }
 

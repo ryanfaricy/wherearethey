@@ -79,14 +79,22 @@
         await LoadData();
         
         EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
-        EventService.OnReportAdded += _ => { _reportCount++; StateHasChanged(); };
-        EventService.OnReportDeleted += _ => { _reportCount--; StateHasChanged(); };
-        EventService.OnAlertAdded += _ => { _activeAlertCount++; StateHasChanged(); };
-        EventService.OnAlertDeleted += _ => { _activeAlertCount--; StateHasChanged(); }; // This is simplistic, might not be active
-        EventService.OnDonationAdded += _ => { _donationCount++; StateHasChanged(); };
-        EventService.OnFeedbackAdded += _ => { _feedbackCount++; StateHasChanged(); };
-        EventService.OnFeedbackDeleted += _ => { _feedbackCount--; StateHasChanged(); };
+        EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportDeleted += HandleReportDeleted;
+        EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertDeleted += HandleAlertDeleted;
+        EventService.OnDonationAdded += HandleDonationAdded;
+        EventService.OnFeedbackAdded += HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
     }
+
+    private void HandleReportAdded(LocationReport _) => InvokeAsync(() => { _reportCount++; StateHasChanged(); });
+    private void HandleReportDeleted(int _) => InvokeAsync(() => { _reportCount--; StateHasChanged(); });
+    private void HandleAlertAdded(Alert _) => InvokeAsync(() => { _activeAlertCount++; StateHasChanged(); });
+    private void HandleAlertDeleted(int _) => InvokeAsync(() => { _activeAlertCount--; StateHasChanged(); });
+    private void HandleDonationAdded(Donation _) => InvokeAsync(() => { _donationCount++; StateHasChanged(); });
+    private void HandleFeedbackAdded(Feedback _) => InvokeAsync(() => { _feedbackCount++; StateHasChanged(); });
+    private void HandleFeedbackDeleted(int _) => InvokeAsync(() => { _feedbackCount--; StateHasChanged(); });
 
     private async Task LoadData()
     {
@@ -121,6 +129,12 @@
     public void Dispose()
     {
         EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
-        // Other events too if I had named handlers
+        EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportDeleted -= HandleReportDeleted;
+        EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertDeleted -= HandleAlertDeleted;
+        EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
     }
 }
