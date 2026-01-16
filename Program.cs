@@ -17,6 +17,7 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
+using WhereAreThey.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -120,18 +121,18 @@ builder.Services.AddHangfire(config =>
 builder.Services.AddHangfireServer();
 
 // Add application services
-builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
+builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Scoped);
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
-builder.Services.AddSingleton<IReportService, ReportService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();
 builder.Services.AddScoped<CircuitHandler, UserConnectionCircuitHandler>();
 builder.Services.AddScoped<IAlertService, AlertService>();
-builder.Services.AddSingleton<IDonationService, DonationService>();
-builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IDonationService, DonationService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddScoped<IMapService, MapService>();

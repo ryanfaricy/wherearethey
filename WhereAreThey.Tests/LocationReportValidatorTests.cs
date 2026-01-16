@@ -13,11 +13,13 @@ public class LocationReportValidatorTests
 {
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
+    private readonly Mock<IAdminService> _adminServiceMock = new();
 
     public LocationReportValidatorTests()
     {
         _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns(new LocalizedString("key", "error message"));
         _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns(new LocalizedString("key", "error message"));
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
     }
 
     private static async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
@@ -41,7 +43,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport { ReporterIdentifier = "" };
 
         // Act
@@ -58,7 +60,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport { ReporterIdentifier = "user", Message = "Check this https://spam.com" };
 
         // Act
@@ -85,7 +87,7 @@ public class LocationReportValidatorTests
         await context.SaveChangesAsync();
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportCooldownMinutes = 5 });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport 
         { 
             ReporterIdentifier = identifier,
@@ -109,7 +111,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { MaxReportDistanceMiles = 1 });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         
         var report = new LocationReport 
         { 
@@ -132,7 +134,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport { ReporterIdentifier = "short" };
 
         // Act
@@ -149,7 +151,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportCooldownMinutes = 5, MaxReportDistanceMiles = 10 });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         
         var report = new LocationReport 
         { 
@@ -171,7 +173,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport 
         { 
             ReporterIdentifier = "valid-passphrase-123",
@@ -194,7 +196,7 @@ public class LocationReportValidatorTests
         var (_, factory) = await CreateContextAndFactoryAsync();
         // 1 mile = 1.60934 km
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { MaxReportDistanceMiles = 1 });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         
         // 40.7128, -74.0060 to 40.7128, -74.0253 is ~1.62 km (just over 1 mile)
         var report = new LocationReport 
@@ -218,7 +220,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { MaxReportDistanceMiles = 10 });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         
         // Use coordinates that are within the limit
         var report = new LocationReport 
@@ -251,7 +253,7 @@ public class LocationReportValidatorTests
         await context.SaveChangesAsync();
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportCooldownMinutes = cooldown });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport 
         { 
             ReporterIdentifier = identifier,
@@ -283,7 +285,7 @@ public class LocationReportValidatorTests
         await context.SaveChangesAsync();
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportCooldownMinutes = cooldown });
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport 
         { 
             ReporterIdentifier = identifier,
@@ -307,7 +309,7 @@ public class LocationReportValidatorTests
         // Arrange
         var (_, factory) = await CreateContextAndFactoryAsync();
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
-        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _localizerMock.Object);
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
         var report = new LocationReport { ReporterIdentifier = "user123456", Message = message };
 
         // Act
@@ -316,5 +318,45 @@ public class LocationReportValidatorTests
         // Assert
         Assert.False(result.IsValid);
         Assert.Contains(result.Errors, e => e.PropertyName == nameof(LocationReport.Message));
+    }
+
+    [Fact]
+    public async Task Validator_ShouldSucceed_WhenAdmin_EvenWithRestrictions()
+    {
+        // Arrange
+        var (context, factory) = await CreateContextAndFactoryAsync();
+        var identifier = "admin-user";
+        
+        // Add a recent report to trigger cooldown for normal users
+        context.LocationReports.Add(new LocationReport 
+        { 
+            ReporterIdentifier = identifier, 
+            Timestamp = DateTime.UtcNow.AddMinutes(-1),
+            Latitude = 0, Longitude = 0
+        });
+        await context.SaveChangesAsync();
+
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(true);
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings 
+        { 
+            ReportCooldownMinutes = 5,
+            MaxReportDistanceMiles = 1
+        });
+        
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
+        
+        var report = new LocationReport 
+        { 
+            ReporterIdentifier = "a", // Too short for normal users
+            Message = "Check this https://admin.com", // Links not allowed for normal users
+            Latitude = 40.7128, Longitude = -74.0060,
+            ReporterLatitude = 34.0522, ReporterLongitude = -118.2437 // Way too far for normal users
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(report);
+
+        // Assert
+        Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
 }

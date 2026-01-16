@@ -14,19 +14,26 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
     public LocationReportValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
+        IAdminService adminService,
         IStringLocalizer<App> l)
     {
         RuleFor(x => x.ReporterIdentifier)
-            .NotEmpty().WithMessage(l["Identifier_Error"])
-            .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"]);
+
+        RuleFor(x => x.ReporterIdentifier)
+            .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"])
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
-            .WithMessage(l["Links_Error"]);
+            .WithMessage(l["Links_Error"])
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
 
         RuleFor(x => x)
             .CustomAsync(async (report, context, cancellation) =>
             {
+                if (await adminService.IsAdminAsync()) return;
+
                 var settings = await settingsService.GetSettingsAsync();
 
                 // Cooldown check

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
@@ -12,13 +13,41 @@ namespace WhereAreThey.Services;
 public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
+    ProtectedLocalStorage localStorage,
     IOptions<AppOptions> appOptions) : IAdminService
 {
     /// <inheritdoc />
     public event Action? OnAdminLogin;
 
     /// <inheritdoc />
-    public void NotifyAdminLogin() => OnAdminLogin?.Invoke();
+    public void NotifyAdminLogin()
+    {
+        _isAdminCached = true;
+        OnAdminLogin?.Invoke();
+    }
+
+    private bool? _isAdminCached;
+
+    /// <inheritdoc />
+    public async Task<bool> IsAdminAsync()
+    {
+        if (_isAdminCached.HasValue) return _isAdminCached.Value;
+
+        try
+        {
+            var result = await localStorage.GetAsync<DateTime>("lastAdminLogin");
+            if (result.Success)
+            {
+                _isAdminCached = (DateTime.UtcNow - result.Value).TotalDays <= 7;
+                return _isAdminCached.Value;
+            }
+        }
+        catch (Exception)
+        {
+            // Storage may not be available or entry may be invalid
+        }
+        return false;
+    }
 
     /// <inheritdoc />
     public async Task<bool> LoginAsync(string password, string? ipAddress)

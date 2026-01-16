@@ -31,4 +31,10 @@ public interface IAdminService
     /// Notifies subscribers that a successful admin login has occurred.
     /// </summary>
     void NotifyAdminLogin();
+
+    /// <summary>
+    /// Checks if the current user is an administrator based on local storage state.
+    /// </summary>
+    /// <returns>True if the user is considered an admin; otherwise, false.</returns>
+    Task<bool> IsAdminAsync();
 }

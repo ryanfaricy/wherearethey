@@ -22,6 +22,12 @@ public class ReportServiceTests
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
+    private readonly Mock<IAdminService> _adminServiceMock = new();
+
+    public ReportServiceTests()
+    {
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+    }
 
     private static IStringLocalizer<App> CreateLocalizer()
     {
@@ -77,7 +83,7 @@ public class ReportServiceTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new LocationReportValidator(factory, settingsService, localizer);
+        var validator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
         return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
@@ -226,7 +232,7 @@ public class ReportServiceTests
             });
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
-        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, CreateLocalizer());
         var appOptions = Options.Create(new AppOptions());
         var backgroundJobClientMock = new Mock<IBackgroundJobClient>();
         
