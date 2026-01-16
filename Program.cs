@@ -97,43 +97,12 @@ builder.Services.AddScoped<IEmailService>(sp =>
     ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
 // Add DbContextFactory with PostgreSQL
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-string? connectionString = null;
-
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-    // Railway/Heroku often provide DATABASE_URL as a postgres:// URI
-    if (databaseUrl.StartsWith("postgres://") || databaseUrl.StartsWith("postgresql://"))
-    {
-        try
-        {
-            var uri = new Uri(databaseUrl);
-            var userInfo = uri.UserInfo.Split(':');
-            var username = userInfo[0];
-            var password = userInfo.Length > 1 ? userInfo[1] : "";
-            connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.Trim('/')};Username={username};Password={password};SSL Mode=Prefer;Trust Server Certificate=true";
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error parsing DATABASE_URL URI: {ex}");
-        }
-    }
-    else
-    {
-        // If it's not a URI, assume it's a direct connection string
-        connectionString = databaseUrl;
-    }
-}
-
-// If DATABASE_URL was not present or failed to parse, fallback to appsettings
-if (string.IsNullOrEmpty(connectionString))
-{
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-}
+var connectionString = WhereAreThey.Helpers.ConfigurationHelper.GetConnectionString(builder.Configuration) 
+                      ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
 {
-    options.UseNpgsql(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres");
+    options.UseNpgsql(connectionString);
     options.EnableDetailedErrors();
 });
 
@@ -145,7 +114,7 @@ builder.Services.AddHangfire(config =>
         .UseRecommendedSerializerSettings()
         .UsePostgreSqlStorage(options =>
         {
-            options.UseNpgsqlConnection(connectionString ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres");
+            options.UseNpgsqlConnection(connectionString);
         });
 });
 builder.Services.AddHangfireServer();
@@ -165,6 +134,8 @@ builder.Services.AddSingleton<IDonationService, DonationService>();
 builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
+builder.Services.AddScoped<IMapService, MapService>();
+builder.Services.AddScoped<IClientStorageService, ClientStorageService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
 builder.Services.AddScoped<IFido2>(sp =>

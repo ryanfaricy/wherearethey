@@ -4,9 +4,10 @@
 @inject IGeocodingService GeocodingService
 @inject NavigationManager NavigationManager
 @inject ISettingsService SettingsService
-@inject IJSRuntime JsRuntime
 @inject DialogService DialogService
 @inject NotificationService NotificationService
+@inject IMapService MapService
+@inject IClientStorageService StorageService
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
 @inject IEventService EventService
@@ -126,7 +127,7 @@
                 _reports.Insert(0, report);
                 if (_mapInitialized)
                 {
-                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+                    await MapService.AddSingleReportAsync(report);
 
                     // Show toast if not from current user and we have our location
                     if (report.ReporterIdentifier != _userIdentifier && _lastKnownPosition != null)
@@ -156,7 +157,7 @@
                             Summary = L["New_Report"],
                             Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
                             Duration = 10000,
-                            Click = _ => JsRuntime.InvokeVoidAsync("focusReport", report.Id)
+                            Click = _ => MapService.FocusReportAsync(report.Id)
                         });
                     }
                 }
@@ -177,8 +178,8 @@
                 if (_mapInitialized)
                 {
                     // Map update: remove and re-add for simplicity if no specific update function exists
-                    await JsRuntime.InvokeVoidAsync("removeSingleReport", report.Id);
-                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+                    await MapService.RemoveSingleReportAsync(report.Id);
+                    await MapService.AddSingleReportAsync(report);
                 }
                 StateHasChanged();
             }
@@ -199,7 +200,7 @@
                 _reports.Remove(report);
                 if (_mapInitialized)
                 {
-                    await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
+                    await MapService.RemoveSingleReportAsync(id);
                 }
                 StateHasChanged();
             }
@@ -215,7 +216,7 @@
                 _userAlerts.Add(alert);
                 if (_mapInitialized)
                 {
-                    await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                    await MapService.UpdateAlertsAsync(_userAlerts);
                 }
                 StateHasChanged();
             }
@@ -242,7 +243,7 @@
 
                     if (_mapInitialized)
                     {
-                        await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                        await MapService.UpdateAlertsAsync(_userAlerts);
                     }
                     StateHasChanged();
                 }
@@ -264,7 +265,7 @@
                 _userAlerts.Remove(alert);
                 if (_mapInitialized)
                 {
-                    await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                    await MapService.UpdateAlertsAsync(_userAlerts);
                 }
                 StateHasChanged();
             }
@@ -278,7 +279,7 @@
     {
         if (firstRender)
         {
-            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await StorageService.GetUserIdentifierAsync();
             
             if (string.IsNullOrEmpty(_userIdentifier))
             {
@@ -286,7 +287,7 @@
                 return; // The dialog will trigger a reload, so we should not continue in this instance
             }
             
-            var isNew = await JsRuntime.InvokeAsync<bool>("isNewUser");
+            var isNew = await StorageService.IsNewUserAsync();
             
             await LoadUserAlerts();
             
@@ -364,18 +365,18 @@
                 DELETE = L["DELETE"].Value
             };
 
-            await JsRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, _reports, _objRef, _userAlerts, jsTranslations);
+            await MapService.InitMapAsync("heatmap", initialLat, initialLng, _reports, _objRef, _userAlerts, jsTranslations);
             _mapInitialized = true;
 
             // If we already got a location while initializing, center now
             if (_lastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {
-                await JsRuntime.InvokeVoidAsync("setMapView", _lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+                await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
             }
 
             try
             {
-                _locationWatchId = await JsRuntime.InvokeAsync<int>("watchLocation", _objRef);
+                _locationWatchId = await MapService.WatchLocationAsync(_objRef);
             }
             catch (Exception ex)
             {
@@ -384,16 +385,16 @@
 
             if (focusReportId.HasValue)
             {
-                await JsRuntime.InvokeVoidAsync("focusReport", focusReportId.Value);
+                await MapService.FocusReportAsync(focusReportId.Value);
             }
             else if (initialRadius.HasValue)
             {
-                await JsRuntime.InvokeVoidAsync("setMapView", initialLat, initialLng, initialRadius.Value);
+                await MapService.SetMapViewAsync(initialLat, initialLng, initialRadius.Value);
             }
 
             if (isNew)
             {
-                await JsRuntime.InvokeVoidAsync("clearNewUserFlag");
+                await StorageService.ClearNewUserFlagAsync();
                 
                 NotificationService.Notify(new NotificationMessage 
                 { 
@@ -408,7 +409,7 @@
             }
 
             // Check for report draft
-            var draftJson = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "report_draft");
+            var draftJson = await StorageService.GetItemAsync("report_draft");
             if (!string.IsNullOrEmpty(draftJson))
             {
                 try
@@ -426,13 +427,13 @@
                             }
                             else
                             {
-                                await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                                await StorageService.RemoveItemAsync("report_draft");
                             }
                         }
                         else
                         {
                             // Draft is too old, clear it
-                            await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                            await StorageService.RemoveItemAsync("report_draft");
                         }
                     }
                 }
@@ -440,7 +441,7 @@
                 {
                     Logger.LogWarning(ex, "Failed to deserialize report draft");
                     // Clear broken draft
-                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                    await StorageService.RemoveItemAsync("report_draft");
                 }
             }
         }
@@ -451,7 +452,7 @@
         _reports = await ReportService.GetRecentReportsAsync(_selectedHours);
         if (_mapInitialized)
         {
-            await JsRuntime.InvokeVoidAsync("updateHeatMap", _reports);
+            await MapService.UpdateHeatMapAsync(_reports);
         }
     }
 
@@ -462,7 +463,7 @@
             _userAlerts = await AlertService.GetActiveAlertsAsync(_userIdentifier, onlyVerified: false);
             if (_mapInitialized)
             {
-                await JsRuntime.InvokeVoidAsync("updateAlerts", _userAlerts);
+                await MapService.UpdateAlertsAsync(_userAlerts);
             }
         }
     }
@@ -495,7 +496,7 @@
                 parameters.Add("InitialLat", lat.Value);
                 parameters.Add("InitialLng", lng.Value);
                 
-                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+                var mapState = await MapService.GetMapStateAsync();
                 if (mapState != null)
                 {
                     parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
@@ -503,7 +504,7 @@
             }
             else
             {
-                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+                var mapState = await MapService.GetMapStateAsync();
                 if (mapState != null)
                 {
                     parameters.Add("InitialLat", mapState.Lat);
@@ -525,7 +526,7 @@
 
         if (result is Alert alert)
         {
-            await JsRuntime.InvokeVoidAsync("setMapView", alert.Latitude, alert.Longitude, alert.RadiusKm);
+            await MapService.SetMapViewAsync(alert.Latitude, alert.Longitude, alert.RadiusKm);
         }
     }
 
@@ -557,7 +558,7 @@
         }
         else
         {
-            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            var mapState = await MapService.GetMapStateAsync();
             initialLat = mapState?.Lat ?? 0;
             initialLng = mapState?.Lng ?? 0;
         }
@@ -571,7 +572,7 @@
             ReporterLongitude = initialLng
         };
 
-        await JsRuntime.InvokeVoidAsync("showGhostPin", initialLat, initialLng);
+        await MapService.ShowGhostPinAsync(initialLat, initialLng);
         try
         {
             // Start location acquisition in background
@@ -582,13 +583,13 @@
         }
         finally
         {
-            await JsRuntime.InvokeVoidAsync("hideGhostPin");
+            await MapService.HideGhostPinAsync();
         }
     }
 
     private async Task ProcessReportWithLocation(GeolocationPosition position)
     {
-        await JsRuntime.InvokeVoidAsync("showGhostPin", position.Coords.Latitude, position.Coords.Longitude);
+        await MapService.ShowGhostPinAsync(position.Coords.Latitude, position.Coords.Longitude);
         try
         {
             var report = new LocationReport
@@ -604,7 +605,7 @@
         }
         finally
         {
-            await JsRuntime.InvokeVoidAsync("hideGhostPin");
+            await MapService.HideGhostPinAsync();
         }
     }
 
@@ -612,7 +613,7 @@
     {
         if (value && _lastKnownPosition != null)
         {
-            await JsRuntime.InvokeVoidAsync("setMapView", _lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+            await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
             _searchAddress = await GeocodingService.ReverseGeocodeAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude);
         }
     }
@@ -645,14 +646,14 @@
 
         if (_mapInitialized)
         {
-            await JsRuntime.InvokeVoidAsync("updateUserLocation", 
+            await MapService.UpdateUserLocationAsync( 
                 position.Coords.Latitude, 
                 position.Coords.Longitude, 
                 position.Coords.Accuracy);
 
             if (_followMe || isFirstLocation)
             {
-                await JsRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+                await MapService.SetMapViewAsync(position.Coords.Latitude, position.Coords.Longitude, null);
                 
                 // Only reverse geocode if search box is empty or we are following
                 if (string.IsNullOrEmpty(_searchAddress) || _followMe)
@@ -669,7 +670,7 @@
         if (selected != null)
         {
             _searchAddress = selected.Address;
-            await JsRuntime.InvokeVoidAsync("setMapView", selected.Latitude, selected.Longitude, 2.0); // 2km radius
+            await MapService.SetMapViewAsync(selected.Latitude, selected.Longitude, 2.0); // 2km radius
             _followMe = false; // Disable follow me if user manually searches
         }
     }
@@ -678,7 +679,7 @@
     public async Task OnMapClick(double lat, double lng, bool force = false)
     {
         _followMe = false;
-        var zoom = await JsRuntime.InvokeAsync<double>("getZoomLevel");
+        var zoom = await MapService.GetZoomLevelAsync();
 
         // Find reports within a certain radius
         // - Marker clicks (force): 50m
@@ -712,7 +713,7 @@
             // If it's a single report, highlight it immediately for better feedback
             if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
             {
-                await JsRuntime.InvokeVoidAsync("selectReport", nearbyReports[0].Id);
+                await MapService.SelectReportAsync(nearbyReports[0].Id);
             }
 
             // Tapping on a blob or marker reveals area details
@@ -742,7 +743,7 @@
         // Long-press/right click reveals create report
         // We need user's current location to verify distance
         
-        await JsRuntime.InvokeVoidAsync("showGhostPin", lat, lng);
+        await MapService.ShowGhostPinAsync(lat, lng);
         
         try
         {
@@ -778,7 +779,7 @@
         }
         finally
         {
-            await JsRuntime.InvokeVoidAsync("hideGhostPin");
+            await MapService.HideGhostPinAsync();
         }
     }
 
@@ -817,7 +818,7 @@
     {
         try
         {
-            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            var mapState = await MapService.GetMapStateAsync();
             if (mapState != null)
             {
                 _manualPickTcs?.TrySetResult(new GeolocationPosition 
@@ -846,7 +847,7 @@
             _lastLocationUpdate = DateTime.UtcNow;
             if (_mapInitialized)
             {
-                await JsRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+                await MapService.SetMapViewAsync(position.Coords.Latitude, position.Coords.Longitude, null);
             }
         }
     }
@@ -862,7 +863,7 @@
         }
 
         using var cts = new CancellationTokenSource();
-        var locationTask = JsRuntime.InvokeAsync<GeolocationPosition>("getLocation").AsTask();
+        var locationTask = StorageService.GetLocationAsync();
         var timerTask = Task.Delay(7000, cts.Token);
 
         try
@@ -918,20 +919,8 @@
 
         if (_locationWatchId != -1)
         {
-            _ = JsRuntime.InvokeVoidAsync("stopWatching", _locationWatchId);
+            _ = MapService.StopWatchingAsync(_locationWatchId);
         }
         _objRef?.Dispose();
-    }
-
-    public class GeolocationPosition
-    {
-        public GeolocationCoordinates Coords { get; set; } = new();
-    }
-
-    public class GeolocationCoordinates
-    {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public double Accuracy { get; set; }
     }
 }

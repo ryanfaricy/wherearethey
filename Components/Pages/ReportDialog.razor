@@ -6,10 +6,11 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IMapService MapService
+@inject IClientStorageService StorageService
 @inject IHapticFeedbackService HapticFeedbackService
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
-@inject IJSRuntime JsRuntime
 
 <RadzenTemplateForm Data="@Report" Submit="@((LocationReport _) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
@@ -58,7 +59,7 @@
 
 @code {
     [Parameter] public LocationReport Report { get; set; } = new();
-    [Parameter] public Task<Home.GeolocationPosition?>? LocationTask { get; set; }
+    [Parameter] public Task<GeolocationPosition?>? LocationTask { get; set; }
     [Parameter] public bool UpdateReportLocation { get; set; } = true;
     private bool _isSubmitting;
     private bool _isDeterminingLocation;
@@ -84,7 +85,7 @@
         {
             Report.Timestamp = DateTime.UtcNow;
             var json = JsonSerializer.Serialize(Report);
-            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "report_draft", json);
+            await StorageService.SetItemAsync("report_draft", json);
         }
         catch (Exception ex)
         {
@@ -96,7 +97,7 @@
     {
         try
         {
-            await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+            await StorageService.RemoveItemAsync("report_draft");
         }
         catch (Exception ex)
         {
@@ -123,7 +124,7 @@
                     Report.Longitude = position.Coords.Longitude;
                     
                     // Update Ghost Pin on map
-                    await JsRuntime.InvokeVoidAsync("showGhostPin", Report.Latitude, Report.Longitude);
+                    await MapService.ShowGhostPinAsync(Report.Latitude, Report.Longitude);
                     
                     _approxAddress = await GeocodingService.ReverseGeocodeAsync(Report.Latitude, Report.Longitude);
                 }

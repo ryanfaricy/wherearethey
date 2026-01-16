@@ -88,6 +88,14 @@
         EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
     }
 
+    private void HandleReportAdded(LocationReport _) => InvokeAsync(() => { _reportCount++; StateHasChanged(); });
+    private void HandleReportDeleted(int _) => InvokeAsync(() => { _reportCount--; StateHasChanged(); });
+    private void HandleAlertAdded(Alert _) => InvokeAsync(() => { _activeAlertCount++; StateHasChanged(); });
+    private void HandleAlertDeleted(int _) => InvokeAsync(() => { _activeAlertCount--; StateHasChanged(); });
+    private void HandleDonationAdded(Donation _) => InvokeAsync(() => { _donationCount++; StateHasChanged(); });
+    private void HandleFeedbackAdded(Feedback _) => InvokeAsync(() => { _feedbackCount++; StateHasChanged(); });
+    private void HandleFeedbackDeleted(int _) => InvokeAsync(() => { _feedbackCount--; StateHasChanged(); });
+
     private async Task LoadData()
     {
         try
@@ -117,14 +125,6 @@
     {
         InvokeAsync(StateHasChanged);
     }
-
-    private void HandleReportAdded(LocationReport _) { _reportCount++; InvokeAsync(StateHasChanged); }
-    private void HandleReportDeleted(int _) { _reportCount--; InvokeAsync(StateHasChanged); }
-    private void HandleAlertAdded(Alert _) { _activeAlertCount++; InvokeAsync(StateHasChanged); }
-    private void HandleAlertDeleted(int _) { _activeAlertCount--; InvokeAsync(StateHasChanged); }
-    private void HandleDonationAdded(Donation _) { _donationCount++; InvokeAsync(StateHasChanged); }
-    private void HandleFeedbackAdded(Feedback _) { _feedbackCount++; InvokeAsync(StateHasChanged); }
-    private void HandleFeedbackDeleted(int _) { _feedbackCount--; InvokeAsync(StateHasChanged); }
 
     public void Dispose()
     {

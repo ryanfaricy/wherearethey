@@ -5,7 +5,8 @@
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
-@inject IJSRuntime JsRuntime
+@inject IMapService MapService
+@inject IClientStorageService StorageService
 @inject ISettingsService SettingsService
 @inject IAdminService AdminService
 @inject ProtectedLocalStorage LocalStorage
@@ -47,7 +48,7 @@
     {
         if (firstRender)
         {
-            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await StorageService.GetUserIdentifierAsync();
 
             try
             {
@@ -71,13 +72,13 @@
     private async Task OnReportClick()
     {
         // Start location acquisition in background
-        var locationTask = JsRuntime.InvokeAsync<GeolocationPosition>("getLocation").AsTask();
+        var locationTask = StorageService.GetLocationAsync();
 
         // Initial placeholder from map if possible
         double initialLat = 0, initialLng = 0;
         try
         {
-            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            var mapState = await MapService.GetMapStateAsync();
             if (mapState != null)
             {
                 initialLat = mapState.Lat;
@@ -95,29 +96,11 @@
             ReporterLongitude = initialLng
         };
 
-        async Task<Home.GeolocationPosition?> GetTransformedLocation()
-        {
-            try
-            {
-                var p = await locationTask;
-                return new Home.GeolocationPosition
-                {
-                    Coords = new Home.GeolocationCoordinates
-                    {
-                        Latitude = p.Coords.Latitude,
-                        Longitude = p.Coords.Longitude,
-                        Accuracy = p.Coords.Accuracy
-                    }
-                };
-            }
-            catch { return null; }
-        }
-
         await DialogService.OpenAsync<ReportDialog>(L["REPORT_LOCATION"],
             new Dictionary<string, object> 
             { 
                 { "Report", report },
-                { "LocationTask", GetTransformedLocation() }
+                { "LocationTask", locationTask }
             },
             DialogConfigs.Default);
     }
@@ -127,7 +110,7 @@
         var parameters = new Dictionary<string, object>();
         try
         {
-            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            var mapState = await MapService.GetMapStateAsync();
             if (mapState != null)
             {
                 parameters.Add("InitialLat", mapState.Lat);
@@ -158,17 +141,5 @@
     public void Dispose()
     {
         AdminService.OnAdminLogin -= HandleAdminLogin;
-    }
-
-    public class GeolocationPosition
-    {
-        public GeolocationCoordinates Coords { get; set; } = new();
-    }
-
-    public class GeolocationCoordinates
-    {
-        public double Latitude { get; set; }
-        public double Longitude { get; set; }
-        public double Accuracy { get; set; }
     }
 }
