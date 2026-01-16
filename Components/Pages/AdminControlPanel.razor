@@ -4,7 +4,7 @@
 @inject IDonationService DonationService
 @inject IFeedbackService FeedbackService
 @inject IAdminService AdminService
-@inject ISettingsService SettingsService
+@inject IAdminPasskeyService PasskeyService
 @inject ProtectedSessionStorage SessionStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -17,6 +17,8 @@
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Components.Admin
+@using System.Text.Json
+@using Fido2NetLib
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -32,6 +34,10 @@
                         <RadzenPassword @bind-Value="@_passwordInput" @onkeypress="@OnKeyPress" />
                     </RadzenFormField>
                     <RadzenButton Text="LOGIN" Click="@Login" ButtonStyle="ButtonStyle.Primary" />
+                    
+                    <RadzenText TextStyle="TextStyle.Caption" TextAlign="TextAlign.Center" Class="rz-my-2">OR</RadzenText>
+                    
+                    <RadzenButton Text="LOGIN WITH PASSKEY" Icon="fingerprint" Click="@LoginWithPasskey" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Outlined" />
                 </RadzenStack>
             </RadzenCard>
         </RadzenStack>
@@ -81,6 +87,7 @@
     private string _passwordInput = "";
     private string? _clientIp;
     private bool _disposed;
+    private IJSObjectReference? _module;
 
     protected override void OnInitialized()
     {
@@ -96,6 +103,8 @@
     {
         if (firstRender)
         {
+            _module = await JsRuntime.InvokeAsync<IJSObjectReference>("import", "./passkey.js");
+
             try
             {
                 var result = await SessionStorage.GetAsync<bool>("isAdmin");
@@ -130,6 +139,38 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Admin login failed for IP {ClientIp}", _clientIp);
+            NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
+        }
+    }
+
+    private async Task LoginWithPasskey()
+    {
+        if (_module == null) return;
+
+        try
+        {
+            var options = await PasskeyService.GetAssertionOptionsAsync();
+            var jsonOptions = options.ToJson();
+
+            var responseJson = await _module.InvokeAsync<string>("loginWithPasskey", jsonOptions);
+            var assertionRawResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(responseJson);
+
+            if (assertionRawResponse == null) throw new Exception("Failed to parse authenticator response");
+
+            if (await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp))
+            {
+                _isAuthenticated = true;
+                await SessionStorage.SetAsync("isAdmin", true);
+                NotificationService.Notify(NotificationSeverity.Success, "Login successful");
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Login failed", "Invalid passkey");
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Admin passkey login failed for IP {ClientIp}", _clientIp);
             NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
         }
     }

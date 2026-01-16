@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
+using Fido2NetLib;
 using FluentValidation;
 using Hangfire;
 using Hangfire.PostgreSql;
@@ -165,6 +166,18 @@ builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
+builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
+builder.Services.AddScoped<IFido2>(sp =>
+{
+    var appOptions = sp.GetRequiredService<IOptions<AppOptions>>().Value;
+    var uri = new Uri(appOptions.BaseUrl);
+    return new Fido2(new Fido2Configuration
+    {
+        ServerDomain = builder.Configuration["Fido2:ServerDomain"] ?? uri.Host,
+        ServerName = "WhereAreThey Admin",
+        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') }
+    });
+});
 builder.Services.AddScoped<UserTimeZoneService>();
 builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
