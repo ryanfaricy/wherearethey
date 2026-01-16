@@ -17,10 +17,12 @@ public class ReportProcessingServiceTests
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<ILocationService> _locationServiceMock = new();
 
-    private IReportProcessingService CreateService(IServiceProvider serviceProvider)
+    private IReportProcessingService CreateService()
     {
         return new ReportProcessingService(
-            serviceProvider,
+            _alertServiceMock.Object,
+            _emailServiceMock.Object,
+            _geocodingServiceMock.Object,
             Options.Create(new AppOptions()),
             _settingsServiceMock.Object,
             _locationServiceMock.Object,
@@ -31,14 +33,7 @@ public class ReportProcessingServiceTests
     public async Task ProcessReport_ShouldSendEmailsToMatchingAlerts()
     {
         // Arrange
-        var services = new ServiceCollection();
-        services.AddSingleton(_alertServiceMock.Object);
-        services.AddSingleton(_emailServiceMock.Object);
-        services.AddSingleton(_geocodingServiceMock.Object);
-        services.AddSingleton(_settingsServiceMock.Object);
-        var serviceProvider = services.BuildServiceProvider();
-
-        var service = CreateService(serviceProvider);
+        var service = CreateService();
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
         var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg" };
 
@@ -67,11 +62,8 @@ public class ReportProcessingServiceTests
     public async Task ProcessReport_ShouldThrowAndLogExceptions()
     {
         // Arrange
-        var services = new ServiceCollection();
-        // This will cause an exception when trying to resolve services if not added
-        var serviceProvider = services.BuildServiceProvider();
-
-        var service = CreateService(serviceProvider);
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ThrowsAsync(new Exception("Test exception"));
+        var service = CreateService();
         var report = new LocationReport { Id = 1 };
 
         // Act

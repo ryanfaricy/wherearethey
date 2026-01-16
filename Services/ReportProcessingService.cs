@@ -7,7 +7,9 @@ namespace WhereAreThey.Services;
 
 /// <inheritdoc />
 public class ReportProcessingService(
-    IServiceProvider serviceProvider,
+    IAlertService alertService,
+    IEmailService emailService,
+    IGeocodingService geocodingService,
     IOptions<AppOptions> appOptions,
     ISettingsService settingsService,
     ILocationService locationService,
@@ -18,10 +20,6 @@ public class ReportProcessingService(
     {
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            var alertService = scope.ServiceProvider.GetRequiredService<IAlertService>();
-            var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-            var geocodingService = scope.ServiceProvider.GetRequiredService<IGeocodingService>();
             var settings = await settingsService.GetSettingsAsync();
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);

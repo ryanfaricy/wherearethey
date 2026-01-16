@@ -153,7 +153,7 @@ builder.Services.AddHangfireServer();
 builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
-builder.Services.AddSingleton<IReportProcessingService, ReportProcessingService>();
+builder.Services.AddScoped<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<IReportService, ReportService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();

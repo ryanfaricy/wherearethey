@@ -21,7 +21,7 @@ This document provides a high-level overview of the application architecture, da
 ### Services
 - **ReportService (Singleton)**: Manages the lifecycle of incident reports (Add, Get, Delete). Provides real-time `OnReportAdded` and `OnReportDeleted` events for UI updates.
 - **LocationService (Singleton)**: Handles specialized spatial and geographic logic, such as radius searches and local time formatting based on coordinates.
-- **ReportProcessingService (Singleton)**: Handles background processing for new reports, including alert matching, geocoding, and email notifications.
+- **ReportProcessingService (Scoped)**: Handles background processing for new reports, including alert matching, geocoding, and email notifications.
 - **AlertService (Scoped)**: Manages distance-based user alerts. Handles email encryption at rest using the Data Protection API.
 - **SettingsService (Singleton)**: Manages global system settings (limits, tokens, toggle features) with a 1-minute memory cache.
 - **Validators (Singleton)**: FluentValidation classes (`LocationReportValidator`, `AlertValidator`, `FeedbackValidator`) encapsulate complex validation logic for reports, alerts, and feedback.

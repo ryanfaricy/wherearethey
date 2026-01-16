@@ -232,7 +232,7 @@ public class ReportServiceTests
         services.AddLogging();
         services.AddSingleton<IGeocodingService>(new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object));
         services.AddSingleton<ILocationService>(new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object));
-        services.AddSingleton<IReportProcessingService, ReportProcessingService>();
+        services.AddScoped<IReportProcessingService, ReportProcessingService>();
         
         // Circular dependency handling: AlertService needs IBackgroundJobClient
         services.AddSingleton<IAlertService>(sp => new AlertService(factory, dataProtectionProvider, sp.GetRequiredService<IEmailService>(), sp.GetRequiredService<IBackgroundJobClient>(), _eventServiceMock.Object, sp.GetRequiredService<IOptions<AppOptions>>(), new Mock<ILogger<AlertService>>().Object, alertValidator));
