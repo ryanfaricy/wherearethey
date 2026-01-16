@@ -17,6 +17,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using System.Text.Json
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
@@ -443,6 +444,43 @@
 
                 // Show help dialog for first-ever load
                 await OnHelpClick();
+            }
+
+            // Check for report draft
+            var draftJson = await JsRuntime.InvokeAsync<string?>("localStorage.getItem", "report_draft");
+            if (!string.IsNullOrEmpty(draftJson))
+            {
+                try
+                {
+                    var draft = JsonSerializer.Deserialize<LocationReport>(draftJson);
+                    if (draft != null)
+                    {
+                        // Only prompt if draft is less than 24 hours old
+                        if (DateTime.UtcNow - draft.Timestamp < TimeSpan.FromHours(24))
+                        {
+                            var resume = await DialogService.Confirm(L["Resume_Draft_Message"], L["Resume_Draft_Title"]);
+                            if (resume == true)
+                            {
+                                await ShowReportDialog(draft);
+                            }
+                            else
+                            {
+                                await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                            }
+                        }
+                        else
+                        {
+                            // Draft is too old, clear it
+                            await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to deserialize report draft");
+                    // Clear broken draft
+                    await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+                }
             }
         }
     }

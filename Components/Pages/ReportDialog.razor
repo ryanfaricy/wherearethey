@@ -1,6 +1,7 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
+@using System.Text.Json
 @inject IReportService ReportService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -34,7 +35,7 @@
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
             <ChildContent>
                 <RadzenTextArea Name="Message" @bind-Value="@Report.Message" Rows="3" 
-                                Style="width: 100%;" MaxLength="500" />
+                                Style="width: 100%;" MaxLength="500" Change="@SaveDraft" />
             </ChildContent>
             <Helper>
                 <RadzenLengthValidator Component="Message" Max="500" Text="@L["Message_Too_Long_Detail"]" />
@@ -42,12 +43,12 @@
         </RadzenFormField>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-            <RadzenCheckBox @bind-Value="@Report.IsEmergency" TValue="bool" Name="IsEmergency" />
+            <RadzenCheckBox @bind-Value="@Report.IsEmergency" TValue="bool" Name="IsEmergency" Change="@SaveDraft" />
             <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-3" JustifyContent="JustifyContent.End">
-            <RadzenButton Text="@L["CANCEL"]" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton Text="@L["CANCEL"]" Click="@Cancel" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
                           Icon="report_problem" ButtonStyle="ButtonStyle.Danger" 
                           IsBusy="@_isSubmitting" />
@@ -77,6 +78,38 @@
         }
     }
 
+    private async Task SaveDraft()
+    {
+        try
+        {
+            Report.Timestamp = DateTime.UtcNow;
+            var json = JsonSerializer.Serialize(Report);
+            await JsRuntime.InvokeVoidAsync("localStorage.setItem", "report_draft", json);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to save report draft");
+        }
+    }
+
+    private async Task ClearDraft()
+    {
+        try
+        {
+            await JsRuntime.InvokeVoidAsync("localStorage.removeItem", "report_draft");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to clear report draft");
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await ClearDraft();
+        DialogService.Close(false);
+    }
+
     private async Task UpdateLocationAsync()
     {
         try
@@ -97,6 +130,7 @@
 
                 Report.ReporterLatitude = position.Coords.Latitude;
                 Report.ReporterLongitude = position.Coords.Longitude;
+                await SaveDraft();
             }
         }
         catch (Exception ex)
@@ -118,7 +152,7 @@
         }
     }
 
-    private void OnAddressSelected(object value)
+    private async Task OnAddressSelected(object value)
     {
         if (value is string address)
         {
@@ -128,6 +162,7 @@
                 Report.Latitude = selected.Latitude;
                 Report.Longitude = selected.Longitude;
                 _approxAddress = selected.Address;
+                await SaveDraft();
             }
         }
     }
@@ -139,6 +174,7 @@
         try
         {
             await ReportService.AddReportAsync(Report);
+            await ClearDraft();
             if (Report.IsEmergency)
             {
                 await HapticFeedbackService.VibrateEmergencyAsync();
