@@ -104,68 +104,48 @@ window.registerSettingsHelper = function (helper) {
 };
 
 window.copyToClipboard = function (text) {
-    console.log('Attempting to copy to clipboard');
+    console.log('Attempting to copy:', text);
     if (text) {
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
-        const fallbackCopy = (textToCopy) => {
-            console.log('Using fallback copy');
-            const textArea = document.createElement("textarea");
-            textArea.value = textToCopy;
-
-            // Minimal styling to avoid layout shift but keep it "visible" for the browser
-            textArea.style.position = "fixed";
-            textArea.style.top = "0";
-            textArea.style.left = "0";
-            textArea.style.width = "2em";
-            textArea.style.height = "2em";
-            textArea.style.padding = "0";
-            textArea.style.border = "none";
-            textArea.style.outline = "none";
-            textArea.style.boxShadow = "none";
-            textArea.style.background = "transparent";
-            textArea.style.opacity = "0.01";
-
-            document.body.appendChild(textArea);
-
-            // iOS specific selection
-            if (isIOS) {
-                textArea.contentEditable = true;
-                textArea.readOnly = false;
-                const range = document.createRange();
-                range.selectNodeContents(textArea);
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(range);
-                textArea.setSelectionRange(0, 999999);
-            } else {
+        const performCopy = (textToCopy) => {
+            if (!navigator.clipboard) {
+                console.log('Navigator.clipboard not available, using fallback');
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
                 textArea.select();
-            }
-
-            try {
-                const successful = document.execCommand('copy');
-                console.log('Fallback copy ' + (successful ? 'successful' : 'unsuccessful'));
-                if (successful && dotNetSettingsHelper) {
-                    dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+                try {
+                    document.execCommand('copy');
+                    console.log('Fallback copy successful');
+                    if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+                } catch (err) {
+                    console.error('Fallback copy failed', err);
                 }
-            } catch (err) {
-                console.error('Fallback copy failed', err);
+                document.body.removeChild(textArea);
+                return;
             }
-
-            document.body.removeChild(textArea);
-        };
-
-        if (navigator.clipboard && !isIOS) {
-            navigator.clipboard.writeText(text).then(() => {
+            navigator.clipboard.writeText(textToCopy).then(() => {
                 console.log('Clipboard copy successful');
                 if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
             }).catch(err => {
-                console.error('Navigator.clipboard failed, falling back', err);
-                fallbackCopy(text);
+                console.error('Failed to copy:', err);
+                const textArea = document.createElement("textarea");
+                textArea.value = textToCopy;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    console.log('Fallback copy successful after clipboard failure');
+                    if (dotNetSettingsHelper) dotNetSettingsHelper.invokeMethodAsync('NotifyCopied');
+                } catch (fallbackErr) {
+                    console.error('Fallback copy failed', fallbackErr);
+                }
+                document.body.removeChild(textArea);
             });
-        } else {
-            fallbackCopy(text);
-        }
+        };
+
+        performCopy(text);
+    } else {
+        console.warn('No text provided to copy');
     }
 };
 

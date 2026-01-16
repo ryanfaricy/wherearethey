@@ -71,7 +71,12 @@
                     <RadzenText TextStyle="TextStyle.Overline">@L["Option_1_Generated"]</RadzenText>
                     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                         <RadzenTextBox Value="@_generatedPassphrase" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 1rem; text-align: center; border-style: dashed;" />
-                        <RadzenButton Icon="content_copy" Click="@(() => CopyToClipboard(_generatedPassphrase))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["Copy_to_Clipboard"]" />
+                        <button type="button" class="rz-button rz-button-sm rz-variant-flat rz-info rz-shade-default" 
+                                onclick="copyToClipboard('@_generatedPassphrase')"
+                                style="padding: 0; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; border-radius: 4px;"
+                                title="@L["Copy_to_Clipboard"]">
+                            <i class="rzi" style="font-size: 1.25rem;">content_copy</i>
+                        </button>
                         <RadzenButton Icon="refresh" Click="@RegeneratePassphrase" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["REFRESH"]" />
                     </RadzenStack>
                     <RadzenButton Text="@L["Use_Generated_Passphrase"]" Click="@(() => UsePassphrase(_generatedPassphrase, true))" 
@@ -106,7 +111,12 @@
         {
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                 <RadzenTextBox Value="@_userIdentifier" ReadOnly="true" Style="flex: 1; font-family: monospace; font-size: 0.8rem;" />
-                <RadzenButton Icon="content_copy" Click="@(() => CopyToClipboard(_userIdentifier))" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Small" ToolTip="@L["Copy_to_Clipboard"]" />
+                <button type="button" class="rz-button rz-button-sm rz-variant-flat rz-info rz-shade-default" 
+                        onclick="copyUserIdentifier()"
+                        style="padding: 0; min-width: 32px; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border: none; cursor: pointer; border-radius: 4px;"
+                        title="@L["Copy_to_Clipboard"]">
+                    <i class="rzi" style="font-size: 1.25rem;">content_copy</i>
+                </button>
                 <RadzenButton Text="@L["IMPORT"]" Click="@(() => _showImport = !_showImport)" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Small" />
             </RadzenStack>
 
@@ -273,11 +283,6 @@
     public void Dispose()
     {
         _objRef?.Dispose();
-    }
-
-    private async Task CopyToClipboard(string text)
-    {
-        await JsRuntime.InvokeVoidAsync("copyToClipboard", text);
     }
 
     [JSInvokable]

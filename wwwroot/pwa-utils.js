@@ -41,6 +41,6 @@ window.pwaFunctions = {
         return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     },
     isIOS: function() {
-        return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        return (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
     }
 };
