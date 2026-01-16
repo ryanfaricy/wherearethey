@@ -132,7 +132,7 @@
 
         try
         {
-            var options = await PasskeyService.GetRegistrationOptionsAsync("admin@wherearethey.com");
+            var options = await PasskeyService.GetRegistrationOptionsAsync("admin@aretheyhere.com");
             var jsonOptions = options.ToJson();
             
             var responseJson = await _module.InvokeAsync<string>("registerPasskey", jsonOptions);
