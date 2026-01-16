@@ -403,7 +403,15 @@ window.setMapView = function (lat, lng, radiusKm) {
         map.setView([lat, lng], Math.round(zoom));
     } else {
         const currentZoom = map.getZoom();
-        map.setView([lat, lng], currentZoom > 0 ? currentZoom : 13);
+        let targetZoom = currentZoom > 0 ? currentZoom : 13;
+        
+        // If we have no reports and are at a world-view zoom level (<= 2), 
+        // zoom in to a sensible default (zoom 8 is roughly 150-250 miles across)
+        if (allReports.length === 0 && targetZoom <= 2) {
+            targetZoom = 8;
+        }
+        
+        map.setView([lat, lng], targetZoom);
     }
     isProgrammaticMove = false;
 };
