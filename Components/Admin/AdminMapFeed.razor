@@ -122,6 +122,10 @@
         InvokeAsync(async () =>
         {
             _reports.Insert(0, report);
+            if (_mapInitialized)
+            {
+                await MapService.AddSingleReportAsync(report);
+            }
             StateHasChanged();
         });
     }
@@ -134,6 +138,12 @@
             if (index != -1)
             {
                 _reports[index] = report;
+                if (_mapInitialized)
+                {
+                    // Update by removing and adding back
+                    await MapService.RemoveSingleReportAsync(report.Id);
+                    await MapService.AddSingleReportAsync(report);
+                }
                 StateHasChanged();
             }
         });
@@ -144,6 +154,10 @@
         InvokeAsync(async () =>
         {
             _reports.RemoveAll(r => r.Id == id);
+            if (_mapInitialized)
+            {
+                await MapService.RemoveSingleReportAsync(id);
+            }
             StateHasChanged();
         });
     }
