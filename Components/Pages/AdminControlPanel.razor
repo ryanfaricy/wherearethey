@@ -47,6 +47,54 @@
 
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
+                <RadzenTabsItem Text="@(_isMobile ? "" : "REAL-TIME")" Icon="bolt">
+                    <RadzenRow>
+                        <RadzenColumn Size="12" SizeMD="8">
+                            <RadzenCard Class="rz-p-0" Style="height: 500px; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
+                                <div id="admin-map" style="height: 100%; width: 100%;"></div>
+                                <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
+                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="LIVE MAP" />
+                                </div>
+                            </RadzenCard>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="4">
+                            <RadzenCard Style="height: 500px; display: flex; flex-direction: column;" Class="rz-p-0">
+                                <div class="rz-p-3 rz-background-color-primary-lighter" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
+                                    <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">Live Report Feed</RadzenText>
+                                </div>
+                                <div style="flex: 1; overflow-y: auto;" class="rz-p-3">
+                                    <RadzenStack Gap="1rem">
+                                        @if (!_reports.Any())
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-align-center rz-mt-4">No recent reports.</RadzenText>
+                                        }
+                                        @foreach (var report in _reports.Take(20))
+                                        {
+                                            <RadzenCard Variant="Variant.Flat" 
+                                                        Class="@(report.IsEmergency ? "rz-background-color-danger-lighter" : "rz-background-color-base-100")" 
+                                                        Style="padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); cursor: pointer;"
+                                                        @onclick="@(() => FocusReportOnMap(report))">
+                                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
+                                                    <RadzenText TextStyle="TextStyle.Caption">@TimeZoneService.FormatLocal(report.Timestamp)</RadzenText>
+                                                    @if (report.IsEmergency)
+                                                    {
+                                                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="EMERGENCY" />
+                                                    }
+                                                </RadzenStack>
+                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2" Style="font-weight: 500;">
+                                                    @(report.Message?.Length > 100 ? report.Message.Substring(0, 97) + "..." : report.Message)
+                                                </RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">
+                                                    <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
+                                                </RadzenText>
+                                            </RadzenCard>
+                                        }
+                                    </RadzenStack>
+                                </div>
+                            </RadzenCard>
+                        </RadzenColumn>
+                    </RadzenRow>
+                </RadzenTabsItem>
                 <RadzenTabsItem Text="@(_isMobile ? "" : "OVERVIEW")" Icon="dashboard">
                     <RadzenRow>
                         <RadzenColumn Size="12" SizeMD="4">
@@ -303,6 +351,53 @@
     private List<AdminLoginAttempt> _loginAttempts = new();
     private SystemSettings _systemSettings = new();
     private string? _clientIp;
+    private bool _mapInitialized;
+    private DotNetObjectReference<AdminControlPanel>? _objRef;
+
+    [JSInvokable] public void OnMapClick(double lat, double lng, bool isMarkerClick) { }
+    [JSInvokable] public void OnMapContextMenu(double lat, double lng) { }
+    [JSInvokable] public void OnMapMoveEnd(double lat, double lng) { }
+    [JSInvokable] public void OnUserInteractedWithMap() { }
+
+    private async Task InitializeMap()
+    {
+        if (_mapInitialized || !_isAuthenticated) return;
+        
+        try 
+        {
+            _objRef = DotNetObjectReference.Create(this);
+            
+            double lat = 0;
+            double lng = 0;
+            if (_reports.Any())
+            {
+                lat = _reports.Average(r => r.Latitude);
+                lng = _reports.Average(r => r.Longitude);
+            }
+
+            var jsTranslations = new
+            {
+                EMERGENCY_REPORT = "EMERGENCY",
+                Report = "Report",
+                Alert_Zone = "Alert Zone"
+            };
+
+            await JsRuntime.InvokeVoidAsync("initHeatMap", "admin-map", lat, lng, _reports, _objRef, null, jsTranslations);
+            _mapInitialized = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize admin map");
+        }
+    }
+
+    private async Task FocusReportOnMap(LocationReport report)
+    {
+        if (_mapInitialized)
+        {
+            await JsRuntime.InvokeVoidAsync("focusReport", report.Id);
+        }
+    }
 
     protected override void OnInitialized()
     {
@@ -380,9 +475,21 @@
     private void HandleReportAdded(LocationReport report)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             _reports.Insert(0, report);
-            NotificationService.Notify(NotificationSeverity.Info, "New Report", report.Message ?? "Report", 5000);
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
+                Summary = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report",
+                Detail = report.Message ?? "Report received",
+                Duration = report.IsEmergency ? 15000 : 5000
+            });
+            
+            if (_mapInitialized)
+            {
+                await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+            }
+            
             StateHasChanged();
         });
     }
@@ -390,11 +497,18 @@
     private void HandleReportUpdated(LocationReport report)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var index = _reports.FindIndex(r => r.Id == report.Id);
             if (index != -1)
             {
                 _reports[index] = report;
+                
+                if (_mapInitialized)
+                {
+                    await JsRuntime.InvokeVoidAsync("removeSingleReport", report.Id);
+                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
+                }
+                
                 StateHasChanged();
             }
         });
@@ -403,11 +517,17 @@
     private void HandleReportDeleted(int id)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var report = _reports.FirstOrDefault(r => r.Id == id);
             if (report != null)
             {
                 _reports.Remove(report);
+                
+                if (_mapInitialized)
+                {
+                    await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
+                }
+                
                 StateHasChanged();
             }
         });
@@ -533,6 +653,8 @@
                 _isAuthenticated = true;
                 await LoadData();
                 StateHasChanged();
+                await Task.Delay(500);
+                await InitializeMap();
             }
         }
     }
@@ -546,6 +668,9 @@
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
                 await LoadData();
+                StateHasChanged();
+                await Task.Delay(500);
+                await InitializeMap();
             }
             else
             {
