@@ -21,4 +21,14 @@ public interface IAdminService
     /// <param name="count">The number of attempts to retrieve.</param>
     /// <returns>A list of recent login attempts.</returns>
     Task<List<AdminLoginAttempt>> GetRecentLoginAttemptsAsync(int count = 50);
+
+    /// <summary>
+    /// Raised when an administrator successfully logs in during the current session.
+    /// </summary>
+    event Action OnAdminLogin;
+
+    /// <summary>
+    /// Notifies subscribers that a successful admin login has occurred.
+    /// </summary>
+    void NotifyAdminLogin();
 }

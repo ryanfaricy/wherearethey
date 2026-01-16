@@ -2,11 +2,15 @@
 @using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
 @inject ISettingsService SettingsService
+@inject IAdminService AdminService
+@inject ProtectedLocalStorage LocalStorage
 @inject IStringLocalizer<App> L
+@implements IDisposable
 
 <RadzenPanelMenu Style="height: 100%">
     <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" />
@@ -16,15 +20,27 @@
     {
         <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
     }
+    @if (_showAdminShortcut)
+    {
+        <RadzenPanelMenuItem Text="@L["CONTROL_PANEL"]" Icon="admin_panel_settings" Path="/cp" />
+    }
 </RadzenPanelMenu>
 
 @code {
     private string? _userIdentifier;
     private SystemSettings _systemSettings = new();
+    private bool _showAdminShortcut;
 
     protected override async Task OnInitializedAsync()
     {
         _systemSettings = await SettingsService.GetSettingsAsync();
+        AdminService.OnAdminLogin += HandleAdminLogin;
+    }
+
+    private void HandleAdminLogin()
+    {
+        _showAdminShortcut = true;
+        InvokeAsync(StateHasChanged);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -32,6 +48,23 @@
         if (firstRender)
         {
             _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+
+            try
+            {
+                var result = await LocalStorage.GetAsync<DateTime>("lastAdminLogin");
+                if (result.Success)
+                {
+                    if ((DateTime.UtcNow - result.Value).TotalDays <= 7)
+                    {
+                        _showAdminShortcut = true;
+                        StateHasChanged();
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // Storage may not be available or entry may be invalid
+            }
         }
     }
 
@@ -120,6 +153,11 @@
     {
         await DialogService.OpenAsync<DonateDialog>(L["DONATE"], null, 
             DialogConfigs.Default);
+    }
+
+    public void Dispose()
+    {
+        AdminService.OnAdminLogin -= HandleAdminLogin;
     }
 
     public class GeolocationPosition

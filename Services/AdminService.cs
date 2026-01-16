@@ -15,6 +15,12 @@ public class AdminService(
     IOptions<AppOptions> appOptions) : IAdminService
 {
     /// <inheritdoc />
+    public event Action? OnAdminLogin;
+
+    /// <inheritdoc />
+    public void NotifyAdminLogin() => OnAdminLogin?.Invoke();
+
+    /// <inheritdoc />
     public async Task<bool> LoginAsync(string password, string? ipAddress)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

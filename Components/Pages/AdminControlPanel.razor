@@ -6,6 +6,7 @@
 @inject IAdminService AdminService
 @inject IAdminPasskeyService PasskeyService
 @inject ProtectedSessionStorage SessionStorage
+@inject ProtectedLocalStorage LocalStorage
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IHttpContextAccessor HttpContextAccessor
@@ -129,6 +130,8 @@
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
+                await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
+                AdminService.NotifyAdminLogin();
                 NotificationService.Notify(NotificationSeverity.Success, "Login successful");
             }
             else
@@ -161,6 +164,8 @@
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
+                await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
+                AdminService.NotifyAdminLogin();
                 NotificationService.Notify(NotificationSeverity.Success, "Login successful");
             }
             else

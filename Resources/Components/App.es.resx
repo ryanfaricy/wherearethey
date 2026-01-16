@@ -82,6 +82,9 @@
   <data name="ARE_THEY_HERE" xml:space="preserve">
     <value>¿ESTÁN AQUÍ?</value>
   </data>
+  <data name="CONTROL_PANEL" xml:space="preserve">
+    <value>Panel de Control</value>
+  </data>
   <data name="Live_Heat_Map" xml:space="preserve">
     <value>Mapa de Calor en Vivo</value>
   </data>
