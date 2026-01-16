@@ -388,12 +388,8 @@
 
             if (initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {
-                var position = await GetLocationWithFallback(allowManual: false);
-                if (position != null)
-                {
-                    initialLat = position.Coords.Latitude;
-                    initialLng = position.Coords.Longitude;
-                }
+                // Start background acquisition but don't block map initialization
+                _ = GetLocationAndCenterMap();
             }
 
             var jsTranslations = new
@@ -408,6 +404,12 @@
 
             await JsRuntime.InvokeVoidAsync("initHeatMap", "heatmap", initialLat, initialLng, _reports, _objRef, _userAlerts, jsTranslations);
             _mapInitialized = true;
+
+            // If we already got a location while initializing, center now
+            if (_lastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
+            {
+                await JsRuntime.InvokeVoidAsync("setMapView", _lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+            }
 
             try
             {
@@ -574,7 +576,7 @@
         try
         {
             // Start location acquisition in background
-            var locationTask = GetLocationWithFallback(allowManual: true);
+            var locationTask = GetLocationWithFallback(allowManual: true, showUI: false);
             
             // Show dialog immediately
             await ShowReportDialog(report, locationTask);
@@ -769,7 +771,7 @@
             else
             {
                 // Start location acquisition in background for reporter location
-                var locationTask = GetLocationWithFallback(allowManual: true);
+                var locationTask = GetLocationWithFallback(allowManual: true, showUI: false);
 
                 var report = new LocationReport
                 {
@@ -845,12 +847,29 @@
         }
     }
 
-    private async Task<GeolocationPosition?> GetLocationWithFallback(bool allowManual = true)
+    private async Task GetLocationAndCenterMap()
     {
-        _isGettingLocation = true;
-        _showManualPick = false;
-        _manualPickTcs = new TaskCompletionSource<GeolocationPosition?>();
-        StateHasChanged();
+        var position = await GetLocationWithFallback(allowManual: false, showUI: false);
+        if (position != null && _lastKnownPosition == null)
+        {
+            _lastKnownPosition = position;
+            _lastLocationUpdate = DateTime.UtcNow;
+            if (_mapInitialized)
+            {
+                await JsRuntime.InvokeVoidAsync("setMapView", position.Coords.Latitude, position.Coords.Longitude, null);
+            }
+        }
+    }
+
+    private async Task<GeolocationPosition?> GetLocationWithFallback(bool allowManual = true, bool showUI = true)
+    {
+        if (showUI)
+        {
+            _isGettingLocation = true;
+            _showManualPick = false;
+            _manualPickTcs = new TaskCompletionSource<GeolocationPosition?>();
+            StateHasChanged();
+        }
 
         using var cts = new CancellationTokenSource();
         var locationTask = JsRuntime.InvokeAsync<GeolocationPosition>("getLocation").AsTask();
@@ -861,14 +880,17 @@
             var firstTask = await Task.WhenAny(locationTask, timerTask);
             if (firstTask == timerTask && !locationTask.IsCompleted)
             {
-                _showManualPick = allowManual;
-                StateHasChanged();
-
-                var secondTask = await Task.WhenAny(locationTask, _manualPickTcs.Task);
-                if (secondTask == _manualPickTcs.Task)
+                if (showUI)
                 {
-                    cts.Cancel();
-                    return await _manualPickTcs.Task;
+                    _showManualPick = allowManual;
+                    StateHasChanged();
+
+                    var secondTask = await Task.WhenAny(locationTask, _manualPickTcs.Task);
+                    if (secondTask == _manualPickTcs.Task)
+                    {
+                        cts.Cancel();
+                        return await _manualPickTcs.Task;
+                    }
                 }
             }
 
@@ -882,9 +904,12 @@
         }
         finally
         {
-            _isGettingLocation = false;
-            _showManualPick = false;
-            StateHasChanged();
+            if (showUI)
+            {
+                _isGettingLocation = false;
+                _showManualPick = false;
+                StateHasChanged();
+            }
         }
     }
 
