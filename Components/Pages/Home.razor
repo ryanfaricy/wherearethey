@@ -38,7 +38,18 @@
 
     <!-- Map Container -->
     <RadzenStack Gap="0" Style="flex: 1; position: relative;">
-        <div id="heatmap"></div>
+        <HeatMap @ref="_heatMap"
+                 ElementId="heatmap"
+                 Reports="@_reports" 
+                 Alerts="@_userAlerts"
+                 InitialLat="@_initialLat"
+                 InitialLng="@_initialLng"
+                 OnMapClick="@OnHeatMapClick"
+                 OnMapMoveEnd="@OnHeatMapMoveEnd"
+                 OnUserInteractedWithMap="@OnHeatMapUserInteracted"
+                 OnLocationUpdated="@OnHeatMapLocationUpdated"
+                 OnMapContextMenu="@OnHeatMapContextMenu"
+                 OnAlertDeleteClick="@OnHeatMapAlertDeleteClick" />
         
         <!-- Map Controls -->
         <HomeMapControls @bind-SearchAddress="@_searchAddress"
@@ -71,6 +82,7 @@
 </RadzenStack>
 
 @code {
+    private HeatMap? _heatMap;
     private bool _isMobile;
     private bool _disposed;
     private List<LocationReport> _reports = new();
@@ -81,13 +93,21 @@
     private bool _showManualPick;
     private TaskCompletionSource<GeolocationPosition?>? _manualPickTcs;
     private string? _userIdentifier;
-    private DotNetObjectReference<Home>? _objRef;
     private int _locationWatchId = -1;
     private GeolocationPosition? _lastKnownPosition;
     private DateTime _lastLocationUpdate;
     private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
+    private double _initialLat;
+    private double _initialLng;
+
+    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await OnMapClick(args.Lat, args.Lng, args.IsMarkerClick);
+    private async Task OnHeatMapMoveEnd(HeatMap.MapLocationEventArgs args) => await OnMapMoveEnd(args.Lat, args.Lng);
+    private void OnHeatMapUserInteracted() => OnUserInteractedWithMap();
+    private async Task OnHeatMapLocationUpdated(GeolocationPosition position) => await OnLocationUpdated(position);
+    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await OnMapContextMenu(args.Lat, args.Lng);
+    private async Task OnHeatMapAlertDeleteClick(int alertId) => await OnAlertDeleteClick(alertId);
 
     protected override async Task OnInitializedAsync()
     {
@@ -291,8 +311,6 @@
             
             await LoadUserAlerts();
             
-            _objRef = DotNetObjectReference.Create(this);
-            
             double initialLat = 0;
             double initialLng = 0;
             double? initialRadius = null;
@@ -355,32 +373,25 @@
                 _ = GetLocationAndCenterMap();
             }
 
-            var jsTranslations = new
+            if (_heatMap != null)
             {
-                Items_at_location = L["Items_at_location"].Value,
-                EMERGENCY_REPORT = L["EMERGENCY_REPORT"].Value,
-                Report = L["Report"].Value,
-                Alert_Zone = L["Alert_Zone"].Value,
-                Radius = L["Radius"].Value,
-                DELETE = L["DELETE"].Value
-            };
+                await _heatMap.InitializeAsync(initialLat, initialLng);
+                _mapInitialized = true;
 
-            await MapService.InitMapAsync("heatmap", initialLat, initialLng, _reports, _objRef, _userAlerts, jsTranslations);
-            _mapInitialized = true;
+                // If we already got a location while initializing, center now
+                if (_lastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
+                {
+                    await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+                }
 
-            // If we already got a location while initializing, center now
-            if (_lastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
-            {
-                await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
-            }
-
-            try
-            {
-                _locationWatchId = await MapService.WatchLocationAsync(_objRef);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error starting location watch");
+                try
+                {
+                    _locationWatchId = await MapService.WatchLocationAsync(_heatMap.GetDotNetObjectReference());
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error starting location watch");
+                }
             }
 
             if (focusReportId.HasValue)
@@ -618,8 +629,7 @@
         }
     }
 
-    [JSInvokable]
-    public void OnUserInteractedWithMap()
+    private void OnUserInteractedWithMap()
     {
         if (_followMe)
         {
@@ -628,8 +638,7 @@
         }
     }
 
-    [JSInvokable]
-    public async Task OnMapMoveEnd(double lat, double lng)
+    private async Task OnMapMoveEnd(double lat, double lng)
     {
         if (_followMe) return;
 
@@ -637,8 +646,7 @@
         StateHasChanged();
     }
 
-    [JSInvokable]
-    public async Task OnLocationUpdated(GeolocationPosition position)
+    private async Task OnLocationUpdated(GeolocationPosition position)
     {
         var isFirstLocation = _lastKnownPosition == null;
         _lastKnownPosition = position;
@@ -675,8 +683,7 @@
         }
     }
 
-    [JSInvokable]
-    public async Task OnMapClick(double lat, double lng, bool force = false)
+    private async Task OnMapClick(double lat, double lng, bool force = false)
     {
         _followMe = false;
         var zoom = await MapService.GetZoomLevelAsync();
@@ -921,6 +928,5 @@
         {
             _ = MapService.StopWatchingAsync(_locationWatchId);
         }
-        _objRef?.Dispose();
     }
 }

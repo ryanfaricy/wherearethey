@@ -17,8 +17,11 @@ const PIN_ZOOM_THRESHOLD = 15;
 
 let translations = {};
 
-window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t) {
+let isAdminMode = false;
+
+window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t, isAdmin) {
     if (t) translations = t;
+    isAdminMode = isAdmin || false;
     if (map) {
         if (resizeObserver) {
             resizeObserver.disconnect();
@@ -302,15 +305,67 @@ function addReportMarker(r) {
         marker.setZIndexOffset(1000);
     }
 
-    const tooltipText = r.message ? 
+    let tooltipText = r.message ? 
         (r.isEmergency ? '🚨 ' + r.message : r.message) : 
         (r.isEmergency ? '🚨 ' + (translations.EMERGENCY_REPORT || 'EMERGENCY') : (translations.Report || 'Report'));
+
+    if (isAdminMode) {
+        const id = r.reporterIdentifier ? r.reporterIdentifier.substring(0, 8) : '???';
+        tooltipText = `<b>${tooltipText}</b><br/><small>Reporter: ${id}</small>`;
+    }
 
     marker.bindTooltip(tooltipText, {
         permanent: false,
         direction: 'top',
-        offset: [0, -10]
+        offset: [0, -10],
+        html: isAdminMode // Enable HTML for admin tooltips
     });
+
+    if (isAdminMode && r.reporterLatitude && r.reporterLongitude) {
+        const reporterMarker = L.circleMarker([r.reporterLatitude, r.reporterLongitude], {
+            radius: 4,
+            color: r.isEmergency ? '#ff4444' : '#3388ff',
+            fillColor: r.isEmergency ? '#ff4444' : '#3388ff',
+            fillOpacity: 0.6,
+            weight: 1
+        }).bindTooltip(`Reporter Location for #${r.id}`);
+        
+        const line = L.polyline([
+            [r.latitude, r.longitude],
+            [r.reporterLatitude, r.reporterLongitude]
+        ], {
+            color: r.isEmergency ? '#ff4444' : '#3388ff',
+            weight: 2,
+            dashArray: '5, 5',
+            opacity: 0.4
+        });
+        
+        marker.reporterLayer = L.layerGroup([reporterMarker, line]);
+        
+        // Show reporter info only when zoomed in enough or marker is visible
+        marker.on('add', function() {
+            if (map.getZoom() >= PIN_ZOOM_THRESHOLD) {
+                marker.reporterLayer.addTo(map);
+            }
+        });
+        
+        marker.on('remove', function() {
+            if (map.hasLayer(marker.reporterLayer)) {
+                map.removeLayer(marker.reporterLayer);
+            }
+        });
+
+        // Also handle zoom changes
+        map.on('zoomend', function() {
+            if (map.hasLayer(marker)) {
+                if (map.getZoom() >= PIN_ZOOM_THRESHOLD) {
+                    if (!map.hasLayer(marker.reporterLayer)) marker.reporterLayer.addTo(map);
+                } else {
+                    if (map.hasLayer(marker.reporterLayer)) map.removeLayer(marker.reporterLayer);
+                }
+            }
+        });
+    }
 
     reportMarkers.push(marker);
 }

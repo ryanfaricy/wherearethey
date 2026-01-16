@@ -1,0 +1,126 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using Microsoft.JSInterop
+@using Microsoft.Extensions.Localization
+@inject IMapService MapService
+@inject IStringLocalizer<App> L
+@implements IDisposable
+
+<div id="@ElementId" style="height: 100%; width: 100%;" @attributes="AdditionalAttributes"></div>
+
+@code {
+    [Parameter] public string ElementId { get; set; } = "heatmap";
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+    [Parameter] public List<LocationReport> Reports { get; set; } = new();
+    [Parameter] public List<Alert>? Alerts { get; set; }
+    [Parameter] public double InitialLat { get; set; }
+    [Parameter] public double InitialLng { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+
+    [Parameter] public EventCallback<MapClickEventArgs> OnMapClick { get; set; }
+    [Parameter] public EventCallback<MapLocationEventArgs> OnMapMoveEnd { get; set; }
+    [Parameter] public EventCallback OnUserInteractedWithMap { get; set; }
+    [Parameter] public EventCallback<GeolocationPosition> OnLocationUpdated { get; set; }
+    [Parameter] public EventCallback<MapLocationEventArgs> OnMapContextMenu { get; set; }
+    [Parameter] public EventCallback<int> OnAlertDeleteClick { get; set; }
+
+    private DotNetObjectReference<HeatMap>? _objRef;
+    private bool _initialized;
+
+    public async Task InitializeAsync(double lat, double lng)
+    {
+        if (_initialized) return;
+        InitialLat = lat;
+        InitialLng = lng;
+        await InitializeInternal();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && InitialLat != 0 && InitialLng != 0 && !_initialized)
+        {
+            await InitializeInternal();
+        }
+    }
+
+    private async Task InitializeInternal()
+    {
+        if (_initialized) return;
+        _objRef = DotNetObjectReference.Create(this);
+        
+        var jsTranslations = new
+        {
+            Items_at_location = L["Items_at_location"].Value,
+            EMERGENCY_REPORT = L["EMERGENCY_REPORT"].Value,
+            Report = L["Report"].Value,
+            Alert_Zone = L["Alert_Zone"].Value,
+            Radius = L["Radius"].Value,
+            DELETE = L["DELETE"].Value
+        };
+
+        await MapService.InitMapAsync(ElementId, InitialLat, InitialLng, Reports, _objRef, Alerts!, jsTranslations, IsAdmin);
+        _initialized = true;
+    }
+
+    [JSInvokable("OnMapClick")]
+    public async Task OnMapClickInternal(double lat, double lng, bool isMarkerClick)
+    {
+        if (OnMapClick.HasDelegate)
+            await OnMapClick.InvokeAsync(new MapClickEventArgs { Lat = lat, Lng = lng, IsMarkerClick = isMarkerClick });
+    }
+
+    [JSInvokable("OnMapMoveEnd")]
+    public async Task OnMapMoveEndInternal(double lat, double lng)
+    {
+        if (OnMapMoveEnd.HasDelegate)
+            await OnMapMoveEnd.InvokeAsync(new MapLocationEventArgs { Lat = lat, Lng = lng });
+    }
+
+    [JSInvokable("OnUserInteractedWithMap")]
+    public async Task OnUserInteractedWithMapInternal()
+    {
+        if (OnUserInteractedWithMap.HasDelegate)
+            await OnUserInteractedWithMap.InvokeAsync();
+    }
+
+    [JSInvokable("OnLocationUpdated")]
+    public async Task OnLocationUpdatedInternal(GeolocationPosition position)
+    {
+        if (OnLocationUpdated.HasDelegate)
+            await OnLocationUpdated.InvokeAsync(position);
+    }
+
+    [JSInvokable("OnMapContextMenu")]
+    public async Task OnMapContextMenuInternal(double lat, double lng)
+    {
+        if (OnMapContextMenu.HasDelegate)
+            await OnMapContextMenu.InvokeAsync(new MapLocationEventArgs { Lat = lat, Lng = lng }); 
+    }
+
+    [JSInvokable("OnAlertDeleteClick")]
+    public async Task OnAlertDeleteClickInternal(int alertId)
+    {
+        if (OnAlertDeleteClick.HasDelegate)
+            await OnAlertDeleteClick.InvokeAsync(alertId);
+    }
+
+    public DotNetObjectReference<HeatMap>? GetDotNetObjectReference() => _objRef;
+
+    public void Dispose()
+    {
+        _objRef?.Dispose();
+    }
+
+    public class MapClickEventArgs
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+        public bool IsMarkerClick { get; set; }
+    }
+
+    public class MapLocationEventArgs
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+    }
+}

@@ -1,6 +1,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Services
+@using WhereAreThey.Components.Home
 @inject IReportService ReportService
 @inject IMapService MapService
 @inject ILogger<AdminMapFeed> Logger
@@ -11,7 +12,10 @@
 <RadzenRow>
     <RadzenColumn Size="12" SizeMD="8">
         <RadzenCard Class="rz-p-0" Style="height: 500px; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
-            <div id="admin-map" style="height: 100%; width: 100%;"></div>
+            <HeatMap @ref="_heatMap"
+                     ElementId="admin-map"
+                     Reports="@_reports"
+                     IsAdmin="true" />
             <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
                 <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="LIVE MAP" />
             </div>
@@ -56,9 +60,9 @@
 </RadzenRow>
 
 @code {
+    private HeatMap? _heatMap;
     private List<LocationReport> _reports = new();
     private bool _mapInitialized;
-    private DotNetObjectReference<AdminMapFeed>? _objRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,12 +83,10 @@
 
     private async Task InitializeMap()
     {
-        if (_mapInitialized) return;
+        if (_mapInitialized || _heatMap == null) return;
         
         try 
         {
-            _objRef = DotNetObjectReference.Create(this);
-            
             double lat = 0;
             double lng = 0;
             if (_reports.Any())
@@ -93,14 +95,7 @@
                 lng = _reports.Average(r => r.Longitude);
             }
 
-            var jsTranslations = new
-            {
-                EMERGENCY_REPORT = "EMERGENCY",
-                Report = "Report",
-                Alert_Zone = "Alert Zone"
-            };
-
-            await MapService.InitMapAsync("admin-map", lat, lng, _reports, _objRef, null!, jsTranslations);
+            await _heatMap.InitializeAsync(lat, lng);
             _mapInitialized = true;
         }
         catch (Exception ex)
@@ -162,16 +157,10 @@
         });
     }
 
-    [JSInvokable] public void OnMapClick(double lat, double lng, bool isMarkerClick) { }
-    [JSInvokable] public void OnMapContextMenu(double lat, double lng) { }
-    [JSInvokable] public void OnMapMoveEnd(double lat, double lng) { }
-    [JSInvokable] public void OnUserInteractedWithMap() { }
-
     public void Dispose()
     {
         EventService.OnReportAdded -= HandleReportAdded;
         EventService.OnReportUpdated -= HandleReportUpdated;
         EventService.OnReportDeleted -= HandleReportDeleted;
-        _objRef?.Dispose();
     }
 }
