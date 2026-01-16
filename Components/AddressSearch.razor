@@ -1,0 +1,37 @@
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IGeocodingService GeocodingService
+@inject IStringLocalizer<App> L
+
+<RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch" Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass" />
+
+@code {
+    [Parameter] public string SearchValue { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchValueChanged { get; set; }
+    [Parameter] public string CustomStyle { get; set; } = "flex: 1; min-width: 100px;";
+    [Parameter] public string InputClass { get; set; } = "search-input";
+    
+    [Parameter] public EventCallback<GeocodingResult> OnResultSelected { get; set; }
+
+    private IEnumerable<GeocodingResult> _geocodingResults = [];
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrEmpty(args.Filter) && args.Filter.Length > 2)
+        {
+            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private async Task OnAddressSelected(object val)
+    {
+        var address = val?.ToString() ?? "";
+        var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
+        if (selected != null)
+        {
+            await SearchValueChanged.InvokeAsync(selected.Address);
+            await OnResultSelected.InvokeAsync(selected);
+        }
+    }
+}

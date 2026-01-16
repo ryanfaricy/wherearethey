@@ -1,0 +1,123 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Services
+@inject IAlertService AlertService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject UserTimeZoneService TimeZoneService
+@inject IJSRuntime JsRuntime
+@inject ILogger<AdminAlertsTab> Logger
+@inject IEventService EventService
+@implements IDisposable
+
+<RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
+    <Columns>
+        <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="Alert" Title="Email">
+            <Template Context="alert">
+                @AlertService.DecryptEmail(alert.EncryptedEmail)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
+            <Template Context="alert">
+                <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
+                             Text="@(alert.IsVerified ? "YES" : "NO")" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active">
+            <Template Context="alert">
+                <RadzenBadge BadgeStyle="@(alert.IsActive ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                             Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
+            <Template Context="alert">
+                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                  Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                  Click="@(() => DeleteAlert(alert.Id))" />
+                </RadzenStack>
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+    
+    private List<Alert> _alerts = new();
+    private RadzenDataGrid<Alert>? _alertsGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertDeleted += HandleAlertDeleted;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _alerts = await AlertService.GetAllAlertsAdminAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading alerts");
+        }
+    }
+
+    private void HandleAlertAdded(Alert alert)
+    {
+        InvokeAsync(async () =>
+        {
+            _alerts.Insert(0, alert);
+            if (_alertsGrid != null) await _alertsGrid.Reload();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAlertDeleted(int id)
+    {
+        InvokeAsync(async () =>
+        {
+            _alerts.RemoveAll(a => a.Id == id);
+            if (_alertsGrid != null) await _alertsGrid.Reload();
+            StateHasChanged();
+        });
+    }
+
+    private async Task DeleteAlert(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this alert? This cannot be undone.", "Delete Alert", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirm == true)
+        {
+            try
+            {
+                await AlertService.DeleteAlertAsync(id);
+                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+            }
+        }
+    }
+
+    private async Task OpenOnMap(Alert alert)
+    {
+        var url = $"/?alertId={alert.ExternalId}";
+        await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
+    public void Dispose()
+    {
+        EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertDeleted -= HandleAlertDeleted;
+    }
+}

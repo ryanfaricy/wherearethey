@@ -1,0 +1,86 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Services
+@inject IDonationService DonationService
+@inject UserTimeZoneService TimeZoneService
+@inject ILogger<AdminDonationsTab> Logger
+@inject IEventService EventService
+@implements IDisposable
+
+<RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
+    <Columns>
+        <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
+            <Template Context="donation">
+                @TimeZoneService.FormatLocal(donation.CreatedAt)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
+            <Template Context="donation">
+                @donation.Amount @donation.Currency.ToUpper()
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
+            <Template Context="donation">
+                <RadzenBadge BadgeStyle="@(donation.Status == "succeeded" || donation.Status == "completed" ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                             Text="@donation.Status" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+    
+    private List<Donation> _donations = new();
+    private RadzenDataGrid<Donation>? _donationsGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        EventService.OnDonationAdded += HandleDonationAdded;
+        EventService.OnDonationUpdated += HandleDonationUpdated;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _donations = await DonationService.GetAllDonationsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading donations");
+        }
+    }
+
+    private void HandleDonationAdded(Donation donation)
+    {
+        InvokeAsync(async () =>
+        {
+            _donations.Insert(0, donation);
+            if (_donationsGrid != null) await _donationsGrid.Reload();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleDonationUpdated(Donation donation)
+    {
+        InvokeAsync(async () =>
+        {
+            var index = _donations.FindIndex(d => d.Id == donation.Id);
+            if (index != -1)
+            {
+                _donations[index] = donation;
+                if (_donationsGrid != null) await _donationsGrid.Reload();
+                StateHasChanged();
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnDonationUpdated -= HandleDonationUpdated;
+    }
+}

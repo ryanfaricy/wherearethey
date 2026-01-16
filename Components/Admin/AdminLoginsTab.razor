@@ -1,0 +1,47 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Services
+@inject IAdminService AdminService
+@inject UserTimeZoneService TimeZoneService
+@inject ILogger<AdminLoginsTab> Logger
+
+<RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
+    <Columns>
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+            <Template Context="attempt">
+                @TimeZoneService.FormatLocal(attempt.Timestamp)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
+            <Template Context="attempt">
+                <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                             Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+    
+    private List<AdminLoginAttempt> _loginAttempts = new();
+    private RadzenDataGrid<AdminLoginAttempt>? _allLoginAttemptsGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading login attempts");
+        }
+    }
+}

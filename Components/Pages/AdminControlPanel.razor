@@ -10,14 +10,13 @@
 @inject DialogService DialogService
 @inject IHttpContextAccessor HttpContextAccessor
 @inject ILogger<AdminControlPanel> Logger
-@inject UserTimeZoneService TimeZoneService
-@inject UserConnectionService UserConnectionService
 @inject IEventService EventService
 @inject IJSRuntime JsRuntime
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Components.Admin
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -48,291 +47,28 @@
         <RadzenTabs RenderMode="TabRenderMode.Client">
             <Tabs>
                 <RadzenTabsItem Text="@(_isMobile ? "" : "REAL-TIME")" Icon="bolt">
-                    <RadzenRow>
-                        <RadzenColumn Size="12" SizeMD="8">
-                            <RadzenCard Class="rz-p-0" Style="height: 500px; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
-                                <div id="admin-map" style="height: 100%; width: 100%;"></div>
-                                <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="LIVE MAP" />
-                                </div>
-                            </RadzenCard>
-                        </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
-                            <RadzenCard Style="height: 500px; display: flex; flex-direction: column;" Class="rz-p-0">
-                                <div class="rz-p-3 rz-background-color-primary-lighter" style="border-bottom: 1px solid rgba(0,0,0,0.1);">
-                                    <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">Live Report Feed</RadzenText>
-                                </div>
-                                <div style="flex: 1; overflow-y: auto;" class="rz-p-3">
-                                    <RadzenStack Gap="1rem">
-                                        @if (!_reports.Any())
-                                        {
-                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-align-center rz-mt-4">No recent reports.</RadzenText>
-                                        }
-                                        @foreach (var report in _reports.Take(20))
-                                        {
-                                            <RadzenCard Variant="Variant.Flat" 
-                                                        Class="@(report.IsEmergency ? "rz-background-color-danger-lighter" : "rz-background-color-base-100")" 
-                                                        Style="padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); cursor: pointer;"
-                                                        @onclick="@(() => FocusReportOnMap(report))">
-                                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                                                    <RadzenText TextStyle="TextStyle.Caption">@TimeZoneService.FormatLocal(report.Timestamp)</RadzenText>
-                                                    @if (report.IsEmergency)
-                                                    {
-                                                        <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="EMERGENCY" />
-                                                    }
-                                                </RadzenStack>
-                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2" Style="font-weight: 500;">
-                                                    @(report.Message?.Length > 100 ? report.Message.Substring(0, 97) + "..." : report.Message)
-                                                </RadzenText>
-                                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">
-                                                    <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
-                                                </RadzenText>
-                                            </RadzenCard>
-                                        }
-                                    </RadzenStack>
-                                </div>
-                            </RadzenCard>
-                        </RadzenColumn>
-                    </RadzenRow>
+                    <AdminMapFeed />
                 </RadzenTabsItem>
                 <RadzenTabsItem Text="@(_isMobile ? "" : "OVERVIEW")" Icon="dashboard">
-                    <RadzenRow>
-                        <RadzenColumn Size="12" SizeMD="4">
-                            <RadzenCard Class="rz-variant-flat rz-background-color-primary-lighter">
-                                <RadzenText TextStyle="TextStyle.Subtitle2">Connected Users</RadzenText>
-                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@UserConnectionService.ConnectionCount</RadzenText>
-                            </RadzenCard>
-                        </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
-                            <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
-                                <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
-                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_reports.Count</RadzenText>
-                            </RadzenCard>
-                        </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="4">
-                            <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
-                                <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
-                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_alerts.Count(a => a.IsActive)</RadzenText>
-                            </RadzenCard>
-                        </RadzenColumn>
-                    </RadzenRow>
-                    <RadzenRow Class="rz-mt-4">
-                        <RadzenColumn Size="12" SizeMD="6">
-                            <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
-                                <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
-                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_donations.Count(d => d.Status == "succeeded" || d.Status == "completed")</RadzenText>
-                            </RadzenCard>
-                        </RadzenColumn>
-                        <RadzenColumn Size="12" SizeMD="6">
-                            <RadzenCard Class="rz-variant-flat rz-background-color-secondary-lighter">
-                                <RadzenText TextStyle="TextStyle.Subtitle2">Feedback Items</RadzenText>
-                                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H3)">@_feedbacks.Count</RadzenText>
-                            </RadzenCard>
-                        </RadzenColumn>
-                    </RadzenRow>
-
-                    <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
-                    <RadzenDataGrid @ref="_recentLoginAttemptsGrid" Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
-                                <Template Context="attempt">
-                                    @TimeZoneService.FormatLocal(attempt.Timestamp)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
-                                <Template Context="attempt">
-                                    <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
-                                                 Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminOverviewTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "REPORTS")" Icon="report_problem">
-                    <RadzenDataGrid @ref="_reportsGrid" Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
-                                <Template Context="report">
-                                    @TimeZoneService.FormatLocal(report.Timestamp)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location" Visible="@(!_isMobile)">
-                                <Template Context="report">
-                                    @report.Coordinates()
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency">
-                                <Template Context="report">
-                                    <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
-                                                 Text="@(report.IsEmergency ? "YES" : "NO")" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Location" Visible="@(!_isMobile)">
-                                <Template Context="report">
-                                    @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Filterable="false" Sortable="false">
-                                <Template Context="report">
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
-                                                      Click="@(() => OpenOnMap(report))" ToolTip="Show on Map" />
-                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                                      Click="@(() => DeleteReport(report.Id))" />
-                                    </RadzenStack>
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminReportsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "ALERTS")" Icon="notifications">
-                    <RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Alert" Title="Email">
-                                <Template Context="alert">
-                                    @AlertService.DecryptEmail(alert.EncryptedEmail)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
-                                <Template Context="alert">
-                                    <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
-                                                 Text="@(alert.IsVerified ? "YES" : "NO")" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active">
-                                <Template Context="alert">
-                                    <RadzenBadge BadgeStyle="@(alert.IsActive ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                                                 Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
-                                <Template Context="alert">
-                                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
-                                                      Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
-                                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                                      Click="@(() => DeleteAlert(alert.Id))" />
-                                    </RadzenStack>
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminAlertsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "DONATIONS")" Icon="volunteer_activism">
-                    <RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
-                                <Template Context="donation">
-                                    @TimeZoneService.FormatLocal(donation.CreatedAt)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
-                                <Template Context="donation">
-                                    @donation.Amount @donation.Currency.ToUpper()
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
-                                <Template Context="donation">
-                                    <RadzenBadge BadgeStyle="@(donation.Status == "succeeded" || donation.Status == "completed" ? BadgeStyle.Success : BadgeStyle.Secondary)" 
-                                                 Text="@donation.Status" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminDonationsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "FEEDBACK")" Icon="chat">
-                    <RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
-                                <Template Context="feedback">
-                                    @TimeZoneService.FormatLocal(feedback.Timestamp)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">
-                                <Template Context="fb">
-                                    <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
-                            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
-                                <Template Context="fb">
-                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                                  Click="@(() => DeleteFeedback(fb.Id))" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminFeedbackTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "LOGINS")" Icon="security">
-                    <RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
-                        <Columns>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
-                                <Template Context="attempt">
-                                    @TimeZoneService.FormatLocal(attempt.Timestamp)
-                                </Template>
-                            </RadzenDataGridColumn>
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!_isMobile)" />
-                            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
-                                <Template Context="attempt">
-                                    <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
-                                                 Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
-                                </Template>
-                            </RadzenDataGridColumn>
-                        </Columns>
-                    </RadzenDataGrid>
+                    <AdminLoginsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
-
                 <RadzenTabsItem Text="@(_isMobile ? "" : "SETTINGS")" Icon="settings">
-                    <RadzenCard>
-                        <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
-                        <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
-                            <RadzenFormField Text="Report Expiry (Hours)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@_systemSettings.ReportExpiryHours" TValue="int" Min="1" Max="168" />
-                                <RadzenText TextStyle="TextStyle.Caption">Reports disappear from public view after this many hours.</RadzenText>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Submission Cooldown (Minutes)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@_systemSettings.ReportCooldownMinutes" TValue="int" Min="1" Max="60" />
-                                <RadzenText TextStyle="TextStyle.Caption">Time users must wait between submitting reports or feedback.</RadzenText>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Alert Creation Limit" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@_systemSettings.AlertLimitCount" TValue="int" Min="1" Max="100" />
-                                <RadzenText TextStyle="TextStyle.Caption">Number of alerts a user can create within the cooldown period.</RadzenText>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Max Report Distance (Miles)" Variant="Variant.Outlined">
-                                <RadzenNumeric @bind-Value="@_systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
-                                <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
-                            </RadzenFormField>
-
-                            <RadzenFormField Text="Mapbox Token (Optional)" Variant="Variant.Outlined">
-                                <RadzenTextBox @bind-Value="@_systemSettings.MapboxToken" />
-                                <RadzenText TextStyle="TextStyle.Caption">Required for map thumbnails in alert emails. Leave empty to disable thumbnails.</RadzenText>
-                            </RadzenFormField>
-
-                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                <RadzenSwitch @bind-Value="@_systemSettings.DonationsEnabled" />
-                                <RadzenLabel Text="Enable Public Donations" />
-                            </RadzenStack>
-
-                            <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
-                        </RadzenStack>
-                    </RadzenCard>
+                    <AdminSettingsTab />
                 </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>
@@ -341,354 +77,37 @@
 
 @code {
     private bool _isMobile;
-    private bool _disposed;
     private bool _isAuthenticated;
     private string _passwordInput = "";
-    private List<LocationReport> _reports = new();
-    private List<Alert> _alerts = new();
-    private List<Donation> _donations = new();
-    private List<Feedback> _feedbacks = new();
-    private List<AdminLoginAttempt> _loginAttempts = new();
-    private SystemSettings _systemSettings = new();
     private string? _clientIp;
-    private bool _mapInitialized;
-    private DotNetObjectReference<AdminControlPanel>? _objRef;
-
-    private RadzenDataGrid<LocationReport>? _reportsGrid;
-    private RadzenDataGrid<Alert>? _alertsGrid;
-    private RadzenDataGrid<Donation>? _donationsGrid;
-    private RadzenDataGrid<Feedback>? _feedbacksGrid;
-    private RadzenDataGrid<AdminLoginAttempt>? _allLoginAttemptsGrid;
-    private RadzenDataGrid<AdminLoginAttempt>? _recentLoginAttemptsGrid;
-
-    [JSInvokable] public void OnMapClick(double lat, double lng, bool isMarkerClick) { }
-    [JSInvokable] public void OnMapContextMenu(double lat, double lng) { }
-    [JSInvokable] public void OnMapMoveEnd(double lat, double lng) { }
-    [JSInvokable] public void OnUserInteractedWithMap() { }
-
-    private async Task InitializeMap()
-    {
-        if (_mapInitialized || !_isAuthenticated) return;
-        
-        try 
-        {
-            _objRef = DotNetObjectReference.Create(this);
-            
-            double lat = 0;
-            double lng = 0;
-            if (_reports.Any())
-            {
-                lat = _reports.Average(r => r.Latitude);
-                lng = _reports.Average(r => r.Longitude);
-            }
-
-            var jsTranslations = new
-            {
-                EMERGENCY_REPORT = "EMERGENCY",
-                Report = "Report",
-                Alert_Zone = "Alert Zone"
-            };
-
-            await JsRuntime.InvokeVoidAsync("initHeatMap", "admin-map", lat, lng, _reports, _objRef, null, jsTranslations);
-            _mapInitialized = true;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to initialize admin map");
-        }
-    }
-
-    private async Task FocusReportOnMap(LocationReport report)
-    {
-        if (_mapInitialized)
-        {
-            await JsRuntime.InvokeVoidAsync("focusReport", report.Id);
-        }
-    }
+    private bool _disposed;
 
     protected override void OnInitialized()
     {
         _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
         
-        // Subscribe to ALL events in IEventService to ensure full coverage and prevent leaks via mismatched disposal
-        EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
         EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
-        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
         EventService.OnDonationAdded += HandleDonationAdded;
-        EventService.OnDonationUpdated += HandleDonationUpdated;
-        EventService.OnAlertAdded += HandleAlertAdded;
-        EventService.OnAlertUpdated += HandleAlertUpdated;
-        EventService.OnAlertDeleted += HandleAlertDeleted;
-        EventService.OnSettingsChanged += HandleSettingsChanged;
         EventService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
-        EventService.OnEmailVerified += HandleEmailVerified;
-        EventService.OnThemeChanged += HandleThemeChanged;
-    }
-
-    private void HandleConnectionCountChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleSettingsChanged(SystemSettings settings)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(() => {
-            _systemSettings = settings;
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAdminLoginAttempt(AdminLoginAttempt attempt)
-    {
-        // Always update login attempts even if not authenticated, as long as we're on the page
-        // (actually usually only authenticated admins see the grid, but if they are on the login screen
-        // it's probably better not to show them live attempts unless they are logged in)
-        if (!_isAuthenticated) 
-        {
-            // If we are NOT authenticated, we might still want to refresh the grid if we just failed a login
-            // but the grid is only visible when _isAuthenticated is true.
-            return;
-        }
-
-        InvokeAsync(async () => {
-            _loginAttempts.Insert(0, attempt);
-            if (!attempt.IsSuccessful)
-            {
-                NotificationService.Notify(NotificationSeverity.Warning, "Security Alert", $"Failed login attempt from {attempt.IpAddress}", 7000);
-            }
-            
-            if (_recentLoginAttemptsGrid != null) await _recentLoginAttemptsGrid.Reload();
-            if (_allLoginAttemptsGrid != null) await _allLoginAttemptsGrid.Reload();
-            
-            StateHasChanged();
-        });
-    }
-
-    private void HandleEmailVerified(string emailHash)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            NotificationService.Notify(NotificationSeverity.Info, "Email Verified", "A user has verified their email address.", 5000);
-            
-            var affectedAlerts = _alerts.Where(a => a.EmailHash == emailHash).ToList();
-            if (affectedAlerts.Any())
-            {
-                foreach (var alert in affectedAlerts)
-                {
-                    alert.IsVerified = true;
-                }
-                
-                if (_alertsGrid != null) await _alertsGrid.Reload();
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleThemeChanged()
-    {
-        InvokeAsync(StateHasChanged);
-    }
-
-    private void HandleReportAdded(LocationReport report)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            _reports.Insert(0, report);
-            NotificationService.Notify(new NotificationMessage
-            {
-                Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
-                Summary = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report",
-                Detail = report.Message ?? "Report received",
-                Duration = report.IsEmergency ? 15000 : 5000
-            });
-            
-            if (_reportsGrid != null) await _reportsGrid.Reload();
-            
-            if (_mapInitialized)
-            {
-                await JsRuntime.InvokeVoidAsync("addSingleReport", report);
-            }
-            
-            StateHasChanged();
-        });
-    }
-
-    private void HandleReportUpdated(LocationReport report)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var index = _reports.FindIndex(r => r.Id == report.Id);
-            if (index != -1)
-            {
-                _reports[index] = report;
-                
-                if (_reportsGrid != null) await _reportsGrid.Reload();
-                
-                if (_mapInitialized)
-                {
-                    await JsRuntime.InvokeVoidAsync("removeSingleReport", report.Id);
-                    await JsRuntime.InvokeVoidAsync("addSingleReport", report);
-                }
-                
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleReportDeleted(int id)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var report = _reports.FirstOrDefault(r => r.Id == id);
-            if (report != null)
-            {
-                _reports.Remove(report);
-                
-                if (_reportsGrid != null) await _reportsGrid.Reload();
-                
-                if (_mapInitialized)
-                {
-                    await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
-                }
-                
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleFeedbackAdded(Feedback feedback)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            _feedbacks.Insert(0, feedback);
-            NotificationService.Notify(NotificationSeverity.Info, "New Feedback", feedback.Type, 5000);
-            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
-            StateHasChanged();
-        });
-    }
-
-    private void HandleFeedbackDeleted(int id)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var fb = _feedbacks.FirstOrDefault(f => f.Id == id);
-            if (fb != null)
-            {
-                _feedbacks.Remove(fb);
-                if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleDonationAdded(Donation donation)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            _donations.Insert(0, donation);
-            NotificationService.Notify(NotificationSeverity.Success, "New Donation Received", $"{donation.Amount} {donation.Currency}", 7000);
-            if (_donationsGrid != null) await _donationsGrid.Reload();
-            StateHasChanged();
-        });
-    }
-
-    private void HandleDonationUpdated(Donation donation)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var existing = _donations.FirstOrDefault(d => d.Id == donation.Id || (donation.ExternalPaymentId != null && d.ExternalPaymentId == donation.ExternalPaymentId));
-            if (existing != null)
-            {
-                var index = _donations.IndexOf(existing);
-                _donations[index] = donation;
-            }
-            else
-            {
-                _donations.Insert(0, donation);
-            }
-            if (_donationsGrid != null) await _donationsGrid.Reload();
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertAdded(Alert alert)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            _alerts.Insert(0, alert);
-            NotificationService.Notify(NotificationSeverity.Info, "New Alert Created", "A user signed up for notifications.", 5000);
-            if (_alertsGrid != null) await _alertsGrid.Reload();
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertUpdated(Alert alert)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var existing = _alerts.FirstOrDefault(a => a.Id == alert.Id);
-            if (existing != null)
-            {
-                var index = _alerts.IndexOf(existing);
-                _alerts[index] = alert;
-                if (_alertsGrid != null) await _alertsGrid.Reload();
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleAlertDeleted(int id)
-    {
-        if (!_isAuthenticated) return;
-        InvokeAsync(async () => {
-            var alert = _alerts.FirstOrDefault(a => a.Id == id);
-            if (alert != null)
-            {
-                _alerts.Remove(alert);
-                if (_alertsGrid != null) await _alertsGrid.Reload();
-                StateHasChanged();
-            }
-        });
-    }
-
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-
-        EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
-        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
-        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
-        EventService.OnDonationAdded -= HandleDonationAdded;
-        EventService.OnDonationUpdated -= HandleDonationUpdated;
-        EventService.OnAlertAdded -= HandleAlertAdded;
-        EventService.OnAlertUpdated -= HandleAlertUpdated;
-        EventService.OnAlertDeleted -= HandleAlertDeleted;
-        EventService.OnSettingsChanged -= HandleSettingsChanged;
-        EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
-        EventService.OnEmailVerified -= HandleEmailVerified;
-        EventService.OnThemeChanged -= HandleThemeChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var result = await SessionStorage.GetAsync<bool>("isAdmin");
-            if (result is { Success: true, Value: true })
+            try
             {
-                _isAuthenticated = true;
-                await LoadData();
-                StateHasChanged();
-                await Task.Delay(500);
-                await InitializeMap();
+                var result = await SessionStorage.GetAsync<bool>("isAdmin");
+                if (result.Success && result.Value)
+                {
+                    _isAuthenticated = true;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to read from session storage");
             }
         }
     }
@@ -701,14 +120,11 @@
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
-                await LoadData();
-                StateHasChanged();
-                await Task.Delay(500);
-                await InitializeMap();
+                NotificationService.Notify(NotificationSeverity.Success, "Login successful");
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Invalid password");
+                NotificationService.Notify(NotificationSeverity.Error, "Login failed", "Invalid password");
             }
         }
         catch (Exception ex)
@@ -733,106 +149,54 @@
         }
     }
 
-    private async Task LoadData()
+    private void HandleReportAdded(LocationReport report)
     {
-        try
-        {
-            _reports = await ReportService.GetAllReportsAsync();
-            _alerts = await AlertService.GetAllAlertsAdminAsync();
-            _donations = await DonationService.GetAllDonationsAsync();
-            _feedbacks = await FeedbackService.GetAllFeedbackAsync();
-            _systemSettings = await SettingsService.GetSettingsAsync();
-            _loginAttempts = await AdminService.GetRecentLoginAttemptsAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading admin data");
-            NotificationService.Notify(NotificationSeverity.Error, "Data load failed", ex.Message);
-        }
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            NotificationService.Notify(new NotificationMessage
+            {
+                Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
+                Summary = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report",
+                Detail = report.Message ?? "Report received",
+                Duration = report.IsEmergency ? 15000 : 5000
+            });
+        });
     }
 
-    private async Task SaveSettings()
+    private void HandleFeedbackAdded(Feedback feedback)
     {
-        try
-        {
-            await SettingsService.UpdateSettingsAsync(_systemSettings);
-            NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save settings");
-            NotificationService.Notify(NotificationSeverity.Error, "Save failed", ex.Message);
-        }
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            NotificationService.Notify(NotificationSeverity.Info, "New Feedback", feedback.Type, 5000);
+        });
     }
 
-    private async Task DeleteReport(int id)
+    private void HandleDonationAdded(Donation donation)
     {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this report?", "Delete Report", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            try
-            {
-                await ReportService.DeleteReportAsync(id);
-                NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to delete report {ReportId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
-            }
-        }
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            NotificationService.Notify(NotificationSeverity.Success, "New Donation Received", $"{donation.Amount} {donation.Currency}", 7000);
+        });
     }
 
-    private async Task DeleteAlert(int id)
+    private void HandleAdminLoginAttempt(AdminLoginAttempt attempt)
     {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this alert? This cannot be undone.", "Delete Alert", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
-
-        if (confirm == true)
-        {
-            try
+        if (!_isAuthenticated) return;
+        InvokeAsync(() => {
+            if (!attempt.IsSuccessful)
             {
-                await AlertService.DeleteAlertAsync(id);
-                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+                NotificationService.Notify(NotificationSeverity.Warning, "Security Alert", $"Failed login attempt from {attempt.IpAddress}", 7000);
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
-            }
-        }
-    }
-    private async Task DeleteFeedback(int id)
-    {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this feedback?", "Delete Feedback", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            try
-            {
-                await FeedbackService.DeleteFeedbackAsync(id);
-                NotificationService.Notify(NotificationSeverity.Success, "Feedback deleted");
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to delete feedback {FeedbackId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
-            }
-        }
+        });
     }
 
-    private async Task OpenOnMap(LocationReport report)
+    public void Dispose()
     {
-        var url = $"/?reportId={report.ExternalId}";
-        await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
-    }
-
-    private async Task OpenOnMap(Alert alert)
-    {
-        var url = $"/?alertId={alert.ExternalId}";
-        await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
+        if (_disposed) return;
+        _disposed = true;
+        EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
     }
 }

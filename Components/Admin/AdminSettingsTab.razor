@@ -1,0 +1,77 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject ISettingsService SettingsService
+@inject NotificationService NotificationService
+@inject ILogger<AdminSettingsTab> Logger
+
+<RadzenCard>
+    <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
+    <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
+        <RadzenFormField Text="Report Expiry (Hours)" Variant="Variant.Outlined">
+            <RadzenNumeric @bind-Value="@_systemSettings.ReportExpiryHours" TValue="int" Min="1" Max="168" />
+            <RadzenText TextStyle="TextStyle.Caption">Reports disappear from public view after this many hours.</RadzenText>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Submission Cooldown (Minutes)" Variant="Variant.Outlined">
+            <RadzenNumeric @bind-Value="@_systemSettings.ReportCooldownMinutes" TValue="int" Min="1" Max="60" />
+            <RadzenText TextStyle="TextStyle.Caption">Time users must wait between submitting reports or feedback.</RadzenText>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Alert Creation Limit" Variant="Variant.Outlined">
+            <RadzenNumeric @bind-Value="@_systemSettings.AlertLimitCount" TValue="int" Min="1" Max="100" />
+            <RadzenText TextStyle="TextStyle.Caption">Number of alerts a user can create within the cooldown period.</RadzenText>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Max Report Distance (Miles)" Variant="Variant.Outlined">
+            <RadzenNumeric @bind-Value="@_systemSettings.MaxReportDistanceMiles" TValue="decimal" Min="0.1m" Max="100.0m" />
+            <RadzenText TextStyle="TextStyle.Caption">Users must be within this distance of the reported location.</RadzenText>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Mapbox Token (Optional)" Variant="Variant.Outlined">
+            <RadzenTextBox @bind-Value="@_systemSettings.MapboxToken" />
+            <RadzenText TextStyle="TextStyle.Caption">Required for map thumbnails in alert emails. Leave empty to disable thumbnails.</RadzenText>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenSwitch @bind-Value="@_systemSettings.DonationsEnabled" />
+            <RadzenLabel Text="Enable Public Donations" />
+        </RadzenStack>
+
+        <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    private SystemSettings _systemSettings = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _systemSettings = await SettingsService.GetSettingsAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading settings");
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        try
+        {
+            await SettingsService.UpdateSettingsAsync(_systemSettings);
+            NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to save settings");
+            NotificationService.Notify(NotificationSeverity.Error, "Save failed", ex.Message);
+        }
+    }
+}

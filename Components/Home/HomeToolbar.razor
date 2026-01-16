@@ -1,0 +1,25 @@
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<App> L
+
+<RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="@(IsMobile ? "4px" : "0.5rem")" Class="@(IsMobile ? "rz-p-1 rz-background-color-primary-lighter main-toolbar" : "rz-p-2 rz-background-color-primary-lighter main-toolbar")" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10; touch-action: none;">
+    <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
+    <RadzenButton Text="@(IsMobile ? "" : L["ALERTS"])" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+    @if (DonationsEnabled)
+    {
+        <RadzenButton Text="@(IsMobile ? "" : L["DONATE"])" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+    }
+    <RadzenButton Text="@(IsMobile ? "" : L["SETTINGS"])" Icon="settings" Click="@OnSettingsClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+    <RadzenButton Text="@(IsMobile ? "" : L["HELP"])" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+    <RadzenButton Text="@(IsMobile ? "" : L["REFRESH"])" Icon="refresh" Click="@OnRefreshClick" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
+</RadzenStack>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+    [Parameter] public bool DonationsEnabled { get; set; }
+    [Parameter] public EventCallback OnReportClick { get; set; }
+    [Parameter] public EventCallback OnAlertsClick { get; set; }
+    [Parameter] public EventCallback OnDonateClick { get; set; }
+    [Parameter] public EventCallback OnSettingsClick { get; set; }
+    [Parameter] public EventCallback OnHelpClick { get; set; }
+    [Parameter] public EventCallback OnRefreshClick { get; set; }
+}

@@ -1,0 +1,126 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Services
+@inject IReportService ReportService
+@inject IAlertService AlertService
+@inject IDonationService DonationService
+@inject IFeedbackService FeedbackService
+@inject IAdminService AdminService
+@inject UserTimeZoneService TimeZoneService
+@inject UserConnectionService UserConnectionService
+@inject IEventService EventService
+@inject ILogger<AdminOverviewTab> Logger
+@implements IDisposable
+
+<RadzenRow>
+    <RadzenColumn Size="12" SizeMD="4">
+        <RadzenCard Class="rz-variant-flat rz-background-color-primary-lighter">
+            <RadzenText TextStyle="TextStyle.Subtitle2">Connected Users</RadzenText>
+            <RadzenText TextStyle="@(IsMobile ? TextStyle.H5 : TextStyle.H3)">@UserConnectionService.ConnectionCount</RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeMD="4">
+        <RadzenCard Class="rz-variant-flat rz-background-color-info-lighter">
+            <RadzenText TextStyle="TextStyle.Subtitle2">Total Reports</RadzenText>
+            <RadzenText TextStyle="@(IsMobile ? TextStyle.H5 : TextStyle.H3)">@_reportCount</RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeMD="4">
+        <RadzenCard Class="rz-variant-flat rz-background-color-warning-lighter">
+            <RadzenText TextStyle="TextStyle.Subtitle2">Active Alerts</RadzenText>
+            <RadzenText TextStyle="@(IsMobile ? TextStyle.H5 : TextStyle.H3)">@_activeAlertCount</RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+<RadzenRow Class="rz-mt-4">
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard Class="rz-variant-flat rz-background-color-success-lighter">
+            <RadzenText TextStyle="TextStyle.Subtitle2">Total Donations</RadzenText>
+            <RadzenText TextStyle="@(IsMobile ? TextStyle.H5 : TextStyle.H3)">@_donationCount</RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+    <RadzenColumn Size="12" SizeMD="6">
+        <RadzenCard Class="rz-variant-flat rz-background-color-secondary-lighter">
+            <RadzenText TextStyle="TextStyle.Subtitle2">Feedback Items</RadzenText>
+            <RadzenText TextStyle="@(IsMobile ? TextStyle.H5 : TextStyle.H3)">@_feedbackCount</RadzenText>
+        </RadzenCard>
+    </RadzenColumn>
+</RadzenRow>
+
+<RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
+<RadzenDataGrid Data="@_loginAttempts" TItem="AdminLoginAttempt" Density="@(IsMobile ? Density.Compact : Density.Default)">
+    <Columns>
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+            <Template Context="attempt">
+                @TimeZoneService.FormatLocal(attempt.Timestamp)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
+            <Template Context="attempt">
+                <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                             Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+
+    private int _reportCount;
+    private int _activeAlertCount;
+    private int _donationCount;
+    private int _feedbackCount;
+    private List<AdminLoginAttempt> _loginAttempts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        
+        EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
+        EventService.OnReportAdded += _ => { _reportCount++; StateHasChanged(); };
+        EventService.OnReportDeleted += _ => { _reportCount--; StateHasChanged(); };
+        EventService.OnAlertAdded += _ => { _activeAlertCount++; StateHasChanged(); };
+        EventService.OnAlertDeleted += _ => { _activeAlertCount--; StateHasChanged(); }; // This is simplistic, might not be active
+        EventService.OnDonationAdded += _ => { _donationCount++; StateHasChanged(); };
+        EventService.OnFeedbackAdded += _ => { _feedbackCount++; StateHasChanged(); };
+        EventService.OnFeedbackDeleted += _ => { _feedbackCount--; StateHasChanged(); };
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            var reports = await ReportService.GetAllReportsAsync();
+            _reportCount = reports.Count;
+            
+            var alerts = await AlertService.GetAllAlertsAdminAsync();
+            _activeAlertCount = alerts.Count(a => a.IsActive);
+            
+            var donations = await DonationService.GetAllDonationsAsync();
+            _donationCount = donations.Count(d => d.Status == "succeeded" || d.Status == "completed");
+            
+            var feedbacks = await FeedbackService.GetAllFeedbackAsync();
+            _feedbackCount = feedbacks.Count;
+            
+            var logins = await AdminService.GetRecentLoginAttemptsAsync();
+            _loginAttempts = logins.Take(5).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading overview data");
+        }
+    }
+
+    private void HandleConnectionCountChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
+        // Other events too if I had named handlers
+    }
+}

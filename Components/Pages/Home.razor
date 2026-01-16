@@ -18,6 +18,7 @@
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @using System.Text.Json
+@using WhereAreThey.Components.Home
 @implements IDisposable
 
 <PageTitle>AreTheyHere - @L["Live Heat Map"]</PageTitle>
@@ -25,69 +26,30 @@
 
 <RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%; width: 100%; position: absolute; top: 0; left: 0; overflow: hidden;">
     <!-- Toolbar -->
-    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="@(_isMobile ? "4px" : "0.5rem")" Class="@(_isMobile ? "rz-p-1 rz-background-color-primary-lighter main-toolbar" : "rz-p-2 rz-background-color-primary-lighter main-toolbar")" Style="border-bottom: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; z-index: 10; touch-action: none;">
-        <RadzenButton Text="@L["REPORT"]" Icon="report_problem" ButtonStyle="ButtonStyle.Danger" Click="@OnReportClick" Size="ButtonSize.Medium" />
-        <RadzenButton Text="@(_isMobile ? "" : L["ALERTS"])" Icon="notifications" Click="@OnAlertsClick" ButtonStyle="ButtonStyle.Warning" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        @if (_systemSettings.DonationsEnabled)
-        {
-            <RadzenButton Text="@(_isMobile ? "" : L["DONATE"])" Icon="volunteer_activism" Click="@OnDonateClick" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        }
-        <RadzenButton Text="@(_isMobile ? "" : L["SETTINGS"])" Icon="settings" Click="@(() => OnSettingsClick(false))" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Text="@(_isMobile ? "" : L["HELP"])" Icon="help_outline" Click="@OnHelpClick" ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-        <RadzenButton Text="@(_isMobile ? "" : L["REFRESH"])" Icon="refresh" Click="@LoadReports" ButtonStyle="ButtonStyle.Info" Variant="Variant.Flat" Size="ButtonSize.Medium" />
-    </RadzenStack>
+    <HomeToolbar IsMobile="@_isMobile" 
+                 DonationsEnabled="@_systemSettings.DonationsEnabled"
+                 OnReportClick="@OnReportClick"
+                 OnAlertsClick="@OnAlertsClick"
+                 OnDonateClick="@OnDonateClick"
+                 OnSettingsClick="@(() => OnSettingsClick(false))"
+                 OnHelpClick="@OnHelpClick"
+                 OnRefreshClick="@LoadReports" />
 
     <!-- Map Container -->
     <RadzenStack Gap="0" Style="flex: 1; position: relative;">
         <div id="heatmap"></div>
         
         <!-- Map Controls -->
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="map-controls-container">
-            <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
-                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                    <RadzenAutoComplete @bind-Value="@_searchAddress" Data="@_geocodingResults" TextProperty="Address" 
-                                        LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                        Placeholder="@L["Search_Address_Placeholder"]" Style="flex: 1; min-width: 100px;" 
-                                        InputClass="search-input" InputType="search" />
-                    
-                    <RadzenToggleButton @bind-Value="@_followMe" Icon="my_location" 
-                                        ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
-                                        Size="ButtonSize.Medium" ToolTip="Follow Me" 
-                                        ToggleButtonStyle="ButtonStyle.Primary"
-                                        Change="@OnFollowMeChange" />
-                    
-                    <RadzenSelectBar @bind-Value="@_selectedHours" TValue="int" Change="@LoadReports"
-                                     Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
-                                     Class="time-filter">
-                        <Items>
-                            <RadzenSelectBarItem Text="1h" Value="1" />
-                            <RadzenSelectBarItem Text="2h" Value="2" />
-                            <RadzenSelectBarItem Text="@($"{_systemSettings.ReportExpiryHours}h")" Value="@_systemSettings.ReportExpiryHours" />
-                        </Items>
-                    </RadzenSelectBar>
-                </RadzenStack>
-            </RadzenCard>
-        </RadzenStack>
+        <HomeMapControls @bind-SearchAddress="@_searchAddress"
+                         @bind-FollowMe="@_followMe"
+                         @bind-SelectedHours="@_selectedHours"
+                         ReportExpiryHours="@_systemSettings.ReportExpiryHours"
+                         OnAddressSelected="@OnAddressSelected"
+                         OnFollowMeChange="@OnFollowMeChange"
+                         OnHoursChange="@LoadReports" />
 
         <!-- Map Legend -->
-        <RadzenStack Style="position: absolute; bottom: 30px; left: 10px; z-index: 1000;" Class="map-legend">
-            <RadzenCard Class="rz-p-2 rz-shadow-2 legend-card shadow-sm" Style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(0,0,0,0.05);">
-                <RadzenStack Gap="0.25rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #f44336; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
-                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["EMERGENCY_REPORT"]</RadzenText>
-                    </RadzenStack>
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #2196f3; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
-                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Report"]</RadzenText>
-                    </RadzenStack>
-                    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                        <RadzenIcon Icon="circle" Style="font-size: 14px; color: #ff9800; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));" />
-                        <RadzenText TextStyle="TextStyle.Caption" Style="font-size: 0.7rem; line-height: 1; color: #444;">@L["Alert_Zone"]</RadzenText>
-                    </RadzenStack>
-                </RadzenStack>
-            </RadzenCard>
-        </RadzenStack>
+        <HomeLegend />
 
         @if (_isGettingLocation)
         {
@@ -125,7 +87,6 @@
     private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
-    private IEnumerable<GeocodingResult> _geocodingResults = new List<GeocodingResult>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -703,17 +664,8 @@
         }
     }
 
-    private async Task OnAddressSearch(LoadDataArgs args)
+    private async Task OnAddressSelected(GeocodingResult selected)
     {
-        if (!string.IsNullOrEmpty(args.Filter) && args.Filter.Length > 2)
-        {
-            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
-        }
-    }
-
-    private async Task OnAddressSelected(object value)
-    {
-        var selected = _geocodingResults.FirstOrDefault(r => r.Address == value?.ToString());
         if (selected != null)
         {
             _searchAddress = selected.Address;

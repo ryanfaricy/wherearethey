@@ -1,0 +1,66 @@
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Models
+@inject IStringLocalizer<App> L
+
+<RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" Class="map-controls-container">
+    <RadzenCard Class="rz-p-1 rz-shadow-5 search-card">
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <AddressSearch @bind-SearchValue="@SearchAddressValue" 
+                           OnResultSelected="@OnAddressSelectedInternal" />
+            
+            <RadzenToggleButton @bind-Value="@FollowMeValue" Icon="my_location" 
+                                ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
+                                Size="ButtonSize.Medium" ToolTip="Follow Me" 
+                                ToggleButtonStyle="ButtonStyle.Primary"
+                                Change="@OnFollowMeChange" />
+            
+            <RadzenSelectBar @bind-Value="@SelectedHoursValue" TValue="int" Change="@OnHoursChange"
+                             Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
+                             Class="time-filter">
+                <Items>
+                    <RadzenSelectBarItem Text="1h" Value="1" />
+                    <RadzenSelectBarItem Text="2h" Value="2" />
+                    <RadzenSelectBarItem Text="@($"{ReportExpiryHours}h")" Value="@ReportExpiryHours" />
+                </Items>
+            </RadzenSelectBar>
+        </RadzenStack>
+    </RadzenCard>
+</RadzenStack>
+
+@code {
+    [Parameter] public string SearchAddress { get; set; } = "";
+    [Parameter] public EventCallback<string> SearchAddressChanged { get; set; }
+    
+    private string SearchAddressValue 
+    {
+        get => SearchAddress;
+        set => SearchAddressChanged.InvokeAsync(value);
+    }
+
+    [Parameter] public bool FollowMe { get; set; }
+    [Parameter] public EventCallback<bool> FollowMeChanged { get; set; }
+    private bool FollowMeValue
+    {
+        get => FollowMe;
+        set => FollowMeChanged.InvokeAsync(value);
+    }
+
+    [Parameter] public int SelectedHours { get; set; }
+    [Parameter] public EventCallback<int> SelectedHoursChanged { get; set; }
+    private int SelectedHoursValue
+    {
+        get => SelectedHours;
+        set => SelectedHoursChanged.InvokeAsync(value);
+    }
+
+    [Parameter] public int ReportExpiryHours { get; set; }
+    
+    [Parameter] public EventCallback<GeocodingResult> OnAddressSelected { get; set; }
+    [Parameter] public EventCallback<bool> OnFollowMeChange { get; set; }
+    [Parameter] public EventCallback<int> OnHoursChange { get; set; }
+
+    private async Task OnAddressSelectedInternal(GeocodingResult result)
+    {
+        await OnAddressSelected.InvokeAsync(result);
+    }
+}

@@ -1,0 +1,106 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Services
+@inject IFeedbackService FeedbackService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+@inject UserTimeZoneService TimeZoneService
+@inject ILogger<AdminFeedbackTab> Logger
+@inject IEventService EventService
+@implements IDisposable
+
+<RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
+    <Columns>
+        <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
+            <Template Context="feedback">
+                @TimeZoneService.FormatLocal(feedback.Timestamp)
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">
+            <Template Context="fb">
+                <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
+        <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" Visible="@(!IsMobile)" />
+        <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
+            <Template Context="fb">
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                              Click="@(() => DeleteFeedback(fb.Id))" />
+            </Template>
+        </RadzenDataGridColumn>
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    [Parameter] public bool IsMobile { get; set; }
+    
+    private List<Feedback> _feedbacks = new();
+    private RadzenDataGrid<Feedback>? _feedbacksGrid;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+        EventService.OnFeedbackAdded += HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            _feedbacks = await FeedbackService.GetAllFeedbackAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading feedback");
+        }
+    }
+
+    private void HandleFeedbackAdded(Feedback feedback)
+    {
+        InvokeAsync(async () =>
+        {
+            _feedbacks.Insert(0, feedback);
+            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleFeedbackDeleted(int id)
+    {
+        InvokeAsync(async () =>
+        {
+            _feedbacks.RemoveAll(f => f.Id == id);
+            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
+            StateHasChanged();
+        });
+    }
+
+    private async Task DeleteFeedback(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this feedback?", "Delete Feedback", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            try
+            {
+                await FeedbackService.DeleteFeedbackAsync(id);
+                NotificationService.Notify(NotificationSeverity.Success, "Feedback deleted");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete feedback {FeedbackId}", id);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
+    }
+}
