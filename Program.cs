@@ -78,6 +78,7 @@ builder.Services.Configure<GzipCompressionProviderOptions>(options =>
 
 // Add HttpClient for proxy and other services
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 
 // Add Email services
 builder.Services.Configure<AppOptions>(builder.Configuration);

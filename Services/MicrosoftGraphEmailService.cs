@@ -1,13 +1,14 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
 /// <inheritdoc />
-public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOptions> options, ILogger<MicrosoftGraphEmailService> logger) : IEmailService
+public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOptions> options, ILogger<MicrosoftGraphEmailService> logger, IMemoryCache cache) : IEmailService
 {
     private readonly EmailOptions _options = options.Value;
 
@@ -74,6 +75,12 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
 
     private async Task<string> GetAccessTokenAsync()
     {
+        const string cacheKey = "MicrosoftGraphAccessToken";
+        if (cache.TryGetValue(cacheKey, out string? cachedToken) && cachedToken != null)
+        {
+            return cachedToken;
+        }
+
         var tokenUrl = $"https://login.microsoftonline.com/{_options.GraphTenantId}/oauth2/v2.0/token";
         var dict = new Dictionary<string, string>
         {
@@ -95,6 +102,22 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
 
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
-        return doc.RootElement.GetProperty("access_token").GetString() ?? throw new Exception("Access token missing in response");
+        var root = doc.RootElement;
+        
+        var token = root.GetProperty("access_token").GetString() ?? throw new Exception("Access token missing in response");
+        
+        if (root.TryGetProperty("expires_in", out var expiresInElement) && expiresInElement.TryGetInt32(out var expiresIn))
+        {
+            // Cache for slightly less than expires_in to be safe (e.g., 5 minutes buffer)
+            var cacheDuration = TimeSpan.FromSeconds(Math.Max(expiresIn - 300, 60));
+            cache.Set(cacheKey, token, cacheDuration);
+        }
+        else
+        {
+            // Fallback cache duration if expires_in is missing
+            cache.Set(cacheKey, token, TimeSpan.FromMinutes(55));
+        }
+
+        return token;
     }
 }

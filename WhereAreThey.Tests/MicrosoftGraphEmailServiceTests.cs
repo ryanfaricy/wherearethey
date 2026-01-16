@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -18,8 +19,9 @@ public class MicrosoftGraphEmailServiceTests
         optionsMock.Setup(o => o.Value).Returns(options);
         
         var loggerMock = new Mock<ILogger<MicrosoftGraphEmailService>>();
+        var cache = new MemoryCache(new MemoryCacheOptions());
         var httpClient = new HttpClient();
-        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object);
+        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object, cache);
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() => service.SendEmailAsync("test@example.com", "Subject", "Body"));
@@ -42,6 +44,7 @@ public class MicrosoftGraphEmailServiceTests
         optionsMock.Setup(o => o.Value).Returns(options);
         
         var loggerMock = new Mock<ILogger<MicrosoftGraphEmailService>>();
+        var cache = new MemoryCache(new MemoryCacheOptions());
         
         var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
         
@@ -74,7 +77,7 @@ public class MicrosoftGraphEmailServiceTests
            .Verifiable();
 
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object);
+        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object, cache);
 
         // Act
         await service.SendEmailAsync("recipient@example.com", "Hello", "<b>World</b>");
@@ -109,6 +112,7 @@ public class MicrosoftGraphEmailServiceTests
         optionsMock.Setup(o => o.Value).Returns(options);
         
         var loggerMock = new Mock<ILogger<MicrosoftGraphEmailService>>();
+        var cache = new MemoryCache(new MemoryCacheOptions());
         
         var handlerMock = new Mock<HttpMessageHandler>();
         handlerMock
@@ -125,10 +129,81 @@ public class MicrosoftGraphEmailServiceTests
            });
 
         var httpClient = new HttpClient(handlerMock.Object);
-        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object);
+        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object, cache);
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<Exception>(() => service.SendEmailAsync("test@example.com", "Sub", "Body"));
         Assert.Contains("Failed to authenticate", ex.Message);
+    }
+
+    [Fact]
+    public async Task SendEmailAsync_ShouldCacheToken()
+    {
+        // Arrange
+        var options = new EmailOptions 
+        { 
+            GraphTenantId = "tenant", 
+            GraphClientId = "client", 
+            GraphClientSecret = "secret", 
+            GraphSenderUserId = "user-id",
+            FromEmail = "sender@example.com", 
+            FromName = "Sender" 
+        };
+        var optionsMock = new Mock<IOptions<EmailOptions>>();
+        optionsMock.Setup(o => o.Value).Returns(options);
+        
+        var loggerMock = new Mock<ILogger<MicrosoftGraphEmailService>>();
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        
+        // Mock token response - should only be called once
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("oauth2/v2.0/token")),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ReturnsAsync(new HttpResponseMessage
+           {
+              StatusCode = HttpStatusCode.OK,
+              Content = new StringContent("{\"access_token\": \"mock-token\", \"expires_in\": 3600}"),
+           });
+
+        // Mock sendMail response
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("sendMail")),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ReturnsAsync(new HttpResponseMessage
+           {
+              StatusCode = HttpStatusCode.Accepted
+           });
+
+        var httpClient = new HttpClient(handlerMock.Object);
+        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object, cache);
+
+        // Act
+        await service.SendEmailAsync("recipient1@example.com", "Hello 1", "Body 1");
+        await service.SendEmailAsync("recipient2@example.com", "Hello 2", "Body 2");
+
+        // Assert
+        handlerMock.Protected().Verify(
+           "SendAsync",
+           Times.Once(), // Token should be requested only once
+           ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("oauth2/v2.0/token")),
+           ItExpr.IsAny<CancellationToken>()
+        );
+        
+        handlerMock.Protected().Verify(
+           "SendAsync",
+           Times.Exactly(2), // sendMail should be called twice
+           ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("sendMail")),
+           ItExpr.IsAny<CancellationToken>()
+        );
     }
 }

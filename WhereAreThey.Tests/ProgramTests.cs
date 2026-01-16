@@ -17,6 +17,7 @@ public class ProgramTests
 
         // Register same services as in Program.cs
         builder.Services.AddLogging();
+        builder.Services.AddMemoryCache();
         builder.Services.Configure<EmailOptions>(_ => { });
         
         builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
