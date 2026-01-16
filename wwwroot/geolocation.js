@@ -33,17 +33,25 @@ window.getLocation = function () {
     });
 };
 
+let locationDotNetHelper;
 window.watchLocation = function (dotNetHelper) {
     if (!navigator.geolocation) {
         return -1;
     }
+
+    locationDotNetHelper = dotNetHelper;
+
+    // Attempt to start orientation tracking as well
+    startOrientationTracking(dotNetHelper);
+
     return navigator.geolocation.watchPosition(
         position => {
             dotNetHelper.invokeMethodAsync('OnLocationUpdated', {
                 coords: {
                     latitude: position.coords.latitude,
                     longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy
+                    accuracy: position.coords.accuracy,
+                    heading: position.coords.heading
                 }
             });
         },
@@ -56,6 +64,62 @@ window.watchLocation = function (dotNetHelper) {
             timeout: 10000
         }
     );
+};
+
+let lastHeading = null;
+let isOrientationListening = false;
+function startOrientationTracking(dotNetHelper) {
+    if (isOrientationListening) return;
+
+    const handleOrientation = (event) => {
+        let heading = null;
+        
+        // iOS Safari
+        if (event.webkitCompassHeading !== undefined) {
+            heading = event.webkitCompassHeading;
+        } 
+        // Standard absolute orientation
+        else if (event.absolute === true && event.alpha !== null) {
+            // alpha is 0 when pointing north, and increases counter-clockwise.
+            // We want degrees clockwise from North.
+            heading = (360 - event.alpha) % 360;
+        }
+
+        if (heading !== null && Math.abs((lastHeading || 0) - heading) > 1) {
+            lastHeading = heading;
+            dotNetHelper.invokeMethodAsync('OnOrientationUpdated', heading);
+        }
+    };
+
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS 13+ requires permission. 
+        // We can't request it here because it's not a user gesture.
+        console.log('DeviceOrientation permission required for iOS');
+    } else {
+        window.addEventListener('deviceorientationabsolute', handleOrientation, true);
+        window.addEventListener('deviceorientation', handleOrientation, true);
+        isOrientationListening = true;
+    }
+}
+
+window.requestOrientationPermission = function () {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        return DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    if (locationDotNetHelper) {
+                        startOrientationTracking(locationDotNetHelper);
+                    }
+                    return true;
+                }
+                return false;
+            })
+            .catch(err => {
+                console.error('Orientation permission error:', err);
+                return false;
+            });
+    }
+    return Promise.resolve(true);
 };
 
 window.stopWatching = function (watchId) {

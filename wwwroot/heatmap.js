@@ -422,16 +422,33 @@ window.setMapView = function (lat, lng, radiusKm) {
     isProgrammaticMove = false;
 };
 
-window.updateUserLocation = function (lat, lng, accuracy) {
+window.updateUserLocation = function (lat, lng, accuracy, heading) {
     if (!map) return;
 
     if (userLocationMarker) {
         userLocationMarker.setLatLng([lat, lng]);
+        
+        const el = userLocationMarker.getElement();
+        if (el) {
+            const headingElement = el.querySelector('.user-location-heading');
+            if (headingElement) {
+                if (heading !== null && heading !== undefined) {
+                    headingElement.style.display = 'block';
+                    headingElement.style.transform = `translate(-50%, -50%) rotate(${heading}deg)`;
+                } else {
+                    headingElement.style.display = 'none';
+                }
+            }
+        }
     } else {
         const userIcon = L.divIcon({
-            className: 'user-location-pulse',
-            iconSize: [14, 14],
-            iconAnchor: [7, 7]
+            className: 'user-location-container',
+            html: `
+                <div class="user-location-heading" style="display: ${heading !== null && heading !== undefined ? 'block' : 'none'}; transform: translate(-50%, -50%) rotate(${heading || 0}deg)"></div>
+                <div class="user-location-pulse-dot"></div>
+            `,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
         });
 
         userLocationMarker = L.marker([lat, lng], {

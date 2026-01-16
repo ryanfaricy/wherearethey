@@ -51,9 +51,14 @@ public class MapService(IJSRuntime jsRuntime) : IMapService
         await jsRuntime.InvokeVoidAsync("setMapView", lat, lng, radiusKm);
     }
 
-    public async Task UpdateUserLocationAsync(double lat, double lng, double? accuracy = null)
+    public async Task UpdateUserLocationAsync(double lat, double lng, double? accuracy = null, double? heading = null)
     {
-        await jsRuntime.InvokeVoidAsync("updateUserLocation", lat, lng, accuracy);
+        await jsRuntime.InvokeVoidAsync("updateUserLocation", lat, lng, accuracy, heading);
+    }
+
+    public async Task<bool> RequestOrientationPermissionAsync()
+    {
+        return await jsRuntime.InvokeAsync<bool>("requestOrientationPermission");
     }
 
     public async Task ShowGhostPinAsync(double lat, double lng)

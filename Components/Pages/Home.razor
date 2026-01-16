@@ -85,6 +85,7 @@
     private int _locationWatchId = -1;
     private GeolocationPosition? _lastKnownPosition;
     private DateTime _lastLocationUpdate;
+    private double? _lastHeading;
     private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
@@ -611,10 +612,15 @@
 
     private async Task OnFollowMeChange(bool value)
     {
-        if (value && _lastKnownPosition != null)
+        _followMe = value;
+        if (value)
         {
-            await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
-            _searchAddress = await GeocodingService.ReverseGeocodeAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude);
+            await MapService.RequestOrientationPermissionAsync();
+            if (_lastKnownPosition != null)
+            {
+                await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+                _searchAddress = await GeocodingService.ReverseGeocodeAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude);
+            }
         }
     }
 
@@ -638,6 +644,19 @@
     }
 
     [JSInvokable]
+    public async Task OnOrientationUpdated(double heading)
+    {
+        if (_mapInitialized && _lastKnownPosition != null)
+        {
+            await MapService.UpdateUserLocationAsync(
+                _lastKnownPosition.Coords.Latitude,
+                _lastKnownPosition.Coords.Longitude,
+                _lastKnownPosition.Coords.Accuracy,
+                heading);
+        }
+    }
+
+    [JSInvokable]
     public async Task OnLocationUpdated(GeolocationPosition position)
     {
         var isFirstLocation = _lastKnownPosition == null;
@@ -649,7 +668,8 @@
             await MapService.UpdateUserLocationAsync( 
                 position.Coords.Latitude, 
                 position.Coords.Longitude, 
-                position.Coords.Accuracy);
+                position.Coords.Accuracy,
+                position.Coords.Heading ?? _lastHeading);
 
             if (_followMe || isFirstLocation)
             {

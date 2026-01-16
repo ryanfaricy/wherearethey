@@ -14,7 +14,8 @@ public interface IMapService
     Task SelectReportAsync(int reportId);
     Task<MapState?> GetMapStateAsync();
     Task SetMapViewAsync(double lat, double lng, double? radiusKm = null);
-    Task UpdateUserLocationAsync(double lat, double lng, double? accuracy = null);
+    Task UpdateUserLocationAsync(double lat, double lng, double? accuracy = null, double? heading = null);
+    Task<bool> RequestOrientationPermissionAsync();
     Task ShowGhostPinAsync(double lat, double lng);
     Task HideGhostPinAsync();
     Task UpdateMapThemeAsync(string? theme = null);
