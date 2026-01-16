@@ -291,10 +291,12 @@ public class ReportServiceTests
         await Task.Delay(1000);
 
         // Assert
-        emailServiceMock.Verify(x => x.SendEmailAsync(
-            It.Is<string>(s => s == userBEmail),
-            It.Is<string>(s => s.Contains("EMERGENCY")),
-            It.Is<string>(b => b.Contains("Alert trigger message"))), Times.Once);
+        emailServiceMock.Verify(x => x.SendEmailsAsync(
+            It.Is<IEnumerable<Email>>(emails => 
+                emails.Count() == 1 &&
+                emails.First().To == userBEmail &&
+                emails.First().Subject.Contains("EMERGENCY") &&
+                emails.First().Body.Contains("Alert trigger message"))), Times.Once);
     }
 
     [Fact]

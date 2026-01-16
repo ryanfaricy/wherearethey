@@ -44,10 +44,11 @@ public class ReportProcessingService(
                 mapThumbnailHtml = $"<p><a href='{heatMapUrl}'><img src='{mapUrl}' alt='Map Location' style='max-width: 100%; height: auto; border-radius: 8px;' /></a></p>";
             }
 
+            var emails = new List<Email>();
             foreach (var alert in matchingAlerts)
             {
-                var email = alertService.DecryptEmail(alert.EncryptedEmail);
-                if (!string.IsNullOrEmpty(email))
+                var emailAddress = alertService.DecryptEmail(alert.EncryptedEmail);
+                if (!string.IsNullOrEmpty(emailAddress))
                 {
                     var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
                     var body = $@"
@@ -63,12 +64,17 @@ public class ReportProcessingService(
                         <p><a href='{heatMapUrl}'>View on Heat Map</a></p>
                         <small>You received this because you set up an alert on AreTheyHere.</small>";
 
-                    await emailService.SendEmailAsync(email, subject, body);
+                    emails.Add(new Email { To = emailAddress, Subject = subject, Body = body });
                 }
                 else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
                 {
                     logger.LogWarning("Failed to decrypt email for alert {AlertId}. The encryption keys may have changed.", alert.Id);
                 }
+            }
+
+            if (emails.Count > 0)
+            {
+                await emailService.SendEmailsAsync(emails);
             }
         }
         catch (Exception ex)

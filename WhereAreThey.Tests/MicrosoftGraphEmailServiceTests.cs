@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
+using WhereAreThey.Models;
 using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests;
@@ -203,6 +204,89 @@ public class MicrosoftGraphEmailServiceTests
            "SendAsync",
            Times.Exactly(2), // sendMail should be called twice
            ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("sendMail")),
+           ItExpr.IsAny<CancellationToken>()
+        );
+    }
+
+    [Fact]
+    public async Task SendEmailsAsync_ShouldBatchIdenticalEmailsUsingBcc()
+    {
+        // Arrange
+        var options = new EmailOptions 
+        { 
+            GraphTenantId = "tenant", 
+            GraphClientId = "client", 
+            GraphClientSecret = "secret", 
+            GraphSenderUserId = "user-id",
+            FromEmail = "sender@example.com", 
+            FromName = "Sender" 
+        };
+        var optionsMock = new Mock<IOptions<EmailOptions>>();
+        optionsMock.Setup(o => o.Value).Returns(options);
+        
+        var loggerMock = new Mock<ILogger<MicrosoftGraphEmailService>>();
+        var cache = new MemoryCache(new MemoryCacheOptions());
+        
+        var handlerMock = new Mock<HttpMessageHandler>(MockBehavior.Strict);
+        
+        // Mock token response
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("oauth2/v2.0/token")),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ReturnsAsync(new HttpResponseMessage
+           {
+              StatusCode = HttpStatusCode.OK,
+              Content = new StringContent("{\"access_token\": \"mock-token\"}"),
+           });
+
+        // Mock sendMail response
+        handlerMock
+           .Protected()
+           .Setup<Task<HttpResponseMessage>>(
+              "SendAsync",
+              ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("sendMail")),
+              ItExpr.IsAny<CancellationToken>()
+           )
+           .ReturnsAsync(new HttpResponseMessage
+           {
+              StatusCode = HttpStatusCode.Accepted
+           });
+
+        var httpClient = new HttpClient(handlerMock.Object);
+        var service = new MicrosoftGraphEmailService(httpClient, optionsMock.Object, loggerMock.Object, cache);
+
+        var emails = new List<Email>
+        {
+            new() { To = "r1@example.com", Subject = "Shared", Body = "Body" },
+            new() { To = "r2@example.com", Subject = "Shared", Body = "Body" },
+            new() { To = "r3@example.com", Subject = "Unique", Body = "UniqueBody" }
+        };
+
+        // Act
+        await service.SendEmailsAsync(emails);
+
+        // Assert
+        // Should be called twice: once for the batch of 2 (r1, r2) and once for the unique one (r3)
+        handlerMock.Protected().Verify(
+           "SendAsync",
+           Times.Exactly(2),
+           ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("sendMail")),
+           ItExpr.IsAny<CancellationToken>()
+        );
+
+        // Verify batch request content
+        handlerMock.Protected().Verify(
+           "SendAsync",
+           Times.Once(),
+           ItExpr.Is<HttpRequestMessage>(req => 
+               req.RequestUri!.ToString().Contains("sendMail") && 
+               req.Content!.ReadAsStringAsync().Result.Contains("r1@example.com") &&
+               req.Content!.ReadAsStringAsync().Result.Contains("r2@example.com") &&
+               req.Content!.ReadAsStringAsync().Result.Contains("bccRecipients")),
            ItExpr.IsAny<CancellationToken>()
         );
     }

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
@@ -15,9 +16,50 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
     /// <inheritdoc />
     public async Task SendEmailAsync(string to, string subject, string body)
     {
-        if (string.IsNullOrEmpty(_options.GraphTenantId) || 
-            string.IsNullOrEmpty(_options.GraphClientId) || 
-            string.IsNullOrEmpty(_options.GraphClientSecret) || 
+        await SendMailInternalAsync([to], null, subject, body);
+    }
+
+    /// <inheritdoc />
+    public async Task SendEmailsAsync(IEnumerable<Email> emails)
+    {
+        var emailList = emails.ToList();
+        if (emailList.Count == 0) return;
+
+        // Group by subject and body to allow BCC optimization
+        var groups = emailList.GroupBy(e => new { e.Subject, e.Body });
+
+        foreach (var group in groups)
+        {
+            var recipients = group.Select(e => e.To).Distinct().ToList();
+
+            if (recipients.Count == 1)
+            {
+                await SendEmailAsync(recipients[0], group.Key.Subject, group.Key.Body);
+            }
+            else
+            {
+                // Send in batches to multiple recipients via BCC to keep addresses private
+                // Microsoft Graph limit for recipients is typically around 100-200 per call for most efficient processing
+                const int batchSize = 100;
+                for (int i = 0; i < recipients.Count; i += batchSize)
+                {
+                    var batch = recipients.Skip(i).Take(batchSize).ToList();
+                    // Use FromEmail as the 'To' recipient and put the actual recipients in BCC
+                    await SendMailInternalAsync([_options.FromEmail], batch, group.Key.Subject, group.Key.Body);
+                }
+            }
+        }
+    }
+
+    private async Task SendMailInternalAsync(
+        IEnumerable<string>? toRecipients,
+        IEnumerable<string>? bccRecipients,
+        string subject,
+        string body)
+    {
+        if (string.IsNullOrEmpty(_options.GraphTenantId) ||
+            string.IsNullOrEmpty(_options.GraphClientId) ||
+            string.IsNullOrEmpty(_options.GraphClientSecret) ||
             string.IsNullOrEmpty(_options.GraphSenderUserId))
         {
             logger.LogWarning("Microsoft Graph configuration is incomplete. Skipping Microsoft Graph.");
@@ -27,7 +69,7 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
         try
         {
             var token = await GetAccessTokenAsync();
-            
+
             var emailPayload = new
             {
                 message = new
@@ -38,10 +80,10 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
                         contentType = "HTML",
                         content = body
                     },
-                    toRecipients = new[]
-                    {
-                        new { emailAddress = new { address = to } }
-                    },
+                    toRecipients = (toRecipients ?? Enumerable.Empty<string>())
+                        .Select(r => new { emailAddress = new { address = r } }).ToArray(),
+                    bccRecipients = (bccRecipients ?? Enumerable.Empty<string>())
+                        .Select(r => new { emailAddress = new { address = r } }).ToArray(),
                     from = new { emailAddress = new { name = _options.FromName, address = _options.FromEmail } },
                 },
                 saveToSentItems = false
@@ -54,7 +96,9 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             request.Content = content;
 
-            logger.LogDebug("Sending email to {To} via Microsoft Graph API", to);
+            var recipientsDisplay = toRecipients != null ? string.Join(", ", toRecipients) : "BCC only";
+            logger.LogDebug("Sending email to {To} (BCC: {BccCount}) via Microsoft Graph API", recipientsDisplay, bccRecipients?.Count() ?? 0);
+            
             var response = await httpClient.SendAsync(request);
 
             if (!response.IsSuccessStatusCode)
@@ -64,11 +108,11 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
                 throw new Exception($"Failed to send email via Microsoft Graph. Status: {response.StatusCode}");
             }
 
-            logger.LogInformation("Email sent to {To} via Microsoft Graph with subject {Subject}", to, subject);
+            logger.LogInformation("Email sent successfully via Microsoft Graph with subject {Subject}", subject);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error sending email to {To} via Microsoft Graph", to);
+            logger.LogError(ex, "Error sending email via Microsoft Graph");
             throw;
         }
     }

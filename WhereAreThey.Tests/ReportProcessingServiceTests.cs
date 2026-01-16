@@ -53,10 +53,13 @@ public class ReportProcessingServiceTests
         await service.ProcessReportAsync(report);
 
         // Assert
-        _emailServiceMock.Verify(e => e.SendEmailAsync(
-            "test@example.com",
-            It.Is<string>(s => s.Contains("Alert")),
-            It.Is<string>(b => b.Contains("123 Test St") && b.Contains("Alert msg"))),
+        _emailServiceMock.Verify(e => e.SendEmailsAsync(
+            It.Is<IEnumerable<Email>>(emails => 
+                emails.Count() == 1 && 
+                emails.First().To == "test@example.com" &&
+                emails.First().Subject.Contains("Alert") &&
+                emails.First().Body.Contains("123 Test St") &&
+                emails.First().Body.Contains("Alert msg"))),
             Times.Once);
     }
 
