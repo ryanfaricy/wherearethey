@@ -132,7 +132,7 @@
                     </RadzenRow>
 
                     <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
-                    <RadzenDataGrid Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_recentLoginAttemptsGrid" Data="@_loginAttempts.Take(5)" TItem="AdminLoginAttempt" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
@@ -151,7 +151,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="@(_isMobile ? "" : "REPORTS")" Icon="report_problem">
-                    <RadzenDataGrid Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_reportsGrid" Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
@@ -192,7 +192,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="@(_isMobile ? "" : "ALERTS")" Icon="notifications">
-                    <RadzenDataGrid Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Alert" Title="Email">
@@ -228,7 +228,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="@(_isMobile ? "" : "DONATIONS")" Icon="volunteer_activism">
-                    <RadzenDataGrid Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                                 <Template Context="donation">
@@ -252,7 +252,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="@(_isMobile ? "" : "FEEDBACK")" Icon="chat">
-                    <RadzenDataGrid Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Visible="@(!_isMobile)" />
                             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
@@ -278,7 +278,7 @@
                 </RadzenTabsItem>
 
                 <RadzenTabsItem Text="@(_isMobile ? "" : "LOGINS")" Icon="security">
-                    <RadzenDataGrid Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
+                    <RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(_isMobile ? Density.Compact : Density.Default)">
                         <Columns>
                             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
                                 <Template Context="attempt">
@@ -353,6 +353,13 @@
     private string? _clientIp;
     private bool _mapInitialized;
     private DotNetObjectReference<AdminControlPanel>? _objRef;
+
+    private RadzenDataGrid<LocationReport>? _reportsGrid;
+    private RadzenDataGrid<Alert>? _alertsGrid;
+    private RadzenDataGrid<Donation>? _donationsGrid;
+    private RadzenDataGrid<Feedback>? _feedbacksGrid;
+    private RadzenDataGrid<AdminLoginAttempt>? _allLoginAttemptsGrid;
+    private RadzenDataGrid<AdminLoginAttempt>? _recentLoginAttemptsGrid;
 
     [JSInvokable] public void OnMapClick(double lat, double lng, bool isMarkerClick) { }
     [JSInvokable] public void OnMapContextMenu(double lat, double lng) { }
@@ -447,12 +454,16 @@
             return;
         }
 
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             _loginAttempts.Insert(0, attempt);
             if (!attempt.IsSuccessful)
             {
                 NotificationService.Notify(NotificationSeverity.Warning, "Security Alert", $"Failed login attempt from {attempt.IpAddress}", 7000);
             }
+            
+            if (_recentLoginAttemptsGrid != null) await _recentLoginAttemptsGrid.Reload();
+            if (_allLoginAttemptsGrid != null) await _allLoginAttemptsGrid.Reload();
+            
             StateHasChanged();
         });
     }
@@ -460,10 +471,20 @@
     private void HandleEmailVerified(string emailHash)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             NotificationService.Notify(NotificationSeverity.Info, "Email Verified", "A user has verified their email address.", 5000);
-            // We might want to reload alerts to show the "YES" in the Verified column
-            _ = LoadData(); 
+            
+            var affectedAlerts = _alerts.Where(a => a.EmailHash == emailHash).ToList();
+            if (affectedAlerts.Any())
+            {
+                foreach (var alert in affectedAlerts)
+                {
+                    alert.IsVerified = true;
+                }
+                
+                if (_alertsGrid != null) await _alertsGrid.Reload();
+                StateHasChanged();
+            }
         });
     }
 
@@ -485,6 +506,8 @@
                 Duration = report.IsEmergency ? 15000 : 5000
             });
             
+            if (_reportsGrid != null) await _reportsGrid.Reload();
+            
             if (_mapInitialized)
             {
                 await JsRuntime.InvokeVoidAsync("addSingleReport", report);
@@ -502,6 +525,8 @@
             if (index != -1)
             {
                 _reports[index] = report;
+                
+                if (_reportsGrid != null) await _reportsGrid.Reload();
                 
                 if (_mapInitialized)
                 {
@@ -523,6 +548,8 @@
             {
                 _reports.Remove(report);
                 
+                if (_reportsGrid != null) await _reportsGrid.Reload();
+                
                 if (_mapInitialized)
                 {
                     await JsRuntime.InvokeVoidAsync("removeSingleReport", id);
@@ -536,9 +563,10 @@
     private void HandleFeedbackAdded(Feedback feedback)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             _feedbacks.Insert(0, feedback);
             NotificationService.Notify(NotificationSeverity.Info, "New Feedback", feedback.Type, 5000);
+            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
             StateHasChanged();
         });
     }
@@ -546,11 +574,12 @@
     private void HandleFeedbackDeleted(int id)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var fb = _feedbacks.FirstOrDefault(f => f.Id == id);
             if (fb != null)
             {
                 _feedbacks.Remove(fb);
+                if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
                 StateHasChanged();
             }
         });
@@ -559,9 +588,10 @@
     private void HandleDonationAdded(Donation donation)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             _donations.Insert(0, donation);
             NotificationService.Notify(NotificationSeverity.Success, "New Donation Received", $"{donation.Amount} {donation.Currency}", 7000);
+            if (_donationsGrid != null) await _donationsGrid.Reload();
             StateHasChanged();
         });
     }
@@ -569,7 +599,7 @@
     private void HandleDonationUpdated(Donation donation)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var existing = _donations.FirstOrDefault(d => d.Id == donation.Id || (donation.ExternalPaymentId != null && d.ExternalPaymentId == donation.ExternalPaymentId));
             if (existing != null)
             {
@@ -580,6 +610,7 @@
             {
                 _donations.Insert(0, donation);
             }
+            if (_donationsGrid != null) await _donationsGrid.Reload();
             StateHasChanged();
         });
     }
@@ -587,9 +618,10 @@
     private void HandleAlertAdded(Alert alert)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             _alerts.Insert(0, alert);
             NotificationService.Notify(NotificationSeverity.Info, "New Alert Created", "A user signed up for notifications.", 5000);
+            if (_alertsGrid != null) await _alertsGrid.Reload();
             StateHasChanged();
         });
     }
@@ -597,12 +629,13 @@
     private void HandleAlertUpdated(Alert alert)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var existing = _alerts.FirstOrDefault(a => a.Id == alert.Id);
             if (existing != null)
             {
                 var index = _alerts.IndexOf(existing);
                 _alerts[index] = alert;
+                if (_alertsGrid != null) await _alertsGrid.Reload();
                 StateHasChanged();
             }
         });
@@ -611,11 +644,12 @@
     private void HandleAlertDeleted(int id)
     {
         if (!_isAuthenticated) return;
-        InvokeAsync(() => {
+        InvokeAsync(async () => {
             var alert = _alerts.FirstOrDefault(a => a.Id == id);
             if (alert != null)
             {
                 _alerts.Remove(alert);
+                if (_alertsGrid != null) await _alertsGrid.Reload();
                 StateHasChanged();
             }
         });
@@ -675,14 +709,12 @@
             else
             {
                 NotificationService.Notify(NotificationSeverity.Error, "Invalid password");
-                await LoadData(); // Refresh login attempts list
             }
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Admin login failed for IP {ClientIp}", _clientIp);
             NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
-            await LoadData();
         }
     }
 
@@ -743,7 +775,6 @@
             try
             {
                 await ReportService.DeleteReportAsync(id);
-                await LoadData();
                 NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
             }
             catch (Exception ex)
@@ -764,7 +795,6 @@
             try
             {
                 await AlertService.DeleteAlertAsync(id);
-                await LoadData();
                 NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
             }
             catch (Exception ex)
@@ -784,7 +814,6 @@
             try
             {
                 await FeedbackService.DeleteFeedbackAsync(id);
-                await LoadData();
                 NotificationService.Notify(NotificationSeverity.Success, "Feedback deleted");
             }
             catch (Exception ex)
