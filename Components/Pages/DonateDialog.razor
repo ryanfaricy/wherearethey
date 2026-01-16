@@ -6,6 +6,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IJSRuntime JsRuntime
+@inject IHapticFeedbackService HapticFeedbackService
 @inject IOptions<SquareOptions> SquareOptions
 @inject ILogger<DonateDialog> Logger
 @inject IStringLocalizer<App> L
@@ -167,6 +168,7 @@
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Payment initialization failed for Square");
+                await HapticFeedbackService.VibrateErrorAsync();
                 NotificationService.Notify(NotificationSeverity.Error, "Payment initialization failed", ex.Message);
                 return;
             }
@@ -176,6 +178,7 @@
             
             if (response.Errors != null && response.Errors.Any())
             {
+                await HapticFeedbackService.VibrateErrorAsync();
                 NotificationService.Notify(NotificationSeverity.Error, "Payment failed", response.Errors[0].Detail);
                 return;
             }
@@ -186,6 +189,7 @@
             await DonationService.RecordDonationAsync(_donation);
 
             NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
+            await HapticFeedbackService.VibrateSuccessAsync();
             
             var displayName = string.IsNullOrWhiteSpace(_donation.DonorName) ? "Anonymous" : _donation.DonorName;
             _recentDonations.Insert(0, new DonationDisplay 
@@ -203,6 +207,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Donation failed for amount {Amount}", _donation.Amount);
+            await HapticFeedbackService.VibrateErrorAsync();
             NotificationService.Notify(NotificationSeverity.Error, "Donation failed", ex.Message);
         }
         finally

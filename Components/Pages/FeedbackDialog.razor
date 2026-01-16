@@ -4,6 +4,7 @@
 @inject IFeedbackService FeedbackService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IHapticFeedbackService HapticFeedbackService
 @inject IJSRuntime JsRuntime
 @inject ILogger<FeedbackDialog> Logger
 @inject IStringLocalizer<App> L
@@ -73,12 +74,14 @@
         {
             _feedback.UserIdentifier = _userIdentifier;
             await FeedbackService.AddFeedbackAsync(_feedback);
+            await HapticFeedbackService.VibrateSuccessAsync();
             NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to submit feedback");
+            await HapticFeedbackService.VibrateErrorAsync();
             NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], ex.Message);
         }
         finally

@@ -5,6 +5,7 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IHapticFeedbackService HapticFeedbackService
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
@@ -83,11 +84,20 @@
         try
         {
             await ReportService.AddReportAsync(Report);
+            if (Report.IsEmergency)
+            {
+                await HapticFeedbackService.VibrateEmergencyAsync();
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateSuccessAsync();
+            }
             NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
             DialogService.Close(true);
         }
         catch (Exception ex)
         {
+            await HapticFeedbackService.VibrateErrorAsync();
             Logger.LogError(ex, "Failed to submit report at {Lat}, {Lng}", Report.Latitude, Report.Longitude);
             NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], ex.Message);
         }

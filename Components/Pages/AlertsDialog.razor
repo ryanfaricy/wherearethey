@@ -5,6 +5,7 @@
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
+@inject IHapticFeedbackService HapticFeedbackService
 @inject IJSRuntime JsRuntime
 @inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
@@ -185,6 +186,7 @@
         {
             _newAlert.UserIdentifier = _userIdentifier;
             await AlertService.CreateAlertAsync(_newAlert, _email);
+            await HapticFeedbackService.VibrateSuccessAsync();
             NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
             
             _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
@@ -195,6 +197,7 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to create alert for email {Email}", _email);
+            await HapticFeedbackService.VibrateErrorAsync();
             NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", ex.Message);
         }
         finally
@@ -208,12 +211,14 @@
         try
         {
             await AlertService.DeactivateAlertAsync(id);
+            await HapticFeedbackService.VibrateWarningAsync();
             NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
             await LoadAlerts();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to deactivate alert {AlertId}", id);
+            await HapticFeedbackService.VibrateErrorAsync();
             NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", ex.Message);
         }
     }

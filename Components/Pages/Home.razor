@@ -10,6 +10,7 @@
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
 @inject IEventService EventService
+@inject IHapticFeedbackService HapticFeedbackService
 @using System.Globalization
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
@@ -166,9 +167,22 @@
                             report.Latitude,
                             report.Longitude);
 
+                        // If it's nearby, vibrate
+                        if (distance <= 5) // Within 5km
+                        {
+                            if (report.IsEmergency)
+                            {
+                                await HapticFeedbackService.VibrateEmergencyAsync();
+                            }
+                            else
+                            {
+                                await HapticFeedbackService.VibrateUpdateAsync();
+                            }
+                        }
+
                         NotificationService.Notify(new NotificationMessage
                         {
-                            Severity = NotificationSeverity.Info,
+                            Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
                             Summary = L["New_Report"],
                             Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
                             Duration = 10000,
