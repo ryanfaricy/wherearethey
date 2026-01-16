@@ -8,6 +8,7 @@
 @inject IHapticFeedbackService HapticFeedbackService
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
+@inject IJSRuntime JsRuntime
 
 <RadzenTemplateForm Data="@Report" Submit="@((LocationReport _) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
@@ -18,7 +19,17 @@
                                 InputType="search" />
         </RadzenFormField>
 
-        <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
+        @if (_isDeterminingLocation)
+        {
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@L["Acquiring_Location"]</RadzenText>
+            </RadzenStack>
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
+        }
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
             <ChildContent>
@@ -46,13 +57,57 @@
 
 @code {
     [Parameter] public LocationReport Report { get; set; } = new();
+    [Parameter] public Task<Home.GeolocationPosition?>? LocationTask { get; set; }
+    [Parameter] public bool UpdateReportLocation { get; set; } = true;
     private bool _isSubmitting;
+    private bool _isDeterminingLocation;
     private string? _approxAddress;
     private List<GeocodingResult> _geocodingResults = new();
 
     protected override async Task OnInitializedAsync()
     {
-        _approxAddress = await GeocodingService.ReverseGeocodeAsync(Report.Latitude, Report.Longitude);
+        if (LocationTask != null && !LocationTask.IsCompleted)
+        {
+            _isDeterminingLocation = true;
+            _ = UpdateLocationAsync();
+        }
+        else
+        {
+            _approxAddress = await GeocodingService.ReverseGeocodeAsync(Report.Latitude, Report.Longitude);
+        }
+    }
+
+    private async Task UpdateLocationAsync()
+    {
+        try
+        {
+            var position = await LocationTask!;
+            if (position != null)
+            {
+                if (UpdateReportLocation)
+                {
+                    Report.Latitude = position.Coords.Latitude;
+                    Report.Longitude = position.Coords.Longitude;
+                    
+                    // Update Ghost Pin on map
+                    await JsRuntime.InvokeVoidAsync("showGhostPin", Report.Latitude, Report.Longitude);
+                    
+                    _approxAddress = await GeocodingService.ReverseGeocodeAsync(Report.Latitude, Report.Longitude);
+                }
+
+                Report.ReporterLatitude = position.Coords.Latitude;
+                Report.ReporterLongitude = position.Coords.Longitude;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to update location in background");
+        }
+        finally
+        {
+            _isDeterminingLocation = false;
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task OnAddressSearch(LoadDataArgs args)

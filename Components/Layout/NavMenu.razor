@@ -37,49 +37,56 @@
 
     private async Task OnReportClick()
     {
+        // Start location acquisition in background
+        var locationTask = JsRuntime.InvokeAsync<GeolocationPosition>("getLocation").AsTask();
+
+        // Initial placeholder from map if possible
+        double initialLat = 0, initialLng = 0;
         try
         {
-            var position = await JsRuntime.InvokeAsync<GeolocationPosition>("getLocation");
-            var report = new LocationReport
+            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            if (mapState != null)
             {
-                Latitude = position.Coords.Latitude,
-                Longitude = position.Coords.Longitude,
-                ReporterIdentifier = _userIdentifier,
-                ReporterLatitude = position.Coords.Latitude,
-                ReporterLongitude = position.Coords.Longitude
-            };
-            
-            await DialogService.OpenAsync<ReportDialog>(L["REPORT_LOCATION"],
-                new Dictionary<string, object> { { "report", report } },
-                DialogConfigs.Default);
+                initialLat = mapState.Lat;
+                initialLng = mapState.Lng;
+            }
         }
-        catch (Exception)
+        catch { /* Map might not be available yet */ }
+
+        var report = new LocationReport
         {
-            // Fallback: try to use map center if possible
-            LocationReport? fallbackReport = null;
+            Latitude = initialLat,
+            Longitude = initialLng,
+            ReporterIdentifier = _userIdentifier,
+            ReporterLatitude = initialLat,
+            ReporterLongitude = initialLng
+        };
+
+        async Task<Home.GeolocationPosition?> GetTransformedLocation()
+        {
             try
             {
-                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
-                if (mapState != null)
+                var p = await locationTask;
+                return new Home.GeolocationPosition
                 {
-                    fallbackReport = new LocationReport
+                    Coords = new Home.GeolocationCoordinates
                     {
-                        Latitude = mapState.Lat,
-                        Longitude = mapState.Lng,
-                        ReporterIdentifier = _userIdentifier,
-                        ReporterLatitude = mapState.Lat,
-                        ReporterLongitude = mapState.Lng
-                    };
-                }
+                        Latitude = p.Coords.Latitude,
+                        Longitude = p.Coords.Longitude,
+                        Accuracy = p.Coords.Accuracy
+                    }
+                };
             }
-            catch { /* Map might not be available */ }
-
-            fallbackReport ??= new LocationReport { ReporterIdentifier = _userIdentifier };
-
-            await DialogService.OpenAsync<ReportDialog>(L["REPORT_LOCATION"],
-                new Dictionary<string, object> { { "report", fallbackReport } },
-                DialogConfigs.Default);
+            catch { return null; }
         }
+
+        await DialogService.OpenAsync<ReportDialog>(L["REPORT_LOCATION"],
+            new Dictionary<string, object> 
+            { 
+                { "Report", report },
+                { "LocationTask", GetTransformedLocation() }
+            },
+            DialogConfigs.Default);
     }
 
     private async Task OnAlertsClick()

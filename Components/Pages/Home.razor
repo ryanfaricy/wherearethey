@@ -547,35 +547,41 @@
             return;
         }
 
-        var position = await GetLocationWithFallback(allowManual: true);
-        if (position != null)
+        // Use last known position if available, otherwise map center
+        double initialLat, initialLng;
+        if (_lastKnownPosition != null)
         {
-            await ProcessReportWithLocation(position);
+            initialLat = _lastKnownPosition.Coords.Latitude;
+            initialLng = _lastKnownPosition.Coords.Longitude;
         }
         else
         {
-            Logger.LogWarning("Failed to get browser location, attempting fallback to map center");
-            // Fallback: use map center instead of showing an error
-            try
-            {
-                var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
-                if (mapState != null)
-                {
-                    await ProcessReportWithLocation(new GeolocationPosition 
-                    { 
-                        Coords = new GeolocationCoordinates { Latitude = mapState.Lat, Longitude = mapState.Lng } 
-                    });
-                }
-                else
-                {
-                    NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", "Could not determine map center");
-                }
-            }
-            catch (Exception exFallback)
-            {
-                Logger.LogError(exFallback, "Fallback to map center also failed");
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to get location", "An unexpected error occurred");
-            }
+            var mapState = await JsRuntime.InvokeAsync<MapState?>("getMapState");
+            initialLat = mapState?.Lat ?? 0;
+            initialLng = mapState?.Lng ?? 0;
+        }
+
+        var report = new LocationReport
+        {
+            Latitude = initialLat,
+            Longitude = initialLng,
+            ReporterIdentifier = _userIdentifier,
+            ReporterLatitude = initialLat,
+            ReporterLongitude = initialLng
+        };
+
+        await JsRuntime.InvokeVoidAsync("showGhostPin", initialLat, initialLng);
+        try
+        {
+            // Start location acquisition in background
+            var locationTask = GetLocationWithFallback(allowManual: true);
+            
+            // Show dialog immediately
+            await ShowReportDialog(report, locationTask);
+        }
+        finally
+        {
+            await JsRuntime.InvokeVoidAsync("hideGhostPin");
         }
     }
 
@@ -748,26 +754,35 @@
         
         try
         {
-            GeolocationPosition? position = null;
             if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)
             {
-                position = _lastKnownPosition;
+                var report = new LocationReport
+                {
+                    Latitude = lat,
+                    Longitude = lng,
+                    ReporterIdentifier = _userIdentifier,
+                    ReporterLatitude = _lastKnownPosition.Coords.Latitude,
+                    ReporterLongitude = _lastKnownPosition.Coords.Longitude
+                };
+                await ShowReportDialog(report);
             }
-
-            if (position == null)
+            else
             {
-                position = await GetLocationWithFallback(allowManual: true);
+                // Start location acquisition in background for reporter location
+                var locationTask = GetLocationWithFallback(allowManual: true);
+
+                var report = new LocationReport
+                {
+                    Latitude = lat,
+                    Longitude = lng,
+                    ReporterIdentifier = _userIdentifier,
+                    ReporterLatitude = _lastKnownPosition?.Coords.Latitude ?? lat,
+                    ReporterLongitude = _lastKnownPosition?.Coords.Longitude ?? lng
+                };
+
+                // Show dialog immediately, don't update report location from GPS (it's fixed to map click)
+                await ShowReportDialog(report, locationTask, updateReportLocation: false);
             }
-
-            var report = new LocationReport
-            {
-                Latitude = lat,
-                Longitude = lng,
-                ReporterIdentifier = _userIdentifier,
-                ReporterLatitude = position?.Coords.Latitude ?? lat,
-                ReporterLongitude = position?.Coords.Longitude ?? lng
-            };
-            await ShowReportDialog(report);
         }
         finally
         {
@@ -789,10 +804,15 @@
         }
     }
 
-    private async Task ShowReportDialog(LocationReport report)
+    private async Task ShowReportDialog(LocationReport report, Task<GeolocationPosition?>? locationTask = null, bool updateReportLocation = true)
     {
         var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
-            new Dictionary<string, object> { { "report", report } },
+            new Dictionary<string, object> 
+            { 
+                { "Report", report },
+                { "LocationTask", locationTask },
+                { "UpdateReportLocation", updateReportLocation }
+            },
             DialogConfigs.Default);
 
         if (result == true)
