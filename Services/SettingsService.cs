@@ -5,6 +5,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class SettingsService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService) : ISettingsService
@@ -14,6 +15,7 @@ public class SettingsService(
     private DateTime _lastUpdate = DateTime.MinValue;
     private readonly TimeSpan _cacheDuration = TimeSpan.FromMinutes(1);
 
+    /// <inheritdoc />
     public async Task<SystemSettings> GetSettingsAsync()
     {
         if (_cachedSettings != null && DateTime.UtcNow - _lastUpdate < _cacheDuration)
@@ -43,6 +45,7 @@ public class SettingsService(
         }
     }
 
+    /// <inheritdoc />
     public async Task UpdateSettingsAsync(SystemSettings settings)
     {
         await _semaphore.WaitAsync();

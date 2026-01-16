@@ -6,10 +6,12 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOptions> options, ILogger<MicrosoftGraphEmailService> logger) : IEmailService
 {
     private readonly EmailOptions _options = options.Value;
 
+    /// <inheritdoc />
     public async Task SendEmailAsync(string to, string subject, string body)
     {
         if (string.IsNullOrEmpty(_options.GraphTenantId) || 

@@ -9,10 +9,13 @@ public enum AppTheme
     System
 }
 
+/// <inheritdoc />
 public class AppThemeService(IEventService eventService) : IAppThemeService
 {
+    /// <inheritdoc />
     public AppTheme CurrentTheme { get; private set; } = AppTheme.System;
 
+    /// <inheritdoc />
     public void SetTheme(AppTheme theme)
     {
         if (CurrentTheme != theme)

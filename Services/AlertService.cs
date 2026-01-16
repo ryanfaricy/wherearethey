@@ -11,9 +11,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <summary>
-/// Service for managing geographic alerts and email notifications.
-/// </summary>
+/// <inheritdoc />
 public class AlertService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IDataProtectionProvider provider,
@@ -26,9 +24,7 @@ public class AlertService(
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
-    /// <summary>
-    /// Creates a new alert and initiates email verification if necessary.
-    /// </summary>
+    /// <inheritdoc />
     public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
     {
         try
@@ -83,9 +79,7 @@ public class AlertService(
         return Convert.ToHexString(hash);
     }
 
-    /// <summary>
-    /// Sends a verification email to a new subscriber.
-    /// </summary>
+    /// <inheritdoc />
     public async Task SendVerificationEmailAsync(string email, string emailHash)
     {
         try
@@ -131,6 +125,7 @@ public class AlertService(
         }
     }
 
+    /// <inheritdoc />
     public virtual async Task<bool> VerifyEmailAsync(string token)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -164,6 +159,7 @@ public class AlertService(
         return true;
     }
 
+    /// <inheritdoc />
     public virtual string? DecryptEmail(string? encryptedEmail)
     {
         if (string.IsNullOrEmpty(encryptedEmail)) return null;
@@ -177,6 +173,7 @@ public class AlertService(
         }
     }
 
+    /// <inheritdoc />
     public async Task<Alert?> GetAlertByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -185,6 +182,7 @@ public class AlertService(
             .FirstOrDefaultAsync(a => a.ExternalId == externalId);
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -205,6 +203,7 @@ public class AlertService(
         return await query.ToListAsync();
     }
 
+    /// <inheritdoc />
     public virtual async Task<bool> DeactivateAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -217,6 +216,7 @@ public class AlertService(
         return true;
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
     {
         // For performance, we use a bounding box first.
@@ -238,6 +238,7 @@ public class AlertService(
     }
 
     // Admin methods
+    /// <inheritdoc />
     public virtual async Task<List<Alert>> GetAllAlertsAdminAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -247,6 +248,7 @@ public class AlertService(
             .ToListAsync();
     }
 
+    /// <inheritdoc />
     public virtual async Task DeleteAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

@@ -7,18 +7,13 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <summary>
-/// Service for specialized location-based logic.
-/// </summary>
+/// <inheritdoc />
 public class LocationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     ISettingsService settingsService,
     ILogger<LocationService> logger) : ILocationService
 {
-    /// <summary>
-    /// Gets reports within a specific radius of a location.
-    /// Uses bounding box filter followed by Haversine distance calculation for performance.
-    /// </summary>
+    /// <inheritdoc />
     public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         try
@@ -50,9 +45,7 @@ public class LocationService(
         }
     }
 
-    /// <summary>
-    /// Determines the local time at a given coordinate and returns it as a formatted string.
-    /// </summary>
+    /// <inheritdoc />
     public string GetFormattedLocalTime(double latitude, double longitude, DateTime utcTimestamp)
     {
         try

@@ -9,6 +9,7 @@ using Environment = Square.Environment;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
@@ -20,6 +21,7 @@ public class DonationService(
         .Environment(squareOptions.Value.Environment == "Production" ? Environment.Production : Environment.Sandbox)
         .Build();
 
+    /// <inheritdoc />
     public async Task<CreatePaymentResponse> CreateSquarePaymentAsync(decimal amount, string sourceId)
     {
         var amountMoney = new Money.Builder()
@@ -37,6 +39,7 @@ public class DonationService(
 
         return result;
     }
+    /// <inheritdoc />
     public async Task<Donation> RecordDonationAsync(Donation donation)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -47,6 +50,7 @@ public class DonationService(
         return donation;
     }
 
+    /// <inheritdoc />
     public async Task<bool> UpdateDonationStatusAsync(string paymentId, string status)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -62,6 +66,7 @@ public class DonationService(
     }
 
     // Admin methods
+    /// <inheritdoc />
     public async Task<List<Donation>> GetAllDonationsAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();

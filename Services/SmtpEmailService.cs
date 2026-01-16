@@ -7,10 +7,12 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailService> logger) : IEmailService
 {
     private readonly EmailOptions _options = options.Value;
 
+    /// <inheritdoc />
     public async Task SendEmailAsync(string to, string subject, string body)
     {
         if (string.IsNullOrEmpty(_options.SmtpServer))

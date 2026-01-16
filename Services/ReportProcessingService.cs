@@ -5,6 +5,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class ReportProcessingService(
     IServiceProvider serviceProvider,
     IOptions<AppOptions> appOptions,
@@ -12,6 +13,7 @@ public class ReportProcessingService(
     ILocationService locationService,
     ILogger<ReportProcessingService> logger) : IReportProcessingService
 {
+    /// <inheritdoc />
     public async Task ProcessReportAsync(LocationReport report)
     {
         try

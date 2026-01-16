@@ -5,8 +5,10 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class GeocodingService(HttpClient httpClient, ISettingsService settingsService, ILogger<GeocodingService> logger) : IGeocodingService
 {
+    /// <inheritdoc />
     public virtual async Task<string?> ReverseGeocodeAsync(double latitude, double longitude)
     {
         var settings = await settingsService.GetSettingsAsync();
@@ -37,6 +39,7 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
         return null;
     }
 
+    /// <inheritdoc />
     public virtual async Task<List<GeocodingResult>> SearchAsync(string query)
     {
         var settings = await settingsService.GetSettingsAsync();

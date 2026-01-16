@@ -8,11 +8,13 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
     IOptions<AppOptions> appOptions) : IAdminService
 {
+    /// <inheritdoc />
     public async Task<bool> LoginAsync(string password, string? ipAddress)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -67,6 +69,7 @@ public class AdminService(
         eventService.NotifyAdminLoginAttempt(attempt);
     }
 
+    /// <inheritdoc />
     public async Task<List<AdminLoginAttempt>> GetRecentLoginAttemptsAsync(int count = 50)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

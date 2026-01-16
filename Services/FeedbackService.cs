@@ -6,11 +6,13 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService,
     IValidator<Feedback> validator) : IFeedbackService
 {
+    /// <inheritdoc />
     public async Task AddFeedbackAsync(Feedback feedback)
     {
         await validator.ValidateAndThrowAsync(feedback);
@@ -23,6 +25,7 @@ public class FeedbackService(
         eventService.NotifyFeedbackAdded(feedback);
     }
 
+    /// <inheritdoc />
     public async Task<List<Feedback>> GetAllFeedbackAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -32,6 +35,7 @@ public class FeedbackService(
             .ToListAsync();
     }
 
+    /// <inheritdoc />
     public async Task DeleteFeedbackAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

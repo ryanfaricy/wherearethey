@@ -7,9 +7,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <summary>
-/// Service for managing the lifecycle of location reports.
-/// </summary>
+/// <inheritdoc />
 public class ReportService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IBackgroundJobClient backgroundJobClient,
@@ -18,9 +16,7 @@ public class ReportService(
     IValidator<LocationReport> validator,
     ILogger<ReportService> logger) : IReportService
 {
-    /// <summary>
-    /// Validates and adds a new location report to the database.
-    /// </summary>
+    /// <inheritdoc />
     public async Task<LocationReport> AddReportAsync(LocationReport report)
     {
         try
@@ -56,9 +52,7 @@ public class ReportService(
         }
     }
 
-    /// <summary>
-    /// Retrieves a report by its public External ID.
-    /// </summary>
+    /// <inheritdoc />
     public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -67,9 +61,7 @@ public class ReportService(
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
     }
 
-    /// <summary>
-    /// Gets recent reports based on the configured expiry hours.
-    /// </summary>
+    /// <inheritdoc />
     public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -85,9 +77,7 @@ public class ReportService(
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Gets all reports for administrative management.
-    /// </summary>
+    /// <inheritdoc />
     public async Task<List<LocationReport>> GetAllReportsAsync()
     {
         await using var context = await contextFactory.CreateDbContextAsync();
@@ -97,9 +87,7 @@ public class ReportService(
             .ToListAsync();
     }
 
-    /// <summary>
-    /// Deletes a report and notifies relevant services.
-    /// </summary>
+    /// <inheritdoc />
     public async Task DeleteReportAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();

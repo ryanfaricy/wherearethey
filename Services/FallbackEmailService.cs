@@ -2,10 +2,12 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILogger<FallbackEmailService> logger) : IEmailService
 {
     private readonly List<IEmailService> _services = emailServices.Where(s => s.GetType() != typeof(FallbackEmailService)).ToList();
 
+    /// <inheritdoc />
     public async Task SendEmailAsync(string to, string subject, string body)
     {
         if (_services.Count == 0)
