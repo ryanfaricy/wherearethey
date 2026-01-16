@@ -94,7 +94,7 @@
                                                 <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
                                             }
                                         </RadzenStack>
-                                        <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.LocationDisplay()</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="@(_isMobile ? JustifyContent.End : JustifyContent.Start)" Class="@(_isMobile ? "rz-w-100" : "")">

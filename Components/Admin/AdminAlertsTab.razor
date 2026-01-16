@@ -55,6 +55,7 @@
     {
         await LoadData();
         EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertUpdated += HandleAlertUpdated;
         EventService.OnAlertDeleted += HandleAlertDeleted;
     }
 
@@ -77,6 +78,20 @@
             _alerts.Insert(0, alert);
             if (_alertsGrid != null) await _alertsGrid.Reload();
             StateHasChanged();
+        });
+    }
+
+    private void HandleAlertUpdated(Alert alert)
+    {
+        InvokeAsync(async () =>
+        {
+            var index = _alerts.FindIndex(a => a.Id == alert.Id);
+            if (index != -1)
+            {
+                _alerts[index] = alert;
+                if (_alertsGrid != null) await _alertsGrid.Reload();
+                StateHasChanged();
+            }
         });
     }
 
@@ -119,6 +134,7 @@
     public void Dispose()
     {
         EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertUpdated -= HandleAlertUpdated;
         EventService.OnAlertDeleted -= HandleAlertDeleted;
     }
 }

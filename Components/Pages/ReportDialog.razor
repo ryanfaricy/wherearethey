@@ -30,7 +30,7 @@
         }
         else
         {
-            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.LocationDisplay(6)}</b>"))</RadzenText>
         }
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">

@@ -22,7 +22,7 @@
         <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" Visible="@(!IsMobile)" />
         <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location" Visible="@(!IsMobile)">
             <Template Context="report">
-                @report.Coordinates()
+                @report.ReporterLocationDisplay()
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency">
@@ -33,7 +33,7 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Title="Location" Visible="@(!IsMobile)">
             <Template Context="report">
-                @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
+                @report.LocationDisplay()
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Filterable="false" Sortable="false">

@@ -5,6 +5,7 @@
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
+@inject IAdminService AdminService
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
@@ -32,8 +33,8 @@
                             <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
                         </RadzenText>
 
-                        <div style="max-height: 250px; overflow-y: auto;">
-                            <RadzenDataList Data="@Reports.Take(15)" TItem="LocationReport">
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="LocationReport">
                                 <Template Context="r">
                                     @if (r.IsEmergency)
                                     {
@@ -45,6 +46,17 @@
                                             @if (!string.IsNullOrEmpty(r.Message))
                                             {
                                                 <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                                            }
+                                            @if (_isAdmin)
+                                            {
+                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;">
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
+                                                    @if (r.HasReporterLocation())
+                                                    {
+                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
+                                                    }
+                                                </RadzenStack>
                                             }
                                         </RadzenCard>
                                     }
@@ -58,13 +70,24 @@
                                             {
                                                 <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
                                             }
+                                            @if (_isAdmin)
+                                            {
+                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
+                                                    @if (r.HasReporterLocation())
+                                                    {
+                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
+                                                    }
+                                                </RadzenStack>
+                                            }
                                         </RadzenCard>
                                     }
                                 </Template>
                             </RadzenDataList>
                         </div>
 
-                        @if (Reports.Count > 15)
+                        @if (!_isAdmin && Reports.Count > 15)
                         {
                             <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 15) more reports</RadzenText>
                         }
@@ -115,9 +138,15 @@
     [Parameter] public List<Alert> Alerts { get; set; } = new();
 
     private bool _alertDeleted;
+    private bool _isAdmin;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await AdminService.IsAdminAsync();
+    }
 
     private async Task DeleteAlert(Alert alert)
     {

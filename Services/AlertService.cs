@@ -150,6 +150,12 @@ public class AlertService(
         }
 
         await context.SaveChangesAsync();
+        
+        foreach (var alert in alerts)
+        {
+            eventService.NotifyAlertUpdated(alert);
+        }
+
         eventService.NotifyEmailVerified(verification.EmailHash);
         return true;
     }

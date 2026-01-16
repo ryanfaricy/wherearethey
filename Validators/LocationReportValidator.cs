@@ -49,7 +49,7 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                 }
 
                 // Distance check
-                if (report.ReporterLatitude.HasValue && report.ReporterLongitude.HasValue)
+                if (report.HasReporterLocation())
                 {
                     var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
                         report.ReporterLatitude.Value, report.ReporterLongitude.Value);
