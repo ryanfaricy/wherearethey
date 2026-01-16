@@ -1,8 +1,8 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@using Microsoft.JSInterop
 @using Microsoft.Extensions.Localization
 @inject IMapService MapService
+@inject IMapStateService MapState
 @inject IStringLocalizer<App> L
 @implements IDisposable
 
@@ -60,6 +60,7 @@
 
         await MapService.InitMapAsync(ElementId, InitialLat, InitialLng, Reports, _objRef, Alerts!, jsTranslations, IsAdmin);
         _initialized = true;
+        MapState.MapInitialized = true;
     }
 
     [JSInvokable("OnMapClick")]
@@ -109,6 +110,7 @@
     public void Dispose()
     {
         _objRef?.Dispose();
+        MapState.MapInitialized = false;
     }
 
     public class MapClickEventArgs

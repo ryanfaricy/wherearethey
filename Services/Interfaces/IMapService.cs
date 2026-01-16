@@ -1,4 +1,3 @@
-using Microsoft.JSInterop;
 using WhereAreThey.Models;
 
 namespace WhereAreThey.Services.Interfaces;

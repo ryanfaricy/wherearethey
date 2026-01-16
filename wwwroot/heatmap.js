@@ -3,7 +3,6 @@ let heatLayer;
 let tileLayer;
 let alertLayers = [];
 let reportMarkers = [];
-let alertMarkers = [];
 let allReports = [];
 let markerClusterGroup;
 let userLocationMarker;
@@ -29,7 +28,6 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         }
         map.remove();
         alertLayers = [];
-        alertMarkers = [];
         reportMarkers = [];
         userLocationMarker = null;
         userLocationCircle = null;
@@ -120,7 +118,6 @@ function refreshClusterGroup() {
     if (!markerClusterGroup) return;
     markerClusterGroup.clearLayers();
     reportMarkers.forEach(m => markerClusterGroup.addLayer(m));
-    alertMarkers.forEach(m => markerClusterGroup.addLayer(m));
 }
 
 window.getZoomLevel = function () {
@@ -147,8 +144,8 @@ window.updateAlerts = function (alerts) {
     // Clear existing alert layers
     alertLayers.forEach(layer => map.removeLayer(layer));
     alertLayers = [];
-    alertMarkers = [];
 
+    if (isAdminMode) return;
     if (!alerts || !alerts.length) return;
 
     alerts.forEach(alert => {
@@ -174,7 +171,7 @@ window.updateAlerts = function (alerts) {
 
         const marker = L.marker([alert.latitude, alert.longitude], {
             icon: alertIcon
-        });
+        }).addTo(map);
 
         marker.alertData = alert;
         marker.on('click', onMarkerClick);
@@ -184,7 +181,6 @@ window.updateAlerts = function (alerts) {
             direction: 'top'
         });
         
-        alertMarkers.push(marker);
         alertLayers.push(marker);
     });
     

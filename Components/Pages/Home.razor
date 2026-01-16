@@ -12,6 +12,9 @@
 @inject IStringLocalizer<App> L
 @inject IEventService EventService
 @inject IHapticFeedbackService HapticFeedbackService
+@inject IMapStateService MapState
+@inject IMapInteractionService MapInteraction
+@inject IClientLocationService ClientLocation
 @using System.Globalization
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
@@ -34,14 +37,11 @@
                  OnDonateClick="@OnDonateClick"
                  OnSettingsClick="@(() => OnSettingsClick(false))"
                  OnHelpClick="@OnHelpClick"
-                 OnRefreshClick="@LoadReports" />
+                 OnRefreshClick="@(() => MapState.LoadReportsAsync(_selectedHours))" />
 
     <!-- Map Container -->
-    <RadzenStack Gap="0" Style="flex: 1; position: relative;">
-        <HeatMap @ref="_heatMap"
+    <MapContainer @ref="_mapContainer"
                  ElementId="heatmap"
-                 Reports="@_reports" 
-                 Alerts="@_userAlerts"
                  InitialLat="@_initialLat"
                  InitialLng="@_initialLng"
                  OnMapClick="@OnHeatMapClick"
@@ -49,7 +49,8 @@
                  OnUserInteractedWithMap="@OnHeatMapUserInteracted"
                  OnLocationUpdated="@OnHeatMapLocationUpdated"
                  OnMapContextMenu="@OnHeatMapContextMenu"
-                 OnAlertDeleteClick="@OnHeatMapAlertDeleteClick" />
+                 OnAlertDeleteClick="@OnHeatMapAlertDeleteClick"
+                 OnManualPick="@HandleManualPick">
         
         <!-- Map Controls -->
         <HomeMapControls @bind-SearchAddress="@_searchAddress"
@@ -58,75 +59,53 @@
                          ReportExpiryHours="@_systemSettings.ReportExpiryHours"
                          OnAddressSelected="@OnAddressSelected"
                          OnFollowMeChange="@OnFollowMeChange"
-                         OnHoursChange="@LoadReports" />
+                         OnHoursChange="@(() => MapState.LoadReportsAsync(_selectedHours))" />
 
         <!-- Map Legend -->
         <HomeLegend />
-
-        @if (_isGettingLocation)
-        {
-            <RadzenStack Style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
-                <RadzenCard Class="rz-shadow-10">
-                    <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
-                        <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
-                        <RadzenText TextStyle="TextStyle.Body1">@L["Acquiring_Location"]</RadzenText>
-                        @if (_showManualPick)
-                        {
-                            <RadzenButton Text="@L["Manual_Pick"]" Click="@HandleManualPick" ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" Size="ButtonSize.Small" />
-                        }
-                    </RadzenStack>
-                </RadzenCard>
-            </RadzenStack>
-        }
-    </RadzenStack>
+    </MapContainer>
 </RadzenStack>
 
 @code {
-    private HeatMap? _heatMap;
+    private MapContainer? _mapContainer;
     private bool _isMobile;
     private bool _disposed;
-    private List<LocationReport> _reports = new();
-    private List<Alert> _userAlerts = new();
     private SystemSettings _systemSettings = new();
-    private bool _mapInitialized;
-    private bool _isGettingLocation;
-    private bool _showManualPick;
-    private TaskCompletionSource<GeolocationPosition?>? _manualPickTcs;
     private string? _userIdentifier;
     private int _locationWatchId = -1;
-    private GeolocationPosition? _lastKnownPosition;
-    private DateTime _lastLocationUpdate;
     private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
     private double _initialLat;
     private double _initialLng;
 
-    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await OnMapClick(args.Lat, args.Lng, args.IsMarkerClick);
+    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
+    {
+        var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick);
+        if (!handled && !args.IsMarkerClick)
+        {
+            await ShowAlertsDialog(args.Lat, args.Lng);
+        }
+    }
+
     private async Task OnHeatMapMoveEnd(HeatMap.MapLocationEventArgs args) => await OnMapMoveEnd(args.Lat, args.Lng);
     private void OnHeatMapUserInteracted() => OnUserInteractedWithMap();
     private async Task OnHeatMapLocationUpdated(GeolocationPosition position) => await OnLocationUpdated(position);
-    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await OnMapContextMenu(args.Lat, args.Lng);
+    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, _userIdentifier);
     private async Task OnHeatMapAlertDeleteClick(int alertId) => await OnAlertDeleteClick(alertId);
 
     protected override async Task OnInitializedAsync()
     {
-        // Subscribe early to ensure unsubscription in Dispose
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
-        EventService.OnAlertAdded += HandleAlertAdded;
-        EventService.OnAlertUpdated += HandleAlertUpdated;
-        EventService.OnAlertDeleted += HandleAlertDeleted;
+        MapState.OnStateChanged += HandleStateChanged;
+        ClientLocation.OnStateChanged += HandleStateChanged;
         EventService.OnSettingsChanged += HandleSettingsChanged;
+        EventService.OnReportAdded += HandleReportAdded; // For notifications only
 
         _systemSettings = await SettingsService.GetSettingsAsync();
-        if (_disposed) return;
-
         _selectedHours = _systemSettings.ReportExpiryHours;
-        await LoadReports();
-        if (_disposed) return;
     }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
 
     private void HandleSettingsChanged(SystemSettings settings)
     {
@@ -140,161 +119,42 @@
     {
         InvokeAsync(async () =>
         {
-            // Incremental update if it matches current time filter
-            var cutoff = DateTime.UtcNow.AddHours(-_selectedHours);
-            if (report.Timestamp >= cutoff && _reports.All(r => r.Id != report.Id))
-            {
-                _reports.Insert(0, report);
-                if (_mapInitialized)
-                {
-                    await MapService.AddSingleReportAsync(report);
+            if (_disposed) return;
 
-                    // Show toast if not from current user and we have our location
-                    if (report.ReporterIdentifier != _userIdentifier && _lastKnownPosition != null)
+            // Show toast if not from current user and we have our location
+            if (report.ReporterIdentifier != _userIdentifier && ClientLocation.LastKnownPosition != null)
+            {
+                var distance = GeoUtils.CalculateDistance(
+                    ClientLocation.LastKnownPosition.Coords.Latitude,
+                    ClientLocation.LastKnownPosition.Coords.Longitude,
+                    report.Latitude,
+                    report.Longitude);
+
+                // If it's nearby, vibrate
+                if (distance <= 5) // Within 5km
+                {
+                    if (report.IsEmergency)
                     {
-                        var distance = GeoUtils.CalculateDistance(
-                            _lastKnownPosition.Coords.Latitude,
-                            _lastKnownPosition.Coords.Longitude,
-                            report.Latitude,
-                            report.Longitude);
-
-                        // If it's nearby, vibrate
-                        if (distance <= 5) // Within 5km
-                        {
-                            if (report.IsEmergency)
-                            {
-                                await HapticFeedbackService.VibrateEmergencyAsync();
-                            }
-                            else
-                            {
-                                await HapticFeedbackService.VibrateUpdateAsync();
-                            }
-                        }
-
-                        NotificationService.Notify(new NotificationMessage
-                        {
-                            Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
-                            Summary = L["New_Report"],
-                            Detail = $"{string.Format(L["New_Report_Notification"], distance)} ({L["VIEW"]})",
-                            Duration = 10000,
-                            Click = _ => MapService.FocusReportAsync(report.Id)
-                        });
-                    }
-                }
-            }
-            StateHasChanged();
-        });
-    }
-
-    private void HandleReportUpdated(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            var existing = _reports.FirstOrDefault(r => r.Id == report.Id);
-            if (existing != null)
-            {
-                var index = _reports.IndexOf(existing);
-                _reports[index] = report;
-                if (_mapInitialized)
-                {
-                    // Map update: remove and re-add for simplicity if no specific update function exists
-                    await MapService.RemoveSingleReportAsync(report.Id);
-                    await MapService.AddSingleReportAsync(report);
-                }
-                StateHasChanged();
-            }
-            else
-            {
-                HandleReportAdded(report);
-            }
-        });
-    }
-
-    private void HandleReportDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            var report = _reports.FirstOrDefault(r => r.Id == id);
-            if (report != null)
-            {
-                _reports.Remove(report);
-                if (_mapInitialized)
-                {
-                    await MapService.RemoveSingleReportAsync(id);
-                }
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleAlertAdded(Alert alert)
-    {
-        InvokeAsync(async () =>
-        {
-            if (alert.UserIdentifier == _userIdentifier && _userAlerts.All(a => a.Id != alert.Id))
-            {
-                _userAlerts.Add(alert);
-                if (_mapInitialized)
-                {
-                    await MapService.UpdateAlertsAsync(_userAlerts);
-                }
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleAlertUpdated(Alert alert)
-    {
-        InvokeAsync(async () =>
-        {
-            if (alert.UserIdentifier == _userIdentifier)
-            {
-                var index = _userAlerts.FindIndex(a => a.Id == alert.Id);
-                if (index != -1)
-                {
-                    if (alert.IsActive)
-                    {
-                        _userAlerts[index] = alert;
+                        await HapticFeedbackService.VibrateEmergencyAsync();
                     }
                     else
                     {
-                        _userAlerts.RemoveAt(index);
+                        await HapticFeedbackService.VibrateUpdateAsync();
                     }
+                }
 
-                    if (_mapInitialized)
-                    {
-                        await MapService.UpdateAlertsAsync(_userAlerts);
-                    }
-                    StateHasChanged();
-                }
-                else if (alert.IsActive)
+                NotificationService.Notify(new NotificationMessage
                 {
-                    HandleAlertAdded(alert);
-                }
+                    Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
+                    Summary = L["New_Report"],
+                    Detail = $"{string.Format(L["New_Report_Notification"], Math.Round(distance, 1))} ({L["VIEW"]})",
+                    Duration = 10000,
+                    Click = _ => MapService.FocusReportAsync(report.Id)
+                });
             }
         });
     }
 
-    private void HandleAlertDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            var alert = _userAlerts.FirstOrDefault(a => a.Id == id);
-            if (alert != null)
-            {
-                _userAlerts.Remove(alert);
-                if (_mapInitialized)
-                {
-                    await MapService.UpdateAlertsAsync(_userAlerts);
-                }
-                StateHasChanged();
-            }
-        });
-    }
-
-    /// <summary>
-    /// Initializes the map and JS interop after the component has rendered.
-    /// </summary>
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -304,13 +164,14 @@
             if (string.IsNullOrEmpty(_userIdentifier))
             {
                 await OnSettingsClick(true);
-                return; // The dialog will trigger a reload, so we should not continue in this instance
+                return;
             }
             
+            await MapState.InitializeAsync(_userIdentifier);
+            await MapState.LoadReportsAsync(_selectedHours);
+            
             var isNew = await StorageService.IsNewUserAsync();
-            
-            await LoadUserAlerts();
-            
+
             double initialLat = 0;
             double initialLng = 0;
             double? initialRadius = null;
@@ -323,6 +184,7 @@
             if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
             {
                 _selectedHours = h;
+                await MapState.LoadReportsAsync(_selectedHours);
             }
 
             if (query.TryGetValue("reportId", out var reportIdStr))
@@ -373,20 +235,19 @@
                 _ = GetLocationAndCenterMap();
             }
 
-            if (_heatMap != null)
+            if (_mapContainer?.Map != null)
             {
-                await _heatMap.InitializeAsync(initialLat, initialLng);
-                _mapInitialized = true;
+                await _mapContainer.Map.InitializeAsync(initialLat, initialLng);
 
                 // If we already got a location while initializing, center now
-                if (_lastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
+                if (ClientLocation.LastKnownPosition != null && initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
                 {
-                    await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
+                    await MapService.SetMapViewAsync(ClientLocation.LastKnownPosition.Coords.Latitude, ClientLocation.LastKnownPosition.Coords.Longitude, null);
                 }
 
                 try
                 {
-                    _locationWatchId = await MapService.WatchLocationAsync(_heatMap.GetDotNetObjectReference());
+                    _locationWatchId = await MapService.WatchLocationAsync(_mapContainer.Map.GetDotNetObjectReference()!);
                 }
                 catch (Exception ex)
                 {
@@ -420,61 +281,39 @@
             }
 
             // Check for report draft
-            var draftJson = await StorageService.GetItemAsync("report_draft");
-            if (!string.IsNullOrEmpty(draftJson))
+            await CheckForReportDraft();
+        }
+    }
+
+    private async Task CheckForReportDraft()
+    {
+        var draftJson = await StorageService.GetItemAsync("report_draft");
+        if (!string.IsNullOrEmpty(draftJson))
+        {
+            try
             {
-                try
+                var draft = JsonSerializer.Deserialize<LocationReport>(draftJson);
+                if (draft != null && DateTime.UtcNow - draft.Timestamp < TimeSpan.FromHours(24))
                 {
-                    var draft = JsonSerializer.Deserialize<LocationReport>(draftJson);
-                    if (draft != null)
+                    var resume = await DialogService.Confirm(L["Resume_Draft_Message"], L["Resume_Draft_Title"]);
+                    if (resume == true)
                     {
-                        // Only prompt if draft is less than 24 hours old
-                        if (DateTime.UtcNow - draft.Timestamp < TimeSpan.FromHours(24))
-                        {
-                            var resume = await DialogService.Confirm(L["Resume_Draft_Message"], L["Resume_Draft_Title"]);
-                            if (resume == true)
-                            {
-                                await ShowReportDialog(draft);
-                            }
-                            else
-                            {
-                                await StorageService.RemoveItemAsync("report_draft");
-                            }
-                        }
-                        else
-                        {
-                            // Draft is too old, clear it
-                            await StorageService.RemoveItemAsync("report_draft");
-                        }
+                        await ShowReportDialog(draft);
+                    }
+                    else
+                    {
+                        await StorageService.RemoveItemAsync("report_draft");
                     }
                 }
-                catch (Exception ex)
+                else
                 {
-                    Logger.LogWarning(ex, "Failed to deserialize report draft");
-                    // Clear broken draft
                     await StorageService.RemoveItemAsync("report_draft");
                 }
             }
-        }
-    }
-
-    private async Task LoadReports()
-    {
-        _reports = await ReportService.GetRecentReportsAsync(_selectedHours);
-        if (_mapInitialized)
-        {
-            await MapService.UpdateHeatMapAsync(_reports);
-        }
-    }
-
-    private async Task LoadUserAlerts()
-    {
-        if (!string.IsNullOrEmpty(_userIdentifier))
-        {
-            _userAlerts = await AlertService.GetActiveAlertsAsync(_userIdentifier, onlyVerified: false);
-            if (_mapInitialized)
+            catch (Exception ex)
             {
-                await MapService.UpdateAlertsAsync(_userAlerts);
+                Logger.LogWarning(ex, "Failed to deserialize report draft");
+                await StorageService.RemoveItemAsync("report_draft");
             }
         }
     }
@@ -482,17 +321,12 @@
     private async Task OnSettingsClick(bool force = false)
     {
         var options = force ? DialogConfigs.NonCloseable : DialogConfigs.Default;
-
-        await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"],
-            null,
-            options);
+        await DialogService.OpenAsync<SettingsDialog>(L["SETTINGS"], null, options);
     }
 
     private async Task OnHelpClick()
     {
-        await DialogService.OpenAsync<HelpDialog>(L["HELP"],
-            null,
-            DialogConfigs.Default);
+        await DialogService.OpenAsync<HelpDialog>(L["HELP"], null, DialogConfigs.Default);
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();
@@ -502,38 +336,19 @@
         var parameters = new Dictionary<string, object>();
         try
         {
-            if (lat.HasValue && lng.HasValue)
+            var mapState = await MapService.GetMapStateAsync();
+            if (mapState != null)
             {
-                parameters.Add("InitialLat", lat.Value);
-                parameters.Add("InitialLng", lng.Value);
-                
-                var mapState = await MapService.GetMapStateAsync();
-                if (mapState != null)
-                {
-                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
-                }
-            }
-            else
-            {
-                var mapState = await MapService.GetMapStateAsync();
-                if (mapState != null)
-                {
-                    parameters.Add("InitialLat", mapState.Lat);
-                    parameters.Add("InitialLng", mapState.Lng);
-                    parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
-                }
+                parameters.Add("InitialLat", lat ?? mapState.Lat);
+                parameters.Add("InitialLng", lng ?? mapState.Lng);
+                parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
             }
         }
-        catch (Exception)
-        {
-            // Ignore if map state cannot be retrieved
-        }
+        catch (Exception) { /* Ignore */ }
 
-        var result = await DialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
-            parameters,
-            DialogConfigs.Default);
+        var result = await DialogService.OpenAsync<AlertsDialog>(L["ALERTS"], parameters, DialogConfigs.Default);
 
-        await LoadUserAlerts();
+        await MapState.LoadAlertsAsync();
 
         if (result is Alert alert)
         {
@@ -543,29 +358,22 @@
 
     private async Task OnDonateClick()
     {
-        await DialogService.OpenAsync<DonateDialog>(L["DONATE"],
-            null,
-            DialogConfigs.Default);
+        await DialogService.OpenAsync<DonateDialog>(L["DONATE"], null, DialogConfigs.Default);
     }
 
-    /// <summary>
-    /// Triggered when the user clicks the "REPORT" button.
-    /// Handles GPS acquisition and shows the report dialog.
-    /// </summary>
     private async Task OnReportClick()
     {
-        if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)
+        if (ClientLocation.LastKnownPosition != null && (DateTime.UtcNow - ClientLocation.LastLocationUpdate).TotalSeconds < 30)
         {
-            await ProcessReportWithLocation(_lastKnownPosition);
+            await ProcessReportWithLocation(ClientLocation.LastKnownPosition);
             return;
         }
 
-        // Use last known position if available, otherwise map center
         double initialLat, initialLng;
-        if (_lastKnownPosition != null)
+        if (ClientLocation.LastKnownPosition != null)
         {
-            initialLat = _lastKnownPosition.Coords.Latitude;
-            initialLng = _lastKnownPosition.Coords.Longitude;
+            initialLat = ClientLocation.LastKnownPosition.Coords.Latitude;
+            initialLng = ClientLocation.LastKnownPosition.Coords.Longitude;
         }
         else
         {
@@ -587,7 +395,7 @@
         try
         {
             // Start location acquisition in background
-            var locationTask = GetLocationWithFallback(allowManual: true, showUI: false);
+            var locationTask = ClientLocation.GetLocationWithFallbackAsync(allowManual: true, showUI: false);
             
             // Show dialog immediately
             await ShowReportDialog(report, locationTask);
@@ -622,10 +430,10 @@
 
     private async Task OnFollowMeChange(bool value)
     {
-        if (value && _lastKnownPosition != null)
+        if (value && ClientLocation.LastKnownPosition != null)
         {
-            await MapService.SetMapViewAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude, null);
-            _searchAddress = await GeocodingService.ReverseGeocodeAsync(_lastKnownPosition.Coords.Latitude, _lastKnownPosition.Coords.Longitude);
+            await MapService.SetMapViewAsync(ClientLocation.LastKnownPosition.Coords.Latitude, ClientLocation.LastKnownPosition.Coords.Longitude, null);
+            _searchAddress = await GeocodingService.ReverseGeocodeAsync(ClientLocation.LastKnownPosition.Coords.Latitude, ClientLocation.LastKnownPosition.Coords.Longitude);
         }
     }
 
@@ -648,11 +456,10 @@
 
     private async Task OnLocationUpdated(GeolocationPosition position)
     {
-        var isFirstLocation = _lastKnownPosition == null;
-        _lastKnownPosition = position;
-        _lastLocationUpdate = DateTime.UtcNow;
+        var isFirstLocation = ClientLocation.LastKnownPosition == null;
+        ClientLocation.UpdateLastKnownPosition(position);
 
-        if (_mapInitialized)
+        if (MapState.MapInitialized)
         {
             await MapService.UpdateUserLocationAsync( 
                 position.Coords.Latitude, 
@@ -683,115 +490,7 @@
         }
     }
 
-    private async Task OnMapClick(double lat, double lng, bool force = false)
-    {
-        _followMe = false;
-        var zoom = await MapService.GetZoomLevelAsync();
-
-        // Find reports within a certain radius
-        // - Marker clicks (force): 50m
-        // - High zoom map clicks: 200m tap tolerance for near-misses on mobile
-        // - Low zoom map clicks: 5km area search for heatmap blobs
-        double searchRadiusKm;
-        if (force)
-        {
-            searchRadiusKm = 0.05;
-        }
-        else if (zoom >= 15)
-        {
-            searchRadiusKm = 0.2;
-        }
-        else
-        {
-            searchRadiusKm = 5.0;
-        }
-
-        var nearbyReports = _reports
-            .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= searchRadiusKm)
-            .OrderByDescending(r => r.Timestamp)
-            .ToList();
-
-        var nearbyAlerts = _userAlerts
-            .Where(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude) <= searchRadiusKm)
-            .ToList();
-
-        if (nearbyReports.Any() || nearbyAlerts.Any())
-        {
-            // If it's a single report, highlight it immediately for better feedback
-            if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
-            {
-                await MapService.SelectReportAsync(nearbyReports[0].Id);
-            }
-
-            // Tapping on a blob or marker reveals area details
-            var result = await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
-                new Dictionary<string, object> 
-                { 
-                    { "Reports", nearbyReports },
-                    { "Alerts", nearbyAlerts }
-                },
-                DialogConfigs.Default);
-
-            if (result == true) // If an alert was deleted
-            {
-                await LoadUserAlerts();
-            }
-        }
-        else if (!force)
-        {
-            // Tapping on a non-blob area opens create alert (only for map clicks, not marker clicks)
-            await ShowAlertsDialog(lat, lng);
-        }
-    }
-
-    [JSInvokable]
-    public async Task OnMapContextMenu(double lat, double lng)
-    {
-        // Long-press/right click reveals create report
-        // We need user's current location to verify distance
-        
-        await MapService.ShowGhostPinAsync(lat, lng);
-        
-        try
-        {
-            if (_lastKnownPosition != null && (DateTime.UtcNow - _lastLocationUpdate).TotalSeconds < 30)
-            {
-                var report = new LocationReport
-                {
-                    Latitude = lat,
-                    Longitude = lng,
-                    ReporterIdentifier = _userIdentifier,
-                    ReporterLatitude = _lastKnownPosition.Coords.Latitude,
-                    ReporterLongitude = _lastKnownPosition.Coords.Longitude
-                };
-                await ShowReportDialog(report);
-            }
-            else
-            {
-                // Start location acquisition in background for reporter location
-                var locationTask = GetLocationWithFallback(allowManual: true, showUI: false);
-
-                var report = new LocationReport
-                {
-                    Latitude = lat,
-                    Longitude = lng,
-                    ReporterIdentifier = _userIdentifier,
-                    ReporterLatitude = _lastKnownPosition?.Coords.Latitude ?? lat,
-                    ReporterLongitude = _lastKnownPosition?.Coords.Longitude ?? lng
-                };
-
-                // Show dialog immediately, don't update report location from GPS (it's fixed to map click)
-                await ShowReportDialog(report, locationTask, updateReportLocation: false);
-            }
-        }
-        finally
-        {
-            await MapService.HideGhostPinAsync();
-        }
-    }
-
-    [JSInvokable]
-    public async Task OnAlertDeleteClick(int alertId)
+    private async Task OnAlertDeleteClick(int alertId)
     {
         var confirmed = await DialogService.Confirm("Are you sure you want to delete this alert zone?", "Delete Alert", 
             new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
@@ -800,7 +499,7 @@
         {
             await AlertService.DeactivateAlertAsync(alertId);
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
-            await LoadUserAlerts();
+            await MapState.LoadAlertsAsync();
         }
     }
 
@@ -817,7 +516,7 @@
 
         if (result == true)
         {
-            await LoadReports();
+            await MapState.LoadReportsAsync(_selectedHours);
         }
     }
 
@@ -828,86 +527,29 @@
             var mapState = await MapService.GetMapStateAsync();
             if (mapState != null)
             {
-                _manualPickTcs?.TrySetResult(new GeolocationPosition 
+                ClientLocation.ConfirmManualPick(new GeolocationPosition 
                 { 
                     Coords = new GeolocationCoordinates { Latitude = mapState.Lat, Longitude = mapState.Lng } 
                 });
             }
             else
             {
-                _manualPickTcs?.TrySetResult(null);
+                ClientLocation.ConfirmManualPick(null);
             }
         }
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to get map state for manual pick");
-            _manualPickTcs?.TrySetResult(null);
+            ClientLocation.ConfirmManualPick(null);
         }
     }
 
     private async Task GetLocationAndCenterMap()
     {
-        var position = await GetLocationWithFallback(allowManual: false, showUI: false);
-        if (position != null && _lastKnownPosition == null)
+        var position = await ClientLocation.GetLocationWithFallbackAsync(allowManual: false, showUI: false);
+        if (position != null && MapState.MapInitialized)
         {
-            _lastKnownPosition = position;
-            _lastLocationUpdate = DateTime.UtcNow;
-            if (_mapInitialized)
-            {
-                await MapService.SetMapViewAsync(position.Coords.Latitude, position.Coords.Longitude, null);
-            }
-        }
-    }
-
-    private async Task<GeolocationPosition?> GetLocationWithFallback(bool allowManual = true, bool showUI = true)
-    {
-        if (showUI)
-        {
-            _isGettingLocation = true;
-            _showManualPick = false;
-            _manualPickTcs = new TaskCompletionSource<GeolocationPosition?>();
-            StateHasChanged();
-        }
-
-        using var cts = new CancellationTokenSource();
-        var locationTask = StorageService.GetLocationAsync();
-        var timerTask = Task.Delay(7000, cts.Token);
-
-        try
-        {
-            var firstTask = await Task.WhenAny(locationTask, timerTask);
-            if (firstTask == timerTask && !locationTask.IsCompleted)
-            {
-                if (showUI)
-                {
-                    _showManualPick = allowManual;
-                    StateHasChanged();
-
-                    var secondTask = await Task.WhenAny(locationTask, _manualPickTcs.Task);
-                    if (secondTask == _manualPickTcs.Task)
-                    {
-                        cts.Cancel();
-                        return await _manualPickTcs.Task;
-                    }
-                }
-            }
-
-            cts.Cancel();
-            return await locationTask;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning(ex, "Failed to get location");
-            return null;
-        }
-        finally
-        {
-            if (showUI)
-            {
-                _isGettingLocation = false;
-                _showManualPick = false;
-                StateHasChanged();
-            }
+            await MapService.SetMapViewAsync(position.Coords.Latitude, position.Coords.Longitude, null);
         }
     }
 
@@ -916,13 +558,10 @@
         if (_disposed) return;
         _disposed = true;
 
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
-        EventService.OnAlertAdded -= HandleAlertAdded;
-        EventService.OnAlertUpdated -= HandleAlertUpdated;
-        EventService.OnAlertDeleted -= HandleAlertDeleted;
+        MapState.OnStateChanged -= HandleStateChanged;
+        ClientLocation.OnStateChanged -= HandleStateChanged;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
+        EventService.OnReportAdded -= HandleReportAdded;
 
         if (_locationWatchId != -1)
         {

@@ -1,0 +1,46 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IMapStateService MapState
+
+<RadzenStack Gap="0" Style="flex: 1; position: relative;">
+    <HeatMap @ref="_heatMap"
+             ElementId="@ElementId"
+             Reports="@MapState.Reports" 
+             Alerts="@MapState.Alerts"
+             InitialLat="@InitialLat"
+             InitialLng="@InitialLng"
+             IsAdmin="@IsAdmin"
+             OnMapClick="@OnMapClick"
+             OnMapMoveEnd="@OnMapMoveEnd"
+             OnUserInteractedWithMap="@OnUserInteractedWithMap"
+             OnLocationUpdated="@OnLocationUpdated"
+             OnMapContextMenu="@OnMapContextMenu"
+             OnAlertDeleteClick="@OnAlertDeleteClick" />
+    
+    @ChildContent
+
+    <LocationOverlay OnManualPick="@OnManualPick" />
+</RadzenStack>
+
+@code {
+    private HeatMap? _heatMap;
+
+    [Parameter] public string ElementId { get; set; } = "heatmap";
+    [Parameter] public double InitialLat { get; set; }
+    [Parameter] public double InitialLng { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [Parameter] public EventCallback<HeatMap.MapClickEventArgs> OnMapClick { get; set; }
+    [Parameter] public EventCallback<HeatMap.MapLocationEventArgs> OnMapMoveEnd { get; set; }
+    [Parameter] public EventCallback OnUserInteractedWithMap { get; set; }
+    [Parameter] public EventCallback<GeolocationPosition> OnLocationUpdated { get; set; }
+    [Parameter] public EventCallback<HeatMap.MapLocationEventArgs> OnMapContextMenu { get; set; }
+    [Parameter] public EventCallback<int> OnAlertDeleteClick { get; set; }
+    [Parameter] public EventCallback OnManualPick { get; set; }
+
+    /// <summary>
+    /// Exposes the underlying HeatMap component.
+    /// </summary>
+    public HeatMap? Map => _heatMap;
+}

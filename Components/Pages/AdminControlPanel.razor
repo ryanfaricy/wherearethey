@@ -1,21 +1,15 @@
 @page "/cp"
-@inject IReportService ReportService
-@inject IAlertService AlertService
-@inject IDonationService DonationService
-@inject IFeedbackService FeedbackService
 @inject IAdminService AdminService
 @inject IAdminPasskeyService PasskeyService
 @inject ProtectedSessionStorage SessionStorage
 @inject ProtectedLocalStorage LocalStorage
 @inject NotificationService NotificationService
-@inject DialogService DialogService
 @inject IHttpContextAccessor HttpContextAccessor
 @inject ILogger<AdminControlPanel> Logger
 @inject IEventService EventService
 @inject IJSRuntime JsRuntime
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using WhereAreThey.Models
-@using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Components.Admin
 @using System.Text.Json

@@ -1,12 +1,10 @@
 using Fido2NetLib;
-using Fido2NetLib.Objects;
 using Microsoft.EntityFrameworkCore;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using System.Text.Json;
 
 namespace WhereAreThey.Tests;

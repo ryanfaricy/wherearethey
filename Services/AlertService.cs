@@ -261,4 +261,30 @@ public class AlertService(
             eventService.NotifyAlertDeleted(id);
         }
     }
+
+    /// <inheritdoc />
+    public virtual async Task UpdateAlertAsync(Alert alert, string? email = null)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        var existing = await context.Alerts.FindAsync(alert.Id);
+        if (existing != null)
+        {
+            existing.Latitude = alert.Latitude;
+            existing.Longitude = alert.Longitude;
+            existing.RadiusKm = alert.RadiusKm;
+            existing.Message = alert.Message;
+            existing.IsActive = alert.IsActive;
+            existing.ExpiresAt = alert.ExpiresAt;
+            existing.IsVerified = alert.IsVerified;
+
+            if (!string.IsNullOrEmpty(email))
+            {
+                existing.EncryptedEmail = _protector.Protect(email);
+                existing.EmailHash = ComputeHash(email);
+            }
+            
+            await context.SaveChangesAsync();
+            eventService.NotifyAlertUpdated(existing);
+        }
+    }
 }

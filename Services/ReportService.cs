@@ -101,4 +101,15 @@ public class ReportService(
             eventService.NotifyReportDeleted(id);
         }
     }
+
+    /// <inheritdoc />
+    public async Task UpdateReportAsync(LocationReport report)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync();
+        context.LocationReports.Update(report);
+        await context.SaveChangesAsync();
+        
+        // Notify global event bus
+        eventService.NotifyReportUpdated(report);
+    }
 }

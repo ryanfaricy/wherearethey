@@ -39,4 +39,10 @@ public interface IReportService
     /// </summary>
     /// <param name="id">The internal ID of the report.</param>
     Task DeleteReportAsync(int id);
+
+    /// <summary>
+    /// Updates an existing location report.
+    /// </summary>
+    /// <param name="report">The report with updated values.</param>
+    Task UpdateReportAsync(LocationReport report);
 }

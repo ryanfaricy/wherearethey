@@ -1,0 +1,54 @@
+@using WhereAreThey.Services.Interfaces
+@using Microsoft.Extensions.Localization
+@inject IClientLocationService LocationService
+@inject IStringLocalizer<App> L
+@implements IDisposable
+
+@if (LocationService.IsLocating)
+{
+    <RadzenStack Style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+        <RadzenCard Class="rz-shadow-10">
+            <RadzenStack AlignItems="AlignItems.Center" Gap="1rem">
+                <RadzenProgressBarCircular Value="100" ShowValue="false" Mode="ProgressBarMode.Indeterminate" />
+                <RadzenText TextStyle="TextStyle.Body1">@L["Acquiring_Location"]</RadzenText>
+                @if (LocationService.ShowManualPick)
+                {
+                    <RadzenButton Text="@L["Manual_Pick"]" 
+                                 Click="@OnManualPickInternal" 
+                                 ButtonStyle="ButtonStyle.Secondary" 
+                                 Variant="Variant.Flat" 
+                                 Size="ButtonSize.Small" />
+                }
+            </RadzenStack>
+        </RadzenCard>
+    </RadzenStack>
+}
+
+@code {
+    /// <summary>
+    /// Event triggered when the user clicks the manual pick button.
+    /// The parent component should handle getting the map center and 
+    /// confirming the pick via the location service.
+    /// </summary>
+    [Parameter] public EventCallback OnManualPick { get; set; }
+
+    protected override void OnInitialized()
+    {
+        LocationService.OnStateChanged += HandleStateChanged;
+    }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
+
+    private async Task OnManualPickInternal()
+    {
+        if (OnManualPick.HasDelegate)
+        {
+            await OnManualPick.InvokeAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        LocationService.OnStateChanged -= HandleStateChanged;
+    }
+}

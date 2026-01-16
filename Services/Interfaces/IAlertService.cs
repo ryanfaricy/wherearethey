@@ -59,6 +59,13 @@ public interface IAlertService
     Task<bool> DeactivateAlertAsync(int id);
 
     /// <summary>
+    /// Updates an existing alert.
+    /// </summary>
+    /// <param name="alert">The alert with updated values.</param>
+    /// <param name="email">The email address to notify (optional, if changed).</param>
+    Task UpdateAlertAsync(Alert alert, string? email = null);
+
+    /// <summary>
     /// Gets all alerts that match a given location.
     /// </summary>
     /// <param name="latitude">The latitude of the location.</param>

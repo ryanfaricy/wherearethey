@@ -1,6 +1,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Components.Admin
 @inject DialogService DialogService
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
@@ -50,7 +51,10 @@
                                             @if (_isAdmin)
                                             {
                                                 <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;">
-                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
+                                                    </RadzenStack>
                                                     <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
                                                     @if (r.HasReporterLocation())
                                                     {
@@ -73,7 +77,10 @@
                                             @if (_isAdmin)
                                             {
                                                 <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
-                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
+                                                    </RadzenStack>
                                                     <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
                                                     @if (r.HasReporterLocation())
                                                     {
@@ -110,9 +117,20 @@
                                             <RadzenStack Gap="0">
                                                 <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@GetAlertName(a)</RadzenText>
                                                 <RadzenText TextStyle="TextStyle.Caption">Radius: @a.RadiusKm km</RadzenText>
+                                                @if (_isAdmin)
+                                                {
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @a.UserIdentifier</RadzenText>
+                                                }
                                             </RadzenStack>
-                                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
-                                                          Click="@(() => DeleteAlert(a))" />
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                                @if (_isAdmin)
+                                                {
+                                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                                  Click="@(() => EditAlert(a))" />
+                                                }
+                                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                              Click="@(() => DeleteAlert(a))" />
+                                            </RadzenStack>
                                         </RadzenStack>
                                     </RadzenCard>
                                 </Template>
@@ -148,6 +166,19 @@
         _isAdmin = await AdminService.IsAdminAsync();
     }
 
+    private async Task EditReport(LocationReport report)
+    {
+        var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
+            new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
+            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            _alertDeleted = true; // Trigger refresh on close
+            DialogService.Close(true); // Close details and refresh map
+        }
+    }
+
     private async Task DeleteAlert(Alert alert)
     {
         var extra = string.IsNullOrEmpty(alert.Message) ? "" : $" ({alert.Message})";
@@ -161,6 +192,19 @@
             _alertDeleted = true;
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
             StateHasChanged();
+        }
+    }
+
+    private async Task EditAlert(Alert alert)
+    {
+        var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
+            new Dictionary<string, object> { { "Alert", alert } },
+            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            _alertDeleted = true; // Trigger refresh on close
+            DialogService.Close(true); // Close details and refresh map
         }
     }
 

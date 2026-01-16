@@ -2,15 +2,14 @@
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Services
 @using WhereAreThey.Components.Home
-@using WhereAreThey.Components.Pages
-@inject IReportService ReportService
 @inject IAlertService AlertService
 @inject IMapService MapService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject ILogger<AdminMapFeed> Logger
 @inject UserTimeZoneService TimeZoneService
-@inject IEventService EventService
+@inject IMapStateService MapState
+@inject IMapInteractionService MapInteraction
 @implements IDisposable
 
 <RadzenRow>
@@ -18,12 +17,12 @@
         <RadzenCard Class="rz-p-0" Style="height: 500px; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
             <HeatMap @ref="_heatMap"
                      ElementId="admin-map"
-                     Reports="@_reports"
-                     Alerts="@_alerts"
+                     Reports="@MapState.Reports"
+                     Alerts="@(new List<Alert>())"
                      IsAdmin="true"
                      OnMapClick="@OnHeatMapClick"
                      OnMapContextMenu="@OnHeatMapContextMenu"
-                     OnAlertDeleteClick="@OnAlertDeleteClick" />
+                     OnAlertDeleteClick="@OnHeatMapAlertDeleteClick" />
             <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
                 <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="LIVE MAP" />
             </div>
@@ -36,11 +35,11 @@
             </div>
             <div style="flex: 1; overflow-y: auto;" class="rz-p-3">
                 <RadzenStack Gap="1rem">
-                    @if (!_reports.Any())
+                    @if (!MapState.Reports.Any())
                     {
                         <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-align-center rz-mt-4">No recent reports.</RadzenText>
                     }
-                    @foreach (var report in _reports.Take(20))
+                    @foreach (var report in MapState.Reports.Take(20))
                     {
                         <RadzenCard Variant="Variant.Flat" 
                                     Class="@(report.IsEmergency ? "rz-background-color-danger-lighter" : "rz-background-color-base-100")" 
@@ -69,22 +68,15 @@
 
 @code {
     private HeatMap? _heatMap;
-    private List<LocationReport> _reports = new();
-    private List<Alert> _alerts = new();
-    private bool _mapInitialized;
 
     protected override async Task OnInitializedAsync()
     {
-        _reports = await ReportService.GetAllReportsAsync();
-        _alerts = (await AlertService.GetAllAlertsAdminAsync()).Where(a => a.IsActive).ToList();
-        
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
-        EventService.OnAlertAdded += HandleAlertAdded;
-        EventService.OnAlertUpdated += HandleAlertUpdated;
-        EventService.OnAlertDeleted += HandleAlertDeleted;
+        MapState.OnStateChanged += HandleStateChanged;
+        await MapState.InitializeAsync(null, isAdmin: true);
+        await MapState.LoadReportsAsync();
     }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -96,20 +88,19 @@
 
     private async Task InitializeMap()
     {
-        if (_mapInitialized || _heatMap == null) return;
+        if (MapState.MapInitialized || _heatMap == null) return;
         
         try 
         {
             double lat = 0;
             double lng = 0;
-            if (_reports.Any())
+            if (MapState.Reports.Any())
             {
-                lat = _reports.Average(r => r.Latitude);
-                lng = _reports.Average(r => r.Longitude);
+                lat = MapState.Reports.Average(r => r.Latitude);
+                lng = MapState.Reports.Average(r => r.Longitude);
             }
 
             await _heatMap.InitializeAsync(lat, lng);
-            _mapInitialized = true;
         }
         catch (Exception ex)
         {
@@ -119,72 +110,17 @@
 
     private async Task FocusReportOnMap(LocationReport report)
     {
-        if (_mapInitialized)
+        if (MapState.MapInitialized)
         {
             await MapService.FocusReportAsync(report.Id);
         }
     }
 
-    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
-    {
-        var zoom = await MapService.GetZoomLevelAsync();
-        double searchRadiusKm = args.IsMarkerClick ? 0.05 : (zoom >= 15 ? 0.2 : 5.0);
+    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick);
 
-        var nearbyReports = _reports
-            .Where(r => GeoUtils.CalculateDistance(args.Lat, args.Lng, r.Latitude, r.Longitude) <= searchRadiusKm)
-            .OrderByDescending(r => r.Timestamp)
-            .ToList();
+    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, isAdmin: true);
 
-        var nearbyAlerts = _alerts
-            .Where(a => GeoUtils.CalculateDistance(args.Lat, args.Lng, a.Latitude, a.Longitude) <= searchRadiusKm)
-            .ToList();
-
-        if (nearbyReports.Any() || nearbyAlerts.Any())
-        {
-            if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
-            {
-                await MapService.SelectReportAsync(nearbyReports[0].Id);
-            }
-
-            await DialogService.OpenAsync<ReportDetailsDialog>("AREA DETAILS",
-                new Dictionary<string, object> 
-                { 
-                    { "Reports", nearbyReports },
-                    { "Alerts", nearbyAlerts }
-                },
-                DialogConfigs.Default);
-        }
-    }
-
-    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args)
-    {
-        var report = new LocationReport
-        {
-            Latitude = args.Lat,
-            Longitude = args.Lng,
-            ReporterLatitude = args.Lat,
-            ReporterLongitude = args.Lng,
-            IsEmergency = false
-        };
-
-        await MapService.ShowGhostPinAsync(args.Lat, args.Lng);
-        try
-        {
-            await DialogService.OpenAsync<ReportDialog>("ADMIN REPORT",
-                new Dictionary<string, object> 
-                { 
-                    { "Report", report },
-                    { "UpdateReportLocation", false }
-                },
-                DialogConfigs.Default);
-        }
-        finally
-        {
-            await MapService.HideGhostPinAsync();
-        }
-    }
-
-    private async Task OnAlertDeleteClick(int alertId)
+    private async Task OnHeatMapAlertDeleteClick(int alertId)
     {
         var confirmed = await DialogService.Confirm("Are you sure you want to delete this alert zone?", "Delete Alert", 
             new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
@@ -196,113 +132,8 @@
         }
     }
 
-    private void HandleReportAdded(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            _reports.Insert(0, report);
-            if (_mapInitialized)
-            {
-                await MapService.AddSingleReportAsync(report);
-            }
-            StateHasChanged();
-        });
-    }
-
-    private void HandleReportUpdated(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _reports.FindIndex(r => r.Id == report.Id);
-            if (index != -1)
-            {
-                _reports[index] = report;
-                if (_mapInitialized)
-                {
-                    await MapService.RemoveSingleReportAsync(report.Id);
-                    await MapService.AddSingleReportAsync(report);
-                }
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleReportDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            _reports.RemoveAll(r => r.Id == id);
-            if (_mapInitialized)
-            {
-                await MapService.RemoveSingleReportAsync(id);
-            }
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertAdded(Alert alert)
-    {
-        if (!alert.IsActive) return;
-        InvokeAsync(async () =>
-        {
-            _alerts.Insert(0, alert);
-            if (_mapInitialized)
-            {
-                await MapService.UpdateAlertsAsync(_alerts);
-            }
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertUpdated(Alert alert)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _alerts.FindIndex(a => a.Id == alert.Id);
-            if (index != -1)
-            {
-                if (alert.IsActive)
-                {
-                    _alerts[index] = alert;
-                }
-                else
-                {
-                    _alerts.RemoveAt(index);
-                }
-
-                if (_mapInitialized)
-                {
-                    await MapService.UpdateAlertsAsync(_alerts);
-                }
-                StateHasChanged();
-            }
-            else if (alert.IsActive)
-            {
-                HandleAlertAdded(alert);
-            }
-        });
-    }
-
-    private void HandleAlertDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            _alerts.RemoveAll(a => a.Id == id);
-            if (_mapInitialized)
-            {
-                await MapService.UpdateAlertsAsync(_alerts);
-            }
-            StateHasChanged();
-        });
-    }
-
     public void Dispose()
     {
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
-        EventService.OnAlertAdded -= HandleAlertAdded;
-        EventService.OnAlertUpdated -= HandleAlertUpdated;
-        EventService.OnAlertDeleted -= HandleAlertDeleted;
+        MapState.OnStateChanged -= HandleStateChanged;
     }
 }

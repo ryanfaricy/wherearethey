@@ -17,7 +17,6 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using WhereAreThey.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -137,6 +136,9 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddScoped<IMapService, MapService>();
 builder.Services.AddScoped<IClientStorageService, ClientStorageService>();
+builder.Services.AddScoped<IMapStateService, MapStateService>();
+builder.Services.AddScoped<IMapInteractionService, MapInteractionService>();
+builder.Services.AddScoped<IClientLocationService, ClientLocationService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
 builder.Services.AddScoped<IFido2>(sp =>

@@ -18,7 +18,8 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
         IStringLocalizer<App> l)
     {
         RuleFor(x => x.ReporterIdentifier)
-            .NotEmpty().WithMessage(l["Identifier_Error"]);
+            .NotEmpty().WithMessage(l["Identifier_Error"])
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
 
         RuleFor(x => x.ReporterIdentifier)
             .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"])

@@ -359,4 +359,29 @@ public class LocationReportValidatorTests
         // Assert
         Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
+
+    [Fact]
+    public async Task Validator_ShouldSucceed_WhenAdmin_AndIdentifierIsEmpty()
+    {
+        // Arrange
+        var (_, factory) = await CreateContextAndFactoryAsync();
+        
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(true);
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        
+        var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
+        
+        var report = new LocationReport 
+        { 
+            ReporterIdentifier = "", // Empty
+            Latitude = 0, Longitude = 0,
+            ReporterLatitude = 0, ReporterLongitude = 0
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(report);
+
+        // Assert
+        Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
+    }
 }

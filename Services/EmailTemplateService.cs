@@ -1,5 +1,4 @@
 using Fluid;
-using Microsoft.AspNetCore.Hosting;
 using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;

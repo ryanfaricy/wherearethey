@@ -1,0 +1,174 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IAlertService AlertService
+@inject IGeocodingService GeocodingService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@_alert" Submit="@((Alert _) => Save())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenFormField Text="Address Search" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
+                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
+                                Placeholder="Search for a location..." Style="width: 100%;"
+                                InputType="search" />
+        </RadzenFormField>
+
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Latitude" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="@_alert.Latitude" TValue="double" 
+                                   ShowUpDown="false" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Longitude" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="@_alert.Longitude" TValue="double" 
+                                   ShowUpDown="false" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenFormField Text="Radius (km)" Variant="Variant.Outlined" Component="RadiusKm" Style="width: 100%;">
+            <ChildContent>
+                <RadzenNumeric Name="RadiusKm" @bind-Value="@_alert.RadiusKm" TValue="double" 
+                               Min="0.1m" Max="160.9m" ShowUpDown="true" 
+                               Step="0.5m" Style="width: 100%;" />
+            </ChildContent>
+            <Helper>
+                <RadzenNumericRangeValidator Component="RadiusKm" Min="0.1" Max="160.9" Text="Radius must be between 0.1 and 160.9 km" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Alert Message" Variant="Variant.Outlined" Component="AlertMessage" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="AlertMessage" @bind-Value="@_alert.Message" Style="width: 100%;" 
+                               Placeholder="e.g. Near My House" MaxLength="100" />
+            </ChildContent>
+            <Helper>
+                <RadzenLengthValidator Component="AlertMessage" Max="100" Text="Message too long" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Email Address" Variant="Variant.Outlined" Component="Email" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="Email" @bind-Value="@_email" Style="width: 100%;" 
+                               Placeholder="user@example.com" />
+            </ChildContent>
+            <Helper>
+                <RadzenRequiredValidator Component="Email" Text="Email is required" />
+                <RadzenEmailValidator Component="Email" Text="Invalid email" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="User Identifier" Variant="Variant.Outlined" Component="UserIdentifier" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="UserIdentifier" @bind-Value="@_alert.UserIdentifier" Style="width: 100%; font-family: monospace;" 
+                               Placeholder="system or device-id" />
+            </ChildContent>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="@_alert.IsActive" TValue="bool" Name="IsActive" />
+                <RadzenLabel Text="Active" Component="IsActive" />
+            </RadzenStack>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="@_alert.IsVerified" TValue="bool" Name="IsVerified" />
+                <RadzenLabel Text="Verified" Component="IsVerified" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SAVE CHANGES" 
+                          Icon="save" ButtonStyle="ButtonStyle.Primary" 
+                          IsBusy="@_isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Alert Alert { get; set; } = new();
+
+    private Alert _alert = new();
+    private string _email = "";
+    private bool _isSubmitting;
+    private string? _approxAddress;
+    private List<GeocodingResult> _geocodingResults = new();
+
+    protected override void OnInitialized()
+    {
+        // Create a copy to edit
+        _alert = new Alert
+        {
+            Id = Alert.Id,
+            ExternalId = Alert.ExternalId,
+            Latitude = Alert.Latitude,
+            Longitude = Alert.Longitude,
+            RadiusKm = Alert.RadiusKm,
+            Message = Alert.Message,
+            EncryptedEmail = Alert.EncryptedEmail,
+            EmailHash = Alert.EmailHash,
+            IsVerified = Alert.IsVerified,
+            IsActive = Alert.IsActive,
+            CreatedAt = Alert.CreatedAt,
+            ExpiresAt = Alert.ExpiresAt,
+            UserIdentifier = Alert.UserIdentifier
+        };
+
+        _email = AlertService.DecryptEmail(Alert.EncryptedEmail) ?? "";
+        
+        _ = LoadAddress();
+    }
+
+    private async Task LoadAddress()
+    {
+        _approxAddress = await GeocodingService.ReverseGeocodeAsync(_alert.Latitude, _alert.Longitude);
+        StateHasChanged();
+    }
+
+    private async Task OnAddressSearch(LoadDataArgs args)
+    {
+        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
+        {
+            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
+        }
+    }
+
+    private void OnAddressSelected(object value)
+    {
+        if (value is string address)
+        {
+            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
+            if (selected != null)
+            {
+                _alert.Latitude = selected.Latitude;
+                _alert.Longitude = selected.Longitude;
+                _approxAddress = selected.Address;
+            }
+        }
+    }
+
+    private async Task Save()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
+            string? newEmail = _email != originalEmail ? _email : null;
+
+            await AlertService.UpdateAlertAsync(_alert, newEmail);
+            NotificationService.Notify(NotificationSeverity.Success, "Alert updated successfully");
+            DialogService.Close(true);
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

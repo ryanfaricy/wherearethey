@@ -1,10 +1,8 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
 @inject IAlertService AlertService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
-@inject UserTimeZoneService TimeZoneService
 @inject IJSRuntime JsRuntime
 @inject ILogger<AdminAlertsTab> Logger
 @inject IEventService EventService
@@ -19,6 +17,7 @@
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Alert" Property="Message" Title="Message" />
+        <RadzenDataGridColumn TItem="Alert" Property="UserIdentifier" Title="User Identifier" Visible="@(!IsMobile)" />
         <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
             <Template Context="alert">
                 <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
@@ -35,6 +34,8 @@
         <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
             <Template Context="alert">
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                  Click="@(() => EditAlert(alert))" ToolTip="Edit Alert" />
                     <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
                                   Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
@@ -129,6 +130,18 @@
     {
         var url = $"/?alertId={alert.ExternalId}";
         await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
+    }
+
+    private async Task EditAlert(Alert alert)
+    {
+        var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
+            new Dictionary<string, object> { { "Alert", alert } },
+            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+
+        if (result == true)
+        {
+            await LoadData();
+        }
     }
 
     public void Dispose()

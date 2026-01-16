@@ -1,5 +1,3 @@
-using System;
-
 namespace WhereAreThey.Models;
 
 public class AdminPasskey
