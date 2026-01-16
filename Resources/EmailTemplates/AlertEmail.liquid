@@ -1,0 +1,19 @@
+<h3>New report near your alert area</h3>
+{% if AlertMessage and AlertMessage != "" %}
+<p><strong>Your Alert:</strong> {{ AlertMessage }}</p>
+{% endif %}
+{% if Address and Address != "" %}
+<p><strong>Approx. Address:</strong> {{ Address }}</p>
+{% endif %}
+<p><strong>Time:</strong> {{ LocalTimeStr }}</p>
+{% if IsEmergency %}
+<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>
+{% endif %}
+{% if ReportMessage and ReportMessage != "" %}
+<p><strong>Message:</strong> {{ ReportMessage }}</p>
+{% endif %}
+{{ MapThumbnailHtml }}
+<p><strong>Location:</strong> {{ Latitude }}, {{ Longitude }}</p>
+<hr/>
+<p><a href='{{ HeatMapUrl }}'>View on Heat Map</a></p>
+<small>You received this because you set up an alert on AreTheyHere.</small>

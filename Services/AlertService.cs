@@ -19,6 +19,7 @@ public class AlertService(
     IBackgroundJobClient backgroundJobClient,
     IEventService eventService,
     IOptions<AppOptions> appOptions,
+    IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
     IValidator<Alert> validator) : IAlertService
 {
@@ -108,14 +109,8 @@ public class AlertService(
             var verificationLink = $"{baseUrl}/verify-email?token={verification.Token}";
 
             var subject = "Verify your email for alerts";
-            var body = $@"
-                <h3>Verify your email address</h3>
-                <p>Someone (hopefully you) signed up for alerts on AreTheyHere using this email address.</p>
-                <p>To receive alert notifications, please verify your email by clicking the link below:</p>
-                <p><a href='{verificationLink}'>Verify Email Address</a></p>
-                <p>If you didn't sign up for these alerts, you can safely ignore this email.</p>
-                <hr/>
-                <small>AreTheyHere - Know where they are.</small>";
+            var viewModel = new VerificationEmailViewModel { VerificationLink = verificationLink };
+            var body = await emailTemplateService.RenderTemplateAsync("VerificationEmail", viewModel);
 
             await emailService.SendEmailAsync(email, subject, body);
         }

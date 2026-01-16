@@ -23,6 +23,7 @@ public class AlertServiceTests
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
+    private readonly Mock<IEmailTemplateService> _emailTemplateServiceMock = new();
     private readonly Mock<ILogger<AlertService>> _loggerMock = new();
     private readonly Mock<IStringLocalizer<App>> _localizerMock = new();
 
@@ -30,6 +31,8 @@ public class AlertServiceTests
     {
         _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string key) => new LocalizedString(key, key));
         _localizerMock.Setup(l => l[It.IsAny<string>(), It.IsAny<object[]>()]).Returns((string key, object[] _) => new LocalizedString(key, key));
+        _emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync("Rendered email body");
     }
 
     private static DbContextOptions<ApplicationDbContext> CreateOptions()
@@ -58,7 +61,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _backgroundJobClientMock.Object, _eventServiceMock.Object, Options.Create(new AppOptions()), _loggerMock.Object, validator);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _backgroundJobClientMock.Object, _eventServiceMock.Object, Options.Create(new AppOptions()), _emailTemplateServiceMock.Object, _loggerMock.Object, validator);
     }
 
     [Fact]

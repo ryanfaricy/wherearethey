@@ -13,6 +13,7 @@ public class ReportProcessingService(
     IOptions<AppOptions> appOptions,
     ISettingsService settingsService,
     ILocationService locationService,
+    IEmailTemplateService emailTemplateService,
     ILogger<ReportProcessingService> logger) : IReportProcessingService
 {
     /// <inheritdoc />
@@ -49,18 +50,21 @@ public class ReportProcessingService(
                 if (!string.IsNullOrEmpty(emailAddress))
                 {
                     var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
-                    var body = $@"
-                        <h3>New report near your alert area</h3>
-                        {(string.IsNullOrEmpty(alert.Message) ? "" : $"<p><strong>Your Alert:</strong> {alert.Message}</p>")}
-                        {(!string.IsNullOrEmpty(address) ? $"<p><strong>Approx. Address:</strong> {address}</p>" : "")}
-                        <p><strong>Time:</strong> {localTimeStr}</p>
-                        {(report.IsEmergency ? "<p style='color: red; font-weight: bold;'>THIS IS MARKED AS AN EMERGENCY</p>" : "")}
-                        {(string.IsNullOrEmpty(report.Message) ? "" : $"<p><strong>Message:</strong> {report.Message}</p>")}
-                        {mapThumbnailHtml}
-                        <p><strong>Location:</strong> {report.Latitude.ToString("F4", CultureInfo.InvariantCulture)}, {report.Longitude.ToString("F4", CultureInfo.InvariantCulture)}</p>
-                        <hr/>
-                        <p><a href='{heatMapUrl}'>View on Heat Map</a></p>
-                        <small>You received this because you set up an alert on AreTheyHere.</small>";
+
+                    var viewModel = new AlertEmailViewModel
+                    {
+                        AlertMessage = alert.Message,
+                        Address = address,
+                        LocalTimeStr = localTimeStr,
+                        IsEmergency = report.IsEmergency,
+                        ReportMessage = report.Message,
+                        MapThumbnailHtml = mapThumbnailHtml,
+                        Latitude = report.Latitude.ToString("F4", CultureInfo.InvariantCulture),
+                        Longitude = report.Longitude.ToString("F4", CultureInfo.InvariantCulture),
+                        HeatMapUrl = heatMapUrl
+                    };
+
+                    var body = await emailTemplateService.RenderTemplateAsync("AlertEmail", viewModel);
 
                     emails.Add(new Email { To = emailAddress, Subject = subject, Body = body });
                 }

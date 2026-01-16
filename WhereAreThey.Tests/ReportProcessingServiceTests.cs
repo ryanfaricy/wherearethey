@@ -16,6 +16,7 @@ public class ReportProcessingServiceTests
     private readonly Mock<IGeocodingService> _geocodingServiceMock = new();
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<ILocationService> _locationServiceMock = new();
+    private readonly Mock<IEmailTemplateService> _emailTemplateServiceMock = new();
 
     private IReportProcessingService CreateService()
     {
@@ -26,6 +27,7 @@ public class ReportProcessingServiceTests
             Options.Create(new AppOptions()),
             _settingsServiceMock.Object,
             _locationServiceMock.Object,
+            _emailTemplateServiceMock.Object,
             _loggerMock.Object);
     }
 
@@ -43,6 +45,9 @@ public class ReportProcessingServiceTests
         _alertServiceMock.Setup(a => a.DecryptEmail(alert.EncryptedEmail)).Returns("test@example.com");
         _geocodingServiceMock.Setup(g => g.ReverseGeocodeAsync(report.Latitude, report.Longitude))
             .ReturnsAsync("123 Test St");
+
+        _emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync("AlertEmail", It.IsAny<AlertEmailViewModel>()))
+            .ReturnsAsync("Rendered email body with 123 Test St and Alert msg");
 
         // Act
         await service.ProcessReportAsync(report);

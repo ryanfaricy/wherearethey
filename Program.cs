@@ -154,6 +154,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(Servi
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IReportProcessingService, ReportProcessingService>();
+builder.Services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 builder.Services.AddSingleton<IReportService, ReportService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();

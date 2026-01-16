@@ -217,6 +217,13 @@ public class ReportServiceTests
         var factory = CreateFactory(options);
         var dataProtectionProvider = new EphemeralDataProtectionProvider();
         var emailServiceMock = new Mock<IEmailService>();
+        var emailTemplateServiceMock = new Mock<IEmailTemplateService>();
+        emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
+            .ReturnsAsync((string name, object model) => 
+            {
+                var reportMsg = model.GetType().GetProperty("ReportMessage")?.GetValue(model)?.ToString() ?? "";
+                return $"Rendered body: {reportMsg}";
+            });
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
         var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
@@ -225,6 +232,7 @@ public class ReportServiceTests
         
         var services = new ServiceCollection();
         services.AddSingleton(emailServiceMock.Object);
+        services.AddSingleton(emailTemplateServiceMock.Object);
         services.AddSingleton(appOptions);
         services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
@@ -235,7 +243,16 @@ public class ReportServiceTests
         services.AddScoped<IReportProcessingService, ReportProcessingService>();
         
         // Circular dependency handling: AlertService needs IBackgroundJobClient
-        services.AddSingleton<IAlertService>(sp => new AlertService(factory, dataProtectionProvider, sp.GetRequiredService<IEmailService>(), sp.GetRequiredService<IBackgroundJobClient>(), _eventServiceMock.Object, sp.GetRequiredService<IOptions<AppOptions>>(), new Mock<ILogger<AlertService>>().Object, alertValidator));
+        services.AddSingleton<IAlertService>(sp => new AlertService(
+            factory, 
+            dataProtectionProvider, 
+            sp.GetRequiredService<IEmailService>(), 
+            sp.GetRequiredService<IBackgroundJobClient>(), 
+            _eventServiceMock.Object, 
+            sp.GetRequiredService<IOptions<AppOptions>>(), 
+            sp.GetRequiredService<IEmailTemplateService>(),
+            new Mock<ILogger<AlertService>>().Object, 
+            alertValidator));
         
         var serviceProvider = services.BuildServiceProvider();
 
