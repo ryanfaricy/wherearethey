@@ -320,55 +320,6 @@ h1:focus {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* App Loading Spinner */
-.app-loading-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    width: 100vw;
-    position: fixed;
-    top: 0;
-    left: 0;
-    background-color: #fff;
-    z-index: 9999;
-    transition: opacity 0.3s ease-out, visibility 0.3s;
-}
-
-[data-theme="dark"] .app-loading-container {
-    background-color: #121212;
-    color: white;
-}
-
-.app-loading-container.loaded {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #f44336;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 1rem;
-}
-
-.loading-text {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-weight: bold;
-    color: #f44336;
-    font-size: 1.2rem;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* Responsive Dialogs */
 .rz-dialog-wrapper {
     z-index: 1003 !important;
