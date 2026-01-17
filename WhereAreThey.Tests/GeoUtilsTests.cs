@@ -24,4 +24,25 @@ public class GeoUtilsTests
             Assert.InRange(result, expectedKm * 0.99, expectedKm * 1.01);
         }
     }
+
+    [Fact]
+    public void GetBoundingBox_ReturnsCorrectRange()
+    {
+        // Arrange
+        double lat = 45.0;
+        double lon = 45.0;
+        double radius = 111.0; // roughly 1 degree
+
+        // Act
+        var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(lat, lon, radius);
+
+        // Assert
+        Assert.True(minLat < lat);
+        Assert.True(maxLat > lat);
+        Assert.True(minLon < lon);
+        Assert.True(maxLon > lon);
+        
+        // 1 degree lat is approx 111km
+        Assert.Equal(1.0, maxLat - lat, 1);
+    }
 }
