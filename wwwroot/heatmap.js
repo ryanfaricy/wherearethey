@@ -434,9 +434,15 @@ window.getMapState = function() {
     if (!map) return null;
     const center = map.getCenter();
     const bounds = map.getBounds();
-    // Calculate radius in km from center to corner (diagonal)
-    // This gives a good default coverage for the visible area
-    const radiusKm = center.distanceTo(bounds.getNorthEast()) / 1000;
+    
+    // Use the distance to the nearest edge (inscribed circle) 
+    // rather than the corner (circumscribed circle) to avoid "way too big" radius
+    const northEdge = L.latLng(bounds.getNorth(), center.lng);
+    const eastEdge = L.latLng(center.lat, bounds.getEast());
+    const distVertical = center.distanceTo(northEdge) / 2000;
+    const distHorizontal = center.distanceTo(eastEdge) / 2000;
+    const radiusKm = Math.min(distVertical, distHorizontal);
+
     return {
         lat: center.lat,
         lng: center.lng,
