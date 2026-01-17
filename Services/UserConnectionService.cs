@@ -1,5 +1,6 @@
-namespace WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
+
+namespace WhereAreThey.Services;
 
 public class UserConnectionService(IEventService eventService)
 {

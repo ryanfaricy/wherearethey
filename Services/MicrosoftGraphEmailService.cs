@@ -23,7 +23,10 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
     public async Task SendEmailsAsync(IEnumerable<Email> emails)
     {
         var emailList = emails.ToList();
-        if (emailList.Count == 0) return;
+        if (emailList.Count == 0)
+        {
+            return;
+        }
 
         // Group by subject and body to allow BCC optimization
         var groups = emailList.GroupBy(e => new { e.Subject, e.Body });
@@ -41,7 +44,7 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
                 // Send in batches to multiple recipients via BCC to keep addresses private
                 // Microsoft Graph limit for recipients is typically around 100-200 per call for most efficient processing
                 const int batchSize = 100;
-                for (int i = 0; i < recipients.Count; i += batchSize)
+                for (var i = 0; i < recipients.Count; i += batchSize)
                 {
                     var batch = recipients.Skip(i).Take(batchSize).ToList();
                     // Use FromEmail as the 'To' recipient and put the actual recipients in BCC
@@ -78,15 +81,15 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
                     body = new
                     {
                         contentType = "HTML",
-                        content = body
+                        content = body,
                     },
-                    toRecipients = (toRecipients ?? Enumerable.Empty<string>())
+                    toRecipients = (toRecipients ?? [])
                         .Select(r => new { emailAddress = new { address = r } }).ToArray(),
-                    bccRecipients = (bccRecipients ?? Enumerable.Empty<string>())
+                    bccRecipients = (bccRecipients ?? [])
                         .Select(r => new { emailAddress = new { address = r } }).ToArray(),
                     from = new { emailAddress = new { name = _options.FromName, address = _options.FromEmail } },
                 },
-                saveToSentItems = false
+                saveToSentItems = false,
             };
 
             var json = JsonSerializer.Serialize(emailPayload);
@@ -131,7 +134,7 @@ public class MicrosoftGraphEmailService(HttpClient httpClient, IOptions<EmailOpt
             { "client_id", _options.GraphClientId },
             { "scope", "https://graph.microsoft.com/.default" },
             { "client_secret", _options.GraphClientSecret },
-            { "grant_type", "client_credentials" }
+            { "grant_type", "client_credentials" },
         };
 
         var content = new FormUrlEncodedContent(dict);

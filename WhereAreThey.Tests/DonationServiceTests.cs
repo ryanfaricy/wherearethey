@@ -32,7 +32,7 @@ public class DonationServiceTests
         return Options.Create(new SquareOptions
         {
             AccessToken = "sandbox-mock-token",
-            LocationId = "mock-location"
+            LocationId = "mock-location",
         });
     }
 
@@ -48,7 +48,7 @@ public class DonationServiceTests
         {
             Amount = 25.00m,
             DonorName = "Test Donor",
-            Status = "pending"
+            Status = "pending",
         };
 
         // Act
@@ -81,7 +81,7 @@ public class DonationServiceTests
             {
                 Amount = 10,
                 ExternalPaymentId = piId,
-                Status = "pending"
+                Status = "pending",
             });
             await context.SaveChangesAsync();
         }

@@ -56,14 +56,18 @@
 
     private async Task PerformVerification()
     {
-        if (string.IsNullOrEmpty(Token)) return;
+        if (string.IsNullOrEmpty(Token))
+        {
+            return;
+        }
 
         _isVerifying = true;
         _isError = false;
         
         try
         {
-            _isVerified = await AlertService.VerifyEmailAsync(Token);
+            var result = await AlertService.VerifyEmailAsync(Token);
+            _isVerified = result.IsSuccess;
             if (!_isVerified)
             {
                 _isError = true;

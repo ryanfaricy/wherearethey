@@ -1,16 +1,17 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
 @inject IReportService ReportService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject IJSRuntime JsRuntime
 @inject ILogger<AdminReportsTab> Logger
-@inject IEventService EventService
+@inject IMapStateService MapState
+@using WhereAreThey.Components.Pages
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
-<RadzenDataGrid @ref="_reportsGrid" Data="@_reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
+<RadzenDataGrid @ref="_reportsGrid" Data="@MapState.Reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
     <Columns>
         <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" Visible="@(!IsMobile)" />
         <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
@@ -22,7 +23,7 @@
         <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" Visible="@(!IsMobile)" />
         <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location" Visible="@(!IsMobile)">
             <Template Context="report">
-                @report.Coordinates()
+                @report.ReporterLocationDisplay()
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency">
@@ -33,7 +34,7 @@
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Title="Location" Visible="@(!IsMobile)">
             <Template Context="report">
-                @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
+                @report.LocationDisplay()
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Filterable="false" Sortable="false">
@@ -41,6 +42,8 @@
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                     <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
                                   Click="@(() => OpenOnMap(report))" ToolTip="Show on Map" />
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                  Click="@(() => EditReport(report))" />
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                   Click="@(() => DeleteReport(report.Id))" />
                 </RadzenStack>
@@ -52,61 +55,31 @@
 @code {
     [Parameter] public bool IsMobile { get; set; }
     
-    private List<LocationReport> _reports = new();
     private RadzenDataGrid<LocationReport>? _reportsGrid;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadData();
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
+        MapState.OnStateChanged += HandleStateChanged;
+        await MapState.InitializeAsync(null, isAdmin: true);
+        await MapState.LoadReportsAsync();
     }
 
-    private async Task LoadData()
-    {
-        try
-        {
-            _reports = await ReportService.GetAllReportsAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading reports");
-        }
-    }
+    private void HandleStateChanged() => InvokeAsync(() => {
+        _reportsGrid?.Reload();
+        StateHasChanged();
+    });
 
-    private void HandleReportAdded(LocationReport report)
+    private async Task EditReport(LocationReport report)
     {
-        InvokeAsync(async () =>
+        var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
+            new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
+            DialogConfigs.Admin);
+
+        if (result == true)
         {
-            _reports.Insert(0, report);
-            if (_reportsGrid != null) await _reportsGrid.Reload();
+            _reportsGrid?.Reload();
             StateHasChanged();
-        });
-    }
-
-    private void HandleReportUpdated(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _reports.FindIndex(r => r.Id == report.Id);
-            if (index != -1)
-            {
-                _reports[index] = report;
-                if (_reportsGrid != null) await _reportsGrid.Reload();
-                StateHasChanged();
-            }
-        });
-    }
-
-    private void HandleReportDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            _reports.RemoveAll(r => r.Id == id);
-            if (_reportsGrid != null) await _reportsGrid.Reload();
-            StateHasChanged();
-        });
+        }
     }
 
     private async Task DeleteReport(int id)
@@ -116,15 +89,14 @@
         
         if (confirm == true)
         {
-            try
+            var result = await ReportService.DeleteReportAsync(id);
+            if (result.IsSuccess)
             {
-                await ReportService.DeleteReportAsync(id);
                 NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
             }
-            catch (Exception ex)
+            else
             {
-                Logger.LogError(ex, "Failed to delete report {ReportId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error);
             }
         }
     }
@@ -137,8 +109,6 @@
 
     public void Dispose()
     {
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
+        MapState.OnStateChanged -= HandleStateChanged;
     }
 }

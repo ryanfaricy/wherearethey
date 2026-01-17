@@ -1,4 +1,3 @@
-using System.Text;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 using Microsoft.EntityFrameworkCore;
@@ -11,17 +10,18 @@ namespace WhereAreThey.Services;
 public class AdminPasskeyService(
     IFido2 fido2,
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IAdminService adminService,
     IEventService eventService,
     ILogger<AdminPasskeyService> logger) : IAdminPasskeyService
 {
     public async Task<CredentialCreateOptions> GetRegistrationOptionsAsync(string adminEmail)
     {
+        await Task.CompletedTask;
+        
         var user = new Fido2User
         {
             DisplayName = "Admin",
             Name = adminEmail,
-            Id = Encoding.UTF8.GetBytes("admin-user-id")
+            Id = "admin-user-id"u8.ToArray(),
         };
 
         return fido2.RequestNewCredential(new RequestNewCredentialParams
@@ -31,12 +31,12 @@ public class AdminPasskeyService(
             AuthenticatorSelection = new AuthenticatorSelection
             {
                 UserVerification = UserVerificationRequirement.Preferred,
-                ResidentKey = ResidentKeyRequirement.Preferred
-            }
+                ResidentKey = ResidentKeyRequirement.Preferred,
+            },
         });
     }
 
-    public async Task<AdminPasskey> CompleteRegistrationAsync(AuthenticatorAttestationRawResponse attestationRawResponse, CredentialCreateOptions options, string keyName)
+    public async Task<Result<AdminPasskey>> CompleteRegistrationAsync(AuthenticatorAttestationRawResponse attestationRawResponse, CredentialCreateOptions options, string keyName)
     {
         try
         {
@@ -44,7 +44,7 @@ public class AdminPasskeyService(
             {
                 AttestationResponse = attestationRawResponse,
                 OriginalOptions = options,
-                IsCredentialIdUniqueToUserCallback = (args, cancellationToken) => Task.FromResult(true)
+                IsCredentialIdUniqueToUserCallback = (_, _) => Task.FromResult(true),
             });
 
             var newKey = new AdminPasskey
@@ -55,19 +55,24 @@ public class AdminPasskeyService(
                 Counter = result.SignCount,
                 CredType = result.Type.ToString(),
                 Aaguid = result.AaGuid.ToString(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             await using var context = await contextFactory.CreateDbContextAsync();
             context.AdminPasskeys.Add(newKey);
             await context.SaveChangesAsync();
 
-            return newKey;
+            return Result<AdminPasskey>.Success(newKey);
         }
         catch (Fido2VerificationException ex)
         {
             logger.LogError(ex, "Passkey registration verification failed");
-            throw new Exception($"Registration failed: {ex.Message}");
+            return Result<AdminPasskey>.Failure($"Registration failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during passkey registration");
+            return Result<AdminPasskey>.Failure("An unexpected error occurred during registration.");
         }
     }
 
@@ -81,32 +86,32 @@ public class AdminPasskeyService(
         return fido2.GetAssertionOptions(new GetAssertionOptionsParams
         {
             AllowedCredentials = allowedCredentials,
-            UserVerification = UserVerificationRequirement.Preferred
+            UserVerification = UserVerificationRequirement.Preferred,
         });
     }
 
-    public async Task<bool> CompleteAssertionAsync(AuthenticatorAssertionRawResponse assertionRawResponse, AssertionOptions options, string? ipAddress)
+    public async Task<Result> CompleteAssertionAsync(AuthenticatorAssertionRawResponse assertionRawResponse, AssertionOptions options, string? ipAddress)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        var credId = assertionRawResponse.Id;
-        // In-memory filter for byte[] comparison
-        var keys = await context.AdminPasskeys.ToListAsync();
-        var key = keys.FirstOrDefault(k => k.CredentialId.SequenceEqual(Convert.FromBase64String(credId.Replace('-', '+').Replace('_', '/').PadRight(4 * ((credId.Length + 3) / 4), '='))));
-
-        if (key == null)
-        {
-            throw new Exception("Unknown credential");
-        }
-
         try
         {
+            await using var context = await contextFactory.CreateDbContextAsync();
+            var credId = assertionRawResponse.Id;
+            // In-memory filter for byte[] comparison
+            var keys = await context.AdminPasskeys.ToListAsync();
+            var key = keys.FirstOrDefault(k => k.CredentialId.SequenceEqual(Convert.FromBase64String(credId.Replace('-', '+').Replace('_', '/').PadRight(4 * ((credId.Length + 3) / 4), '='))));
+
+            if (key == null)
+            {
+                return Result.Failure("Unknown credential");
+            }
+
             var result = await fido2.MakeAssertionAsync(new MakeAssertionParams
             {
                 AssertionResponse = assertionRawResponse,
                 OriginalOptions = options,
                 StoredPublicKey = key.PublicKey,
                 StoredSignatureCounter = key.Counter,
-                IsUserHandleOwnerOfCredentialIdCallback = (args, cancellationToken) => Task.FromResult(true)
+                IsUserHandleOwnerOfCredentialIdCallback = (_, _) => Task.FromResult(true),
             });
 
             // Update counter to prevent replay attacks
@@ -114,13 +119,18 @@ public class AdminPasskeyService(
             await context.SaveChangesAsync();
 
             await RecordAttempt(ipAddress, true);
-            return true;
+            return Result.Success();
         }
         catch (Fido2VerificationException ex)
         {
             logger.LogWarning(ex, "Passkey assertion verification failed for IP {IpAddress}", ipAddress);
             await RecordAttempt(ipAddress, false);
-            throw new Exception($"Login failed: {ex.Message}");
+            return Result.Failure($"Login failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during passkey assertion for IP {IpAddress}", ipAddress);
+            return Result.Failure("An unexpected error occurred during login.");
         }
     }
 
@@ -130,15 +140,18 @@ public class AdminPasskeyService(
         return await context.AdminPasskeys.ToListAsync();
     }
 
-    public async Task DeletePasskeyAsync(int id)
+    public async Task<Result> DeletePasskeyAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var key = await context.AdminPasskeys.FindAsync(id);
-        if (key != null)
+        if (key == null)
         {
-            context.AdminPasskeys.Remove(key);
-            await context.SaveChangesAsync();
+            return Result.Failure("Passkey not found.");
         }
+
+        context.AdminPasskeys.Remove(key);
+        await context.SaveChangesAsync();
+        return Result.Success();
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)
@@ -148,7 +161,7 @@ public class AdminPasskeyService(
         {
             Timestamp = DateTime.UtcNow,
             IpAddress = ipAddress,
-            IsSuccessful = isSuccessful
+            IsSuccessful = isSuccessful,
         };
         context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();

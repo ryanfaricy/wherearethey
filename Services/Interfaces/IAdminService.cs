@@ -12,8 +12,8 @@ public interface IAdminService
     /// </summary>
     /// <param name="password">The administrative password.</param>
     /// <param name="ipAddress">The IP address of the login attempt.</param>
-    /// <returns>True if login was successful; otherwise, false.</returns>
-    Task<bool> LoginAsync(string password, string? ipAddress);
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> LoginAsync(string password, string? ipAddress);
 
     /// <summary>
     /// Gets a list of recent administrative login attempts.
@@ -31,4 +31,10 @@ public interface IAdminService
     /// Notifies subscribers that a successful admin login has occurred.
     /// </summary>
     void NotifyAdminLogin();
+
+    /// <summary>
+    /// Checks if the current user is an administrator based on local storage state.
+    /// </summary>
+    /// <returns>True if the user is considered an admin; otherwise, false.</returns>
+    Task<bool> IsAdminAsync();
 }

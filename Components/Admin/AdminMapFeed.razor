@@ -1,17 +1,28 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
-@inject IReportService ReportService
+@inject IAlertService AlertService
 @inject IMapService MapService
+@inject DialogService DialogService
+@inject NotificationService NotificationService
 @inject ILogger<AdminMapFeed> Logger
 @inject UserTimeZoneService TimeZoneService
-@inject IEventService EventService
+@inject IMapStateService MapState
+@inject IMapInteractionService MapInteraction
+@using WhereAreThey.Components.Home
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenRow>
     <RadzenColumn Size="12" SizeMD="8">
         <RadzenCard Class="rz-p-0" Style="height: 500px; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.1);">
-            <div id="admin-map" style="height: 100%; width: 100%;"></div>
+            <HeatMap @ref="_heatMap"
+                     ElementId="admin-map"
+                     Reports="@MapState.Reports"
+                     Alerts="@(new List<Alert>())"
+                     IsAdmin="true"
+                     OnMapClick="@OnHeatMapClick"
+                     OnMapContextMenu="@OnHeatMapContextMenu"
+                     OnAlertDeleteClick="@OnHeatMapAlertDeleteClick" />
             <div style="position: absolute; top: 10px; right: 10px; z-index: 1000;">
                 <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="LIVE MAP" />
             </div>
@@ -24,11 +35,11 @@
             </div>
             <div style="flex: 1; overflow-y: auto;" class="rz-p-3">
                 <RadzenStack Gap="1rem">
-                    @if (!_reports.Any())
+                    @if (!MapState.Reports.Any())
                     {
                         <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-align-center rz-mt-4">No recent reports.</RadzenText>
                     }
-                    @foreach (var report in _reports.Take(20))
+                    @foreach (var report in MapState.Reports.Take(20))
                     {
                         <RadzenCard Variant="Variant.Flat" 
                                     Class="@(report.IsEmergency ? "rz-background-color-danger-lighter" : "rz-background-color-base-100")" 
@@ -42,10 +53,10 @@
                                 }
                             </RadzenStack>
                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2" Style="font-weight: 500;">
-                                @(report.Message?.Length > 100 ? report.Message.Substring(0, 97) + "..." : report.Message)
+                                @(report.Message?.Length > 100 ? report.Message[..97] + "..." : report.Message)
                             </RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">
-                                <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.Latitude.ToString("F4"), @report.Longitude.ToString("F4")
+                                <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.LocationDisplay()
                             </RadzenText>
                         </RadzenCard>
                     }
@@ -56,18 +67,16 @@
 </RadzenRow>
 
 @code {
-    private List<LocationReport> _reports = new();
-    private bool _mapInitialized;
-    private DotNetObjectReference<AdminMapFeed>? _objRef;
+    private HeatMap? _heatMap;
 
     protected override async Task OnInitializedAsync()
     {
-        _reports = await ReportService.GetAllReportsAsync();
-        
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
+        MapState.OnStateChanged += HandleStateChanged;
+        await MapState.InitializeAsync(null, isAdmin: true);
+        await MapState.LoadReportsAsync();
     }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -79,29 +88,22 @@
 
     private async Task InitializeMap()
     {
-        if (_mapInitialized) return;
-        
+        if (MapState.MapInitialized || _heatMap == null)
+        {
+            return;
+        }
+
         try 
         {
-            _objRef = DotNetObjectReference.Create(this);
-            
             double lat = 0;
             double lng = 0;
-            if (_reports.Any())
+            if (MapState.Reports.Any())
             {
-                lat = _reports.Average(r => r.Latitude);
-                lng = _reports.Average(r => r.Longitude);
+                lat = MapState.Reports.Average(r => r.Latitude);
+                lng = MapState.Reports.Average(r => r.Longitude);
             }
 
-            var jsTranslations = new
-            {
-                EMERGENCY_REPORT = "EMERGENCY",
-                Report = "Report",
-                Alert_Zone = "Alert Zone"
-            };
-
-            await MapService.InitMapAsync("admin-map", lat, lng, _reports, _objRef, null!, jsTranslations);
-            _mapInitialized = true;
+            await _heatMap.InitializeAsync(lat, lng);
         }
         catch (Exception ex)
         {
@@ -111,53 +113,30 @@
 
     private async Task FocusReportOnMap(LocationReport report)
     {
-        if (_mapInitialized)
+        if (MapState.MapInitialized)
         {
             await MapService.FocusReportAsync(report.Id);
         }
     }
 
-    private void HandleReportAdded(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            _reports.Insert(0, report);
-            StateHasChanged();
-        });
-    }
+    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick);
 
-    private void HandleReportUpdated(LocationReport report)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _reports.FindIndex(r => r.Id == report.Id);
-            if (index != -1)
-            {
-                _reports[index] = report;
-                StateHasChanged();
-            }
-        });
-    }
+    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, isAdmin: true);
 
-    private void HandleReportDeleted(int id)
+    private async Task OnHeatMapAlertDeleteClick(int alertId)
     {
-        InvokeAsync(async () =>
-        {
-            _reports.RemoveAll(r => r.Id == id);
-            StateHasChanged();
-        });
-    }
+        var confirmed = await DialogService.Confirm("Are you sure you want to delete this alert zone?", "Delete Alert", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
 
-    [JSInvokable] public void OnMapClick(double lat, double lng, bool isMarkerClick) { }
-    [JSInvokable] public void OnMapContextMenu(double lat, double lng) { }
-    [JSInvokable] public void OnMapMoveEnd(double lat, double lng) { }
-    [JSInvokable] public void OnUserInteractedWithMap() { }
+        if (confirmed == true)
+        {
+            await AlertService.DeleteAlertAsync(alertId);
+            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
+        }
+    }
 
     public void Dispose()
     {
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
-        _objRef?.Dispose();
+        MapState.OnStateChanged -= HandleStateChanged;
     }
 }

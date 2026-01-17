@@ -1,3 +1,4 @@
+@using WhereAreThey.Components.Admin
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
@@ -5,6 +6,7 @@
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
+@inject IAdminService AdminService
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
@@ -32,8 +34,8 @@
                             <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
                         </RadzenText>
 
-                        <div style="max-height: 250px; overflow-y: auto;">
-                            <RadzenDataList Data="@Reports.Take(15)" TItem="LocationReport">
+                        <div style="max-height: 400px; overflow-y: auto;">
+                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="LocationReport">
                                 <Template Context="r">
                                     @if (r.IsEmergency)
                                     {
@@ -45,6 +47,20 @@
                                             @if (!string.IsNullOrEmpty(r.Message))
                                             {
                                                 <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                                            }
+                                            @if (_isAdmin)
+                                            {
+                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;">
+                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
+                                                    </RadzenStack>
+                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
+                                                    @if (r.HasReporterLocation())
+                                                    {
+                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
+                                                    }
+                                                </RadzenStack>
                                             }
                                         </RadzenCard>
                                     }
@@ -58,13 +74,27 @@
                                             {
                                                 <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
                                             }
+                                            @if (_isAdmin)
+                                            {
+                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
+                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
+                                                    </RadzenStack>
+                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
+                                                    @if (r.HasReporterLocation())
+                                                    {
+                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
+                                                    }
+                                                </RadzenStack>
+                                            }
                                         </RadzenCard>
                                     }
                                 </Template>
                             </RadzenDataList>
                         </div>
 
-                        @if (Reports.Count > 15)
+                        @if (!_isAdmin && Reports.Count > 15)
                         {
                             <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 15) more reports</RadzenText>
                         }
@@ -87,9 +117,20 @@
                                             <RadzenStack Gap="0">
                                                 <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@GetAlertName(a)</RadzenText>
                                                 <RadzenText TextStyle="TextStyle.Caption">Radius: @a.RadiusKm km</RadzenText>
+                                                @if (_isAdmin)
+                                                {
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @a.UserIdentifier</RadzenText>
+                                                }
                                             </RadzenStack>
-                                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
-                                                          Click="@(() => DeleteAlert(a))" />
+                                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                                @if (_isAdmin)
+                                                {
+                                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                                  Click="@(() => EditAlert(a))" />
+                                                }
+                                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                                                              Click="@(() => DeleteAlert(a))" />
+                                            </RadzenStack>
                                         </RadzenStack>
                                     </RadzenCard>
                                 </Template>
@@ -111,13 +152,32 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public List<LocationReport> Reports { get; set; } = new();
-    [Parameter] public List<Alert> Alerts { get; set; } = new();
+    [Parameter] public List<LocationReport> Reports { get; set; } = [];
+    [Parameter] public List<Alert> Alerts { get; set; } = [];
 
     private bool _alertDeleted;
+    private bool _isAdmin;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _isAdmin = await AdminService.IsAdminAsync();
+    }
+
+    private async Task EditReport(LocationReport report)
+    {
+        var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
+            new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
+            DialogConfigs.Admin);
+
+        if (result == true)
+        {
+            _alertDeleted = true; // Trigger refresh on close
+            DialogService.Close(true); // Close details and refresh map
+        }
+    }
 
     private async Task DeleteAlert(Alert alert)
     {
@@ -135,17 +195,46 @@
         }
     }
 
-    private string TimeAgo(DateTime dateTime)
+    private async Task EditAlert(Alert alert)
+    {
+        var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
+            new Dictionary<string, object> { { "Alert", alert } },
+            DialogConfigs.Admin);
+
+        if (result == true)
+        {
+            _alertDeleted = true; // Trigger refresh on close
+            DialogService.Close(true); // Close details and refresh map
+        }
+    }
+
+    private static string TimeAgo(DateTime dateTime)
     {
         var span = DateTime.UtcNow - dateTime;
-        if (span.TotalSeconds < 30) return "just now";
-        if (span.TotalMinutes < 1) return "less than a minute ago";
-        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
-        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalSeconds < 30)
+        {
+            return "just now";
+        }
+
+        if (span.TotalMinutes < 1)
+        {
+            return "less than a minute ago";
+        }
+
+        if (span.TotalMinutes < 60)
+        {
+            return $"{(int)span.TotalMinutes}m ago";
+        }
+
+        if (span.TotalHours < 24)
+        {
+            return $"{(int)span.TotalHours}h ago";
+        }
+
         return $"{(int)span.TotalDays}d ago";
     }
 
-    private string GetAlertName(Alert alert)
+    private static string GetAlertName(Alert alert)
     {
         return string.IsNullOrEmpty(alert.Message) ? "Alert Zone" : alert.Message;
     }

@@ -17,7 +17,7 @@ public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILog
             return;
         }
 
-        List<Exception> exceptions = new();
+        List<Exception> exceptions = [];
 
         foreach (var service in _services)
         {
@@ -52,7 +52,10 @@ public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILog
     public async Task SendEmailsAsync(IEnumerable<Email> emails)
     {
         var emailList = emails.ToList();
-        if (emailList.Count == 0) return;
+        if (emailList.Count == 0)
+        {
+            return;
+        }
 
         if (_services.Count == 0)
         {
@@ -60,7 +63,7 @@ public class FallbackEmailService(IEnumerable<IEmailService> emailServices, ILog
             return;
         }
 
-        List<Exception> exceptions = new();
+        List<Exception> exceptions = [];
 
         foreach (var service in _services)
         {

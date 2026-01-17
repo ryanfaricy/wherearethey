@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -24,11 +27,17 @@ public class AdminServiceTests
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
         var eventServiceMock = new Mock<IEventService>();
-        _service = new AdminService(mockFactory.Object, eventServiceMock.Object, Options.Create(_appOptions));
+        
+        // Use real ProtectedLocalStorage with mocked dependencies
+        var jsRuntimeMock = new Mock<IJSRuntime>();
+        var dataProtectionProviderMock = new Mock<IDataProtectionProvider>();
+        var localStorage = new ProtectedLocalStorage(jsRuntimeMock.Object, dataProtectionProviderMock.Object);
+
+        _service = new AdminService(mockFactory.Object, eventServiceMock.Object, localStorage, Options.Create(_appOptions));
     }
 
     [Fact]
-    public async Task LoginAsync_WithCorrectPassword_ReturnsTrue()
+    public async Task LoginAsync_WithCorrectPassword_ReturnsSuccess()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -37,11 +46,11 @@ public class AdminServiceTests
         var result = await _service.LoginAsync("correct_password", "127.0.0.1");
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
-    public async Task LoginAsync_WithIncorrectPassword_ReturnsFalse()
+    public async Task LoginAsync_WithIncorrectPassword_ReturnsFailure()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -50,11 +59,12 @@ public class AdminServiceTests
         var result = await _service.LoginAsync("wrong_password", "127.0.0.1");
 
         // Assert
-        Assert.False(result);
+        Assert.True(result.IsFailure);
+        Assert.Equal("Invalid password.", result.Error);
     }
 
     [Fact]
-    public async Task LoginAsync_AfterFiveFailures_ThrowsException()
+    public async Task LoginAsync_AfterFiveFailures_ReturnsFailure()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -66,6 +76,8 @@ public class AdminServiceTests
             await _service.LoginAsync("wrong", ip);
         }
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.LoginAsync("wrong", ip));
+        var result = await _service.LoginAsync("wrong", ip);
+        Assert.True(result.IsFailure);
+        Assert.Contains("Too many failed login attempts", result.Error);
     }
 }

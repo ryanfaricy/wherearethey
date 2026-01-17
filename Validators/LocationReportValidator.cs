@@ -14,19 +14,30 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
     public LocationReportValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
+        IAdminService adminService,
         IStringLocalizer<App> l)
     {
         RuleFor(x => x.ReporterIdentifier)
             .NotEmpty().WithMessage(l["Identifier_Error"])
-            .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"]);
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
+
+        RuleFor(x => x.ReporterIdentifier)
+            .MinimumLength(8).WithMessage(l["Passphrase_Length_Error"])
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
 
         RuleFor(x => x.Message)
             .Must(m => string.IsNullOrEmpty(m) || (!m.Contains("http://") && !m.Contains("https://") && !m.Contains("www.")))
-            .WithMessage(l["Links_Error"]);
+            .WithMessage(l["Links_Error"])
+            .WhenAsync(async (_, _) => !await adminService.IsAdminAsync());
 
         RuleFor(x => x)
             .CustomAsync(async (report, context, cancellation) =>
             {
+                if (await adminService.IsAdminAsync())
+                {
+                    return;
+                }
+
                 var settings = await settingsService.GetSettingsAsync();
 
                 // Cooldown check
@@ -42,10 +53,10 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                 }
 
                 // Distance check
-                if (report.ReporterLatitude.HasValue && report.ReporterLongitude.HasValue)
+                if (report.HasReporterLocation())
                 {
                     var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
-                        report.ReporterLatitude.Value, report.ReporterLongitude.Value);
+                        report.ReporterLatitude!.Value, report.ReporterLongitude!.Value);
 
                     var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
                     if (distance > maxDistanceKm)

@@ -10,7 +10,7 @@ public static class PassphraseGenerator
         "fierce", "gentle", "silent", "ancient", "modern", "vibrant", "mighty", "humble", 
         "stellar", "cosmic", "icy", "fiery", "golden", "silver", "azure", "crimson", 
         "hidden", "secret", "mystic", "loyal", "shiny", "glossy", "rough", "smooth", 
-        "narrow", "broad", "tall", "short", "deep", "dark", "stable", "vivid", "pious"
+        "narrow", "broad", "tall", "short", "deep", "dark", "stable", "vivid", "pious",
     ];
 
     private static readonly string[] Nouns = 
@@ -21,7 +21,7 @@ public static class PassphraseGenerator
         "stream", "peak", "woods", "tide", "canyon", "dune", "reef", "orchard", "field", "bay",
         "hawk", "whale", "lion", "owl", "bear", "elk", "lynx", "fox", "badger", "comet", 
         "planet", "nebula", "storm", "mist", "gale", "frost", "root", "branch", "bloom",
-        "stone", "rock", "path", "trail", "bridge", "gate", "tower", "shield", "spirit"
+        "stone", "rock", "path", "trail", "bridge", "gate", "tower", "shield", "spirit",
     ];
 
     public static string Generate()

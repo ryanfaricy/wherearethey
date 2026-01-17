@@ -67,7 +67,10 @@
 
     private async Task SubmitFeedback()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
 
         _isSubmitting = true;
         try

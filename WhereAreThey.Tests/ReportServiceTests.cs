@@ -22,6 +22,12 @@ public class ReportServiceTests
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
+    private readonly Mock<IAdminService> _adminServiceMock = new();
+
+    public ReportServiceTests()
+    {
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+    }
 
     private static IStringLocalizer<App> CreateLocalizer()
     {
@@ -34,7 +40,7 @@ public class ReportServiceTests
                 "Location_Verify_Error" => "Unable to verify your current location. Please ensure GPS is enabled.",
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, val);
         });
@@ -44,7 +50,7 @@ public class ReportServiceTests
             {
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, string.Format(val, args));
         });
@@ -77,7 +83,7 @@ public class ReportServiceTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new LocationReportValidator(factory, settingsService, localizer);
+        var validator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
         return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
@@ -96,16 +102,17 @@ public class ReportServiceTests
             ReporterLongitude = -74.0060,
             ReporterIdentifier = "test-user",
             Message = "Test location",
-            IsEmergency = false
+            IsEmergency = false,
         };
 
         // Act
         var result = await service.AddReportAsync(report);
 
         // Assert
-        Assert.NotEqual(0, result.Id);
-        Assert.Equal(40.7128, result.Latitude);
-        Assert.True(result.Timestamp <= DateTime.UtcNow);
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(0, result.Value!.Id);
+        Assert.Equal(40.7128, result.Value!.Latitude);
+        Assert.True(result.Value!.Timestamp <= DateTime.UtcNow);
     }
 
     [Fact]
@@ -123,7 +130,7 @@ public class ReportServiceTests
             ReporterLongitude = -74.0060,
             ReporterIdentifier = "test-user-2",
             Message = "Test event",
-            IsEmergency = false
+            IsEmergency = false,
         };
 
         // Act
@@ -147,14 +154,14 @@ public class ReportServiceTests
             {
                 Latitude = 40.0,
                 Longitude = -74.0,
-                Timestamp = DateTime.UtcNow.AddHours(-48)
+                Timestamp = DateTime.UtcNow.AddHours(-48),
             };
             
             var recentReport = new LocationReport
             {
                 Latitude = 41.0,
                 Longitude = -75.0,
-                Timestamp = DateTime.UtcNow.AddHours(-2)
+                Timestamp = DateTime.UtcNow.AddHours(-2),
             };
 
             context.LocationReports.Add(oldReport);
@@ -219,14 +226,14 @@ public class ReportServiceTests
         var emailServiceMock = new Mock<IEmailService>();
         var emailTemplateServiceMock = new Mock<IEmailTemplateService>();
         emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
-            .ReturnsAsync((string name, object model) => 
+            .ReturnsAsync((string _, object model) => 
             {
                 var reportMsg = model.GetType().GetProperty("ReportMessage")?.GetValue(model)?.ToString() ?? "";
                 return $"Rendered body: {reportMsg}";
             });
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
-        var reportValidator = new LocationReportValidator(factory, settingsService, CreateLocalizer());
+        var reportValidator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, CreateLocalizer());
         var appOptions = Options.Create(new AppOptions());
         var backgroundJobClientMock = new Mock<IBackgroundJobClient>();
         
@@ -258,7 +265,7 @@ public class ReportServiceTests
 
         // Setup background job client to execute synchronously for the test
         backgroundJobClientMock.Setup(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()))
-            .Callback<Job, IState>((job, state) =>
+            .Callback<Job, IState>((job, _) =>
             {
                 var instance = serviceProvider.GetRequiredService(job.Type);
                 var task = (Task)job.Method.Invoke(instance, job.Args.ToArray())!;
@@ -277,7 +284,7 @@ public class ReportServiceTests
             RadiusKm = 10.0, 
             IsActive = true,
             UserIdentifier = "UserB",
-            Message = "UserB's Area"
+            Message = "UserB's Area",
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
 
@@ -298,7 +305,7 @@ public class ReportServiceTests
             ReporterLongitude = -74.0,
             ReporterIdentifier = "test-user",
             Message = "Alert trigger message",
-            IsEmergency = true
+            IsEmergency = true,
         };
 
         // Act
@@ -335,8 +342,8 @@ public class ReportServiceTests
         var result = await service.GetReportByExternalIdAsync(report.ExternalId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(report.Id, result.Id);
-        Assert.Equal(report.ExternalId, result.ExternalId);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(report.Id, result.Value!.Id);
+        Assert.Equal(report.ExternalId, result.Value!.ExternalId);
     }
 }

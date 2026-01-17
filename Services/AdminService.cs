@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
@@ -12,16 +13,47 @@ namespace WhereAreThey.Services;
 public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
+    ProtectedLocalStorage localStorage,
     IOptions<AppOptions> appOptions) : IAdminService
 {
     /// <inheritdoc />
     public event Action? OnAdminLogin;
 
     /// <inheritdoc />
-    public void NotifyAdminLogin() => OnAdminLogin?.Invoke();
+    public void NotifyAdminLogin()
+    {
+        _isAdminCached = true;
+        OnAdminLogin?.Invoke();
+    }
+
+    private bool? _isAdminCached;
 
     /// <inheritdoc />
-    public async Task<bool> LoginAsync(string password, string? ipAddress)
+    public async Task<bool> IsAdminAsync()
+    {
+        if (_isAdminCached.HasValue)
+        {
+            return _isAdminCached.Value;
+        }
+
+        try
+        {
+            var result = await localStorage.GetAsync<DateTime>("lastAdminLogin");
+            if (result.Success)
+            {
+                _isAdminCached = (DateTime.UtcNow - result.Value).TotalDays <= 7;
+                return _isAdminCached.Value;
+            }
+        }
+        catch (Exception)
+        {
+            // Storage may not be available or entry may be invalid
+        }
+        return false;
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> LoginAsync(string password, string? ipAddress)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
 
@@ -34,7 +66,7 @@ public class AdminService(
         if (failedAttempts >= 5)
         {
             await RecordAttempt(ipAddress, false);
-            throw new InvalidOperationException("Too many failed login attempts from this IP. Please try again in 15 minutes.");
+            return Result.Failure("Too many failed login attempts from this IP. Please try again in 15 minutes.");
         }
 
         var adminPassword = appOptions.Value.AdminPassword;
@@ -58,7 +90,7 @@ public class AdminService(
 
         await RecordAttempt(ipAddress, isSuccessful);
 
-        return isSuccessful;
+        return isSuccessful ? Result.Success() : Result.Failure("Invalid password.");
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)
@@ -68,7 +100,7 @@ public class AdminService(
         {
             Timestamp = DateTime.UtcNow,
             IpAddress = ipAddress,
-            IsSuccessful = isSuccessful
+            IsSuccessful = isSuccessful,
         };
         context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();

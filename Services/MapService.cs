@@ -6,9 +6,9 @@ namespace WhereAreThey.Services;
 
 public class MapService(IJSRuntime jsRuntime) : IMapService
 {
-    public async Task InitMapAsync(string elementId, double initialLat, double initialLng, List<LocationReport> reports, object objRef, List<Alert> alerts, object translations)
+    public async Task InitMapAsync(string elementId, double initialLat, double initialLng, List<LocationReport> reports, object objRef, List<Alert> alerts, object translations, bool isAdmin = false)
     {
-        await jsRuntime.InvokeVoidAsync("initHeatMap", elementId, initialLat, initialLng, reports, objRef, alerts, translations);
+        await jsRuntime.InvokeVoidAsync("initHeatMap", elementId, initialLat, initialLng, reports, objRef, alerts, translations, isAdmin);
     }
 
     public async Task UpdateHeatMapAsync(List<LocationReport> reports, bool shouldFitBounds = true)

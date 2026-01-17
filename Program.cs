@@ -12,20 +12,26 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Radzen;
+using Serilog;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
+using WhereAreThey.Helpers;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Logging.AddSimpleConsole(options =>
+try
 {
-    options.IncludeScopes = true;
-    options.SingleLine = false;
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-});
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
 // Add services to the container.
 var razorComponentsBuilder = builder.Services.AddRazorComponents()
@@ -82,9 +88,21 @@ builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
 // Add Email services
-builder.Services.Configure<AppOptions>(builder.Configuration);
-builder.Services.Configure<SquareOptions>(builder.Configuration.GetSection("Square"));
-builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddOptions<AppOptions>()
+    .Bind(builder.Configuration)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<SquareOptions>()
+    .Bind(builder.Configuration.GetSection("Square"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<EmailOptions>()
+    .Bind(builder.Configuration.GetSection("Email"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
 builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
     client.Timeout = TimeSpan.FromSeconds(10);
@@ -93,11 +111,11 @@ builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
     new FallbackEmailService([
         sp.GetRequiredService<MicrosoftGraphEmailService>(),
-        sp.GetRequiredService<SmtpEmailService>()
+        sp.GetRequiredService<SmtpEmailService>(),
     ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
 // Add DbContextFactory with PostgreSQL
-var connectionString = WhereAreThey.Helpers.ConfigurationHelper.GetConnectionString(builder.Configuration) 
+var connectionString = ConfigurationHelper.GetConnectionString(builder.Configuration) 
                       ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
@@ -120,22 +138,25 @@ builder.Services.AddHangfire(config =>
 builder.Services.AddHangfireServer();
 
 // Add application services
-builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Singleton);
+builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>();
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IReportProcessingService, ReportProcessingService>();
 builder.Services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
-builder.Services.AddSingleton<IReportService, ReportService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddSingleton<ILocationService, LocationService>();
 builder.Services.AddSingleton<UserConnectionService>();
 builder.Services.AddScoped<CircuitHandler, UserConnectionCircuitHandler>();
 builder.Services.AddScoped<IAlertService, AlertService>();
-builder.Services.AddSingleton<IDonationService, DonationService>();
-builder.Services.AddSingleton<IFeedbackService, FeedbackService>();
+builder.Services.AddScoped<IDonationService, DonationService>();
+builder.Services.AddScoped<IFeedbackService, FeedbackService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IAppThemeService, AppThemeService>();
 builder.Services.AddScoped<IMapService, MapService>();
 builder.Services.AddScoped<IClientStorageService, ClientStorageService>();
+builder.Services.AddScoped<IMapStateService, MapStateService>();
+builder.Services.AddScoped<IMapInteractionService, MapInteractionService>();
+builder.Services.AddScoped<IClientLocationService, ClientLocationService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
 builder.Services.AddScoped<IFido2>(sp =>
@@ -146,12 +167,13 @@ builder.Services.AddScoped<IFido2>(sp =>
     {
         ServerDomain = builder.Configuration["Fido2:ServerDomain"] ?? uri.Host,
         ServerName = "WhereAreThey Admin",
-        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') }
+        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') },
     });
 });
 builder.Services.AddScoped<UserTimeZoneService>();
 builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHealthChecks();
 
 // Add Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -165,7 +187,7 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
+                QueueLimit = 0,
             }));
 });
 
@@ -204,10 +226,10 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 var forwardedOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
 };
 forwardedOptions.KnownProxies.Clear();
-forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownIPNetworks.Clear();
 app.UseForwardedHeaders(forwardedOptions);
 
 if (!app.Environment.IsDevelopment())
@@ -232,6 +254,7 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
 app.Use(async (context, next) =>
@@ -253,21 +276,39 @@ var localizationOptions = new RequestLocalizationOptions()
 
 app.UseRequestLocalization(localizationOptions);
 
+app.MapHealthChecks("/health");
 app.MapControllers();
+
+var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+app.MapHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = [new HangfireDashboardAuthorizationFilter(appOptions.AdminPassword)]
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> appOptions, IHttpClientFactory httpClientFactory) => 
 {
-    if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
+    if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid))
+    {
+        return Results.BadRequest();
+    }
 
-    var report = await reportService.GetReportByExternalIdAsync(rGuid);
-    if (report == null) return Results.NotFound();
+    var result = await reportService.GetReportByExternalIdAsync(rGuid);
+    if (result.IsFailure)
+    {
+        return Results.NotFound();
+    }
 
+    var report = result.Value!;
     var httpClient = httpClientFactory.CreateClient();
     var settings = await settingsService.GetSettingsAsync();
-    if (string.IsNullOrEmpty(settings.MapboxToken)) return Results.NotFound();
+    if (string.IsNullOrEmpty(settings.MapboxToken))
+    {
+        return Results.NotFound();
+    }
 
     var latStr = report.Latitude.ToString(CultureInfo.InvariantCulture);
     var lngStr = report.Longitude.ToString(CultureInfo.InvariantCulture);
@@ -280,7 +321,10 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);
-    if (!response.IsSuccessStatusCode) return Results.StatusCode((int)response.StatusCode);
+    if (!response.IsSuccessStatusCode)
+    {
+        return Results.StatusCode((int)response.StatusCode);
+    }
 
     var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/png";
     var stream = await response.Content.ReadAsStreamAsync();
@@ -298,8 +342,17 @@ app.MapGet("/.well-known/web-app-origin-association", (IWebHostEnvironment env) 
     Results.File(Path.Combine(env.WebRootPath, ".well-known", "web-app-origin-association"), "application/json"));
 
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 namespace WhereAreThey
 {
-    public partial class Program { }
+    public class Program;
 }

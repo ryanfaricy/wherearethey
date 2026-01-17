@@ -1,9 +1,4 @@
-﻿@using Microsoft.Extensions.Localization
-@using WhereAreThey.Components.Pages
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@inject NavigationManager NavigationManager
+﻿@inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject IMapService MapService
 @inject IClientStorageService StorageService
@@ -11,6 +6,11 @@
 @inject IAdminService AdminService
 @inject ProtectedLocalStorage LocalStorage
 @inject IStringLocalizer<App> L
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Components.Pages
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenPanelMenu Style="height: 100%">
@@ -100,14 +100,14 @@
             Longitude = initialLng,
             ReporterIdentifier = _userIdentifier,
             ReporterLatitude = initialLat,
-            ReporterLongitude = initialLng
+            ReporterLongitude = initialLng,
         };
 
         await DialogService.OpenAsync<ReportDialog>(L["REPORT_LOCATION"],
             new Dictionary<string, object> 
             { 
                 { "Report", report },
-                { "LocationTask", locationTask }
+                { "LocationTask", locationTask },
             },
             DialogConfigs.Default);
     }

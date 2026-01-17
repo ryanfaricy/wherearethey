@@ -161,7 +161,7 @@
     {
         public string Passphrase { get; set; } = "";
     }
-    private ImportRequest _importRequest = new();
+    private readonly ImportRequest _importRequest = new();
     private string _userIdentifier = "";
     private string _generatedPassphrase = "";
     private bool _showImport;
@@ -199,12 +199,14 @@
 
     private void OnCultureChange(object value)
     {
-        if (value is string culture)
+        if (value is not string culture)
         {
-            var uri = new Uri(NavigationManager.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
-            var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
-            NavigationManager.NavigateTo("/Culture/Set" + query, forceLoad: true);
+            return;
         }
+        
+        var uri = new Uri(NavigationManager.Uri).GetComponents(UriComponents.PathAndQuery, UriFormat.Unescaped);
+        var query = $"?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString(uri)}";
+        NavigationManager.NavigateTo("/Culture/Set" + query, forceLoad: true);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -248,8 +250,15 @@
 
     private async Task UsePassphrase(string id, bool isNew = false)
     {
-        if (string.IsNullOrWhiteSpace(id) || id.Length < 8) return;
-        if (_isBusy) return;
+        if (string.IsNullOrWhiteSpace(id) || id.Length < 8)
+        {
+            return;
+        }
+
+        if (_isBusy)
+        {
+            return;
+        }
 
         _isBusy = true;
         try
@@ -293,8 +302,15 @@
 
     private async Task ImportProfile()
     {
-        if (string.IsNullOrWhiteSpace(_importRequest.Passphrase) || _importRequest.Passphrase.Length < 8) return;
-        if (_isBusy) return;
+        if (string.IsNullOrWhiteSpace(_importRequest.Passphrase) || _importRequest.Passphrase.Length < 8)
+        {
+            return;
+        }
+
+        if (_isBusy)
+        {
+            return;
+        }
 
         _isBusy = true;
         try

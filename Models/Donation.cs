@@ -10,4 +10,6 @@ public class Donation
     public DateTime CreatedAt { get; set; }
     public string? ExternalPaymentId { get; set; }
     public string Status { get; set; } = "pending"; // pending, completed, failed
+    
+    public bool IsSuccess() => Status is "succeeded" or "completed";
 }

@@ -12,8 +12,12 @@ public class LocationReport
     public double? ReporterLatitude { get; set; }
     public double? ReporterLongitude { get; set; }
     public bool IsEmergency { get; set; }
-
-    public string Coordinates() => ReporterLatitude.HasValue && ReporterLongitude.HasValue
-        ? $"{ReporterLatitude.Value:F4}, {ReporterLongitude.Value:F4}"
+    
+    public string LocationDisplay(int digits = 4) => $"{Latitude.ToString($"F{digits}")}, {Longitude.ToString($"F{digits}")}";
+    
+    public bool HasReporterLocation() => ReporterLatitude.HasValue && ReporterLongitude.HasValue;
+    
+    public string ReporterLocationDisplay() => HasReporterLocation()
+        ? $"{ReporterLatitude!.Value:F4}, {ReporterLongitude!.Value:F4}"
         : "N/A";
 }

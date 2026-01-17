@@ -2,7 +2,6 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
 @inject IGeocodingService GeocodingService
-@inject IStringLocalizer<App> L
 
 <RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch" Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass" />
 

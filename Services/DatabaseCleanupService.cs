@@ -41,7 +41,10 @@ public class DatabaseCleanupService(
             .Where(r => r.Timestamp < reportCutoff)
             .ExecuteDeleteAsync();
         
-        if (oldReports > 0) logger.LogInformation("Cleaned up {Count} old location reports.", oldReports);
+        if (oldReports > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} old location reports.", oldReports);
+        }
 
         // 2. Delete unverified email verifications older than 24 hours
         var verificationCutoff = DateTime.UtcNow.AddHours(-24);
@@ -49,7 +52,10 @@ public class DatabaseCleanupService(
             .Where(v => v.VerifiedAt == null && v.CreatedAt < verificationCutoff)
             .ExecuteDeleteAsync();
         
-        if (oldVerifications > 0) logger.LogInformation("Cleaned up {Count} unverified email verifications.", oldVerifications);
+        if (oldVerifications > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} unverified email verifications.", oldVerifications);
+        }
 
         // 3. Delete expired alerts
         var alertCutoff = DateTime.UtcNow;
@@ -57,7 +63,10 @@ public class DatabaseCleanupService(
             .Where(a => a.ExpiresAt != null && a.ExpiresAt < alertCutoff)
             .ExecuteDeleteAsync();
             
-        if (expiredAlerts > 0) logger.LogInformation("Cleaned up {Count} expired alerts.", expiredAlerts);
+        if (expiredAlerts > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} expired alerts.", expiredAlerts);
+        }
 
         // 4. Delete old admin login attempts (older than 90 days)
         var loginAttemptCutoff = DateTime.UtcNow.AddDays(-90);
@@ -65,7 +74,10 @@ public class DatabaseCleanupService(
             .Where(a => a.Timestamp < loginAttemptCutoff)
             .ExecuteDeleteAsync();
             
-        if (oldLoginAttempts > 0) logger.LogInformation("Cleaned up {Count} old admin login attempts.", oldLoginAttempts);
+        if (oldLoginAttempts > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} old admin login attempts.", oldLoginAttempts);
+        }
 
         // 5. Delete old feedback (older than 1 year)
         var feedbackCutoff = DateTime.UtcNow.AddYears(-1);
@@ -73,8 +85,11 @@ public class DatabaseCleanupService(
             .Where(f => f.Timestamp < feedbackCutoff)
             .ExecuteDeleteAsync();
             
-        if (oldFeedback > 0) logger.LogInformation("Cleaned up {Count} old feedback entries.", oldFeedback);
-        
+        if (oldFeedback > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} old feedback entries.", oldFeedback);
+        }
+
         logger.LogInformation("Database cleanup task completed.");
     }
 }

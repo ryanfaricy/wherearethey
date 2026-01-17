@@ -86,13 +86,15 @@ public class AlertServiceTests
         var result = await service.CreateAlertAsync(alert, email);
 
         // Assert
-        Assert.NotEqual(0, result.Id);
-        Assert.NotEqual(originalExternalId, result.ExternalId);
-        Assert.True(result.IsActive);
-        Assert.False(result.IsVerified); // New alerts are not verified by default
-        Assert.NotNull(result.EncryptedEmail);
-        Assert.NotEqual(email, result.EncryptedEmail);
-        Assert.Equal(email, service.DecryptEmail(result.EncryptedEmail));
+        Assert.True(result.IsSuccess);
+        var createdAlert = result.Value!;
+        Assert.NotEqual(0, createdAlert.Id);
+        Assert.NotEqual(originalExternalId, createdAlert.ExternalId);
+        Assert.True(createdAlert.IsActive);
+        Assert.False(createdAlert.IsVerified); // New alerts are not verified by default
+        Assert.NotNull(createdAlert.EncryptedEmail);
+        Assert.NotEqual(email, createdAlert.EncryptedEmail);
+        Assert.Equal(email, service.DecryptEmail(createdAlert.EncryptedEmail));
         
         // Verify background job was enqueued
         _backgroundJobClientMock.Verify(x => x.Create(
@@ -181,7 +183,8 @@ public class AlertServiceTests
         var service = CreateService(factory);
         var email = "verify@example.com";
         
-        var alert = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user" }, email);
+        var createResult = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user" }, email);
+        var alert = createResult.Value!;
         Assert.False(alert.IsVerified);
 
         // Manually trigger verification email to create verification record
@@ -199,8 +202,8 @@ public class AlertServiceTests
         var result2 = await service.VerifyEmailAsync(token);
 
         // Assert
-        Assert.True(result1);
-        Assert.True(result2); // Should still return true if already verified
+        Assert.True(result1.IsSuccess);
+        Assert.True(result2.IsSuccess); // Should still return true if already verified
         await using (var context = new ApplicationDbContext(options))
         {
             var updatedAlert = await context.Alerts.FindAsync(alert.Id);
@@ -241,7 +244,7 @@ public class AlertServiceTests
         var result = await service.DeactivateAlertAsync(alertId);
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.IsSuccess);
         await using (var context = new ApplicationDbContext(options))
         {
             var deactivatedAlert = await context.Alerts.FindAsync(alertId);
@@ -427,7 +430,7 @@ public class AlertServiceTests
         var result = await service.VerifyEmailAsync("non-existent-token");
 
         // Assert
-        Assert.False(result);
+        Assert.True(result.IsFailure);
     }
 
     [Fact]
@@ -462,7 +465,7 @@ public class AlertServiceTests
         var result = await service.VerifyEmailAsync(token);
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.IsSuccess);
         await using (var context = await factory.CreateDbContextAsync())
         {
             var alert = await context.Alerts.FirstAsync(a => a.EmailHash == emailHash);
@@ -526,7 +529,8 @@ public class AlertServiceTests
         var result = await service.CreateAlertAsync(alert, email);
 
         // Assert
-        Assert.True(result.IsVerified);
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.IsVerified);
         
         // Verify background job was NOT enqueued since already verified
         _backgroundJobClientMock.Verify(x => x.Create(
@@ -553,9 +557,9 @@ public class AlertServiceTests
         var result = await service.GetAlertByExternalIdAsync(alert.ExternalId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(alert.Id, result.Id);
-        Assert.Equal(alert.ExternalId, result.ExternalId);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(alert.Id, result.Value!.Id);
+        Assert.Equal(alert.ExternalId, result.Value!.ExternalId);
     }
 
     [Fact]
@@ -579,9 +583,10 @@ public class AlertServiceTests
         var result = await service.CreateAlertAsync(alert, email);
 
         // Assert
-        Assert.Equal(160.9, result.RadiusKm);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(160.9, result.Value!.RadiusKm);
         await using var context = new ApplicationDbContext(options);
-        var savedAlert = await context.Alerts.FindAsync(result.Id);
+        var savedAlert = await context.Alerts.FindAsync(result.Value!.Id);
         Assert.Equal(160.9, savedAlert!.RadiusKm);
     }
 
@@ -615,9 +620,12 @@ public class AlertServiceTests
             UserIdentifier = userId
         };
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ValidationException>(() => 
-            service.CreateAlertAsync(alert4, email));
+        // Act
+        var result = await service.CreateAlertAsync(alert4, email);
+        
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Contains("You can only create", result.Error);
         
         _localizerMock.Verify(l => l["Alert_Cooldown_Error"], Times.AtLeastOnce);
     }

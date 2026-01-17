@@ -1,13 +1,11 @@
+using System.Text.Json;
 using Fido2NetLib;
-using Fido2NetLib.Objects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Microsoft.Extensions.Logging;
-using Xunit;
-using System.Text.Json;
 
 namespace WhereAreThey.Tests;
 
@@ -20,7 +18,7 @@ public class AdminPasskeyServiceTests
         var config = new Fido2Configuration
         {
             ServerDomain = "localhost",
-            ServerName = "Test"
+            ServerName = "Test",
         };
         var fido2 = new Fido2(config);
         
@@ -29,14 +27,13 @@ public class AdminPasskeyServiceTests
             .Options;
 
         var mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mockFactory.Setup(f => f.CreateDbContextAsync(default))
+        mockFactory.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
-        var adminServiceMock = new Mock<IAdminService>();
         var eventServiceMock = new Mock<IEventService>();
         var loggerMock = new Mock<ILogger<AdminPasskeyService>>();
 
-        var service = new AdminPasskeyService(fido2, mockFactory.Object, adminServiceMock.Object, eventServiceMock.Object, loggerMock.Object);
+        var service = new AdminPasskeyService(fido2, mockFactory.Object, eventServiceMock.Object, loggerMock.Object);
 
         // Act
         var registrationOptions = await service.GetRegistrationOptionsAsync("admin@test.com");
@@ -45,8 +42,8 @@ public class AdminPasskeyServiceTests
         // Assert
         // In Fido2 v4.0.0, ToJson() returns the options directly
         using var doc = JsonDocument.Parse(json);
-        bool hasChallenge = doc.RootElement.TryGetProperty("challenge", out _);
-        bool hasPublicKey = doc.RootElement.TryGetProperty("publicKey", out _);
+        var hasChallenge = doc.RootElement.TryGetProperty("challenge", out _);
+        var hasPublicKey = doc.RootElement.TryGetProperty("publicKey", out _);
         
         Assert.True(hasChallenge, $"JSON should have 'challenge' property at root. Actual JSON: {json}");
         Assert.False(hasPublicKey, "JSON should NOT have 'publicKey' property at root (it's the root itself).");
@@ -60,7 +57,7 @@ public class AdminPasskeyServiceTests
         var config = new Fido2Configuration
         {
             ServerDomain = "localhost",
-            ServerName = "Test"
+            ServerName = "Test",
         };
         var fido2 = new Fido2(config);
         
@@ -69,14 +66,13 @@ public class AdminPasskeyServiceTests
             .Options;
 
         var mockFactory = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        mockFactory.Setup(f => f.CreateDbContextAsync(default))
+        mockFactory.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(options));
 
-        var adminServiceMock = new Mock<IAdminService>();
         var eventServiceMock = new Mock<IEventService>();
         var loggerMock = new Mock<ILogger<AdminPasskeyService>>();
 
-        var service = new AdminPasskeyService(fido2, mockFactory.Object, adminServiceMock.Object, eventServiceMock.Object, loggerMock.Object);
+        var service = new AdminPasskeyService(fido2, mockFactory.Object, eventServiceMock.Object, loggerMock.Object);
 
         // Act
         var assertionOptions = await service.GetAssertionOptionsAsync();
@@ -84,8 +80,8 @@ public class AdminPasskeyServiceTests
 
         // Assert
         using var doc = JsonDocument.Parse(json);
-        bool hasChallenge = doc.RootElement.TryGetProperty("challenge", out _);
-        bool hasPublicKey = doc.RootElement.TryGetProperty("publicKey", out _);
+        var hasChallenge = doc.RootElement.TryGetProperty("challenge", out _);
+        var hasPublicKey = doc.RootElement.TryGetProperty("publicKey", out _);
         
         Assert.True(hasChallenge, $"JSON should have 'challenge' property at root. Actual JSON: {json}");
         Assert.False(hasPublicKey, "JSON should NOT have 'publicKey' property at root.");

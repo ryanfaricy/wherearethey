@@ -1,6 +1,3 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
 @inject IReportService ReportService
 @inject IAlertService AlertService
 @inject IDonationService DonationService
@@ -10,6 +7,9 @@
 @inject UserConnectionService UserConnectionService
 @inject IEventService EventService
 @inject ILogger<AdminOverviewTab> Logger
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenRow>
@@ -72,7 +72,7 @@
     private int _activeAlertCount;
     private int _donationCount;
     private int _feedbackCount;
-    private List<AdminLoginAttempt> _loginAttempts = new();
+    private List<AdminLoginAttempt> _loginAttempts = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -82,6 +82,7 @@
         EventService.OnReportAdded += HandleReportAdded;
         EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnAlertAdded += HandleAlertAdded;
+        EventService.OnAlertUpdated += HandleAlertUpdated;
         EventService.OnAlertDeleted += HandleAlertDeleted;
         EventService.OnDonationAdded += HandleDonationAdded;
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
@@ -91,6 +92,7 @@
     private void HandleReportAdded(LocationReport _) => InvokeAsync(() => { _reportCount++; StateHasChanged(); });
     private void HandleReportDeleted(int _) => InvokeAsync(() => { _reportCount--; StateHasChanged(); });
     private void HandleAlertAdded(Alert _) => InvokeAsync(() => { _activeAlertCount++; StateHasChanged(); });
+    private void HandleAlertUpdated(Alert _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
     private void HandleAlertDeleted(int _) => InvokeAsync(() => { _activeAlertCount--; StateHasChanged(); });
     private void HandleDonationAdded(Donation _) => InvokeAsync(() => { _donationCount++; StateHasChanged(); });
     private void HandleFeedbackAdded(Feedback _) => InvokeAsync(() => { _feedbackCount++; StateHasChanged(); });
@@ -107,7 +109,7 @@
             _activeAlertCount = alerts.Count(a => a.IsActive);
             
             var donations = await DonationService.GetAllDonationsAsync();
-            _donationCount = donations.Count(d => d.Status == "succeeded" || d.Status == "completed");
+            _donationCount = donations.Count(d => d.IsSuccess());
             
             var feedbacks = await FeedbackService.GetAllFeedbackAsync();
             _feedbackCount = feedbacks.Count;
@@ -132,6 +134,7 @@
         EventService.OnReportAdded -= HandleReportAdded;
         EventService.OnReportDeleted -= HandleReportDeleted;
         EventService.OnAlertAdded -= HandleAlertAdded;
+        EventService.OnAlertUpdated -= HandleAlertUpdated;
         EventService.OnAlertDeleted -= HandleAlertDeleted;
         EventService.OnDonationAdded -= HandleDonationAdded;
         EventService.OnFeedbackAdded -= HandleFeedbackAdded;

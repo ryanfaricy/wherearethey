@@ -57,7 +57,10 @@ public class DonationService(
         var donation = await context.Donations
             .FirstOrDefaultAsync(d => d.ExternalPaymentId == paymentId);
         
-        if (donation == null) return false;
+        if (donation == null)
+        {
+            return false;
+        }
 
         donation.Status = status;
         await context.SaveChangesAsync();

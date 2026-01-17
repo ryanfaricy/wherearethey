@@ -61,7 +61,7 @@ public class ReportProcessingService(
                         MapThumbnailHtml = mapThumbnailHtml,
                         Latitude = report.Latitude.ToString("F4", CultureInfo.InvariantCulture),
                         Longitude = report.Longitude.ToString("F4", CultureInfo.InvariantCulture),
-                        HeatMapUrl = heatMapUrl
+                        HeatMapUrl = heatMapUrl,
                     };
 
                     var body = await emailTemplateService.RenderTemplateAsync("AlertEmail", viewModel);

@@ -33,5 +33,20 @@ namespace WhereAreThey.Models
                 return options;
             }
         }
+
+        /// <summary>
+        /// Admin dialog configuration with draggable and resizable.
+        /// </summary>
+        public static DialogOptions Admin
+        {
+            get
+            {
+                var options = Default;
+                options.Resizable = true;
+                options.Draggable = true;
+                
+                return options;
+            }
+        }
     }
 }

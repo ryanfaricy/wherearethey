@@ -9,7 +9,7 @@
 @inject IJSRuntime JsRuntime
 @inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
-<RadzenMediaQuery Query="(max-width: 768px)" Change=@(args => _isMobile = args) />
+<RadzenMediaQuery Query="(max-width: 768px)" Change="@(args => _isMobile = args)" />
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Distance_Based_Alerts"]</RadzenText>
@@ -94,7 +94,7 @@
                                                 <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
                                             }
                                         </RadzenStack>
-                                        <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.Latitude.ToString("F2"), @alert.Longitude.ToString("F2")</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption">@alert.RadiusKm km around @alert.LocationDisplay()</RadzenText>
                                         <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(alert.EncryptedEmail))</RadzenText>
                                     </RadzenStack>
                                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="@(_isMobile ? JustifyContent.End : JustifyContent.Start)" Class="@(_isMobile ? "rz-w-100" : "")">
@@ -129,8 +129,8 @@
 
     private Alert _newAlert = new() { RadiusKm = 5.0 };
     private string _email = "";
-    private List<Alert> _activeAlerts = new();
-    private List<GeocodingResult> _geocodingResults = new();
+    private List<Alert> _activeAlerts = [];
+    private List<GeocodingResult> _geocodingResults = [];
     private bool _isSubmitting;
     private string? _userIdentifier;
     private string? _approxAddress;
@@ -140,9 +140,20 @@
         if (firstRender)
         {
             _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
-            if (InitialLat.HasValue) _newAlert.Latitude = InitialLat.Value;
-            if (InitialLng.HasValue) _newAlert.Longitude = InitialLng.Value;
-            if (InitialRadius.HasValue) _newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+            if (InitialLat.HasValue)
+            {
+                _newAlert.Latitude = InitialLat.Value;
+            }
+
+            if (InitialLng.HasValue)
+            {
+                _newAlert.Longitude = InitialLng.Value;
+            }
+
+            if (InitialRadius.HasValue)
+            {
+                _newAlert.RadiusKm = Math.Min(InitialRadius.Value, 160.9);
+            }
 
             if (InitialLat.HasValue && InitialLng.HasValue)
             {
@@ -165,34 +176,50 @@
 
     private void OnAddressSelected(object value)
     {
-        if (value is string address)
+        if (value is not string address)
         {
-            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
-            if (selected != null)
-            {
-                _newAlert.Latitude = selected.Latitude;
-                _newAlert.Longitude = selected.Longitude;
-                _approxAddress = selected.Address;
-            }
+            return;
         }
+        
+        var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
+        
+        if (selected == null)
+        {
+            return;
+        }
+        
+        _newAlert.Latitude = selected.Latitude;
+        _newAlert.Longitude = selected.Longitude;
+        _approxAddress = selected.Address;
     }
 
     private async Task CreateAlert()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
 
         _isSubmitting = true;
         try
         {
             _newAlert.UserIdentifier = _userIdentifier;
-            await AlertService.CreateAlertAsync(_newAlert, _email);
-            await HapticFeedbackService.VibrateSuccessAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
-            
-            _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
-            _email = "";
-            await LoadAlerts();
-            DialogService.Close(true);
+            var result = await AlertService.CreateAlertAsync(_newAlert, _email);
+            if (result.IsSuccess)
+            {
+                await HapticFeedbackService.VibrateSuccessAsync();
+                NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
+                
+                _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
+                _email = "";
+                await LoadAlerts();
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", result.Error);
+            }
         }
         catch (Exception ex)
         {
@@ -210,10 +237,18 @@
     {
         try
         {
-            await AlertService.DeactivateAlertAsync(id);
-            await HapticFeedbackService.VibrateWarningAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
-            await LoadAlerts();
+            var result = await AlertService.DeactivateAlertAsync(id);
+            if (result.IsSuccess)
+            {
+                await HapticFeedbackService.VibrateWarningAsync();
+                NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
+                await LoadAlerts();
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", result.Error);
+            }
         }
         catch (Exception ex)
         {
@@ -235,12 +270,24 @@
 
     private static string MaskEmail(string? email)
     {
-        if (string.IsNullOrEmpty(email)) return "Unknown";
+        if (string.IsNullOrEmpty(email))
+        {
+            return "Unknown";
+        }
+
         var parts = email.Split('@');
-        if (parts.Length != 2) return "****";
+        if (parts.Length != 2)
+        {
+            return "****";
+        }
+
         var name = parts[0];
         var domain = parts[1];
-        if (name.Length <= 2) return "**@" + domain;
-        return name.Substring(0, 2) + "****@" + domain;
+        if (name.Length <= 2)
+        {
+            return "**@" + domain;
+        }
+
+        return name[..2] + "****@" + domain;
     }
 }

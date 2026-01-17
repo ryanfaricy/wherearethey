@@ -1,7 +1,7 @@
+@using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@using System.Text.Json
 @inject IReportService ReportService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -30,7 +30,7 @@
         }
         else
         {
-            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.Latitude.ToString("F6")}, {Report.Longitude.ToString("F6")}</b>"))</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.LocationDisplay(6)}</b>"))</RadzenText>
         }
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
@@ -48,6 +48,16 @@
             <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
+        @if (IsAdminMode)
+        {
+            <RadzenFormField Text="User Identifier (Admin)" Variant="Variant.Outlined" Component="ReporterIdentifier" Style="width: 100%;">
+                <ChildContent>
+                    <RadzenTextBox Name="ReporterIdentifier" @bind-Value="@Report.ReporterIdentifier" Style="width: 100%; font-family: monospace;" 
+                                   Placeholder="system or device-id" />
+                </ChildContent>
+            </RadzenFormField>
+        }
+
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-3" JustifyContent="JustifyContent.End">
             <RadzenButton Text="@L["CANCEL"]" Click="@Cancel" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
@@ -61,14 +71,15 @@
     [Parameter] public LocationReport Report { get; set; } = new();
     [Parameter] public Task<GeolocationPosition?>? LocationTask { get; set; }
     [Parameter] public bool UpdateReportLocation { get; set; } = true;
+    [Parameter] public bool IsAdminMode { get; set; }
     private bool _isSubmitting;
     private bool _isDeterminingLocation;
     private string? _approxAddress;
-    private List<GeocodingResult> _geocodingResults = new();
+    private List<GeocodingResult> _geocodingResults = [];
 
     protected override async Task OnInitializedAsync()
     {
-        if (LocationTask != null && !LocationTask.IsCompleted)
+        if (LocationTask is { IsCompleted: false })
         {
             _isDeterminingLocation = true;
             _ = UpdateLocationAsync();
@@ -170,22 +181,51 @@
 
     private async Task SubmitReport()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
+
         _isSubmitting = true;
         try
         {
-            await ReportService.AddReportAsync(Report);
-            await ClearDraft();
-            if (Report.IsEmergency)
+            Result result;
+            if (IsAdminMode)
             {
-                await HapticFeedbackService.VibrateEmergencyAsync();
+                result = await ReportService.UpdateReportAsync(Report);
+                if (result.IsSuccess)
+                {
+                    NotificationService.Notify(NotificationSeverity.Success, "Report updated successfully");
+                }
             }
             else
             {
-                await HapticFeedbackService.VibrateSuccessAsync();
+                var addResult = await ReportService.AddReportAsync(Report);
+                result = addResult;
+                if (addResult.IsSuccess)
+                {
+                    await ClearDraft();
+                    if (Report.IsEmergency)
+                    {
+                        await HapticFeedbackService.VibrateEmergencyAsync();
+                    }
+                    else
+                    {
+                        await HapticFeedbackService.VibrateSuccessAsync();
+                    }
+                    NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
+                }
             }
-            NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
-            DialogService.Close(true);
+
+            if (result.IsSuccess)
+            {
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], result.Error);
+            }
         }
         catch (Exception ex)
         {
