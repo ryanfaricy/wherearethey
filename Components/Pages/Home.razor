@@ -335,10 +335,14 @@
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();
-
-    private async Task ShowAlertsDialog(double? lat = null, double? lng = null)
+    private async Task ShowAlertsDialog(double? lat = null, double? lng = null, int? alertId = null)
     {
         var parameters = new Dictionary<string, object>();
+        if (alertId.HasValue)
+        {
+            parameters.Add("SelectedAlertId", alertId.Value);
+        }
+
         try
         {
             var mapState = await MapService.GetMapStateAsync();

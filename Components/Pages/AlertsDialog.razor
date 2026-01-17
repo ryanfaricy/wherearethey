@@ -14,7 +14,7 @@
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H5" Style="font-weight: bold;">@L["Distance_Based_Alerts"]</RadzenText>
     
-    <RadzenTabs RenderMode="TabRenderMode.Client">
+    <RadzenTabs RenderMode="TabRenderMode.Client" @bind-SelectedIndex="_selectedTabIndex">
         <Tabs>
             <RadzenTabsItem Text="@L["Create_New"]">
                 <RadzenTemplateForm Data="@_newAlert" Submit="@((Alert _) => CreateAlert())">
@@ -82,9 +82,9 @@
             <RadzenTabsItem Text="@L["Active_Alerts"]">
                 @if (_activeAlerts.Any())
                 {
-                    <RadzenDataList Data="@_activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
+                    <RadzenDataList @ref="_dataList" Data="@_activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
                         <Template Context="alert">
-                            <RadzenCard Class="rz-mb-2 rz-p-2">
+                            <RadzenCard Class="@GetAlertCardClass(alert)" Style="@GetAlertCardStyle(alert)">
                                 <RadzenStack Orientation="@(_isMobile ? Orientation.Vertical : Orientation.Horizontal)" JustifyContent="JustifyContent.SpaceBetween" AlignItems="@(_isMobile ? AlignItems.Start : AlignItems.Center)" Gap="@(_isMobile ? "1rem" : "0.5rem")">
                                     <RadzenStack Gap="0">
                                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
@@ -123,13 +123,16 @@
 
 @code {
     private bool _isMobile;
+    private int _selectedTabIndex = 0;
     [Parameter] public double? InitialLat { get; set; }
     [Parameter] public double? InitialLng { get; set; }
     [Parameter] public double? InitialRadius { get; set; }
+    [Parameter] public int? SelectedAlertId { get; set; }
 
     private Alert _newAlert = new() { RadiusKm = 5.0 };
     private string _email = "";
     private List<Alert> _activeAlerts = [];
+    private RadzenDataList<Alert> _dataList;
     private List<GeocodingResult> _geocodingResults = [];
     private bool _isSubmitting;
     private string? _userIdentifier;
@@ -139,6 +142,11 @@
     {
         if (firstRender)
         {
+            if (SelectedAlertId.HasValue)
+            {
+                _selectedTabIndex = 1;
+            }
+
             _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
             if (InitialLat.HasValue)
             {
@@ -161,6 +169,19 @@
             }
             
             await LoadAlerts();
+
+            if (SelectedAlertId.HasValue && _dataList != null)
+            {
+                var index = _activeAlerts.FindIndex(a => a.Id == SelectedAlertId.Value);
+                if (index >= 0)
+                {
+                    var page = index / 3;
+                    if (page > 0)
+                    {
+                        await _dataList.GoToPage(page);
+                    }
+                }
+            }
 
             StateHasChanged();
         }
@@ -266,6 +287,16 @@
     private async Task LoadAlerts()
     {
         _activeAlerts = await AlertService.GetActiveAlertsAsync(_userIdentifier, onlyVerified: false);
+    }
+
+    private string GetAlertCardClass(Alert a)
+    {
+        return a.Id == SelectedAlertId ? "rz-mb-2 rz-p-2 rz-border-primary rz-shadow-4" : "rz-mb-2 rz-p-2";
+    }
+
+    private string GetAlertCardStyle(Alert a)
+    {
+        return a.Id == SelectedAlertId ? "border-width: 2px;" : "";
     }
 
     private static string MaskEmail(string? email)

@@ -1,4 +1,6 @@
+using Microsoft.Extensions.Localization;
 using Radzen;
+using WhereAreThey.Components;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
@@ -10,7 +12,8 @@ public class MapInteractionService(
     IMapService mapService,
     IMapStateService stateService,
     DialogService dialogService,
-    IAdminService adminService)
+    IAdminService adminService,
+    IStringLocalizer<App> L)
     : IMapInteractionService
 {
     /// <inheritdoc />
@@ -25,6 +28,18 @@ public class MapInteractionService(
         if (!nearbyReports.Any() && !nearbyAlerts.Any())
         {
             return false;
+        }
+
+        // If it's an alert marker click, open AlertsDialog directly
+        if (isMarkerClick && nearbyAlerts.Any())
+        {
+            await dialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
+                new Dictionary<string, object>
+                {
+                    { "SelectedAlertId", nearbyAlerts[0].Id }
+                },
+                DialogConfigs.Default);
+            return true;
         }
         
         // If it's a single report, highlight it immediately for better feedback
