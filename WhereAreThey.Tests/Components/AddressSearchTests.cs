@@ -80,4 +80,23 @@ public class AddressSearchTests : ComponentTestBase
         Assert.NotNull(selectedResult);
         Assert.Equal("123 Main St", selectedResult.Address);
     }
+
+    [Fact]
+    public async Task AddressSearch_Clearing_TriggersCallbackWithEmptyString()
+    {
+        // Arrange
+        string? searchVal = "Initial";
+        var cut = Render<AddressSearch>(parameters => parameters
+            .Add(p => p.SearchValue, searchVal)
+            .Add(p => p.SearchValueChanged, (string s) => searchVal = s)
+        );
+        var autocomplete = cut.FindComponent<RadzenAutoComplete>();
+
+        // Act
+        // Simulate clearing the input (Radzen sends null or empty string to Change)
+        await cut.InvokeAsync(() => autocomplete.Instance.Change.InvokeAsync(null));
+
+        // Assert
+        Assert.Equal("", searchVal);
+    }
 }

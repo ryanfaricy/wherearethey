@@ -382,3 +382,10 @@ h1:focus {
         top: 56px !important;
     }
 }
+
+/* Ensure RadzenAutoComplete clear button is always visible on mobile */
+.rz-clear-icon {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}

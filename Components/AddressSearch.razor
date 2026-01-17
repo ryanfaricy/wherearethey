@@ -26,6 +26,13 @@
     private async Task OnAddressSelected(object val)
     {
         var address = val?.ToString() ?? "";
+        
+        if (string.IsNullOrEmpty(address))
+        {
+            await SearchValueChanged.InvokeAsync("");
+            return;
+        }
+
         var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
         if (selected != null)
         {
