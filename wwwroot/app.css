@@ -6,6 +6,15 @@ html, body {
     padding: 0;
     overflow: hidden;
     overscroll-behavior: none;
+    /* Prevent iOS text size adjustment */
+    -webkit-text-size-adjust: 100%;
+}
+
+/* Fix for iOS viewport height issues with RadzenLayout */
+.rz-vh-100 {
+    height: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
 }
 
 /* Global Theme Fallbacks to prevent flicker */
@@ -331,6 +340,20 @@ h1:focus {
 @media (max-width: 768px) {
     .rz-dialog {
         top: 56px !important;
+        max-height: calc(100% - 56px) !important;
+        max-height: calc(100dvh - 56px) !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        left: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border-radius: 0 !important; /* Mobile look */
+    }
+
+    .rz-dialog-content {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
 }
 
