@@ -3,7 +3,8 @@
 @inject IGeocodingService GeocodingService
 
 <RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch"
-                    Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass" />
+                    Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass"
+                    Placeholder="Search for an address..." />
 
 @code {
     [Parameter] public string SearchValue { get; set; } = "";
