@@ -39,13 +39,31 @@ The app will be available at `https://localhost:7114` (or similar, check console
 
 ## 🧪 Testing
 
-We use xUnit for testing. Run all tests with:
+### Backend & Component Tests
+We use xUnit for backend testing and [bUnit](https://bunit.dev/) for testing Blazor components.
+Component tests are located in `WhereAreThey.Tests/ComponentTests`.
+
+Run all .NET tests with:
 ```bash
 dotnet test
 ```
 
+### JavaScript Tests
+We use [Vitest](https://vitest.dev/) for JavaScript testing.
+Tests are located in the `tests/` directory.
+
+#### Prerequisites
+- Node.js (v18+) installed
+
+#### Running JS Tests
+```bash
+npm install
+npm test
+```
+
 ### Mocking External Services
-Tests use `Moq` to mock `IEmailService`, `IGeocodingService`, etc. to avoid hitting real APIs during test execution.
+Backend tests use `Moq` to mock `IEmailService`, `IGeocodingService`, etc. to avoid hitting real APIs during test execution.
+ bUnit tests mock JS interop and standard services.
 
 ## 🏗️ Project Structure
 
@@ -72,3 +90,6 @@ To add a new language:
 
 The project is configured for easy deployment to **Railway** or any platform supporting Docker.
 Ensure `DATABASE_URL` and `BaseUrl` are set in your production environment.
+
+### CI/CD in Docker
+The `Dockerfile` is configured to run both .NET and JavaScript tests during the build stage. This ensures that any failing tests will prevent a broken build from being deployed to Railway or any other Docker-based environment.
