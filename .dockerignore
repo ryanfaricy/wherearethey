@@ -6,7 +6,8 @@
 bin/
 obj/
 out/
-WhereAreThey.Tests/
+# WhereAreThey.Tests/
+node_modules/
 *.db
 *.sqlite
 .env
