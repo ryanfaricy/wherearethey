@@ -453,15 +453,9 @@
         StateHasChanged();
     }
 
-    private async Task OnMapMoveEnd(double lat, double lng)
+    private Task OnMapMoveEnd(double lat, double lng)
     {
-        if (_followMe)
-        {
-            return;
-        }
-
-        _searchAddress = await GeocodingService.ReverseGeocodeAsync(lat, lng);
-        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private async Task OnLocationUpdated(GeolocationPosition position)

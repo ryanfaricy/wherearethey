@@ -3,7 +3,8 @@
 @using WhereAreThey.Services.Interfaces
 @inject IGeocodingService GeocodingService
 
-<RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch" Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass" />
+<RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch"
+                    Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass" />
 
 @code {
     [Parameter] public string SearchValue { get; set; } = "";
