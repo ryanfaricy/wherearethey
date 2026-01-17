@@ -23,6 +23,10 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
     <PackageReference Include="Radzen.Blazor" Version="8.5.1" />
+    <PackageReference Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageReference Include="Serilog.Expressions" Version="5.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="Square" Version="32.0.0.20231018" />
     <PackageReference Include="Stripe.net" Version="47.4.0" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.1" />

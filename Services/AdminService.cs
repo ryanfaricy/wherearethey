@@ -53,7 +53,7 @@ public class AdminService(
     }
 
     /// <inheritdoc />
-    public async Task<bool> LoginAsync(string password, string? ipAddress)
+    public async Task<Result> LoginAsync(string password, string? ipAddress)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
 
@@ -66,7 +66,7 @@ public class AdminService(
         if (failedAttempts >= 5)
         {
             await RecordAttempt(ipAddress, false);
-            throw new InvalidOperationException("Too many failed login attempts from this IP. Please try again in 15 minutes.");
+            return Result.Failure("Too many failed login attempts from this IP. Please try again in 15 minutes.");
         }
 
         var adminPassword = appOptions.Value.AdminPassword;
@@ -90,7 +90,7 @@ public class AdminService(
 
         await RecordAttempt(ipAddress, isSuccessful);
 
-        return isSuccessful;
+        return isSuccessful ? Result.Success() : Result.Failure("Invalid password.");
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)

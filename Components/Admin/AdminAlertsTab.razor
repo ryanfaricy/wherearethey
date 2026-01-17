@@ -34,10 +34,10 @@
         <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
             <Template Context="alert">
                 <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
-                                  Click="@(() => EditAlert(alert))" ToolTip="Edit Alert" />
                     <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
                                   Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                  Click="@(() => EditAlert(alert))" ToolTip="Edit Alert" />
                     <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                   Click="@(() => DeleteAlert(alert.Id))" />
                 </RadzenStack>
@@ -125,15 +125,14 @@
 
         if (confirm == true)
         {
-            try
+            var result = await AlertService.DeleteAlertAsync(id);
+            if (result.IsSuccess)
             {
-                await AlertService.DeleteAlertAsync(id);
                 NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
             }
-            catch (Exception ex)
+            else
             {
-                Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error);
             }
         }
     }
@@ -148,7 +147,7 @@
     {
         var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
             new Dictionary<string, object> { { "Alert", alert } },
-            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+            DialogConfigs.Admin);
 
         if (result == true)
         {

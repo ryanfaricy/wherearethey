@@ -170,7 +170,7 @@
     {
         var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
             new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
-            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+            DialogConfigs.Admin);
 
         if (result == true)
         {
@@ -199,7 +199,7 @@
     {
         var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
             new Dictionary<string, object> { { "Alert", alert } },
-            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+            DialogConfigs.Admin);
 
         if (result == true)
         {

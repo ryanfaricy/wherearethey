@@ -37,7 +37,7 @@ public class AdminServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_WithCorrectPassword_ReturnsTrue()
+    public async Task LoginAsync_WithCorrectPassword_ReturnsSuccess()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -46,11 +46,11 @@ public class AdminServiceTests
         var result = await _service.LoginAsync("correct_password", "127.0.0.1");
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]
-    public async Task LoginAsync_WithIncorrectPassword_ReturnsFalse()
+    public async Task LoginAsync_WithIncorrectPassword_ReturnsFailure()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -59,11 +59,12 @@ public class AdminServiceTests
         var result = await _service.LoginAsync("wrong_password", "127.0.0.1");
 
         // Assert
-        Assert.False(result);
+        Assert.True(result.IsFailure);
+        Assert.Equal("Invalid password.", result.Error);
     }
 
     [Fact]
-    public async Task LoginAsync_AfterFiveFailures_ThrowsException()
+    public async Task LoginAsync_AfterFiveFailures_ReturnsFailure()
     {
         // Arrange
         _appOptions.AdminPassword = "correct_password";
@@ -75,6 +76,8 @@ public class AdminServiceTests
             await _service.LoginAsync("wrong", ip);
         }
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _service.LoginAsync("wrong", ip));
+        var result = await _service.LoginAsync("wrong", ip);
+        Assert.True(result.IsFailure);
+        Assert.Contains("Too many failed login attempts", result.Error);
     }
 }

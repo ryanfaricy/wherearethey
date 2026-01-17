@@ -189,26 +189,43 @@
         _isSubmitting = true;
         try
         {
+            Result result;
             if (IsAdminMode)
             {
-                await ReportService.UpdateReportAsync(Report);
-                NotificationService.Notify(NotificationSeverity.Success, "Report updated successfully");
+                result = await ReportService.UpdateReportAsync(Report);
+                if (result.IsSuccess)
+                {
+                    NotificationService.Notify(NotificationSeverity.Success, "Report updated successfully");
+                }
             }
             else
             {
-                await ReportService.AddReportAsync(Report);
-                await ClearDraft();
-                if (Report.IsEmergency)
+                var addResult = await ReportService.AddReportAsync(Report);
+                result = addResult;
+                if (addResult.IsSuccess)
                 {
-                    await HapticFeedbackService.VibrateEmergencyAsync();
+                    await ClearDraft();
+                    if (Report.IsEmergency)
+                    {
+                        await HapticFeedbackService.VibrateEmergencyAsync();
+                    }
+                    else
+                    {
+                        await HapticFeedbackService.VibrateSuccessAsync();
+                    }
+                    NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
                 }
-                else
-                {
-                    await HapticFeedbackService.VibrateSuccessAsync();
-                }
-                NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
             }
-            DialogService.Close(true);
+
+            if (result.IsSuccess)
+            {
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], result.Error);
+            }
         }
         catch (Exception ex)
         {

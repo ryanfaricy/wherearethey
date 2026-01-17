@@ -120,7 +120,8 @@
     {
         try
         {
-            if (await AdminService.LoginAsync(_passwordInput, _clientIp))
+            var result = await AdminService.LoginAsync(_passwordInput, _clientIp);
+            if (result.IsSuccess)
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
@@ -130,7 +131,7 @@
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Login failed", "Invalid password");
+                NotificationService.Notify(NotificationSeverity.Error, "Login failed", result.Error);
             }
         }
         catch (Exception ex)
@@ -160,7 +161,8 @@
                 throw new Exception("Failed to parse authenticator response");
             }
 
-            if (await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp))
+            var result = await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp);
+            if (result.IsSuccess)
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
@@ -170,7 +172,7 @@
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Login failed", "Invalid passkey");
+                NotificationService.Notify(NotificationSeverity.Error, "Login failed", result.Error);
             }
         }
         catch (Exception ex)

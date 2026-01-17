@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Radzen;
+using Serilog;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
 using WhereAreThey.Helpers;
@@ -19,14 +20,18 @@ using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Logging.AddSimpleConsole(options =>
+try
 {
-    options.IncludeScopes = true;
-    options.SingleLine = false;
-    options.TimestampFormat = "yyyy-MM-dd HH:mm:ss ";
-});
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseSerilog((context, services, configuration) => configuration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
 
 // Add services to the container.
 var razorComponentsBuilder = builder.Services.AddRazorComponents()
@@ -83,9 +88,21 @@ builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
 // Add Email services
-builder.Services.Configure<AppOptions>(builder.Configuration);
-builder.Services.Configure<SquareOptions>(builder.Configuration.GetSection("Square"));
-builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddOptions<AppOptions>()
+    .Bind(builder.Configuration)
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<SquareOptions>()
+    .Bind(builder.Configuration.GetSection("Square"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
+builder.Services.AddOptions<EmailOptions>()
+    .Bind(builder.Configuration.GetSection("Email"))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
 builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
     client.Timeout = TimeSpan.FromSeconds(10);
@@ -156,6 +173,7 @@ builder.Services.AddScoped<IFido2>(sp =>
 builder.Services.AddScoped<UserTimeZoneService>();
 builder.Services.AddHostedService<DatabaseCleanupService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHealthChecks();
 
 // Add Rate Limiting
 builder.Services.AddRateLimiter(options =>
@@ -236,6 +254,7 @@ app.Use(async (ctx, next) =>
 });
 
 app.UseHttpsRedirection();
+app.UseSerilogRequestLogging();
 app.UseRateLimiter();
 
 app.Use(async (context, next) =>
@@ -257,7 +276,15 @@ var localizationOptions = new RequestLocalizationOptions()
 
 app.UseRequestLocalization(localizationOptions);
 
+app.MapHealthChecks("/health");
 app.MapControllers();
+
+var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
+app.MapHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = [new HangfireDashboardAuthorizationFilter(appOptions.AdminPassword)]
+});
+
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
@@ -269,12 +296,13 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
         return Results.BadRequest();
     }
 
-    var report = await reportService.GetReportByExternalIdAsync(rGuid);
-    if (report == null)
+    var result = await reportService.GetReportByExternalIdAsync(rGuid);
+    if (result.IsFailure)
     {
         return Results.NotFound();
     }
 
+    var report = result.Value!;
     var httpClient = httpClientFactory.CreateClient();
     var settings = await settingsService.GetSettingsAsync();
     if (string.IsNullOrEmpty(settings.MapboxToken))
@@ -314,6 +342,15 @@ app.MapGet("/.well-known/web-app-origin-association", (IWebHostEnvironment env) 
     Results.File(Path.Combine(env.WebRootPath, ".well-known", "web-app-origin-association"), "application/json"));
 
 app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 namespace WhereAreThey
 {

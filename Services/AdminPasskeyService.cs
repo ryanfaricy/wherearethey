@@ -36,7 +36,7 @@ public class AdminPasskeyService(
         });
     }
 
-    public async Task<AdminPasskey> CompleteRegistrationAsync(AuthenticatorAttestationRawResponse attestationRawResponse, CredentialCreateOptions options, string keyName)
+    public async Task<Result<AdminPasskey>> CompleteRegistrationAsync(AuthenticatorAttestationRawResponse attestationRawResponse, CredentialCreateOptions options, string keyName)
     {
         try
         {
@@ -62,12 +62,17 @@ public class AdminPasskeyService(
             context.AdminPasskeys.Add(newKey);
             await context.SaveChangesAsync();
 
-            return newKey;
+            return Result<AdminPasskey>.Success(newKey);
         }
         catch (Fido2VerificationException ex)
         {
             logger.LogError(ex, "Passkey registration verification failed");
-            throw new Exception($"Registration failed: {ex.Message}");
+            return Result<AdminPasskey>.Failure($"Registration failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during passkey registration");
+            return Result<AdminPasskey>.Failure("An unexpected error occurred during registration.");
         }
     }
 
@@ -85,21 +90,21 @@ public class AdminPasskeyService(
         });
     }
 
-    public async Task<bool> CompleteAssertionAsync(AuthenticatorAssertionRawResponse assertionRawResponse, AssertionOptions options, string? ipAddress)
+    public async Task<Result> CompleteAssertionAsync(AuthenticatorAssertionRawResponse assertionRawResponse, AssertionOptions options, string? ipAddress)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        var credId = assertionRawResponse.Id;
-        // In-memory filter for byte[] comparison
-        var keys = await context.AdminPasskeys.ToListAsync();
-        var key = keys.FirstOrDefault(k => k.CredentialId.SequenceEqual(Convert.FromBase64String(credId.Replace('-', '+').Replace('_', '/').PadRight(4 * ((credId.Length + 3) / 4), '='))));
-
-        if (key == null)
-        {
-            throw new Exception("Unknown credential");
-        }
-
         try
         {
+            await using var context = await contextFactory.CreateDbContextAsync();
+            var credId = assertionRawResponse.Id;
+            // In-memory filter for byte[] comparison
+            var keys = await context.AdminPasskeys.ToListAsync();
+            var key = keys.FirstOrDefault(k => k.CredentialId.SequenceEqual(Convert.FromBase64String(credId.Replace('-', '+').Replace('_', '/').PadRight(4 * ((credId.Length + 3) / 4), '='))));
+
+            if (key == null)
+            {
+                return Result.Failure("Unknown credential");
+            }
+
             var result = await fido2.MakeAssertionAsync(new MakeAssertionParams
             {
                 AssertionResponse = assertionRawResponse,
@@ -114,13 +119,18 @@ public class AdminPasskeyService(
             await context.SaveChangesAsync();
 
             await RecordAttempt(ipAddress, true);
-            return true;
+            return Result.Success();
         }
         catch (Fido2VerificationException ex)
         {
             logger.LogWarning(ex, "Passkey assertion verification failed for IP {IpAddress}", ipAddress);
             await RecordAttempt(ipAddress, false);
-            throw new Exception($"Login failed: {ex.Message}");
+            return Result.Failure($"Login failed: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during passkey assertion for IP {IpAddress}", ipAddress);
+            return Result.Failure("An unexpected error occurred during login.");
         }
     }
 
@@ -130,15 +140,18 @@ public class AdminPasskeyService(
         return await context.AdminPasskeys.ToListAsync();
     }
 
-    public async Task DeletePasskeyAsync(int id)
+    public async Task<Result> DeletePasskeyAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var key = await context.AdminPasskeys.FindAsync(id);
-        if (key != null)
+        if (key == null)
         {
-            context.AdminPasskeys.Remove(key);
-            await context.SaveChangesAsync();
+            return Result.Failure("Passkey not found.");
         }
+
+        context.AdminPasskeys.Remove(key);
+        await context.SaveChangesAsync();
+        return Result.Success();
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)

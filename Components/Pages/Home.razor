@@ -194,9 +194,10 @@
             {
                 if (Guid.TryParse(reportIdStr, out var rGuid))
                 {
-                    var report = await ReportService.GetReportByExternalIdAsync(rGuid);
-                    if (report != null)
+                    var result = await ReportService.GetReportByExternalIdAsync(rGuid);
+                    if (result.IsSuccess)
                     {
+                        var report = result.Value!;
                         focusReportId = report.Id;
                         initialLat = report.Latitude;
                         initialLng = report.Longitude;
@@ -210,9 +211,10 @@
 
             if (query.TryGetValue("alertId", out var alertIdStr) && Guid.TryParse(alertIdStr, out var aGuid))
             {
-                var alert = await AlertService.GetAlertByExternalIdAsync(aGuid);
-                if (alert != null)
+                var result = await AlertService.GetAlertByExternalIdAsync(aGuid);
+                if (result.IsSuccess)
                 {
+                    var alert = result.Value!;
                     initialLat = alert.Latitude;
                     initialLng = alert.Longitude;
                     initialRadius = alert.RadiusKm;

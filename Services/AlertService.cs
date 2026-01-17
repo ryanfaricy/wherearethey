@@ -26,11 +26,15 @@ public class AlertService(
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     /// <inheritdoc />
-    public virtual async Task<Alert> CreateAlertAsync(Alert alert, string email)
+    public virtual async Task<Result<Alert>> CreateAlertAsync(Alert alert, string email)
     {
         try
         {
-            await validator.ValidateAndThrowAsync(alert);
+            var validationResult = await validator.ValidateAsync(alert);
+            if (!validationResult.IsValid)
+            {
+                return Result<Alert>.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            }
 
             await using var context = await contextFactory.CreateDbContextAsync();
 
@@ -60,12 +64,12 @@ public class AlertService(
                 backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash));
             }
 
-            return alert;
+            return Result<Alert>.Success(alert);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error creating alert for email hash {EmailHash}", ComputeHash(email));
-            throw;
+            return Result<Alert>.Failure("An error occurred while creating the alert.");
         }
     }
 
@@ -81,7 +85,7 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public async Task SendVerificationEmailAsync(string email, string emailHash)
+    public async Task<Result> SendVerificationEmailAsync(string email, string emailHash)
     {
         try
         {
@@ -102,7 +106,7 @@ public class AlertService(
             }
             else if (verification.VerifiedAt != null)
             {
-                return; // Already verified
+                return Result.Success(); // Already verified
             }
 
             var baseUrl = appOptions.Value.BaseUrl;
@@ -113,15 +117,17 @@ public class AlertService(
             var body = await emailTemplateService.RenderTemplateAsync("VerificationEmail", viewModel);
 
             await emailService.SendEmailAsync(email, subject, body);
+            return Result.Success();
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error sending verification email to {Email}", email);
+            return Result.Failure("Failed to send verification email.");
         }
     }
 
     /// <inheritdoc />
-    public virtual async Task<bool> VerifyEmailAsync(string token)
+    public virtual async Task<Result> VerifyEmailAsync(string token)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var verification = await context.EmailVerifications
@@ -129,12 +135,12 @@ public class AlertService(
 
         if (verification == null)
         {
-            return false;
+            return Result.Failure("Invalid verification token.");
         }
 
         if (verification.VerifiedAt != null)
         {
-            return true;
+            return Result.Success();
         }
 
         verification.VerifiedAt = DateTime.UtcNow;
@@ -157,7 +163,7 @@ public class AlertService(
         }
 
         eventService.NotifyEmailVerified(verification.EmailHash);
-        return true;
+        return Result.Success();
     }
 
     /// <inheritdoc />
@@ -179,12 +185,14 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public async Task<Alert?> GetAlertByExternalIdAsync(Guid externalId)
+    public async Task<Result<Alert>> GetAlertByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.Alerts
+        var alert = await context.Alerts
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ExternalId == externalId);
+
+        return alert != null ? Result<Alert>.Success(alert) : Result<Alert>.Failure("Alert not found.");
     }
 
     /// <inheritdoc />
@@ -209,19 +217,19 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public virtual async Task<bool> DeactivateAlertAsync(int id)
+    public virtual async Task<Result> DeactivateAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var alert = await context.Alerts.FindAsync(id);
         if (alert == null)
         {
-            return false;
+            return Result.Failure("Alert not found.");
         }
 
         alert.IsActive = false;
         await context.SaveChangesAsync();
         eventService.NotifyAlertUpdated(alert);
-        return true;
+        return Result.Success();
     }
 
     /// <inheritdoc />
@@ -257,25 +265,39 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public virtual async Task DeleteAlertAsync(int id)
+    public virtual async Task<Result> DeleteAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var alert = await context.Alerts.FindAsync(id);
-        if (alert != null)
+        if (alert == null)
         {
-            context.Alerts.Remove(alert);
-            await context.SaveChangesAsync();
-            eventService.NotifyAlertDeleted(id);
+            return Result.Failure("Alert not found.");
         }
+
+        context.Alerts.Remove(alert);
+        await context.SaveChangesAsync();
+        eventService.NotifyAlertDeleted(id);
+        return Result.Success();
     }
 
     /// <inheritdoc />
-    public virtual async Task UpdateAlertAsync(Alert alert, string? email = null)
+    public virtual async Task<Result> UpdateAlertAsync(Alert alert, string? email = null)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        var existing = await context.Alerts.FindAsync(alert.Id);
-        if (existing != null)
+        try
         {
+            var validationResult = await validator.ValidateAsync(alert);
+            if (!validationResult.IsValid)
+            {
+                return Result.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            }
+
+            await using var context = await contextFactory.CreateDbContextAsync();
+            var existing = await context.Alerts.FindAsync(alert.Id);
+            if (existing == null)
+            {
+                return Result.Failure("Alert not found.");
+            }
+
             existing.Latitude = alert.Latitude;
             existing.Longitude = alert.Longitude;
             existing.RadiusKm = alert.RadiusKm;
@@ -292,6 +314,12 @@ public class AlertService(
             
             await context.SaveChangesAsync();
             eventService.NotifyAlertUpdated(existing);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating alert {AlertId}", alert.Id);
+            return Result.Failure("An error occurred while updating the alert.");
         }
     }
 }

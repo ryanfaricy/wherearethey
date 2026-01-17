@@ -162,9 +162,16 @@
             var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
             var newEmail = _email != originalEmail ? _email : null;
 
-            await AlertService.UpdateAlertAsync(_alert, newEmail);
-            NotificationService.Notify(NotificationSeverity.Success, "Alert updated successfully");
-            DialogService.Close(true);
+            var result = await AlertService.UpdateAlertAsync(_alert, newEmail);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Alert updated successfully");
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error);
+            }
         }
         catch (Exception ex)
         {

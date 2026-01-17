@@ -204,14 +204,22 @@
         try
         {
             _newAlert.UserIdentifier = _userIdentifier;
-            await AlertService.CreateAlertAsync(_newAlert, _email);
-            await HapticFeedbackService.VibrateSuccessAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
-            
-            _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
-            _email = "";
-            await LoadAlerts();
-            DialogService.Close(true);
+            var result = await AlertService.CreateAlertAsync(_newAlert, _email);
+            if (result.IsSuccess)
+            {
+                await HapticFeedbackService.VibrateSuccessAsync();
+                NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
+                
+                _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
+                _email = "";
+                await LoadAlerts();
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", result.Error);
+            }
         }
         catch (Exception ex)
         {
@@ -229,10 +237,18 @@
     {
         try
         {
-            await AlertService.DeactivateAlertAsync(id);
-            await HapticFeedbackService.VibrateWarningAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
-            await LoadAlerts();
+            var result = await AlertService.DeactivateAlertAsync(id);
+            if (result.IsSuccess)
+            {
+                await HapticFeedbackService.VibrateWarningAsync();
+                NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
+                await LoadAlerts();
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", result.Error);
+            }
         }
         catch (Exception ex)
         {

@@ -17,11 +17,15 @@ public class ReportService(
     ILogger<ReportService> logger) : IReportService
 {
     /// <inheritdoc />
-    public async Task<LocationReport> AddReportAsync(LocationReport report)
+    public async Task<Result<LocationReport>> AddReportAsync(LocationReport report)
     {
         try
         {
-            await validator.ValidateAndThrowAsync(report);
+            var validationResult = await validator.ValidateAsync(report);
+            if (!validationResult.IsValid)
+            {
+                return Result<LocationReport>.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            }
 
             await using var context = await contextFactory.CreateDbContextAsync();
 
@@ -43,22 +47,24 @@ public class ReportService(
                 logger.LogError(ex, "Error enqueuing report processing job");
             }
 
-            return report;
+            return Result<LocationReport>.Success(report);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Error adding location report at {Lat}, {Lng}", report.Latitude, report.Longitude);
-            throw;
+            return Result<LocationReport>.Failure("An error occurred while adding the location report.");
         }
     }
 
     /// <inheritdoc />
-    public async Task<LocationReport?> GetReportByExternalIdAsync(Guid externalId)
+    public async Task<Result<LocationReport>> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.LocationReports
+        var report = await context.LocationReports
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
+
+        return report != null ? Result<LocationReport>.Success(report) : Result<LocationReport>.Failure("Report not found.");
     }
 
     /// <inheritdoc />
@@ -88,28 +94,46 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task DeleteReportAsync(int id)
+    public async Task<Result> DeleteReportAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var report = await context.LocationReports.FindAsync(id);
-        if (report != null)
+        if (report == null)
         {
-            context.LocationReports.Remove(report);
-            await context.SaveChangesAsync();
-            
-            // Notify global event bus
-            eventService.NotifyReportDeleted(id);
+            return Result.Failure("Report not found.");
         }
-    }
 
-    /// <inheritdoc />
-    public async Task UpdateReportAsync(LocationReport report)
-    {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        context.LocationReports.Update(report);
+        context.LocationReports.Remove(report);
         await context.SaveChangesAsync();
         
         // Notify global event bus
-        eventService.NotifyReportUpdated(report);
+        eventService.NotifyReportDeleted(id);
+        return Result.Success();
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> UpdateReportAsync(LocationReport report)
+    {
+        try
+        {
+            var validationResult = await validator.ValidateAsync(report);
+            if (!validationResult.IsValid)
+            {
+                return Result.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+            }
+
+            await using var context = await contextFactory.CreateDbContextAsync();
+            context.LocationReports.Update(report);
+            await context.SaveChangesAsync();
+            
+            // Notify global event bus
+            eventService.NotifyReportUpdated(report);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error updating report {ReportId}", report.Id);
+            return Result.Failure("An error occurred while updating the report.");
+        }
     }
 }

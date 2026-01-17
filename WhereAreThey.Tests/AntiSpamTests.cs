@@ -103,9 +103,12 @@ public class AntiSpamTests
             ReporterIdentifier = "UserA"
         };
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
-        Assert.Contains("5.0 miles", ex.Message);
+        // Act
+        var result = await service.AddReportAsync(report);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Contains("5.0 miles", result.Error);
     }
 
     [Fact]
@@ -136,10 +139,11 @@ public class AntiSpamTests
 
         // Act
         await service.AddReportAsync(report1);
+        var result = await service.AddReportAsync(report2);
         
         // Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report2));
-        Assert.Contains("5 minutes", ex.Message);
+        Assert.True(result.IsFailure);
+        Assert.Contains("5 minutes", result.Error);
     }
 
     [Fact]
@@ -160,9 +164,12 @@ public class AntiSpamTests
             Message = "Check out my site: https://spam.com"
         };
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
-        Assert.Contains("Links are not allowed", ex.Message);
+        // Act
+        var result = await service.AddReportAsync(report);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Contains("Links are not allowed", result.Error);
     }
 
     [Fact]
@@ -243,8 +250,9 @@ public class AntiSpamTests
         var report = new LocationReport { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
         await service.AddReportAsync(report);
         
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(report));
-        Assert.Contains("10 minutes", ex.Message);
+        var resultCooldown = await service.AddReportAsync(report);
+        Assert.True(resultCooldown.IsFailure);
+        Assert.Contains("10 minutes", resultCooldown.Error);
 
         // Check distance
         var farReport = new LocationReport { 
@@ -253,7 +261,8 @@ public class AntiSpamTests
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
             Timestamp = DateTime.UtcNow 
         };
-        var exDist = await Assert.ThrowsAsync<ValidationException>(() => service.AddReportAsync(farReport));
-        Assert.Contains("50.0 miles", exDist.Message);
+        var resultDist = await service.AddReportAsync(farReport);
+        Assert.True(resultDist.IsFailure);
+        Assert.Contains("50.0 miles", resultDist.Error);
     }
 }

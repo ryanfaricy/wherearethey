@@ -109,9 +109,10 @@ public class ReportServiceTests
         var result = await service.AddReportAsync(report);
 
         // Assert
-        Assert.NotEqual(0, result.Id);
-        Assert.Equal(40.7128, result.Latitude);
-        Assert.True(result.Timestamp <= DateTime.UtcNow);
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(0, result.Value!.Id);
+        Assert.Equal(40.7128, result.Value!.Latitude);
+        Assert.True(result.Value!.Timestamp <= DateTime.UtcNow);
     }
 
     [Fact]
@@ -341,8 +342,8 @@ public class ReportServiceTests
         var result = await service.GetReportByExternalIdAsync(report.ExternalId);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal(report.Id, result.Id);
-        Assert.Equal(report.ExternalId, result.ExternalId);
+        Assert.True(result.IsSuccess);
+        Assert.Equal(report.Id, result.Value!.Id);
+        Assert.Equal(report.ExternalId, result.Value!.ExternalId);
     }
 }

@@ -73,7 +73,7 @@
     {
         var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
             new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
-            new DialogOptions { Width = "500px", Resizable = true, Draggable = true });
+            DialogConfigs.Admin);
 
         if (result == true)
         {
@@ -89,15 +89,14 @@
         
         if (confirm == true)
         {
-            try
+            var result = await ReportService.DeleteReportAsync(id);
+            if (result.IsSuccess)
             {
-                await ReportService.DeleteReportAsync(id);
                 NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
             }
-            catch (Exception ex)
+            else
             {
-                Logger.LogError(ex, "Failed to delete report {ReportId}", id);
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error);
             }
         }
     }
