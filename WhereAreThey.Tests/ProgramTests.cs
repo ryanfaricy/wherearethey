@@ -25,7 +25,7 @@ public class ProgramTests
         builder.Services.AddScoped<IEmailService>(sp => 
             new FallbackEmailService([
                 sp.GetRequiredService<MicrosoftGraphEmailService>(),
-                sp.GetRequiredService<SmtpEmailService>()
+                sp.GetRequiredService<SmtpEmailService>(),
             ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
         // Act

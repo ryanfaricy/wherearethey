@@ -1,7 +1,6 @@
 using Microsoft.JSInterop;
 using Moq;
 using WhereAreThey.Services;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

@@ -63,7 +63,7 @@
             Report = L["Report"].Value,
             Alert_Zone = L["Alert_Zone"].Value,
             Radius = L["Radius"].Value,
-            DELETE = L["DELETE"].Value
+            DELETE = L["DELETE"].Value,
         };
 
         await MapService.InitMapAsync(ElementId, InitialLat, InitialLng, Reports, _objRef, Alerts!, jsTranslations, IsAdmin);

@@ -1,13 +1,13 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
 using Radzen;
-using Microsoft.Extensions.Localization;
 using WhereAreThey.Components;
 
 namespace WhereAreThey.Tests.Components;
 
-public abstract class ComponentTestBase : TestContext
+public abstract class ComponentTestBase : BunitContext
 {
     protected Mock<IStringLocalizer<App>> LocalizerMock { get; private set; }
 

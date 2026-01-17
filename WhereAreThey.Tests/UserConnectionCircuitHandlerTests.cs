@@ -1,8 +1,6 @@
 using Moq;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Microsoft.AspNetCore.Components.Server.Circuits;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -23,7 +21,7 @@ public class UserConnectionCircuitHandlerTests
     public async Task OnCircuitOpenedAsync_IncrementsConnectionCount()
     {
         // Act
-        await _handler.OnCircuitOpenedAsync(null!, default);
+        await _handler.OnCircuitOpenedAsync(null!, CancellationToken.None);
 
         // Assert
         Assert.Equal(1, _connectionService.ConnectionCount);
@@ -34,11 +32,11 @@ public class UserConnectionCircuitHandlerTests
     public async Task OnCircuitClosedAsync_DecrementsConnectionCount()
     {
         // Arrange
-        await _handler.OnCircuitOpenedAsync(null!, default);
+        await _handler.OnCircuitOpenedAsync(null!, CancellationToken.None);
         _eventServiceMock.Invocations.Clear();
 
         // Act
-        await _handler.OnCircuitClosedAsync(null!, default);
+        await _handler.OnCircuitClosedAsync(null!, CancellationToken.None);
 
         // Assert
         Assert.Equal(0, _connectionService.ConnectionCount);

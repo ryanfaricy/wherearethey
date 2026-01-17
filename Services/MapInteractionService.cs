@@ -36,7 +36,7 @@ public class MapInteractionService(
             await dialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
                 new Dictionary<string, object>
                 {
-                    { "SelectedAlertId", nearbyAlerts[0].Id }
+                    { "SelectedAlertId", nearbyAlerts[0].Id },
                 },
                 DialogConfigs.Default);
             return true;

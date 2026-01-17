@@ -1,23 +1,21 @@
+using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Microsoft.Extensions.Logging;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
 public class ClientLocationServiceTests
 {
     private readonly Mock<IClientStorageService> _storageServiceMock;
-    private readonly Mock<ILogger<ClientLocationService>> _loggerMock;
     private readonly ClientLocationService _service;
 
     public ClientLocationServiceTests()
     {
         _storageServiceMock = new Mock<IClientStorageService>();
-        _loggerMock = new Mock<ILogger<ClientLocationService>>();
-        _service = new ClientLocationService(_storageServiceMock.Object, _loggerMock.Object);
+        var loggerMock = new Mock<ILogger<ClientLocationService>>();
+        _service = new ClientLocationService(_storageServiceMock.Object, loggerMock.Object);
     }
 
     [Fact]
@@ -43,7 +41,7 @@ public class ClientLocationServiceTests
         var tcs = new TaskCompletionSource<GeolocationPosition?>();
         _storageServiceMock.Setup(s => s.GetLocationAsync()).Returns(tcs.Task);
 
-        bool stateChanged = false;
+        var stateChanged = false;
         _service.OnStateChanged += () => stateChanged = true;
 
         // Act
@@ -72,7 +70,7 @@ public class ClientLocationServiceTests
     {
         // Arrange
         var position = new GeolocationPosition { Coords = new GeolocationCoordinates { Latitude = 5, Longitude = 6 } };
-        bool notified = false;
+        var notified = false;
         _service.OnStateChanged += () => notified = true;
 
         // Act

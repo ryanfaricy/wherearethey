@@ -41,7 +41,7 @@ public class DatabaseCleanupServiceTests
         
         var settings = new SystemSettings 
         { 
-            DataRetentionDays = 30 
+            DataRetentionDays = 30,
         };
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(settings);
 

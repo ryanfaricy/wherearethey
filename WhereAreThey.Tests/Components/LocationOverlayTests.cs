@@ -1,9 +1,9 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radzen.Blazor;
 using WhereAreThey.Components.Home;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -43,7 +43,7 @@ public class LocationOverlayTests : ComponentTestBase
         // Assert
         Assert.NotEmpty(cut.Nodes);
         Assert.Contains("Acquiring_Location", cut.Markup);
-        Assert.NotNull(cut.FindComponent<Radzen.Blazor.RadzenProgressBarCircular>());
+        Assert.NotNull(cut.FindComponent<RadzenProgressBarCircular>());
     }
 
     [Fact]
@@ -57,7 +57,7 @@ public class LocationOverlayTests : ComponentTestBase
         var cut = Render<LocationOverlay>();
 
         // Assert
-        var button = cut.FindComponent<Radzen.Blazor.RadzenButton>();
+        var button = cut.FindComponent<RadzenButton>();
         Assert.Equal("Manual_Pick", button.Instance.Text);
     }
 
@@ -68,13 +68,13 @@ public class LocationOverlayTests : ComponentTestBase
         _locationServiceMock.Setup(s => s.IsLocating).Returns(true);
         _locationServiceMock.Setup(s => s.ShowManualPick).Returns(true);
 
-        bool manualPickTriggered = false;
+        var manualPickTriggered = false;
         var cut = Render<LocationOverlay>(parameters => parameters
             .Add(p => p.OnManualPick, () => manualPickTriggered = true)
         );
 
         // Act
-        var button = cut.FindComponent<Radzen.Blazor.RadzenButton>();
+        var button = cut.FindComponent<RadzenButton>();
         await cut.InvokeAsync(() => button.Instance.Click.InvokeAsync());
 
         // Assert

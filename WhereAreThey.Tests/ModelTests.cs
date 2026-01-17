@@ -1,5 +1,4 @@
 using WhereAreThey.Models;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

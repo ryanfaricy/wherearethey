@@ -55,7 +55,7 @@ else
             {
                 Type = "Bug",
                 Message = $"[AUTO-REPORTED] {exception.GetType().Name}: {exception.Message}\n\nStack Trace:\n{exception.StackTrace}",
-                UserIdentifier = userIdentifier ?? "system"
+                UserIdentifier = userIdentifier ?? "system",
             };
             await FeedbackService.AddFeedbackAsync(feedback);
         }

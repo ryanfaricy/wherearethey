@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Hangfire.Dashboard;
 
 namespace WhereAreThey.Helpers;
@@ -28,7 +30,7 @@ public class HangfireDashboardAuthorizationFilter(string adminPassword) : IDashb
             try
             {
                 var encodedCredential = authHeader[6..];
-                var decodedCredential = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encodedCredential));
+                var decodedCredential = Encoding.UTF8.GetString(Convert.FromBase64String(encodedCredential));
                 var parts = decodedCredential.Split(':');
                 if (parts.Length == 2)
                 {
@@ -36,12 +38,12 @@ public class HangfireDashboardAuthorizationFilter(string adminPassword) : IDashb
                     var password = parts[1];
 
                     // Using FixedTimeEquals to prevent timing attacks
-                    var passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
-                    var adminPasswordBytes = System.Text.Encoding.UTF8.GetBytes(adminPassword);
+                    var passwordBytes = Encoding.UTF8.GetBytes(password);
+                    var adminPasswordBytes = Encoding.UTF8.GetBytes(adminPassword);
 
                     if (user == "admin" && 
                         passwordBytes.Length == adminPasswordBytes.Length && 
-                        System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(passwordBytes, adminPasswordBytes))
+                        CryptographicOperations.FixedTimeEquals(passwordBytes, adminPasswordBytes))
                     {
                         return true;
                     }

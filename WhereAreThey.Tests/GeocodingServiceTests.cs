@@ -29,8 +29,8 @@ public class GeocodingServiceTests
         {
             features = new[]
             {
-                new { place_name = "123 Test St, City, Country" }
-            }
+                new { place_name = "123 Test St, City, Country" },
+            },
         };
 
         _httpMessageHandlerMock.Protected()
@@ -41,7 +41,7 @@ public class GeocodingServiceTests
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(responseContent))
+                Content = new StringContent(JsonSerializer.Serialize(responseContent)),
             });
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
@@ -63,8 +63,8 @@ public class GeocodingServiceTests
             features = new[]
             {
                 new { place_name = "Result 1", center = new[] { -74.0, 40.0 } },
-                new { place_name = "Result 2", center = new[] { -73.0, 41.0 } }
-            }
+                new { place_name = "Result 2", center = new[] { -73.0, 41.0 } },
+            },
         };
 
         _httpMessageHandlerMock.Protected()
@@ -75,7 +75,7 @@ public class GeocodingServiceTests
             .ReturnsAsync(new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
-                Content = new StringContent(JsonSerializer.Serialize(responseContent))
+                Content = new StringContent(JsonSerializer.Serialize(responseContent)),
             });
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);

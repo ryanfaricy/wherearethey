@@ -170,7 +170,7 @@
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error);
+                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)

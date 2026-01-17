@@ -6,7 +6,6 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -26,15 +25,17 @@ public class AlertValidatorTests
             .ReturnsAsync(new SystemSettings { AlertLimitCount = 3, ReportCooldownMinutes = 60 });
     }
 
-    private async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
+    private static async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
     {
+        await Task.CompletedTask;
+        
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
         var context = new ApplicationDbContext(options);
         var factoryMock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        factoryMock.Setup(f => f.CreateDbContextAsync(default)).ReturnsAsync(() => new ApplicationDbContext(options));
+        factoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None)).ReturnsAsync(() => new ApplicationDbContext(options));
 
         return (context, factoryMock.Object);
     }

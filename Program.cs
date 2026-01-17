@@ -207,8 +207,9 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 var app = builder.Build();
 
 // Apply any pending migrations
-using (var scope = app.Services.CreateScope())
+if (builder.Configuration["SkipMigrations"] != "true")
 {
+    using var scope = app.Services.CreateScope();
     try
     {
         var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
@@ -282,14 +283,14 @@ app.MapControllers();
 var appOptions = app.Services.GetRequiredService<IOptions<AppOptions>>().Value;
 app.MapHangfireDashboard("/hangfire", new DashboardOptions
 {
-    Authorization = [new HangfireDashboardAuthorizationFilter(appOptions.AdminPassword)]
+    Authorization = [new HangfireDashboardAuthorizationFilter(appOptions.AdminPassword)],
 });
 
 app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> appOptions, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> applicationOptions, IHttpClientFactory httpClientFactory) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid))
     {
@@ -317,7 +318,7 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
     var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);
     
     // Use the BaseUrl as Referer as requested
-    var referer = appOptions.Value.BaseUrl;
+    var referer = applicationOptions.Value.BaseUrl;
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);

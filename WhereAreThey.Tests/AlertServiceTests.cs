@@ -1,4 +1,3 @@
-using FluentValidation;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
@@ -78,7 +77,7 @@ public class AlertServiceTests
             Longitude = -74.0060,
             RadiusKm = 5.0,
             Message = "Test alert",
-            UserIdentifier = "test-user"
+            UserIdentifier = "test-user",
         };
 
         // Act
@@ -120,7 +119,7 @@ public class AlertServiceTests
                 IsActive = true,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
             
             var inactiveAlert = new Alert
@@ -131,7 +130,7 @@ public class AlertServiceTests
                 IsActive = false,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
 
             context.Alerts.Add(activeAlert);
@@ -160,7 +159,7 @@ public class AlertServiceTests
             context.Alerts.Add(new Alert
             {
                 Latitude = 40.0, Longitude = -74.0, RadiusKm = 5.0, IsActive = true, IsVerified = false,
-                CreatedAt = DateTime.UtcNow, EncryptedEmail = "encrypted"
+                CreatedAt = DateTime.UtcNow, EncryptedEmail = "encrypted",
             });
             await context.SaveChangesAsync();
         }
@@ -232,7 +231,7 @@ public class AlertServiceTests
                 RadiusKm = 5.0,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
 
             context.Alerts.Add(alert);
@@ -272,7 +271,7 @@ public class AlertServiceTests
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
                 ExpiresAt = DateTime.UtcNow.AddHours(-1),
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
             
             var validAlert = new Alert
@@ -284,7 +283,7 @@ public class AlertServiceTests
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddHours(1),
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
 
             context.Alerts.Add(expiredAlert);
@@ -319,7 +318,7 @@ public class AlertServiceTests
                 IsActive = true,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
-                EncryptedEmail = "encrypted"
+                EncryptedEmail = "encrypted",
             };
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
@@ -352,12 +351,12 @@ public class AlertServiceTests
             context.Alerts.Add(new Alert
             {
                 Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true, IsVerified = true,
-                UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+                UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             context.Alerts.Add(new Alert
             {
                 Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true, IsVerified = true,
-                UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+                UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             await context.SaveChangesAsync();
         }
@@ -450,13 +449,13 @@ public class AlertServiceTests
             {
                 EmailHash = emailHash,
                 Token = token,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             });
             context.Alerts.Add(new Alert
             {
                 EmailHash = emailHash,
                 IsVerified = false,
-                Latitude = 0, Longitude = 0, RadiusKm = 1
+                Latitude = 0, Longitude = 0, RadiusKm = 1,
             });
             await context.SaveChangesAsync();
         }
@@ -489,7 +488,7 @@ public class AlertServiceTests
             {
                 Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0,
                 IsActive = true, IsVerified = false,
-                CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc"
+                CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             await context.SaveChangesAsync();
         }
@@ -518,7 +517,7 @@ public class AlertServiceTests
                 EmailHash = emailHash,
                 Token = "token",
                 VerifiedAt = DateTime.UtcNow,
-                CreatedAt = DateTime.UtcNow.AddDays(-1)
+                CreatedAt = DateTime.UtcNow.AddDays(-1),
             });
             await context.SaveChangesAsync();
         }
@@ -576,7 +575,7 @@ public class AlertServiceTests
             Longitude = -74.0,
             RadiusKm = 200.0,
             Message = "Too big radius",
-            UserIdentifier = "test-user"
+            UserIdentifier = "test-user",
         };
 
         // Act
@@ -609,7 +608,7 @@ public class AlertServiceTests
             await service.CreateAlertAsync(new Alert
             {
                 Latitude = 40, Longitude = -74, RadiusKm = 5,
-                UserIdentifier = userId
+                UserIdentifier = userId,
             }, email);
         }
 
@@ -617,7 +616,7 @@ public class AlertServiceTests
         var alert4 = new Alert
         {
             Latitude = 40, Longitude = -74, RadiusKm = 5,
-            UserIdentifier = userId
+            UserIdentifier = userId,
         };
 
         // Act

@@ -88,7 +88,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             MaxReportDistanceMiles = 5.0m,
             MapboxToken = null,
             DonationsEnabled = true,
-            DataRetentionDays = 30
+            DataRetentionDays = 30,
         });
     }
 }

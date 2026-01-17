@@ -29,7 +29,7 @@ public class HangfireDashboardAuthorizationFilterTests
     {
         // Arrange
         var httpContext = new DefaultHttpContext();
-        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes("admin:wrong-password"));
+        var credentials = Convert.ToBase64String("admin:wrong-password"u8.ToArray());
         httpContext.Request.Headers.Authorization = $"Basic {credentials}";
 
         // Act

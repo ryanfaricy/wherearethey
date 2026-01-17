@@ -124,7 +124,7 @@
             { 
                 DisplayName = string.IsNullOrWhiteSpace(d.DonorName) ? "Anonymous" : d.DonorName,
                 Amount = d.Amount,
-                TimeAgo = TimeAgo(d.CreatedAt)
+                TimeAgo = TimeAgo(d.CreatedAt),
             }).ToList();
     }
 
@@ -211,7 +211,7 @@
             { 
                 DisplayName = displayName, 
                 Amount = _donation.Amount, 
-                TimeAgo = "just now" 
+                TimeAgo = "just now",
             });
 
             _donation = new Donation { Amount = 10 };

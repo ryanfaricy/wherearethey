@@ -1,24 +1,22 @@
+using Bunit;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Localization;
 using Moq;
+using Radzen;
+using WhereAreThey.Components;
+using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Microsoft.Extensions.Localization;
-using Radzen;
-using Xunit;
-using WhereAreThey.Components;
-using WhereAreThey.Components.Pages;
-using Bunit;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace WhereAreThey.Tests;
 
-public class MapInteractionServiceTests : TestContext
+public class MapInteractionServiceTests : BunitContext
 {
     private readonly Mock<IMapService> _mapServiceMock;
     private readonly Mock<IMapStateService> _stateServiceMock;
     private readonly DialogService _dialogService;
     private readonly Mock<IAdminService> _adminServiceMock;
-    private readonly Mock<IStringLocalizer<App>> _localizerMock;
     private readonly MapInteractionService _service;
 
     public MapInteractionServiceTests()
@@ -26,19 +24,19 @@ public class MapInteractionServiceTests : TestContext
         _mapServiceMock = new Mock<IMapService>();
         _stateServiceMock = new Mock<IMapStateService>();
         _adminServiceMock = new Mock<IAdminService>();
-        _localizerMock = new Mock<IStringLocalizer<App>>();
+        var localizerMock = new Mock<IStringLocalizer<App>>();
         
         Services.AddRadzenComponents();
         _dialogService = Services.GetRequiredService<DialogService>();
         
-        _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string name) => new LocalizedString(name, name));
+        localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string name) => new LocalizedString(name, name));
 
         _service = new MapInteractionService(
             _mapServiceMock.Object,
             _stateServiceMock.Object,
             _dialogService,
             _adminServiceMock.Object,
-            _localizerMock.Object);
+            localizerMock.Object);
     }
 
     [Theory]
@@ -61,9 +59,9 @@ public class MapInteractionServiceTests : TestContext
         // Arrange
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
-            .Returns(new List<LocationReport>());
+            .Returns([]);
         _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
-            .Returns(new List<Alert>());
+            .Returns([]);
 
         // Act
         var result = await _service.HandleMapClickAsync(0, 0, false);
@@ -81,17 +79,20 @@ public class MapInteractionServiceTests : TestContext
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
             .Returns(reports);
         _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
-            .Returns(new List<Alert>());
+            .Returns([]);
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
 
-        bool dialogOpened = false;
-        _dialogService.OnOpen += (title, type, parameters, options) => {
-            if (type == typeof(ReportDetailsDialog))
+        var dialogOpened = false;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            if (type != typeof(ReportDetailsDialog))
             {
-                dialogOpened = true;
-                // Close the dialog immediately to avoid hanging on the 'await'
-                _dialogService.Close(null);
+                return;
             }
+
+            dialogOpened = true;
+            // Close the dialog immediately to avoid hanging on the 'await'
+            _dialogService.Close();
         };
 
         // Act
@@ -108,14 +109,17 @@ public class MapInteractionServiceTests : TestContext
         // Arrange
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
         
-        bool dialogOpened = false;
-        _dialogService.OnOpen += (title, type, parameters, options) => {
-            if (type == typeof(ReportDialog))
+        var dialogOpened = false;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            if (type != typeof(ReportDialog))
             {
-                dialogOpened = true;
-                // Close the dialog immediately to avoid hanging on the 'await'
-                _dialogService.Close(null);
+                return;
             }
+
+            dialogOpened = true;
+            // Close the dialog immediately to avoid hanging on the 'await'
+            _dialogService.Close();
         };
 
         // Act

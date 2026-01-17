@@ -38,7 +38,7 @@ public class SettingsServiceTests
             MaxReportDistanceMiles = 20.5m,
             MapboxToken = "test_token",
             DonationsEnabled = false,
-            DataRetentionDays = 60
+            DataRetentionDays = 60,
         };
 
         // Act

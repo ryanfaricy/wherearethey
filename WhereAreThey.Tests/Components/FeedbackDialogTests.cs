@@ -1,14 +1,11 @@
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.JSInterop;
 using Moq;
-using Radzen;
 using Radzen.Blazor;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 

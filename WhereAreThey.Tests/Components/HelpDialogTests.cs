@@ -6,7 +6,6 @@ using Radzen.Blazor;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -65,9 +64,12 @@ public class HelpDialogTests : ComponentTestBase
     {
         // Arrange
         var dialogService = Services.GetRequiredService<DialogService>();
-        bool dialogOpened = false;
+        var dialogOpened = false;
         dialogService.OnOpen += (title, type, parameters, options) => {
-            if (title == "PRIVACY_POLICY") dialogOpened = true;
+            if (title == "PRIVACY_POLICY")
+            {
+                dialogOpened = true;
+            }
         };
 
         var cut = Render<HelpDialog>();
@@ -86,9 +88,12 @@ public class HelpDialogTests : ComponentTestBase
     {
         // Arrange
         var dialogService = Services.GetRequiredService<DialogService>();
-        bool dialogOpened = false;
+        var dialogOpened = false;
         dialogService.OnOpen += (title, type, parameters, options) => {
-            if (title == "FEEDBACK") dialogOpened = true;
+            if (title == "FEEDBACK")
+            {
+                dialogOpened = true;
+            }
         };
 
         var cut = Render<HelpDialog>();

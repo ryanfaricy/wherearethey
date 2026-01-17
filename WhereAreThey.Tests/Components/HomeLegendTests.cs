@@ -1,6 +1,6 @@
 using Bunit;
+using Radzen.Blazor;
 using WhereAreThey.Components.Home;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -18,7 +18,7 @@ public class HomeLegendTests : ComponentTestBase
         Assert.NotNull(cut.Find(".legend-card"));
         
         // Check if all three legend items are rendered (Emergency Report, Report, Alert Zone)
-        var icons = cut.FindComponents<Radzen.Blazor.RadzenIcon>();
+        var icons = cut.FindComponents<RadzenIcon>();
         Assert.Equal(3, icons.Count);
         
         // Verify localized text is present (using the keys since our mock returns keys)

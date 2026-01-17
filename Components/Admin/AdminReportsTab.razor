@@ -96,7 +96,7 @@
             }
             else
             {
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error);
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
             }
         }
     }

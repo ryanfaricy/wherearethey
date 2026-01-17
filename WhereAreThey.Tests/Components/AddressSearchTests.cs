@@ -1,10 +1,11 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radzen;
+using Radzen.Blazor;
 using WhereAreThey.Components;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -26,7 +27,7 @@ public class AddressSearchTests : ComponentTestBase
         var cut = Render<AddressSearch>();
 
         // Assert
-        Assert.NotNull(cut.FindComponent<Radzen.Blazor.RadzenAutoComplete>());
+        Assert.NotNull(cut.FindComponent<RadzenAutoComplete>());
     }
 
     [Fact]
@@ -35,17 +36,17 @@ public class AddressSearchTests : ComponentTestBase
         // Arrange
         var results = new List<GeocodingResult>
         {
-            new GeocodingResult { Address = "123 Main St", Latitude = 10, Longitude = 20 }
+            new() { Address = "123 Main St", Latitude = 10, Longitude = 20 },
         };
         _geocodingServiceMock.Setup(s => s.SearchAsync(It.IsAny<string>()))
             .ReturnsAsync(results);
 
         var cut = Render<AddressSearch>();
-        var autocomplete = cut.FindComponent<Radzen.Blazor.RadzenAutoComplete>();
+        var autocomplete = cut.FindComponent<RadzenAutoComplete>();
 
         // Act
         // We simulate the LoadData event which is triggered when typing
-        await cut.InvokeAsync(() => autocomplete.Instance.LoadData.InvokeAsync(new Radzen.LoadDataArgs { Filter = "Main" }));
+        await cut.InvokeAsync(() => autocomplete.Instance.LoadData.InvokeAsync(new LoadDataArgs { Filter = "Main" }));
 
         // Assert
         _geocodingServiceMock.Verify(s => s.SearchAsync("Main"), Times.Once);
@@ -57,7 +58,7 @@ public class AddressSearchTests : ComponentTestBase
         // Arrange
         var results = new List<GeocodingResult>
         {
-            new GeocodingResult { Address = "123 Main St", Latitude = 10, Longitude = 20 }
+            new() { Address = "123 Main St", Latitude = 10, Longitude = 20 },
         };
         _geocodingServiceMock.Setup(s => s.SearchAsync(It.IsAny<string>()))
             .ReturnsAsync(results);
@@ -66,10 +67,10 @@ public class AddressSearchTests : ComponentTestBase
         var cut = Render<AddressSearch>(parameters => parameters
             .Add(p => p.OnResultSelected, r => selectedResult = r)
         );
-        var autocomplete = cut.FindComponent<Radzen.Blazor.RadzenAutoComplete>();
+        var autocomplete = cut.FindComponent<RadzenAutoComplete>();
 
         // Trigger search to populate internal results
-        await cut.InvokeAsync(() => autocomplete.Instance.LoadData.InvokeAsync(new Radzen.LoadDataArgs { Filter = "Main" }));
+        await cut.InvokeAsync(() => autocomplete.Instance.LoadData.InvokeAsync(new LoadDataArgs { Filter = "Main" }));
 
         // Act
         // Simulate selecting the address

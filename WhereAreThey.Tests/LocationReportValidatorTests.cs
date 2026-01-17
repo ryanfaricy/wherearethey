@@ -82,7 +82,7 @@ public class LocationReportValidatorTests
             ReporterIdentifier = identifier, 
             Timestamp = DateTime.UtcNow.AddMinutes(-1),
             Latitude = 0,
-            Longitude = 0
+            Longitude = 0,
         });
         await context.SaveChangesAsync();
 
@@ -94,7 +94,7 @@ public class LocationReportValidatorTests
             Latitude = 0,
             Longitude = 0,
             ReporterLatitude = 0,
-            ReporterLongitude = 0
+            ReporterLongitude = 0,
         };
 
         // Act
@@ -117,7 +117,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "user",
             Latitude = 40.7128, Longitude = -74.0060, // NYC
-            ReporterLatitude = 34.0522, ReporterLongitude = -118.2437 // LA
+            ReporterLatitude = 34.0522, ReporterLongitude = -118.2437, // LA
         };
 
         // Act
@@ -157,7 +157,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "valid-passphrase-123",
             Latitude = 40.7128, Longitude = -74.0060,
-            ReporterLatitude = 40.7129, ReporterLongitude = -74.0061
+            ReporterLatitude = 40.7129, ReporterLongitude = -74.0061,
         };
 
         // Act
@@ -178,7 +178,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "valid-passphrase-123",
             Latitude = 40, Longitude = -74,
-            ReporterLatitude = null, ReporterLongitude = null
+            ReporterLatitude = null, ReporterLongitude = null,
         };
 
         // Act
@@ -203,7 +203,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "valid-passphrase-123",
             Latitude = 40.7128, Longitude = -74.0060,
-            ReporterLatitude = 40.7128, ReporterLongitude = -74.0253
+            ReporterLatitude = 40.7128, ReporterLongitude = -74.0253,
         };
 
         // Act
@@ -227,7 +227,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "valid-passphrase-123",
             Latitude = 40.7128, Longitude = -74.0060,
-            ReporterLatitude = 40.7128, ReporterLongitude = -74.0060
+            ReporterLatitude = 40.7128, ReporterLongitude = -74.0060,
         };
 
         // Act
@@ -248,7 +248,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = identifier, 
             Timestamp = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(30),
-            Latitude = 0, Longitude = 0
+            Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();
 
@@ -258,7 +258,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = identifier,
             Latitude = 0, Longitude = 0,
-            ReporterLatitude = 0, ReporterLongitude = 0
+            ReporterLatitude = 0, ReporterLongitude = 0,
         };
 
         // Act
@@ -280,7 +280,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = identifier, 
             Timestamp = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(-30),
-            Latitude = 0, Longitude = 0
+            Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();
 
@@ -290,7 +290,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = identifier,
             Latitude = 0, Longitude = 0,
-            ReporterLatitude = 0, ReporterLongitude = 0
+            ReporterLatitude = 0, ReporterLongitude = 0,
         };
 
         // Act
@@ -332,7 +332,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = identifier, 
             Timestamp = DateTime.UtcNow.AddMinutes(-1),
-            Latitude = 0, Longitude = 0
+            Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();
 
@@ -340,7 +340,7 @@ public class LocationReportValidatorTests
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings 
         { 
             ReportCooldownMinutes = 5,
-            MaxReportDistanceMiles = 1
+            MaxReportDistanceMiles = 1,
         });
         
         var validator = new LocationReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
@@ -350,7 +350,7 @@ public class LocationReportValidatorTests
             ReporterIdentifier = "a", // Too short for normal users
             Message = "Check this https://admin.com", // Links not allowed for normal users
             Latitude = 40.7128, Longitude = -74.0060,
-            ReporterLatitude = 34.0522, ReporterLongitude = -118.2437 // Way too far for normal users
+            ReporterLatitude = 34.0522, ReporterLongitude = -118.2437, // Way too far for normal users
         };
 
         // Act
@@ -375,7 +375,7 @@ public class LocationReportValidatorTests
         { 
             ReporterIdentifier = "", // Empty
             Latitude = 0, Longitude = 0,
-            ReporterLatitude = 0, ReporterLongitude = 0
+            ReporterLatitude = 0, ReporterLongitude = 0,
         };
 
         // Act

@@ -1,4 +1,3 @@
-using FluentValidation;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
@@ -38,7 +37,7 @@ public class AntiSpamTests
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
                 "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, val);
         });
@@ -49,7 +48,7 @@ public class AntiSpamTests
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
                 "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, string.Format(val, args));
         });
@@ -100,7 +99,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 41.0, // ~111km away
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA"
+            ReporterIdentifier = "UserA",
         };
 
         // Act
@@ -125,7 +124,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA-Passphrase"
+            ReporterIdentifier = "UserA-Passphrase",
         };
 
         var report2 = new LocationReport
@@ -134,7 +133,7 @@ public class AntiSpamTests
             Longitude = -74.0,
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "UserA-Passphrase"
+            ReporterIdentifier = "UserA-Passphrase",
         };
 
         // Act
@@ -161,7 +160,7 @@ public class AntiSpamTests
             ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
             ReporterIdentifier = "UserA-Passphrase",
-            Message = "Check out my site: https://spam.com"
+            Message = "Check out my site: https://spam.com",
         };
 
         // Act
@@ -186,13 +185,13 @@ public class AntiSpamTests
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-12) 
+                Timestamp = DateTime.UtcNow.AddHours(-12),
             });
             // Report from 2 hours ago
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 41.0, Longitude = -75.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-2) 
+                Timestamp = DateTime.UtcNow.AddHours(-2),
             });
             await context.SaveChangesAsync();
         }
@@ -219,7 +218,7 @@ public class AntiSpamTests
             ReportExpiryHours = 24, 
             ReportCooldownMinutes = 10,
             MaxReportDistanceMiles = 50.0m,
-            DonationsEnabled = false
+            DonationsEnabled = false,
         };
         await settingsService.UpdateSettingsAsync(customSettings);
 
@@ -235,7 +234,7 @@ public class AntiSpamTests
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-12) 
+                Timestamp = DateTime.UtcNow.AddHours(-12),
             });
             await context.SaveChangesAsync();
         }
@@ -259,7 +258,7 @@ public class AntiSpamTests
             ReporterIdentifier = "UserC-Passphrase", 
             Latitude = 40, Longitude = -74, 
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
-            Timestamp = DateTime.UtcNow 
+            Timestamp = DateTime.UtcNow,
         };
         var resultDist = await service.AddReportAsync(farReport);
         Assert.True(resultDist.IsFailure);

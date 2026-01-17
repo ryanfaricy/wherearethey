@@ -57,14 +57,14 @@ public class LocationServiceTests
         {
             Latitude = 40.7580, // ~5 km away
             Longitude = -73.9855,
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow,
         };
         
         var farReport = new LocationReport
         {
             Latitude = 42.3601, // ~200 km away
             Longitude = -71.0589,
-            Timestamp = DateTime.UtcNow
+            Timestamp = DateTime.UtcNow,
         };
 
         await using (var context = new ApplicationDbContext(options))

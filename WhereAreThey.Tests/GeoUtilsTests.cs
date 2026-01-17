@@ -29,9 +29,9 @@ public class GeoUtilsTests
     public void GetBoundingBox_ReturnsCorrectRange()
     {
         // Arrange
-        double lat = 45.0;
-        double lon = 45.0;
-        double radius = 111.0; // roughly 1 degree
+        var lat = 45.0;
+        var lon = 45.0;
+        var radius = 111.0; // roughly 1 degree
 
         // Act
         var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(lat, lon, radius);

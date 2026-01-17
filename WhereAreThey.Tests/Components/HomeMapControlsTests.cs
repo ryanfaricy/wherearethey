@@ -2,21 +2,19 @@ using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radzen.Blazor;
+using WhereAreThey.Components;
 using WhereAreThey.Components.Home;
-using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
 public class HomeMapControlsTests : ComponentTestBase
 {
-    private readonly Mock<IGeocodingService> _geocodingServiceMock;
-
     public HomeMapControlsTests()
     {
-        _geocodingServiceMock = new Mock<IGeocodingService>();
-        Services.AddSingleton(_geocodingServiceMock.Object);
+        var geocodingServiceMock = new Mock<IGeocodingService>();
+        Services.AddSingleton(geocodingServiceMock.Object);
     }
 
     [Fact]
@@ -30,9 +28,9 @@ public class HomeMapControlsTests : ComponentTestBase
         );
 
         // Assert
-        Assert.NotNull(cut.FindComponent<WhereAreThey.Components.AddressSearch>());
-        Assert.NotNull(cut.FindComponent<Radzen.Blazor.RadzenToggleButton>());
-        Assert.NotNull(cut.FindComponent<Radzen.Blazor.RadzenSelectBar<int>>());
+        Assert.NotNull(cut.FindComponent<AddressSearch>());
+        Assert.NotNull(cut.FindComponent<RadzenToggleButton>());
+        Assert.NotNull(cut.FindComponent<RadzenSelectBar<int>>());
     }
 
     [Fact]
@@ -45,7 +43,7 @@ public class HomeMapControlsTests : ComponentTestBase
             .Add(p => p.FollowMeChanged, EventCallback.Factory.Create<bool>(this, v => followMeValue = v))
         );
 
-        var toggleButton = cut.FindComponent<Radzen.Blazor.RadzenToggleButton>();
+        var toggleButton = cut.FindComponent<RadzenToggleButton>();
 
         // Act
         await cut.InvokeAsync(() => toggleButton.Instance.ValueChanged.InvokeAsync(true));
@@ -65,7 +63,7 @@ public class HomeMapControlsTests : ComponentTestBase
             .Add(p => p.OnHoursChange, EventCallback.Factory.Create<int>(this, v => selectedHours = v))
         );
 
-        var selectBar = cut.FindComponent<Radzen.Blazor.RadzenSelectBar<int>>();
+        var selectBar = cut.FindComponent<RadzenSelectBar<int>>();
 
         // Act
         await cut.InvokeAsync(() => selectBar.Instance.Change.InvokeAsync(2));

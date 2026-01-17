@@ -1,8 +1,6 @@
 using Bunit;
-using Microsoft.Extensions.DependencyInjection;
-using Moq;
+using Radzen.Blazor;
 using WhereAreThey.Components.Home;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -20,7 +18,7 @@ public class HomeToolbarTests : ComponentTestBase
         // Assert
         // There should be buttons for: REPORT, ALERTS, SETTINGS, HELP, REFRESH
         // and DONATE if enabled.
-        var buttons = cut.FindComponents<Radzen.Blazor.RadzenButton>();
+        var buttons = cut.FindComponents<RadzenButton>();
         Assert.Equal(5, buttons.Count); // REPORT, ALERTS, SETTINGS, HELP, REFRESH (DonationsEnabled is false by default)
     }
 
@@ -34,7 +32,7 @@ public class HomeToolbarTests : ComponentTestBase
         );
 
         // Assert
-        var buttons = cut.FindComponents<Radzen.Blazor.RadzenButton>();
+        var buttons = cut.FindComponents<RadzenButton>();
         Assert.Equal(6, buttons.Count);
     }
 

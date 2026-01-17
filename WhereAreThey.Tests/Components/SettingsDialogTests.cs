@@ -1,14 +1,11 @@
 using Bunit;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
+using Radzen.Blazor;
 using WhereAreThey.Components.Pages;
-using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
-using Radzen;
-using Radzen.Blazor;
-using Microsoft.AspNetCore.Components;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -21,7 +18,7 @@ public class SettingsDialogTests : ComponentTestBase
         _themeServiceMock = new Mock<IAppThemeService>();
         Services.AddSingleton(_themeServiceMock.Object);
         
-        // NavigationManager is already registered in TestContext
+        // NavigationManager is already registered in BunitContext
     }
 
     [Fact]

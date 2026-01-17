@@ -51,7 +51,7 @@ public class EmailTemplateServiceTests
             LocalTimeStr = "2026-01-15 12:00",
             IsEmergency = true,
             Latitude = "40.1234",
-            Longitude = "-74.1234"
+            Longitude = "-74.1234",
         };
 
         // Act

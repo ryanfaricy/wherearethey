@@ -2,7 +2,6 @@ using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 
@@ -109,6 +108,8 @@ public class MapStateServiceTests : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+        
         _service.Dispose();
     }
 }

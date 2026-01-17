@@ -1,7 +1,6 @@
 using Moq;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

@@ -210,7 +210,7 @@
                 Severity = report.IsEmergency ? NotificationSeverity.Error : NotificationSeverity.Info,
                 Summary = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report",
                 Detail = report.Message ?? "Report received",
-                Duration = report.IsEmergency ? 15000 : 5000
+                Duration = report.IsEmergency ? 15000 : 5000,
             });
         });
     }

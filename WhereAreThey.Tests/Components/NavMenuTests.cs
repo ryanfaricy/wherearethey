@@ -2,28 +2,23 @@ using Bunit;
 using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.JSInterop;
 using Moq;
-using Radzen;
 using Radzen.Blazor;
 using WhereAreThey.Components.Layout;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 
 public class NavMenuTests : ComponentTestBase
 {
-    private readonly Mock<IMapService> _mapServiceMock;
-    private readonly Mock<IClientStorageService> _storageServiceMock;
     private readonly Mock<ISettingsService> _settingsServiceMock;
     private readonly Mock<IAdminService> _adminServiceMock;
 
     public NavMenuTests()
     {
-        _mapServiceMock = new Mock<IMapService>();
-        _storageServiceMock = new Mock<IClientStorageService>();
+        var mapServiceMock = new Mock<IMapService>();
+        var storageServiceMock = new Mock<IClientStorageService>();
         _settingsServiceMock = new Mock<ISettingsService>();
         _adminServiceMock = new Mock<IAdminService>();
         
@@ -32,8 +27,8 @@ public class NavMenuTests : ComponentTestBase
             JSInterop.JSRuntime, 
             Mock.Of<IDataProtectionProvider>());
 
-        Services.AddSingleton(_mapServiceMock.Object);
-        Services.AddSingleton(_storageServiceMock.Object);
+        Services.AddSingleton(mapServiceMock.Object);
+        Services.AddSingleton(storageServiceMock.Object);
         Services.AddSingleton(_settingsServiceMock.Object);
         Services.AddSingleton(_adminServiceMock.Object);
         Services.AddSingleton(localStorage);
@@ -109,7 +104,7 @@ public class NavMenuTests : ComponentTestBase
     public void NavMenu_ClickingItem_TriggersCallback()
     {
         // Arrange
-        bool clicked = false;
+        var clicked = false;
         var cut = Render<NavMenu>(parameters => parameters
             .Add(p => p.OnMenuItemClick, () => clicked = true)
         );

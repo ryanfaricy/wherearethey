@@ -224,7 +224,7 @@
             else
             {
                 await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], result.Error);
+                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], result.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)

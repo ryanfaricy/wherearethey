@@ -123,7 +123,7 @@
 
 @code {
     private bool _isMobile;
-    private int _selectedTabIndex = 0;
+    private int _selectedTabIndex;
     [Parameter] public double? InitialLat { get; set; }
     [Parameter] public double? InitialLng { get; set; }
     [Parameter] public double? InitialRadius { get; set; }
@@ -239,7 +239,7 @@
             else
             {
                 await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", result.Error);
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", result.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)
@@ -268,7 +268,7 @@
             else
             {
                 await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", result.Error);
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", result.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)

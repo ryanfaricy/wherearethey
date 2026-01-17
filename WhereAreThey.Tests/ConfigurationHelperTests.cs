@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Configuration;
 using WhereAreThey.Helpers;
-using Xunit;
 
 namespace WhereAreThey.Tests;
 

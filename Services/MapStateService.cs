@@ -235,6 +235,8 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+        
         _eventService.OnReportAdded -= HandleReportAdded;
         _eventService.OnReportUpdated -= HandleReportUpdated;
         _eventService.OnReportDeleted -= HandleReportDeleted;

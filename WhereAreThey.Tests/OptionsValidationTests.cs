@@ -17,7 +17,7 @@ public class OptionsValidationTests
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["BaseUrl"] = "", // Empty BaseUrl
-                ["AdminPassword"] = "short" // Too short password
+                ["AdminPassword"] = "short", // Too short password
             })
             .Build();
 
@@ -45,7 +45,7 @@ public class OptionsValidationTests
                 ["Square:ApplicationId"] = "",
                 ["Square:AccessToken"] = "",
                 ["Square:LocationId"] = "",
-                ["Square:Environment"] = ""
+                ["Square:Environment"] = "",
             })
             .Build();
 
@@ -74,7 +74,7 @@ public class OptionsValidationTests
             {
                 ["Email:FromEmail"] = "not-an-email",
                 ["Email:FromName"] = "",
-                ["Email:SmtpPort"] = "70000" // Out of range
+                ["Email:SmtpPort"] = "70000", // Out of range
             })
             .Build();
 
