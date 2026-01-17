@@ -9,7 +9,10 @@ public class UserTimeZoneService
 
     public void SetTimeZone(string ianaTimeZoneId)
     {
-        if (string.IsNullOrEmpty(ianaTimeZoneId)) return;
+        if (string.IsNullOrEmpty(ianaTimeZoneId))
+        {
+            return;
+        }
 
         try
         {

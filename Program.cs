@@ -14,6 +14,7 @@ using Microsoft.Extensions.Options;
 using Radzen;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
+using WhereAreThey.Helpers;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -93,11 +94,11 @@ builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
     new FallbackEmailService([
         sp.GetRequiredService<MicrosoftGraphEmailService>(),
-        sp.GetRequiredService<SmtpEmailService>()
+        sp.GetRequiredService<SmtpEmailService>(),
     ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
 
 // Add DbContextFactory with PostgreSQL
-var connectionString = WhereAreThey.Helpers.ConfigurationHelper.GetConnectionString(builder.Configuration) 
+var connectionString = ConfigurationHelper.GetConnectionString(builder.Configuration) 
                       ?? "Host=localhost;Database=wherearethey;Username=postgres;Password=postgres";
 
 builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
@@ -120,7 +121,7 @@ builder.Services.AddHangfire(config =>
 builder.Services.AddHangfireServer();
 
 // Add application services
-builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>(ServiceLifetime.Scoped);
+builder.Services.AddValidatorsFromAssemblyContaining<WhereAreThey.Program>();
 builder.Services.AddSingleton<IEventService, EventService>();
 builder.Services.AddSingleton<ISettingsService, SettingsService>();
 builder.Services.AddScoped<IReportProcessingService, ReportProcessingService>();
@@ -149,7 +150,7 @@ builder.Services.AddScoped<IFido2>(sp =>
     {
         ServerDomain = builder.Configuration["Fido2:ServerDomain"] ?? uri.Host,
         ServerName = "WhereAreThey Admin",
-        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') }
+        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') },
     });
 });
 builder.Services.AddScoped<UserTimeZoneService>();
@@ -168,7 +169,7 @@ builder.Services.AddRateLimiter(options =>
             {
                 PermitLimit = 30,
                 Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
+                QueueLimit = 0,
             }));
 });
 
@@ -207,10 +208,10 @@ using (var scope = app.Services.CreateScope())
 // Configure the HTTP request pipeline.
 var forwardedOptions = new ForwardedHeadersOptions
 {
-    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
 };
 forwardedOptions.KnownProxies.Clear();
-forwardedOptions.KnownNetworks.Clear();
+forwardedOptions.KnownIPNetworks.Clear();
 app.UseForwardedHeaders(forwardedOptions);
 
 if (!app.Environment.IsDevelopment())
@@ -263,14 +264,23 @@ app.MapRazorComponents<App>()
 
 app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> appOptions, IHttpClientFactory httpClientFactory) => 
 {
-    if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid)) return Results.BadRequest();
+    if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid))
+    {
+        return Results.BadRequest();
+    }
 
     var report = await reportService.GetReportByExternalIdAsync(rGuid);
-    if (report == null) return Results.NotFound();
+    if (report == null)
+    {
+        return Results.NotFound();
+    }
 
     var httpClient = httpClientFactory.CreateClient();
     var settings = await settingsService.GetSettingsAsync();
-    if (string.IsNullOrEmpty(settings.MapboxToken)) return Results.NotFound();
+    if (string.IsNullOrEmpty(settings.MapboxToken))
+    {
+        return Results.NotFound();
+    }
 
     var latStr = report.Latitude.ToString(CultureInfo.InvariantCulture);
     var lngStr = report.Longitude.ToString(CultureInfo.InvariantCulture);
@@ -283,7 +293,10 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);
-    if (!response.IsSuccessStatusCode) return Results.StatusCode((int)response.StatusCode);
+    if (!response.IsSuccessStatusCode)
+    {
+        return Results.StatusCode((int)response.StatusCode);
+    }
 
     var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/png";
     var stream = await response.Content.ReadAsStreamAsync();
@@ -304,5 +317,5 @@ app.Run();
 
 namespace WhereAreThey
 {
-    public partial class Program { }
+    public class Program;
 }

@@ -1,12 +1,12 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
 @inject IFeedbackService FeedbackService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject ILogger<AdminFeedbackTab> Logger
 @inject IEventService EventService
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
@@ -36,7 +36,7 @@
 @code {
     [Parameter] public bool IsMobile { get; set; }
     
-    private List<Feedback> _feedbacks = new();
+    private List<Feedback> _feedbacks = [];
     private RadzenDataGrid<Feedback>? _feedbacksGrid;
 
     protected override async Task OnInitializedAsync()
@@ -63,7 +63,11 @@
         InvokeAsync(async () =>
         {
             _feedbacks.Insert(0, feedback);
-            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
+            if (_feedbacksGrid != null)
+            {
+                await _feedbacksGrid.Reload();
+            }
+
             StateHasChanged();
         });
     }
@@ -73,7 +77,11 @@
         InvokeAsync(async () =>
         {
             _feedbacks.RemoveAll(f => f.Id == id);
-            if (_feedbacksGrid != null) await _feedbacksGrid.Reload();
+            if (_feedbacksGrid != null)
+            {
+                await _feedbacksGrid.Reload();
+            }
+
             StateHasChanged();
         });
     }

@@ -31,7 +31,10 @@ public class AdminService(
     /// <inheritdoc />
     public async Task<bool> IsAdminAsync()
     {
-        if (_isAdminCached.HasValue) return _isAdminCached.Value;
+        if (_isAdminCached.HasValue)
+        {
+            return _isAdminCached.Value;
+        }
 
         try
         {
@@ -97,7 +100,7 @@ public class AdminService(
         {
             Timestamp = DateTime.UtcNow,
             IpAddress = ipAddress,
-            IsSuccessful = isSuccessful
+            IsSuccessful = isSuccessful,
         };
         context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();

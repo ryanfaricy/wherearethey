@@ -1,7 +1,7 @@
+@using WhereAreThey.Components.Admin
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Components.Admin
 @inject DialogService DialogService
 @inject IAlertService AlertService
 @inject NotificationService NotificationService
@@ -152,8 +152,8 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public List<LocationReport> Reports { get; set; } = new();
-    [Parameter] public List<Alert> Alerts { get; set; } = new();
+    [Parameter] public List<LocationReport> Reports { get; set; } = [];
+    [Parameter] public List<Alert> Alerts { get; set; } = [];
 
     private bool _alertDeleted;
     private bool _isAdmin;
@@ -208,17 +208,33 @@
         }
     }
 
-    private string TimeAgo(DateTime dateTime)
+    private static string TimeAgo(DateTime dateTime)
     {
         var span = DateTime.UtcNow - dateTime;
-        if (span.TotalSeconds < 30) return "just now";
-        if (span.TotalMinutes < 1) return "less than a minute ago";
-        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
-        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalSeconds < 30)
+        {
+            return "just now";
+        }
+
+        if (span.TotalMinutes < 1)
+        {
+            return "less than a minute ago";
+        }
+
+        if (span.TotalMinutes < 60)
+        {
+            return $"{(int)span.TotalMinutes}m ago";
+        }
+
+        if (span.TotalHours < 24)
+        {
+            return $"{(int)span.TotalHours}h ago";
+        }
+
         return $"{(int)span.TotalDays}d ago";
     }
 
-    private string GetAlertName(Alert alert)
+    private static string GetAlertName(Alert alert)
     {
         return string.IsNullOrEmpty(alert.Message) ? "Alert Zone" : alert.Message;
     }

@@ -111,7 +111,7 @@
 
 @code {
     private Donation _donation = new() { Amount = 10 };
-    private List<DonationDisplay> _recentDonations = new();
+    private List<DonationDisplay> _recentDonations = [];
     private bool _isProcessing;
 
     protected override async Task OnInitializedAsync()
@@ -128,12 +128,24 @@
             }).ToList();
     }
 
-    private string TimeAgo(DateTime dateTime)
+    private static string TimeAgo(DateTime dateTime)
     {
         var span = DateTime.UtcNow - dateTime;
-        if (span.TotalSeconds < 60) return "just now";
-        if (span.TotalMinutes < 60) return $"{(int)span.TotalMinutes}m ago";
-        if (span.TotalHours < 24) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalSeconds < 60)
+        {
+            return "just now";
+        }
+
+        if (span.TotalMinutes < 60)
+        {
+            return $"{(int)span.TotalMinutes}m ago";
+        }
+
+        if (span.TotalHours < 24)
+        {
+            return $"{(int)span.TotalHours}h ago";
+        }
+
         return $"{(int)span.TotalDays}d ago";
     }
 
@@ -153,7 +165,10 @@
 
     private async Task ProcessDonation()
     {
-        if (_isProcessing) return;
+        if (_isProcessing)
+        {
+            return;
+        }
 
         _isProcessing = true;
         StateHasChanged();

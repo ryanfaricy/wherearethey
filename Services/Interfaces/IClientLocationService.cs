@@ -35,7 +35,7 @@ public interface IClientLocationService
     /// <summary>
     /// Attempts to get the current location with a timeout and optional manual fallback.
     /// </summary>
-    Task<GeolocationPosition?> GetLocationWithFallbackAsync(bool allowManual = true, bool showUI = true);
+    Task<GeolocationPosition?> GetLocationWithFallbackAsync(bool allowManual = true, bool showUi = true);
 
     /// <summary>
     /// Confirms a manual location pick (usually from the map center).

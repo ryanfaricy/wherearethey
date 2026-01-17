@@ -1,7 +1,7 @@
+@using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@using System.Text.Json
 @inject IReportService ReportService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
@@ -75,11 +75,11 @@
     private bool _isSubmitting;
     private bool _isDeterminingLocation;
     private string? _approxAddress;
-    private List<GeocodingResult> _geocodingResults = new();
+    private List<GeocodingResult> _geocodingResults = [];
 
     protected override async Task OnInitializedAsync()
     {
-        if (LocationTask != null && !LocationTask.IsCompleted)
+        if (LocationTask is { IsCompleted: false })
         {
             _isDeterminingLocation = true;
             _ = UpdateLocationAsync();
@@ -181,7 +181,11 @@
 
     private async Task SubmitReport()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
+
         _isSubmitting = true;
         try
         {

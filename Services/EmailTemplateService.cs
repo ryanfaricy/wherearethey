@@ -30,24 +30,27 @@ public class EmailTemplateService : IEmailTemplateService
 
         var source = await File.ReadAllTextAsync(templatePath);
 
-        if (Parser.TryParse(source, out var template, out var error))
+        if (!Parser.TryParse(source, out var template, out var error))
         {
-            var context = new TemplateContext();
-            if (model != null)
-            {
-                context.Options.MemberAccessStrategy.Register(model.GetType());
-                context.SetValue("Model", model);
-                
-                // Expose properties as top-level variables for convenience
-                foreach (var prop in model.GetType().GetProperties())
-                {
-                    context.SetValue(prop.Name, prop.GetValue(model));
-                }
-            }
-            
+            throw new InvalidOperationException($"Failed to parse template '{templateName}': {error}");
+        }
+
+        var context = new TemplateContext();
+        if (model == null)
+        {
             return await template.RenderAsync(context);
         }
 
-        throw new InvalidOperationException($"Failed to parse template '{templateName}': {error}");
+        context.Options.MemberAccessStrategy.Register(model.GetType());
+        context.SetValue("Model", model);
+                
+        // Expose properties as top-level variables for convenience
+        foreach (var prop in model.GetType().GetProperties())
+        {
+            context.SetValue(prop.Name, prop.GetValue(model));
+        }
+
+        return await template.RenderAsync(context);
+
     }
 }

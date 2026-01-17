@@ -1,7 +1,7 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
 @using System.Text.Json
 @using Fido2NetLib
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
 @inject ISettingsService SettingsService
 @inject IAdminPasskeyService PasskeyService
 @inject IJSRuntime JsRuntime
@@ -128,7 +128,10 @@
 
     private async Task RegisterPasskey()
     {
-        if (_module == null) return;
+        if (_module == null)
+        {
+            return;
+        }
 
         try
         {
@@ -138,7 +141,10 @@
             var responseJson = await _module.InvokeAsync<string>("registerPasskey", jsonOptions);
             var attestationRawResponse = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(responseJson);
 
-            if (attestationRawResponse == null) throw new Exception("Failed to parse authenticator response");
+            if (attestationRawResponse == null)
+            {
+                throw new Exception("Failed to parse authenticator response");
+            }
 
             await PasskeyService.CompleteRegistrationAsync(attestationRawResponse, options, _newKeyName);
             

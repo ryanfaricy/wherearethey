@@ -1,7 +1,3 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
-@using WhereAreThey.Components.Pages
 @inject IReportService ReportService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -9,6 +5,10 @@
 @inject IJSRuntime JsRuntime
 @inject ILogger<AdminReportsTab> Logger
 @inject IMapStateService MapState
+@using WhereAreThey.Components.Pages
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenDataGrid @ref="_reportsGrid" Data="@MapState.Reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">

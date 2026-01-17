@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.JSInterop;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -28,7 +29,7 @@ public class AdminServiceTests
         var eventServiceMock = new Mock<IEventService>();
         
         // Use real ProtectedLocalStorage with mocked dependencies
-        var jsRuntimeMock = new Mock<Microsoft.JSInterop.IJSRuntime>();
+        var jsRuntimeMock = new Mock<IJSRuntime>();
         var dataProtectionProviderMock = new Mock<IDataProtectionProvider>();
         var localStorage = new ProtectedLocalStorage(jsRuntimeMock.Object, dataProtectionProviderMock.Object);
 

@@ -39,7 +39,7 @@ public class MicrosoftGraphEmailServiceTests
             GraphClientSecret = "secret", 
             GraphSenderUserId = "user-id",
             FromEmail = "sender@example.com", 
-            FromName = "Sender" 
+            FromName = "Sender",
         };
         var optionsMock = new Mock<IOptions<EmailOptions>>();
         optionsMock.Setup(o => o.Value).Returns(options);
@@ -73,7 +73,7 @@ public class MicrosoftGraphEmailServiceTests
            )
            .ReturnsAsync(new HttpResponseMessage
            {
-              StatusCode = HttpStatusCode.Accepted
+              StatusCode = HttpStatusCode.Accepted,
            })
            .Verifiable();
 
@@ -107,7 +107,7 @@ public class MicrosoftGraphEmailServiceTests
             GraphTenantId = "tenant", 
             GraphClientId = "client", 
             GraphClientSecret = "secret", 
-            GraphSenderUserId = "user-id" 
+            GraphSenderUserId = "user-id",
         };
         var optionsMock = new Mock<IOptions<EmailOptions>>();
         optionsMock.Setup(o => o.Value).Returns(options);
@@ -148,7 +148,7 @@ public class MicrosoftGraphEmailServiceTests
             GraphClientSecret = "secret", 
             GraphSenderUserId = "user-id",
             FromEmail = "sender@example.com", 
-            FromName = "Sender" 
+            FromName = "Sender",
         };
         var optionsMock = new Mock<IOptions<EmailOptions>>();
         optionsMock.Setup(o => o.Value).Returns(options);
@@ -182,7 +182,7 @@ public class MicrosoftGraphEmailServiceTests
            )
            .ReturnsAsync(new HttpResponseMessage
            {
-              StatusCode = HttpStatusCode.Accepted
+              StatusCode = HttpStatusCode.Accepted,
            });
 
         var httpClient = new HttpClient(handlerMock.Object);
@@ -219,7 +219,7 @@ public class MicrosoftGraphEmailServiceTests
             GraphClientSecret = "secret", 
             GraphSenderUserId = "user-id",
             FromEmail = "sender@example.com", 
-            FromName = "Sender" 
+            FromName = "Sender",
         };
         var optionsMock = new Mock<IOptions<EmailOptions>>();
         optionsMock.Setup(o => o.Value).Returns(options);
@@ -253,7 +253,7 @@ public class MicrosoftGraphEmailServiceTests
            )
            .ReturnsAsync(new HttpResponseMessage
            {
-              StatusCode = HttpStatusCode.Accepted
+              StatusCode = HttpStatusCode.Accepted,
            });
 
         var httpClient = new HttpClient(handlerMock.Object);
@@ -263,7 +263,7 @@ public class MicrosoftGraphEmailServiceTests
         {
             new() { To = "r1@example.com", Subject = "Shared", Body = "Body" },
             new() { To = "r2@example.com", Subject = "Shared", Body = "Body" },
-            new() { To = "r3@example.com", Subject = "Unique", Body = "UniqueBody" }
+            new() { To = "r3@example.com", Subject = "Unique", Body = "UniqueBody" },
         };
 
         // Act

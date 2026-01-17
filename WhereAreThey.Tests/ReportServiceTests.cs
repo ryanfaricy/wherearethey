@@ -40,7 +40,7 @@ public class ReportServiceTests
                 "Location_Verify_Error" => "Unable to verify your current location. Please ensure GPS is enabled.",
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, val);
         });
@@ -50,7 +50,7 @@ public class ReportServiceTests
             {
                 "Cooldown_Error" => "You can only make one report every {0} minutes.",
                 "Distance_Error" => "You can only make a report within {0} miles of your location.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, string.Format(val, args));
         });
@@ -102,7 +102,7 @@ public class ReportServiceTests
             ReporterLongitude = -74.0060,
             ReporterIdentifier = "test-user",
             Message = "Test location",
-            IsEmergency = false
+            IsEmergency = false,
         };
 
         // Act
@@ -129,7 +129,7 @@ public class ReportServiceTests
             ReporterLongitude = -74.0060,
             ReporterIdentifier = "test-user-2",
             Message = "Test event",
-            IsEmergency = false
+            IsEmergency = false,
         };
 
         // Act
@@ -153,14 +153,14 @@ public class ReportServiceTests
             {
                 Latitude = 40.0,
                 Longitude = -74.0,
-                Timestamp = DateTime.UtcNow.AddHours(-48)
+                Timestamp = DateTime.UtcNow.AddHours(-48),
             };
             
             var recentReport = new LocationReport
             {
                 Latitude = 41.0,
                 Longitude = -75.0,
-                Timestamp = DateTime.UtcNow.AddHours(-2)
+                Timestamp = DateTime.UtcNow.AddHours(-2),
             };
 
             context.LocationReports.Add(oldReport);
@@ -225,7 +225,7 @@ public class ReportServiceTests
         var emailServiceMock = new Mock<IEmailService>();
         var emailTemplateServiceMock = new Mock<IEmailTemplateService>();
         emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync(It.IsAny<string>(), It.IsAny<object>()))
-            .ReturnsAsync((string name, object model) => 
+            .ReturnsAsync((string _, object model) => 
             {
                 var reportMsg = model.GetType().GetProperty("ReportMessage")?.GetValue(model)?.ToString() ?? "";
                 return $"Rendered body: {reportMsg}";
@@ -264,7 +264,7 @@ public class ReportServiceTests
 
         // Setup background job client to execute synchronously for the test
         backgroundJobClientMock.Setup(x => x.Create(It.IsAny<Job>(), It.IsAny<IState>()))
-            .Callback<Job, IState>((job, state) =>
+            .Callback<Job, IState>((job, _) =>
             {
                 var instance = serviceProvider.GetRequiredService(job.Type);
                 var task = (Task)job.Method.Invoke(instance, job.Args.ToArray())!;
@@ -283,7 +283,7 @@ public class ReportServiceTests
             RadiusKm = 10.0, 
             IsActive = true,
             UserIdentifier = "UserB",
-            Message = "UserB's Area"
+            Message = "UserB's Area",
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
 
@@ -304,7 +304,7 @@ public class ReportServiceTests
             ReporterLongitude = -74.0,
             ReporterIdentifier = "test-user",
             Message = "Alert trigger message",
-            IsEmergency = true
+            IsEmergency = true,
         };
 
         // Act

@@ -1,7 +1,3 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Services
-@using WhereAreThey.Components.Home
 @inject IAlertService AlertService
 @inject IMapService MapService
 @inject DialogService DialogService
@@ -10,6 +6,10 @@
 @inject UserTimeZoneService TimeZoneService
 @inject IMapStateService MapState
 @inject IMapInteractionService MapInteraction
+@using WhereAreThey.Components.Home
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenRow>
@@ -53,7 +53,7 @@
                                 }
                             </RadzenStack>
                             <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2" Style="font-weight: 500;">
-                                @(report.Message?.Length > 100 ? report.Message.Substring(0, 97) + "..." : report.Message)
+                                @(report.Message?.Length > 100 ? report.Message[..97] + "..." : report.Message)
                             </RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">
                                 <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.LocationDisplay()
@@ -88,8 +88,11 @@
 
     private async Task InitializeMap()
     {
-        if (MapState.MapInitialized || _heatMap == null) return;
-        
+        if (MapState.MapInitialized || _heatMap == null)
+        {
+            return;
+        }
+
         try 
         {
             double lat = 0;

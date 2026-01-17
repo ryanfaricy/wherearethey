@@ -95,7 +95,7 @@ public class AlertService(
                 {
                     EmailHash = emailHash,
                     Token = Guid.NewGuid().ToString("N"),
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
                 context.EmailVerifications.Add(verification);
                 await context.SaveChangesAsync();
@@ -163,7 +163,11 @@ public class AlertService(
     /// <inheritdoc />
     public virtual string? DecryptEmail(string? encryptedEmail)
     {
-        if (string.IsNullOrEmpty(encryptedEmail)) return null;
+        if (string.IsNullOrEmpty(encryptedEmail))
+        {
+            return null;
+        }
+
         try
         {
             return _protector.Unprotect(encryptedEmail);
@@ -209,7 +213,10 @@ public class AlertService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var alert = await context.Alerts.FindAsync(id);
-        if (alert == null) return false;
+        if (alert == null)
+        {
+            return false;
+        }
 
         alert.IsActive = false;
         await context.SaveChangesAsync();

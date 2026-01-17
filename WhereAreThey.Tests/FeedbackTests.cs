@@ -22,7 +22,7 @@ public class FeedbackTests
             {
                 "Feedback_Links_Error" => "Links are not allowed in feedback to prevent spam.",
                 "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, val);
         });
@@ -31,7 +31,7 @@ public class FeedbackTests
             var val = key switch
             {
                 "Feedback_Cooldown_Error" => "You can only submit one feedback every {0} minutes.",
-                _ => key
+                _ => key,
             };
             return new LocalizedString(key, string.Format(val, args));
         });
@@ -59,7 +59,7 @@ public class FeedbackTests
         return new SettingsService(factory, new Mock<IEventService>().Object);
     }
 
-    private IFeedbackService CreateService(IDbContextFactory<ApplicationDbContext> factory)
+    private static IFeedbackService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
@@ -77,7 +77,7 @@ public class FeedbackTests
         {
             Type = "Bug",
             Message = "Test message",
-            UserIdentifier = "UserA"
+            UserIdentifier = "UserA",
         };
 
         // Act
@@ -118,7 +118,7 @@ public class FeedbackTests
         { 
             Type = "Feature", 
             Message = "Spam link: http://evil.com", 
-            UserIdentifier = "UserA" 
+            UserIdentifier = "UserA",
         };
 
         // Act & Assert
@@ -157,7 +157,7 @@ public class FeedbackTests
         { 
             Type = "Bug", 
             Message = "[AUTO-REPORTED] Exception at http://localhost:5000/stacktrace", 
-            UserIdentifier = "system" 
+            UserIdentifier = "system",
         };
 
         // Act

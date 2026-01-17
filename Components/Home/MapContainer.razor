@@ -3,7 +3,7 @@
 @inject IMapStateService MapState
 
 <RadzenStack Gap="0" Style="flex: 1; position: relative;">
-    <HeatMap @ref="_heatMap"
+    <HeatMap @ref="Map"
              ElementId="@ElementId"
              Reports="@MapState.Reports" 
              Alerts="@MapState.Alerts"
@@ -23,7 +23,6 @@
 </RadzenStack>
 
 @code {
-    private HeatMap? _heatMap;
 
     [Parameter] public string ElementId { get; set; } = "heatmap";
     [Parameter] public double InitialLat { get; set; }
@@ -42,5 +41,6 @@
     /// <summary>
     /// Exposes the underlying HeatMap component.
     /// </summary>
-    public HeatMap? Map => _heatMap;
+    public HeatMap? Map { get; private set; }
+
 }

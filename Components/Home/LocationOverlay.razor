@@ -1,7 +1,7 @@
-@using WhereAreThey.Services.Interfaces
-@using Microsoft.Extensions.Localization
 @inject IClientLocationService LocationService
 @inject IStringLocalizer<App> L
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 @if (LocationService.IsLocating)

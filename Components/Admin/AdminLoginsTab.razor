@@ -1,6 +1,6 @@
 @using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
 @inject IAdminService AdminService
 @inject UserTimeZoneService TimeZoneService
 @inject ILogger<AdminLoginsTab> Logger
@@ -25,7 +25,7 @@
 @code {
     [Parameter] public bool IsMobile { get; set; }
     
-    private List<AdminLoginAttempt> _loginAttempts = new();
+    private List<AdminLoginAttempt> _loginAttempts = [];
     private RadzenDataGrid<AdminLoginAttempt>? _allLoginAttemptsGrid;
 
     protected override async Task OnInitializedAsync()

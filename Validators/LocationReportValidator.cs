@@ -33,7 +33,10 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
         RuleFor(x => x)
             .CustomAsync(async (report, context, cancellation) =>
             {
-                if (await adminService.IsAdminAsync()) return;
+                if (await adminService.IsAdminAsync())
+                {
+                    return;
+                }
 
                 var settings = await settingsService.GetSettingsAsync();
 
@@ -53,7 +56,7 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                 if (report.HasReporterLocation())
                 {
                     var distance = GeoUtils.CalculateDistance(report.Latitude, report.Longitude,
-                        report.ReporterLatitude.Value, report.ReporterLongitude.Value);
+                        report.ReporterLatitude!.Value, report.ReporterLongitude!.Value);
 
                     var maxDistanceKm = (double)settings.MaxReportDistanceMiles * 1.60934;
                     if (distance > maxDistanceKm)

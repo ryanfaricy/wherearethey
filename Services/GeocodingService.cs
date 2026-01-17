@@ -12,7 +12,10 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
     public virtual async Task<string?> ReverseGeocodeAsync(double latitude, double longitude)
     {
         var settings = await settingsService.GetSettingsAsync();
-        if (string.IsNullOrEmpty(settings.MapboxToken)) return null;
+        if (string.IsNullOrEmpty(settings.MapboxToken))
+        {
+            return null;
+        }
 
         try
         {
@@ -21,7 +24,10 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
             var url = $"https://api.mapbox.com/geocoding/v5/mapbox.places/{lngStr},{latStr}.json?access_token={settings.MapboxToken}&types=address,poi,neighborhood&limit=1";
             
             var response = await httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return null;
+            if (!response.IsSuccessStatusCode)
+            {
+                return null;
+            }
 
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
@@ -43,13 +49,19 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
     public virtual async Task<List<GeocodingResult>> SearchAsync(string query)
     {
         var settings = await settingsService.GetSettingsAsync();
-        if (string.IsNullOrEmpty(settings.MapboxToken) || string.IsNullOrWhiteSpace(query)) return new List<GeocodingResult>();
+        if (string.IsNullOrEmpty(settings.MapboxToken) || string.IsNullOrWhiteSpace(query))
+        {
+            return [];
+        }
 
         try
         {
             var url = $"https://api.mapbox.com/geocoding/v5/mapbox.places/{Uri.EscapeDataString(query)}.json?access_token={settings.MapboxToken}&limit=5";
             var response = await httpClient.GetAsync(url);
-            if (!response.IsSuccessStatusCode) return new List<GeocodingResult>();
+            if (!response.IsSuccessStatusCode)
+            {
+                return [];
+            }
 
             var json = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(json);
@@ -62,7 +74,7 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
                 {
                     Address = feature.GetProperty("place_name").GetString() ?? "",
                     Longitude = center[0].GetDouble(),
-                    Latitude = center[1].GetDouble()
+                    Latitude = center[1].GetDouble(),
                 });
             }
             return results;
@@ -72,6 +84,6 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
             logger.LogError(ex, "Error in Geocoding SearchAsync for '{Query}'", query);
         }
 
-        return new List<GeocodingResult>();
+        return [];
     }
 }

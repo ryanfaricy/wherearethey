@@ -23,7 +23,10 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
     public async Task SendEmailsAsync(IEnumerable<Email> emails)
     {
         var emailList = emails.ToList();
-        if (emailList.Count == 0) return;
+        if (emailList.Count == 0)
+        {
+            return;
+        }
 
         // Group by subject and body to allow BCC optimization
         var groups = emailList.GroupBy(e => new { e.Subject, e.Body });
@@ -41,7 +44,7 @@ public class SmtpEmailService(IOptions<EmailOptions> options, ILogger<SmtpEmailS
                 // Send in batches to multiple recipients via BCC to keep addresses private
                 // SMTP servers often have limits on the number of recipients per message (e.g. 100)
                 const int batchSize = 100;
-                for (int i = 0; i < recipients.Count; i += batchSize)
+                for (var i = 0; i < recipients.Count; i += batchSize)
                 {
                     var batch = recipients.Skip(i).Take(batchSize).ToList();
                     // Use FromEmail as the 'To' recipient and put the actual recipients in BCC

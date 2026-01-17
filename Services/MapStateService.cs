@@ -14,28 +14,32 @@ public class MapStateService : IMapStateService
     private bool _isAdmin;
 
     /// <inheritdoc />
-    public List<LocationReport> Reports { get; private set; } = new();
+    public List<LocationReport> Reports { get; private set; } = [];
 
     /// <inheritdoc />
-    public List<Alert> Alerts { get; private set; } = new();
+    public List<Alert> Alerts { get; private set; } = [];
 
     private bool _mapInitialized;
     /// <inheritdoc />
     public bool MapInitialized 
     { 
         get => _mapInitialized; 
-        set 
+        set
         {
-            if (_mapInitialized != value)
+            if (_mapInitialized == value)
             {
-                _mapInitialized = value;
-                if (_mapInitialized)
-                {
-                    // When the map initializes, ensure it has the latest data
-                    _ = _mapService.UpdateHeatMapAsync(Reports);
-                    _ = _mapService.UpdateAlertsAsync(Alerts);
-                }
+                return;
             }
+
+            _mapInitialized = value;
+            if (!_mapInitialized)
+            {
+                return;
+            }
+
+            // When the map initializes, ensure it has the latest data
+            _ = _mapService.UpdateHeatMapAsync(Reports);
+            _ = _mapService.UpdateAlertsAsync(Alerts);
         }
     }
 
@@ -132,15 +136,17 @@ public class MapStateService : IMapStateService
     private void HandleReportUpdated(LocationReport report)
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
-        if (index != -1)
+        if (index == -1)
         {
-            Reports[index] = report;
-            if (MapInitialized)
-            {
-                _ = UpdateReportOnMap(report);
-            }
-            OnStateChanged?.Invoke();
+            return;
         }
+
+        Reports[index] = report;
+        if (MapInitialized)
+        {
+            _ = UpdateReportOnMap(report);
+        }
+        OnStateChanged?.Invoke();
     }
 
     private async Task UpdateReportOnMap(LocationReport report)
@@ -161,8 +167,15 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertAdded(Alert alert)
     {
-        if (!alert.IsActive) return;
-        if (!_isAdmin && alert.UserIdentifier != _userIdentifier) return;
+        if (!alert.IsActive)
+        {
+            return;
+        }
+
+        if (!_isAdmin && alert.UserIdentifier != _userIdentifier)
+        {
+            return;
+        }
 
         Alerts.Insert(0, alert);
         if (MapInitialized)
@@ -174,7 +187,10 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertUpdated(Alert alert)
     {
-        if (!_isAdmin && alert.UserIdentifier != _userIdentifier) return;
+        if (!_isAdmin && alert.UserIdentifier != _userIdentifier)
+        {
+            return;
+        }
 
         var index = Alerts.FindIndex(a => a.Id == alert.Id);
         if (index != -1)
@@ -203,15 +219,17 @@ public class MapStateService : IMapStateService
     private void HandleAlertDeleted(int id)
     {
         var alert = Alerts.FirstOrDefault(a => a.Id == id);
-        if (alert != null)
+        if (alert == null)
         {
-            Alerts.Remove(alert);
-            if (MapInitialized)
-            {
-                _ = _mapService.UpdateAlertsAsync(Alerts);
-            }
-            OnStateChanged?.Invoke();
+            return;
         }
+
+        Alerts.Remove(alert);
+        if (MapInitialized)
+        {
+            _ = _mapService.UpdateAlertsAsync(Alerts);
+        }
+        OnStateChanged?.Invoke();
     }
 
     /// <inheritdoc />

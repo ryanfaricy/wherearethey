@@ -4,10 +4,11 @@ using WhereAreThey.Services.Interfaces;
 namespace WhereAreThey.Services;
 
 /// <inheritdoc />
-public class ClientLocationService : IClientLocationService
+public class ClientLocationService(
+    IClientStorageService storageService,
+    ILogger<ClientLocationService> logger)
+    : IClientLocationService
 {
-    private readonly IClientStorageService _storageService;
-    private readonly ILogger<ClientLocationService> _logger;
     private TaskCompletionSource<GeolocationPosition?>? _manualPickTcs;
 
     /// <inheritdoc />
@@ -25,18 +26,10 @@ public class ClientLocationService : IClientLocationService
     /// <inheritdoc />
     public event Action? OnStateChanged;
 
-    public ClientLocationService(
-        IClientStorageService storageService,
-        ILogger<ClientLocationService> logger)
-    {
-        _storageService = storageService;
-        _logger = logger;
-    }
-
     /// <inheritdoc />
-    public async Task<GeolocationPosition?> GetLocationWithFallbackAsync(bool allowManual = true, bool showUI = true)
+    public async Task<GeolocationPosition?> GetLocationWithFallbackAsync(bool allowManual = true, bool showUi = true)
     {
-        if (showUI)
+        if (showUi)
         {
             IsLocating = true;
             ShowManualPick = false;
@@ -45,7 +38,7 @@ public class ClientLocationService : IClientLocationService
         }
 
         using var cts = new CancellationTokenSource();
-        var locationTask = _storageService.GetLocationAsync();
+        var locationTask = storageService.GetLocationAsync();
         var timerTask = Task.Delay(7000, cts.Token);
 
         try
@@ -53,7 +46,7 @@ public class ClientLocationService : IClientLocationService
             var firstTask = await Task.WhenAny(locationTask, timerTask);
             if (firstTask == timerTask && !locationTask.IsCompleted)
             {
-                if (showUI)
+                if (showUi)
                 {
                     ShowManualPick = allowManual;
                     OnStateChanged?.Invoke();
@@ -82,12 +75,12 @@ public class ClientLocationService : IClientLocationService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get location");
+            logger.LogWarning(ex, "Failed to get location");
             return null;
         }
         finally
         {
-            if (showUI)
+            if (showUi)
             {
                 IsLocating = false;
                 ShowManualPick = false;

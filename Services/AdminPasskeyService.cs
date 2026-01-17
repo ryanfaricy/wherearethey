@@ -1,4 +1,3 @@
-using System.Text;
 using Fido2NetLib;
 using Fido2NetLib.Objects;
 using Microsoft.EntityFrameworkCore;
@@ -11,17 +10,18 @@ namespace WhereAreThey.Services;
 public class AdminPasskeyService(
     IFido2 fido2,
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IAdminService adminService,
     IEventService eventService,
     ILogger<AdminPasskeyService> logger) : IAdminPasskeyService
 {
     public async Task<CredentialCreateOptions> GetRegistrationOptionsAsync(string adminEmail)
     {
+        await Task.CompletedTask;
+        
         var user = new Fido2User
         {
             DisplayName = "Admin",
             Name = adminEmail,
-            Id = Encoding.UTF8.GetBytes("admin-user-id")
+            Id = "admin-user-id"u8.ToArray(),
         };
 
         return fido2.RequestNewCredential(new RequestNewCredentialParams
@@ -31,8 +31,8 @@ public class AdminPasskeyService(
             AuthenticatorSelection = new AuthenticatorSelection
             {
                 UserVerification = UserVerificationRequirement.Preferred,
-                ResidentKey = ResidentKeyRequirement.Preferred
-            }
+                ResidentKey = ResidentKeyRequirement.Preferred,
+            },
         });
     }
 
@@ -44,7 +44,7 @@ public class AdminPasskeyService(
             {
                 AttestationResponse = attestationRawResponse,
                 OriginalOptions = options,
-                IsCredentialIdUniqueToUserCallback = (args, cancellationToken) => Task.FromResult(true)
+                IsCredentialIdUniqueToUserCallback = (_, _) => Task.FromResult(true),
             });
 
             var newKey = new AdminPasskey
@@ -55,7 +55,7 @@ public class AdminPasskeyService(
                 Counter = result.SignCount,
                 CredType = result.Type.ToString(),
                 Aaguid = result.AaGuid.ToString(),
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             await using var context = await contextFactory.CreateDbContextAsync();
@@ -81,7 +81,7 @@ public class AdminPasskeyService(
         return fido2.GetAssertionOptions(new GetAssertionOptionsParams
         {
             AllowedCredentials = allowedCredentials,
-            UserVerification = UserVerificationRequirement.Preferred
+            UserVerification = UserVerificationRequirement.Preferred,
         });
     }
 
@@ -106,7 +106,7 @@ public class AdminPasskeyService(
                 OriginalOptions = options,
                 StoredPublicKey = key.PublicKey,
                 StoredSignatureCounter = key.Counter,
-                IsUserHandleOwnerOfCredentialIdCallback = (args, cancellationToken) => Task.FromResult(true)
+                IsUserHandleOwnerOfCredentialIdCallback = (_, _) => Task.FromResult(true),
             });
 
             // Update counter to prevent replay attacks
@@ -148,7 +148,7 @@ public class AdminPasskeyService(
         {
             Timestamp = DateTime.UtcNow,
             IpAddress = ipAddress,
-            IsSuccessful = isSuccessful
+            IsSuccessful = isSuccessful,
         };
         context.AdminLoginAttempts.Add(attempt);
         await context.SaveChangesAsync();

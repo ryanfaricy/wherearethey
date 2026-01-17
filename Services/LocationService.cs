@@ -1,8 +1,8 @@
+using GeoTimeZone;
 using Microsoft.EntityFrameworkCore;
+using TimeZoneConverter;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
-using GeoTimeZone;
-using TimeZoneConverter;
 using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;

@@ -8,12 +8,12 @@
 @inject ILogger<AdminControlPanel> Logger
 @inject IEventService EventService
 @inject IJSRuntime JsRuntime
-@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
-@using WhereAreThey.Components.Admin
 @using System.Text.Json
 @using Fido2NetLib
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@using WhereAreThey.Components.Admin
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <PageTitle>Admin Control Panel</PageTitle>
@@ -103,7 +103,7 @@
             try
             {
                 var result = await SessionStorage.GetAsync<bool>("isAdmin");
-                if (result.Success && result.Value)
+                if (result is { Success: true, Value: true })
                 {
                     _isAuthenticated = true;
                     StateHasChanged();
@@ -142,7 +142,10 @@
 
     private async Task LoginWithPasskey()
     {
-        if (_module == null) return;
+        if (_module == null)
+        {
+            return;
+        }
 
         try
         {
@@ -152,7 +155,10 @@
             var responseJson = await _module.InvokeAsync<string>("loginWithPasskey", jsonOptions);
             var assertionRawResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(responseJson);
 
-            if (assertionRawResponse == null) throw new Exception("Failed to parse authenticator response");
+            if (assertionRawResponse == null)
+            {
+                throw new Exception("Failed to parse authenticator response");
+            }
 
             if (await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp))
             {
@@ -191,7 +197,11 @@
 
     private void HandleReportAdded(LocationReport report)
     {
-        if (!_isAuthenticated) return;
+        if (!_isAuthenticated)
+        {
+            return;
+        }
+
         InvokeAsync(() => {
             NotificationService.Notify(new NotificationMessage
             {
@@ -205,7 +215,11 @@
 
     private void HandleFeedbackAdded(Feedback feedback)
     {
-        if (!_isAuthenticated) return;
+        if (!_isAuthenticated)
+        {
+            return;
+        }
+
         InvokeAsync(() => {
             NotificationService.Notify(NotificationSeverity.Info, "New Feedback", feedback.Type, 5000);
         });
@@ -213,7 +227,11 @@
 
     private void HandleDonationAdded(Donation donation)
     {
-        if (!_isAuthenticated) return;
+        if (!_isAuthenticated)
+        {
+            return;
+        }
+
         InvokeAsync(() => {
             NotificationService.Notify(NotificationSeverity.Success, "New Donation Received", $"{donation.Amount} {donation.Currency}", 7000);
         });
@@ -221,7 +239,11 @@
 
     private void HandleAdminLoginAttempt(AdminLoginAttempt attempt)
     {
-        if (!_isAuthenticated) return;
+        if (!_isAuthenticated)
+        {
+            return;
+        }
+
         InvokeAsync(() => {
             if (!attempt.IsSuccessful)
             {
@@ -232,7 +254,11 @@
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         EventService.OnReportAdded -= HandleReportAdded;
         EventService.OnFeedbackAdded -= HandleFeedbackAdded;

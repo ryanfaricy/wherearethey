@@ -6,7 +6,7 @@ public enum AppTheme
 {
     Light,
     Dark,
-    System
+    System,
 }
 
 /// <inheritdoc />
@@ -18,10 +18,12 @@ public class AppThemeService(IEventService eventService) : IAppThemeService
     /// <inheritdoc />
     public void SetTheme(AppTheme theme)
     {
-        if (CurrentTheme != theme)
+        if (CurrentTheme == theme)
         {
-            CurrentTheme = theme;
-            eventService.NotifyThemeChanged();
+            return;
         }
+        
+        CurrentTheme = theme;
+        eventService.NotifyThemeChanged();
     }
 }

@@ -25,7 +25,10 @@ public class FeedbackValidator : AbstractValidator<Feedback>
         RuleFor(x => x)
             .CustomAsync(async (feedback, context, cancellation) =>
             {
-                if (feedback.Message.StartsWith("[AUTO-REPORTED]")) return;
+                if (feedback.Message.StartsWith("[AUTO-REPORTED]"))
+                {
+                    return;
+                }
 
                 var settings = await settingsService.GetSettingsAsync();
 

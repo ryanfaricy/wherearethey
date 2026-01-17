@@ -95,7 +95,7 @@
     private string _email = "";
     private bool _isSubmitting;
     private string? _approxAddress;
-    private List<GeocodingResult> _geocodingResults = new();
+    private List<GeocodingResult> _geocodingResults = [];
 
     protected override void OnInitialized()
     {
@@ -114,7 +114,7 @@
             IsActive = Alert.IsActive,
             CreatedAt = Alert.CreatedAt,
             ExpiresAt = Alert.ExpiresAt,
-            UserIdentifier = Alert.UserIdentifier
+            UserIdentifier = Alert.UserIdentifier,
         };
 
         _email = AlertService.DecryptEmail(Alert.EncryptedEmail) ?? "";
@@ -138,16 +138,20 @@
 
     private void OnAddressSelected(object value)
     {
-        if (value is string address)
+        if (value is not string address)
         {
-            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
-            if (selected != null)
-            {
-                _alert.Latitude = selected.Latitude;
-                _alert.Longitude = selected.Longitude;
-                _approxAddress = selected.Address;
-            }
+            return;
         }
+
+        var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
+        if (selected == null)
+        {
+            return;
+        }
+
+        _alert.Latitude = selected.Latitude;
+        _alert.Longitude = selected.Longitude;
+        _approxAddress = selected.Address;
     }
 
     private async Task Save()
@@ -156,7 +160,7 @@
         try
         {
             var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
-            string? newEmail = _email != originalEmail ? _email : null;
+            var newEmail = _email != originalEmail ? _email : null;
 
             await AlertService.UpdateAlertAsync(_alert, newEmail);
             NotificationService.Notify(NotificationSeverity.Success, "Alert updated successfully");

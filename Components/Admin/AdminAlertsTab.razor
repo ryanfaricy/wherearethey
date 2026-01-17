@@ -1,11 +1,11 @@
-@using WhereAreThey.Models
-@using WhereAreThey.Services.Interfaces
 @inject IAlertService AlertService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 @inject ILogger<AdminAlertsTab> Logger
 @inject IEventService EventService
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
 <RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
@@ -49,7 +49,7 @@
 @code {
     [Parameter] public bool IsMobile { get; set; }
     
-    private List<Alert> _alerts = new();
+    private List<Alert> _alerts = [];
     private RadzenDataGrid<Alert>? _alertsGrid;
 
     protected override async Task OnInitializedAsync()
@@ -77,7 +77,11 @@
         InvokeAsync(async () =>
         {
             _alerts.Insert(0, alert);
-            if (_alertsGrid != null) await _alertsGrid.Reload();
+            if (_alertsGrid != null)
+            {
+                await _alertsGrid.Reload();
+            }
+
             StateHasChanged();
         });
     }
@@ -90,7 +94,11 @@
             if (index != -1)
             {
                 _alerts[index] = alert;
-                if (_alertsGrid != null) await _alertsGrid.Reload();
+                if (_alertsGrid != null)
+                {
+                    await _alertsGrid.Reload();
+                }
+
                 StateHasChanged();
             }
         });
@@ -101,7 +109,11 @@
         InvokeAsync(async () =>
         {
             _alerts.RemoveAll(a => a.Id == id);
-            if (_alertsGrid != null) await _alertsGrid.Reload();
+            if (_alertsGrid != null)
+            {
+                await _alertsGrid.Reload();
+            }
+
             StateHasChanged();
         });
     }

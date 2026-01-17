@@ -56,7 +56,10 @@
 
     private async Task PerformVerification()
     {
-        if (string.IsNullOrEmpty(Token)) return;
+        if (string.IsNullOrEmpty(Token))
+        {
+            return;
+        }
 
         _isVerifying = true;
         _isError = false;
