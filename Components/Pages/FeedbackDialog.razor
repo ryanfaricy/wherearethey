@@ -5,6 +5,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IHapticFeedbackService HapticFeedbackService
+@inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject ILogger<FeedbackDialog> Logger
 @inject IStringLocalizer<App> L
@@ -75,6 +76,14 @@
         _isSubmitting = true;
         try
         {
+            // Easter egg to get to admin login screen
+            if (_feedback.Type == L["Feature"] && _feedback.Message?.Trim().Equals("let me into cp", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                DialogService.Close(true);
+                NavigationManager.NavigateTo("/cp");
+                return;
+            }
+
             _feedback.UserIdentifier = _userIdentifier;
             await FeedbackService.AddFeedbackAsync(_feedback);
             await HapticFeedbackService.VibrateSuccessAsync();
