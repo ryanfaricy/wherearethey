@@ -131,7 +131,8 @@ public class MapStateServiceTests : IDisposable
         _service.MapInitialized = true;
 
         // Act
-        await _eventServiceMock.RaiseAsync(e => e.OnAlertAdded += null, alert);
+        // ReSharper disable once MethodHasAsyncOverload
+        _eventServiceMock.Raise(e => e.OnAlertAdded += null, alert);
 
         // Assert
         Assert.Empty(_service.Alerts);

@@ -1,3 +1,5 @@
+using FluentValidation.Results;
+
 namespace WhereAreThey.Models;
 
 /// <summary>
@@ -18,6 +20,9 @@ public class Result
     public static Result Success() => new(true, null);
     public static Result Failure(string error) => new(false, error);
 
+    public static Result Failure(ValidationResult validationResult) =>
+        Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+
     public static implicit operator bool(Result result) => result.IsSuccess;
 }
 
@@ -37,6 +42,9 @@ public class Result<T> : Result
 
     public static Result<T> Success(T value) => new(value, true, null);
     public new static Result<T> Failure(string error) => new(default, false, error);
+
+    public new static Result<T> Failure(ValidationResult validationResult) =>
+        Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
 
     public static implicit operator T?(Result<T> result) => result.Value;
 }

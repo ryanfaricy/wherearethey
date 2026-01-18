@@ -31,7 +31,7 @@ public class AlertService(
             var validationResult = await validator.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
-                return Result<Alert>.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+                return Result<Alert>.Failure(validationResult);
             }
 
             await using var context = await contextFactory.CreateDbContextAsync();
@@ -276,7 +276,7 @@ public class AlertService(
             var validationResult = await validator.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
-                return Result.Failure(string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
+                return Result.Failure(validationResult);
             }
 
             await using var context = await contextFactory.CreateDbContextAsync();
