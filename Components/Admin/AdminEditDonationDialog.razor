@@ -1,0 +1,91 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IDonationService DonationService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@_donation" Submit="@((Donation _) => Save())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenFormField Text="Amount" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenNumeric @bind-Value="@_donation.Amount" TValue="decimal" 
+                           ShowUpDown="true" Style="width: 100%;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Currency" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="@_donation.Currency" Style="width: 100%;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Donor Name" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="@_donation.DonorName" Style="width: 100%;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Donor Email" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="@_donation.DonorEmail" Style="width: 100%;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Status" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDropDown @bind-Value="@_donation.Status" Data="@_statuses" Style="width: 100%;" />
+        </RadzenFormField>
+        
+        <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-2">
+            Payment ID: @(_donation.ExternalPaymentId ?? "N/A")
+        </RadzenText>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SAVE CHANGES" 
+                          Icon="save" ButtonStyle="ButtonStyle.Primary" 
+                          IsBusy="@_isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Donation Donation { get; set; } = new();
+
+    private Donation _donation = new();
+    private bool _isSubmitting;
+    private List<string> _statuses = ["pending", "completed", "failed", "succeeded"];
+
+    protected override void OnInitialized()
+    {
+        // Create a copy to edit
+        _donation = new Donation
+        {
+            Id = Donation.Id,
+            Amount = Donation.Amount,
+            Currency = Donation.Currency,
+            DonorName = Donation.DonorName,
+            DonorEmail = Donation.DonorEmail,
+            Status = Donation.Status,
+            CreatedAt = Donation.CreatedAt,
+            ExternalPaymentId = Donation.ExternalPaymentId
+        };
+    }
+
+    private async Task Save()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var result = await DonationService.UpdateDonationAsync(_donation);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Donation updated successfully");
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

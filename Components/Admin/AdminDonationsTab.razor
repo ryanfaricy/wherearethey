@@ -2,6 +2,7 @@
 @inject UserTimeZoneService TimeZoneService
 @inject ILogger<AdminDonationsTab> Logger
 @inject IEventService EventService
+@inject DialogService DialogService
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
@@ -24,6 +25,12 @@
             <Template Context="donation">
                 <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
                              Text="@donation.Status" />
+            </Template>
+        </RadzenDataGridColumn>
+        <RadzenDataGridColumn TItem="Donation" Context="donation" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="60px">
+            <Template Context="donation">
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
+                              Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
             </Template>
         </RadzenDataGridColumn>
     </Columns>
@@ -51,6 +58,19 @@
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading donations");
+        }
+    }
+
+    private async Task EditDonation(Donation donation)
+    {
+        var result = await DialogService.OpenAsync<AdminEditDonationDialog>("EDIT DONATION",
+            new Dictionary<string, object> { { "Donation", donation } },
+            new DialogOptions { Width = "400px" });
+
+        if (result == true)
+        {
+            // Event listener will update the list automatically, but we can force a reload if needed.
+            StateHasChanged();
         }
     }
 

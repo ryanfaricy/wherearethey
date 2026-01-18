@@ -113,4 +113,46 @@ public class DonationServiceTests
         // Assert
         Assert.False(result);
     }
+
+    [Fact]
+    public async Task UpdateDonation_ShouldUpdateFields()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var eventServiceMock = new Mock<IEventService>();
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper());
+
+        Donation initial;
+        await using (var context = new ApplicationDbContext(options))
+        {
+            initial = new Donation
+            {
+                Amount = 10,
+                DonorName = "Initial Name",
+                Status = "pending",
+            };
+            context.Donations.Add(initial);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        initial.Amount = 50;
+        initial.DonorName = "Updated Name";
+        initial.Status = "completed";
+        var result = await service.UpdateDonationAsync(initial);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        await using (var context = new ApplicationDbContext(options))
+        {
+            var updated = await context.Donations.FindAsync(initial.Id);
+            Assert.NotNull(updated);
+            Assert.Equal(50, updated.Amount);
+            Assert.Equal("Updated Name", updated.DonorName);
+            Assert.Equal("completed", updated.Status);
+        }
+        
+        eventServiceMock.Verify(e => e.NotifyDonationUpdated(It.IsAny<Donation>()), Times.Once);
+    }
 }

@@ -36,4 +36,11 @@ public interface IDonationService
     /// </summary>
     /// <returns>A list of donations.</returns>
     Task<List<Donation>> GetAllDonationsAsync();
+
+    /// <summary>
+    /// Updates a donation's details.
+    /// </summary>
+    /// <param name="donation">The updated donation.</param>
+    /// <returns>The result of the update operation.</returns>
+    Task<Result> UpdateDonationAsync(Donation donation);
 }

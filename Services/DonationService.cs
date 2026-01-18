@@ -78,4 +78,32 @@ public class DonationService(
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
     }
+
+    /// <inheritdoc />
+    public async Task<Result> UpdateDonationAsync(Donation donation)
+    {
+        try
+        {
+            await using var context = await contextFactory.CreateDbContextAsync();
+            var existing = await context.Donations.FindAsync(donation.Id);
+            if (existing == null)
+            {
+                return Result.Failure("Donation not found.");
+            }
+
+            existing.Amount = donation.Amount;
+            existing.DonorName = donation.DonorName;
+            existing.DonorEmail = donation.DonorEmail;
+            existing.Status = donation.Status;
+            existing.Currency = donation.Currency;
+
+            await context.SaveChangesAsync();
+            eventService.NotifyDonationUpdated(existing);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while updating the donation: {ex.Message}");
+        }
+    }
 }
