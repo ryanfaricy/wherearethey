@@ -1,45 +1,56 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using Microsoft.Extensions.Localization
 @inject UserTimeZoneService TimeZoneService
 @inject IAdminService AdminService
+@inject IStringLocalizer<App> L
 
 <RadzenCard @attributes="CardAttributes" @onclick="OnClick">
-    <RadzenStack Gap="0.5rem">
-        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">
-                @TimeZoneService.FormatLocal(Report.Timestamp, "g")
-            </RadzenText>
-            @if (Report.IsEmergency)
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Start" Gap="0.5rem">
+        <RadzenStack Gap="0.5rem" Style="flex: 1;">
+            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">
+                    @TimeZoneService.FormatLocal(Report.Timestamp, "g")
+                </RadzenText>
+                @if (Report.IsEmergency)
+                {
+                    <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
+                }
+            </RadzenStack>
+
+            @if (!string.IsNullOrEmpty(Report.Message))
             {
-                <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
+                <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">
+                    @GetMessage()
+                </RadzenText>
+            }
+
+            @if (IsAdmin)
+            {
+                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="@AdminDetailsStyle">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Report.ReporterIdentifier</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.LocationDisplay()</RadzenText>
+                    @if (Report.HasReporterLocation())
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption">Rep: @Report.ReporterLocationDisplay()</RadzenText>
+                    }
+                </RadzenStack>
             }
         </RadzenStack>
 
-        @if (!string.IsNullOrEmpty(Report.Message))
-        {
-            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">
-                @GetMessage()
-            </RadzenText>
-        }
-
-        @if (IsAdmin)
-        {
-            <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="@AdminDetailsStyle">
-                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Report.ReporterIdentifier</RadzenText>
-                    @if (OnEdit.HasDelegate)
-                    {
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@OnEdit" @onclick:stopPropagation="true" />
-                    }
-                </RadzenStack>
-                <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.LocationDisplay()</RadzenText>
-                @if (Report.HasReporterLocation())
-                {
-                    <RadzenText TextStyle="TextStyle.Caption">Rep: @Report.ReporterLocationDisplay()</RadzenText>
-                }
-            </RadzenStack>
-        }
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.25rem" AlignItems="AlignItems.Start">
+            @if (IsAdmin && OnEdit.HasDelegate)
+            {
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" 
+                              Click="@OnEdit" @onclick:stopPropagation="true" ToolTip="@L["EDIT"]" />
+            }
+            @if ((IsAdmin || (CurrentUserIdentifier != null && Report.ReporterIdentifier == CurrentUserIdentifier)) && OnDelete.HasDelegate)
+            {
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" 
+                              Click="@OnDelete" @onclick:stopPropagation="true" ToolTip="@L["DELETE"]" />
+            }
+        </RadzenStack>
     </RadzenStack>
 </RadzenCard>
 
@@ -48,8 +59,10 @@
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
     [Parameter] public int MaxMessageLength { get; set; } = 0;
+    [Parameter] public string? CurrentUserIdentifier { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
 
     private string GetMessage()
     {

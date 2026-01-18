@@ -4,6 +4,8 @@
 @using WhereAreThey.Services.Interfaces
 @inject DialogService DialogService
 @inject IAlertService AlertService
+@inject IReportService ReportService
+@inject IClientStorageService StorageService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject IAdminService AdminService
@@ -41,7 +43,9 @@
                                     <ReportCard Report="@r" 
                                                 IsSelected="@(r.Id == SelectedReportId)"
                                                 IsAdmin="@_isAdmin"
-                                                OnEdit="@(() => EditReport(r))" />
+                                                CurrentUserIdentifier="@_userIdentifier"
+                                                OnEdit="@(() => EditReport(r))"
+                                                OnDelete="@(() => DeleteReport(r))" />
                                 </Template>
                             </RadzenDataList>
                         </div>
@@ -95,6 +99,7 @@
 
     private bool _alertDeleted;
     private bool _isAdmin;
+    private string? _userIdentifier;
     private int _selectedTabIndex;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
@@ -103,6 +108,7 @@
     protected override async Task OnInitializedAsync()
     {
         _isAdmin = await AdminService.IsAdminAsync();
+        _userIdentifier = await StorageService.GetUserIdentifierAsync();
 
         if (SelectedAlertId.HasValue && !SelectedReportId.HasValue)
         {
@@ -120,6 +126,28 @@
         {
             _alertDeleted = true; // Trigger refresh on close
             DialogService.Close(true); // Close details and refresh map
+        }
+    }
+
+    private async Task DeleteReport(LocationReport report)
+    {
+        var confirmed = await DialogService.Confirm("Are you sure you want to delete this report?", 
+            "Delete Report", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+
+        if (confirmed == true)
+        {
+            var result = await ReportService.DeleteReportAsync(report.Id);
+            if (result.IsSuccess)
+            {
+                Reports.Remove(report);
+                _alertDeleted = true;
+                NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
+                StateHasChanged();
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to delete report", result.Error ?? "Unknown error");
+            }
         }
     }
 
