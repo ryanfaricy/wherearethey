@@ -2,6 +2,7 @@
 @using Microsoft.Extensions.Options
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Helpers
 @inject IDonationService DonationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -124,29 +125,8 @@
             { 
                 DisplayName = string.IsNullOrWhiteSpace(d.DonorName) ? "Anonymous" : d.DonorName,
                 Amount = d.Amount,
-                TimeAgo = TimeAgo(d.CreatedAt),
+                TimeAgo = DateTimeUtils.GetTimeAgo(d.CreatedAt),
             }).ToList();
-    }
-
-    private static string TimeAgo(DateTime dateTime)
-    {
-        var span = DateTime.UtcNow - dateTime;
-        if (span.TotalSeconds < 60)
-        {
-            return "just now";
-        }
-
-        if (span.TotalMinutes < 60)
-        {
-            return $"{(int)span.TotalMinutes}m ago";
-        }
-
-        if (span.TotalHours < 24)
-        {
-            return $"{(int)span.TotalHours}h ago";
-        }
-
-        return $"{(int)span.TotalDays}d ago";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

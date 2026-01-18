@@ -2,6 +2,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using WhereAreThey.Helpers
 @inject DialogService DialogService
 @inject IAlertService AlertService
 @inject IReportService ReportService
@@ -34,7 +35,7 @@
                     {
                         <RadzenText TextStyle="TextStyle.Caption">
                             <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentTimestamp) 
-                            <span class="rz-color-info">(@TimeAgo(MostRecentTimestamp))</span>
+                            <span class="rz-color-info">(@DateTimeUtils.GetTimeAgo(MostRecentTimestamp))</span>
                         </RadzenText>
 
                         <div style="max-height: 400px; overflow-y: auto;">
@@ -195,31 +196,5 @@
                 await JsRuntime.InvokeVoidAsync("scrollToElement", "selected-alert-card");
             }
         }
-    }
-
-    private static string TimeAgo(DateTime dateTime)
-    {
-        var span = DateTime.UtcNow - dateTime;
-        if (span.TotalSeconds < 30)
-        {
-            return "just now";
-        }
-
-        if (span.TotalMinutes < 1)
-        {
-            return "less than a minute ago";
-        }
-
-        if (span.TotalMinutes < 60)
-        {
-            return $"{(int)span.TotalMinutes}m ago";
-        }
-
-        if (span.TotalHours < 24)
-        {
-            return $"{(int)span.TotalHours}h ago";
-        }
-
-        return $"{(int)span.TotalDays}d ago";
     }
 }
