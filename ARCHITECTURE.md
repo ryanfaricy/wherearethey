@@ -33,7 +33,7 @@ The `VisibilityPolicy` helper centralizes the logic for "ShouldShow" (e.g., `isA
 ## 🧩 Key Components & Services
 
 ### Services
-- **ReportService (Singleton)**: Manages the lifecycle of incident reports (Add, Get, Delete). Provides real-time `OnReportAdded` and `OnReportDeleted` events for UI updates.
+- **ReportService (Singleton)**: Manages the lifecycle of incident reports (Add, Get, Delete). Provides real-time notifications for UI updates via `IEventService`.
 - **LocationService (Singleton)**: Handles specialized spatial and geographic logic, such as radius searches and local time formatting based on coordinates.
 - **ReportProcessingService (Scoped)**: Handles background processing for new reports, including alert matching, geocoding, and email notifications.
 - **AlertService (Scoped)**: Manages distance-based user alerts. Handles email encryption at rest using the Data Protection API.
@@ -98,5 +98,5 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 6. **Centralized Validation**: Use FluentValidation builders (`LocationReportValidator`, etc.) for any submission-related checks (spam, content, distance).
 7. **Decouple Post-Processing**: Use `IReportProcessingService` for non-blocking tasks that occur after a report is saved.
 8. **Inherit from `BaseService<T>`**: New business services for auditable entities should inherit from `BaseService<T>` to gain automatic soft-delete and admin filtering.
-9. **Use `OnEntityChanged`**: Prefer the generic `OnEntityChanged` event for UI updates unless specialized payload is required.
+9. **Use `OnEntityChanged`**: Always use the generic `OnEntityChanged` event for UI updates related to auditable entities.
 10. **Update Tests**: Any logic change in services MUST be accompanied by a test update in `WhereAreThey.Tests`.

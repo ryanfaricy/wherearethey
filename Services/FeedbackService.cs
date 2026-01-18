@@ -22,7 +22,6 @@ public class FeedbackService(
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();
 
-        EventService.NotifyFeedbackAdded(feedback);
         EventService.NotifyEntityChanged(feedback, EntityChangeType.Added);
     }
 
@@ -59,7 +58,6 @@ public class FeedbackService(
             existing.DeletedAt = feedback.DeletedAt;
 
             await context.SaveChangesAsync();
-            EventService.NotifyFeedbackUpdated(existing);
             EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }
@@ -67,15 +65,5 @@ public class FeedbackService(
         {
             return Result.Failure($"An error occurred while updating feedback: {ex.Message}");
         }
-    }
-
-    /// <inheritdoc />
-    protected override void NotifyUpdated(Feedback entity) => EventService.NotifyFeedbackUpdated(entity);
-    
-    /// <inheritdoc />
-    protected override void NotifyDeleted(Feedback entity)
-    {
-        EventService.NotifyFeedbackUpdated(entity);
-        EventService.NotifyFeedbackDeleted(entity.Id);
     }
 }

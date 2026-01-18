@@ -99,7 +99,7 @@ public class MapStateServiceTests : IDisposable
         _service.MapInitialized = true;
 
         // Act
-        _eventServiceMock.Raise(e => e.OnReportAdded += null, report);
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Added);
 
         // Assert
         Assert.Contains(report, _service.Reports);
@@ -115,7 +115,7 @@ public class MapStateServiceTests : IDisposable
         _service.MapInitialized = true;
 
         // Act
-        _eventServiceMock.Raise(e => e.OnReportDeleted += null, 1);
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Deleted);
 
         // Assert
         Assert.Empty(_service.Reports);
@@ -132,7 +132,7 @@ public class MapStateServiceTests : IDisposable
 
         // Act
         // ReSharper disable once MethodHasAsyncOverload
-        _eventServiceMock.Raise(e => e.OnAlertAdded += null, alert);
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, alert, EntityChangeType.Added);
 
         // Assert
         Assert.Empty(_service.Alerts);

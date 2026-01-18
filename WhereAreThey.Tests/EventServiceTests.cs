@@ -10,15 +10,21 @@ public class EventServiceTests
     {
         // Arrange
         var service = new EventService();
-        LocationReport? receivedReport = null;
-        service.OnReportAdded += report => receivedReport = report;
+        object? receivedEntity = null;
+        EntityChangeType receivedType = EntityChangeType.Updated;
+        service.OnEntityChanged += (entity, type) => 
+        {
+            receivedEntity = entity;
+            receivedType = type;
+        };
         var report = new LocationReport { Id = 1 };
 
         // Act
-        service.NotifyReportAdded(report);
+        service.NotifyEntityChanged(report, EntityChangeType.Added);
 
         // Assert
-        Assert.Equal(report, receivedReport);
+        Assert.Equal(report, receivedEntity);
+        Assert.Equal(EntityChangeType.Added, receivedType);
     }
 
     [Fact]
@@ -26,14 +32,21 @@ public class EventServiceTests
     {
         // Arrange
         var service = new EventService();
-        var receivedId = 0;
-        service.OnReportDeleted += id => receivedId = id;
+        object? receivedEntity = null;
+        EntityChangeType receivedType = EntityChangeType.Added;
+        service.OnEntityChanged += (entity, type) => 
+        {
+            receivedEntity = entity;
+            receivedType = type;
+        };
+        var report = new LocationReport { Id = 123 };
 
         // Act
-        service.NotifyReportDeleted(123);
+        service.NotifyEntityChanged(report, EntityChangeType.Deleted);
 
         // Assert
-        Assert.Equal(123, receivedId);
+        Assert.Equal(report, receivedEntity);
+        Assert.Equal(EntityChangeType.Deleted, receivedType);
     }
 
     [Fact]
@@ -41,15 +54,15 @@ public class EventServiceTests
     {
         // Arrange
         var service = new EventService();
-        Feedback? receivedFeedback = null;
-        service.OnFeedbackAdded += f => receivedFeedback = f;
+        object? receivedEntity = null;
+        service.OnEntityChanged += (entity, type) => receivedEntity = entity;
         var feedback = new Feedback { Id = 1 };
 
         // Act
-        service.NotifyFeedbackAdded(feedback);
+        service.NotifyEntityChanged(feedback, EntityChangeType.Added);
 
         // Assert
-        Assert.Equal(feedback, receivedFeedback);
+        Assert.Equal(feedback, receivedEntity);
     }
 
     [Fact]
@@ -57,15 +70,15 @@ public class EventServiceTests
     {
         // Arrange
         var service = new EventService();
-        Donation? receivedDonation = null;
-        service.OnDonationAdded += d => receivedDonation = d;
+        object? receivedEntity = null;
+        service.OnEntityChanged += (entity, type) => receivedEntity = entity;
         var donation = new Donation { Id = 1 };
 
         // Act
-        service.NotifyDonationAdded(donation);
+        service.NotifyEntityChanged(donation, EntityChangeType.Added);
 
         // Assert
-        Assert.Equal(donation, receivedDonation);
+        Assert.Equal(donation, receivedEntity);
     }
 
     [Fact]
@@ -73,15 +86,15 @@ public class EventServiceTests
     {
         // Arrange
         var service = new EventService();
-        Alert? receivedAlert = null;
-        service.OnAlertAdded += a => receivedAlert = a;
+        object? receivedEntity = null;
+        service.OnEntityChanged += (entity, type) => receivedEntity = entity;
         var alert = new Alert { Id = 1 };
 
         // Act
-        service.NotifyAlertAdded(alert);
+        service.NotifyEntityChanged(alert, EntityChangeType.Added);
 
         // Assert
-        Assert.Equal(alert, receivedAlert);
+        Assert.Equal(alert, receivedEntity);
     }
 
     [Fact]

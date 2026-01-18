@@ -244,7 +244,7 @@ public class AlertServiceTests
         Assert.True(result.IsSuccess);
         await using (var context = new ApplicationDbContext(options))
         {
-            var deactivatedAlert = await context.Alerts.FindAsync(alertId);
+            var deactivatedAlert = await context.Alerts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == alertId);
             Assert.NotNull(deactivatedAlert!.DeletedAt);
         }
     }
@@ -597,11 +597,11 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        _eventServiceMock.Verify(x => x.NotifyAlertUpdated(It.Is<Alert>(a => a.Id == alert.Id)), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<Alert>(a => a.Id == alert.Id), EntityChangeType.Updated), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())
         {
-            var updated = await context.Alerts.FindAsync(alert.Id);
+            var updated = await context.Alerts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == alert.Id);
             Assert.NotNull(updated!.DeletedAt);
         }
     }
@@ -625,11 +625,11 @@ public class AlertServiceTests
         await service.DeleteAlertAsync(alert.Id);
 
         // Assert
-        _eventServiceMock.Verify(x => x.NotifyAlertDeleted(alert.Id), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.IsAny<Alert>(), EntityChangeType.Deleted), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())
         {
-            var deleted = await context.Alerts.FindAsync(alert.Id);
+            var deleted = await context.Alerts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == alert.Id);
             Assert.NotNull(deleted);
             Assert.NotNull(deleted.DeletedAt);
         }

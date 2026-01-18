@@ -84,7 +84,7 @@ else
 @code {
     protected override Task<List<Feedback>> GetEntitiesAsync() => FeedbackService.GetAllFeedbackAsync();
 
-    private async Task EditFeedback(Feedback feedback)
+    private async Task EditFeedback(IEntity feedback)
     {
         var result = await DialogService.OpenAsync<AdminEditFeedbackDialog>($"Edit Feedback {feedback.Id}", 
             new Dictionary<string, object> { { "Feedback", feedback } },

@@ -88,7 +88,7 @@ public class AddressSearchTests : ComponentTestBase
         var searchVal = "Initial";
         var cut = Render<AddressSearch>(parameters => parameters
             .Add(p => p.SearchValue, searchVal)
-            .Add(p => p.SearchValueChanged, (string s) => searchVal = s)
+            .Add(p => p.SearchValueChanged, s => searchVal = s)
         );
         var autocomplete = cut.FindComponent<RadzenAutoComplete>();
 

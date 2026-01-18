@@ -111,7 +111,7 @@
         MapState.OnStateChanged += HandleStateChanged;
         ClientLocation.OnStateChanged += HandleStateChanged;
         EventService.OnSettingsChanged += HandleSettingsChanged;
-        EventService.OnReportAdded += HandleReportAdded; // For notifications only
+        EventService.OnEntityChanged += HandleEntityChanged; // For notifications only
         AdminService.OnAdminLogin += HandleAdminLogin;
         AdminService.OnAdminLogout += HandleAdminLogout;
 
@@ -147,6 +147,14 @@
             _systemSettings = settings;
             StateHasChanged();
         });
+    }
+
+    private void HandleEntityChanged(object entity, EntityChangeType type)
+    {
+        if (entity is LocationReport report && type == EntityChangeType.Added)
+        {
+            HandleReportAdded(report);
+        }
     }
 
     private void HandleReportAdded(LocationReport report)
@@ -607,7 +615,7 @@
         MapState.OnStateChanged -= HandleStateChanged;
         ClientLocation.OnStateChanged -= HandleStateChanged;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
-        EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnEntityChanged -= HandleEntityChanged;
         AdminService.OnAdminLogin -= HandleAdminLogin;
         AdminService.OnAdminLogout -= HandleAdminLogout;
 

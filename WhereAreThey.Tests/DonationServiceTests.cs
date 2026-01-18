@@ -153,6 +153,6 @@ public class DonationServiceTests
             Assert.Equal("completed", updated.Status);
         }
         
-        eventServiceMock.Verify(e => e.NotifyDonationUpdated(It.IsAny<Donation>()), Times.Once);
+        eventServiceMock.Verify(e => e.NotifyEntityChanged(It.IsAny<Donation>(), EntityChangeType.Updated), Times.Once);
     }
 }

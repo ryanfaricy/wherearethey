@@ -117,7 +117,7 @@
         }
     }
 
-    private async Task EditReport(LocationReport report)
+    private async Task EditReport(IEntity report)
     {
         var result = await DialogService.OpenAsync<AdminEditReportDialog>($"Edit Report {report.Id}", 
             new Dictionary<string, object> { { "Report", report } },
@@ -168,7 +168,7 @@
         }
     }
 
-    private async Task EditAlert(Alert alert)
+    private async Task EditAlert(IEntity alert)
     {
         var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
             new Dictionary<string, object> { { "Alert", alert } },

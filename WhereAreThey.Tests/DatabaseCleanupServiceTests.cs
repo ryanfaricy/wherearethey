@@ -77,11 +77,11 @@ public class DatabaseCleanupServiceTests
         await service.PublicCleanupDatabaseAsync();
 
         // Assert
-        Assert.Equal(1, await context.LocationReports.CountAsync());
+        Assert.Equal(1, await context.LocationReports.IgnoreQueryFilters().CountAsync());
         Assert.Equal(2, await context.EmailVerifications.CountAsync()); // One new, one old-but-verified
-        Assert.Equal(2, await context.Alerts.CountAsync());
+        Assert.Equal(2, await context.Alerts.IgnoreQueryFilters().CountAsync());
         Assert.Equal(1, await context.AdminLoginAttempts.CountAsync());
-        Assert.Equal(1, await context.Feedbacks.CountAsync());
+        Assert.Equal(1, await context.Feedbacks.IgnoreQueryFilters().CountAsync());
     }
 
     // Wrapper to expose the private/protected method for testing

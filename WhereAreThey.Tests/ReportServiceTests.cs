@@ -137,7 +137,7 @@ public class ReportServiceTests
         await service.AddReportAsync(report);
 
         // Assert
-        _eventServiceMock.Verify(x => x.NotifyReportAdded(It.Is<LocationReport>(r => r.Message == report.Message)), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<LocationReport>(r => r.Message == report.Message), EntityChangeType.Added), Times.Once);
     }
 
     [Fact]

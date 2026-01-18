@@ -5,7 +5,6 @@
 @inject UserTimeZoneService TimeZoneService
 @inject IJSRuntime JsRuntime
 @inject IMapStateService MapState
-@using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
@@ -114,7 +113,7 @@ else
 
     protected override Task<List<LocationReport>> GetEntitiesAsync() => ReportService.GetAllReportsAsync();
 
-    private async Task EditReport(LocationReport report)
+    private async Task EditReport(IEntity report)
     {
         var result = await DialogService.OpenAsync<AdminEditReportDialog>($"Edit Report {report.Id}", 
             new Dictionary<string, object> { { "Report", report } },

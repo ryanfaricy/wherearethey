@@ -91,8 +91,8 @@
                 }
             }
 
-            <RadzenStack Orientation="@_stackOrientation" 
-                         AlignItems="@_stackAlign" 
+            <RadzenStack Orientation="@StackOrientation" 
+                         AlignItems="@StackAlign" 
                          Gap="1rem" Class="rz-mt-4">
                 @if (IsMobile)
                 {
@@ -111,8 +111,8 @@
 
 @code {
     [Parameter] public bool IsMobile { get; set; }
-    private Orientation _stackOrientation => IsMobile ? Orientation.Vertical : Orientation.Horizontal;
-    private AlignItems _stackAlign => IsMobile ? AlignItems.Stretch : AlignItems.Center;
+    private Orientation StackOrientation => IsMobile ? Orientation.Vertical : Orientation.Horizontal;
+    private AlignItems StackAlign => IsMobile ? AlignItems.Stretch : AlignItems.Center;
     
     private SystemSettings _systemSettings = new();
     private List<AdminPasskey>? _passkeys;

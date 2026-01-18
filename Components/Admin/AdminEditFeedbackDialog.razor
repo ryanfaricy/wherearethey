@@ -41,7 +41,7 @@
 
     private Feedback _feedback = new();
     private bool _isSubmitting;
-    private List<string> _types = ["Bug", "Feature", "General"];
+    private readonly List<string> _types = ["Bug", "Feature", "General"];
 
     protected override void OnInitialized()
     {
@@ -53,7 +53,7 @@
             Message = Feedback.Message,
             UserIdentifier = Feedback.UserIdentifier,
             Timestamp = Feedback.Timestamp,
-            DeletedAt = Feedback.DeletedAt
+            DeletedAt = Feedback.DeletedAt,
         };
     }
 

@@ -23,7 +23,7 @@ public abstract class BaseService<T>(
     /// </summary>
     /// <param name="isAdmin">If true, ignores global query filters to include deleted items.</param>
     /// <returns>A list of entities ordered by creation date descending.</returns>
-    public virtual async Task<List<T>> GetAllAsync(bool isAdmin = false)
+    protected virtual async Task<List<T>> GetAllAsync(bool isAdmin = false)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var query = context.Set<T>().AsTracking();
@@ -42,7 +42,7 @@ public abstract class BaseService<T>(
     /// </summary>
     /// <param name="id">The primary key of the entity to delete.</param>
     /// <returns>A success result if deleted; otherwise, a failure result.</returns>
-    public virtual async Task<Result> SoftDeleteAsync(int id)
+    protected virtual async Task<Result> SoftDeleteAsync(int id)
     {
         try
         {
@@ -59,12 +59,9 @@ public abstract class BaseService<T>(
             entity.DeletedAt = DateTime.UtcNow;
             await context.SaveChangesAsync();
 
-            // Generic notification
+            // Notify generic change
             EventService.NotifyEntityChanged(entity, EntityChangeType.Updated);
             EventService.NotifyEntityChanged(entity, EntityChangeType.Deleted);
-            
-            // Call the specialized notification methods for backward compatibility
-            NotifyDeleted(entity);
             
             return Result.Success();
         }
@@ -73,16 +70,4 @@ public abstract class BaseService<T>(
             return Result.Failure($"An error occurred while deleting the entity: {ex.Message}");
         }
     }
-    
-    /// <summary>
-    /// Derived classes must implement this to notify subscribers of an update using specialized event methods.
-    /// </summary>
-    /// <param name="entity">The updated entity.</param>
-    protected abstract void NotifyUpdated(T entity);
-    
-    /// <summary>
-    /// Derived classes must implement this to notify subscribers of a deletion using specialized event methods.
-    /// </summary>
-    /// <param name="entity">The deleted entity.</param>
-    protected abstract void NotifyDeleted(T entity);
 }

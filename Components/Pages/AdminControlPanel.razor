@@ -94,9 +94,7 @@
     {
         _clientIp = HttpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
         
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnFeedbackAdded += HandleFeedbackAdded;
-        EventService.OnDonationAdded += HandleDonationAdded;
+        EventService.OnEntityChanged += HandleEntityChanged;
         EventService.OnAdminLoginAttempt += HandleAdminLoginAttempt;
     }
 
@@ -205,6 +203,27 @@
         }
     }
 
+    private void HandleEntityChanged(object entity, EntityChangeType type)
+    {
+        if (type != EntityChangeType.Added)
+        {
+            return;
+        }
+
+        if (entity is LocationReport report)
+        {
+            HandleReportAdded(report);
+        }
+        else if (entity is Feedback feedback)
+        {
+            HandleFeedbackAdded(feedback);
+        }
+        else if (entity is Donation donation)
+        {
+            HandleDonationAdded(donation);
+        }
+    }
+
     private void HandleReportAdded(LocationReport report)
     {
         if (!_isAuthenticated)
@@ -270,9 +289,7 @@
         }
 
         _disposed = true;
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
-        EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnEntityChanged -= HandleEntityChanged;
         EventService.OnAdminLoginAttempt -= HandleAdminLoginAttempt;
     }
 }

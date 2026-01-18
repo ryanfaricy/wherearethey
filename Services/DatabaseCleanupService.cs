@@ -38,6 +38,7 @@ public class DatabaseCleanupService(
         // 1. Delete reports older than DataRetentionDays
         var reportCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
         var oldReports = await context.LocationReports
+            .IgnoreQueryFilters()
             .Where(r => r.Timestamp < reportCutoff)
             .ExecuteDeleteAsync();
         
@@ -60,6 +61,7 @@ public class DatabaseCleanupService(
         // 3. Delete soft-deleted alerts older than DataRetentionDays
         var alertCleanupCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
         var expiredAlerts = await context.Alerts
+            .IgnoreQueryFilters()
             .Where(a => a.DeletedAt != null && a.DeletedAt < alertCleanupCutoff)
             .ExecuteDeleteAsync();
             
@@ -82,6 +84,7 @@ public class DatabaseCleanupService(
         // 5. Delete old feedback (older than 1 year)
         var feedbackCutoff = DateTime.UtcNow.AddYears(-1);
         var oldFeedback = await context.Feedbacks
+            .IgnoreQueryFilters()
             .Where(f => f.Timestamp < feedbackCutoff)
             .ExecuteDeleteAsync();
             

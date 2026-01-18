@@ -4,12 +4,10 @@
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject ILogger<AdminMapFeed> Logger
-@inject UserTimeZoneService TimeZoneService
 @inject IMapStateService MapState
 @inject IMapInteractionService MapInteraction
 @using WhereAreThey.Components.Home
 @using WhereAreThey.Models
-@using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
@@ -100,7 +98,7 @@
         }
     }
 
-    private async Task FocusReportOnMap(LocationReport report)
+    private async Task FocusReportOnMap(IEntity report)
     {
         if (MapState.MapInitialized)
         {
@@ -124,14 +122,14 @@
         }
     }
 
-    private async Task EditReport(LocationReport report)
+    private async Task EditReport(IEntity report)
     {
         await DialogService.OpenAsync<AdminEditReportDialog>($"Edit Report {report.Id}", 
             new Dictionary<string, object> { { "Report", report } },
             DialogConfigs.Admin);
     }
 
-    private async Task DeleteReport(LocationReport report)
+    private async Task DeleteReport(IEntity report)
     {
         var confirmed = await DialogService.Confirm("Are you sure you want to delete this report?", "Delete Report", 
             new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });

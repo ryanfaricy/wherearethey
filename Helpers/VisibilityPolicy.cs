@@ -1,6 +1,6 @@
 namespace WhereAreThey.Helpers;
 
-using WhereAreThey.Models;
+using Models;
 
 /// <summary>
 /// Centralizes visibility rules for auditable entities across the application.

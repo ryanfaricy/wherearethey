@@ -35,7 +35,6 @@ public class ReportService(
             await context.SaveChangesAsync();
 
             // Notify global event bus
-            EventService.NotifyReportAdded(report);
             EventService.NotifyEntityChanged(report, EntityChangeType.Added);
 
             try
@@ -113,7 +112,6 @@ public class ReportService(
             await context.SaveChangesAsync();
             
             // Notify global event bus
-            EventService.NotifyReportUpdated(report);
             EventService.NotifyEntityChanged(report, EntityChangeType.Updated);
             return Result.Success();
         }
@@ -122,15 +120,5 @@ public class ReportService(
             logger.LogError(ex, "Error updating report {ReportId}", report.Id);
             return Result.Failure("An error occurred while updating the report.");
         }
-    }
-
-    /// <inheritdoc />
-    protected override void NotifyUpdated(LocationReport entity) => EventService.NotifyReportUpdated(entity);
-    
-    /// <inheritdoc />
-    protected override void NotifyDeleted(LocationReport entity) 
-    {
-        EventService.NotifyReportUpdated(entity);
-        EventService.NotifyReportDeleted(entity.Id);
     }
 }

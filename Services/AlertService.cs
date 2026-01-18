@@ -55,7 +55,6 @@ public class AlertService(
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
 
-            EventService.NotifyAlertAdded(alert);
             EventService.NotifyEntityChanged(alert, EntityChangeType.Added);
             
             if (!alert.IsVerified)
@@ -148,7 +147,6 @@ public class AlertService(
         
         foreach (var alert in alerts)
         {
-            EventService.NotifyAlertUpdated(alert);
             EventService.NotifyEntityChanged(alert, EntityChangeType.Updated);
         }
 
@@ -221,7 +219,7 @@ public class AlertService(
 
         alert.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
-        EventService.NotifyAlertUpdated(alert);
+        EventService.NotifyEntityChanged(alert, EntityChangeType.Updated);
         return Result.Success();
     }
 
@@ -293,7 +291,6 @@ public class AlertService(
             }
             
             await context.SaveChangesAsync();
-            EventService.NotifyAlertUpdated(existing);
             EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }
@@ -302,15 +299,5 @@ public class AlertService(
             logger.LogError(ex, "Error updating alert {AlertId}", alert.Id);
             return Result.Failure("An error occurred while updating the alert.");
         }
-    }
-
-    /// <inheritdoc />
-    protected override void NotifyUpdated(Alert entity) => EventService.NotifyAlertUpdated(entity);
-    
-    /// <inheritdoc />
-    protected override void NotifyDeleted(Alert entity)
-    {
-        EventService.NotifyAlertUpdated(entity);
-        EventService.NotifyAlertDeleted(entity.Id);
     }
 }

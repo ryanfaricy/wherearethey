@@ -10,5 +10,5 @@ public enum EntityChangeType
     /// <summary>The entity was modified.</summary>
     Updated, 
     /// <summary>The entity was soft-deleted.</summary>
-    Deleted 
+    Deleted,
 }

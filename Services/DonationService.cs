@@ -46,7 +46,6 @@ public class DonationService(
         donation.CreatedAt = DateTime.UtcNow;
         context.Donations.Add(donation);
         await context.SaveChangesAsync();
-        EventService.NotifyDonationAdded(donation);
         EventService.NotifyEntityChanged(donation, EntityChangeType.Added);
         return donation;
     }
@@ -66,7 +65,6 @@ public class DonationService(
 
         donation.Status = status;
         await context.SaveChangesAsync();
-        EventService.NotifyDonationUpdated(donation);
         EventService.NotifyEntityChanged(donation, EntityChangeType.Updated);
         return true;
     }
@@ -100,7 +98,6 @@ public class DonationService(
             existing.DeletedAt = donation.DeletedAt;
 
             await context.SaveChangesAsync();
-            EventService.NotifyDonationUpdated(existing);
             EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }
@@ -114,15 +111,5 @@ public class DonationService(
     public async Task<Result> DeleteDonationAsync(int id)
     {
         return await SoftDeleteAsync(id);
-    }
-
-    /// <inheritdoc />
-    protected override void NotifyUpdated(Donation entity) => EventService.NotifyDonationUpdated(entity);
-    
-    /// <inheritdoc />
-    protected override void NotifyDeleted(Donation entity)
-    {
-        EventService.NotifyDonationUpdated(entity);
-        EventService.NotifyDonationDeleted(entity.Id);
     }
 }

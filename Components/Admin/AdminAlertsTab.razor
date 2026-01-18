@@ -114,7 +114,7 @@ else
         await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
     }
 
-    private async Task EditAlert(Alert alert)
+    private async Task EditAlert(IEntity alert)
     {
         var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
             new Dictionary<string, object> { { "Alert", alert } },

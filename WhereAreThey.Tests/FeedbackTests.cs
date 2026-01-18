@@ -127,7 +127,7 @@ public class FeedbackTests
     }
 
     [Fact]
-    public async Task DeleteFeedback_ShouldRemoveItem()
+    public async Task DeleteFeedback_ShouldSoftDeleteItem()
     {
         // Arrange
         var options = CreateOptions();
@@ -143,7 +143,8 @@ public class FeedbackTests
 
         // Assert
         var all = await service.GetAllFeedbackAsync();
-        Assert.Empty(all);
+        Assert.Single(all);
+        Assert.NotNull(all[0].DeletedAt);
     }
 
     [Fact]

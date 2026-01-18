@@ -28,18 +28,20 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 }
             }
 
-            if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
             {
-                // Ensure Kind is UTC for PostgreSQL
-                if (entry.Entity.CreatedAt.Kind != DateTimeKind.Utc)
-                {
-                    entry.Entity.CreatedAt = DateTime.SpecifyKind(entry.Entity.CreatedAt, DateTimeKind.Utc);
-                }
+                continue;
+            }
 
-                if (entry.Entity.DeletedAt.HasValue && entry.Entity.DeletedAt.Value.Kind != DateTimeKind.Utc)
-                {
-                    entry.Entity.DeletedAt = DateTime.SpecifyKind(entry.Entity.DeletedAt.Value, DateTimeKind.Utc);
-                }
+            // Ensure Kind is UTC for PostgreSQL
+            if (entry.Entity.CreatedAt.Kind != DateTimeKind.Utc)
+            {
+                entry.Entity.CreatedAt = DateTime.SpecifyKind(entry.Entity.CreatedAt, DateTimeKind.Utc);
+            }
+
+            if (entry.Entity.DeletedAt.HasValue && entry.Entity.DeletedAt.Value.Kind != DateTimeKind.Utc)
+            {
+                entry.Entity.DeletedAt = DateTime.SpecifyKind(entry.Entity.DeletedAt.Value, DateTimeKind.Utc);
             }
         }
         return base.SaveChangesAsync(cancellationToken);

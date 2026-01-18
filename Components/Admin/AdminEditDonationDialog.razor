@@ -49,7 +49,7 @@
 
     private Donation _donation = new();
     private bool _isSubmitting;
-    private List<string> _statuses = ["pending", "completed", "failed", "succeeded"];
+    private readonly List<string> _statuses = ["pending", "completed", "failed", "succeeded"];
 
     protected override void OnInitialized()
     {

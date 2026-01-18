@@ -3,7 +3,6 @@
 @using WhereAreThey.Services.Interfaces
 @using Microsoft.Extensions.Localization
 @inject UserTimeZoneService TimeZoneService
-@inject IAdminService AdminService
 @inject IStringLocalizer<App> L
 
 <RadzenCard @attributes="CardAttributes" @onclick="OnClick">
@@ -77,7 +76,7 @@
     /// <summary>
     /// Maximum number of characters to display from the message before truncating.
     /// </summary>
-    [Parameter] public int MaxMessageLength { get; set; } = 0;
+    [Parameter] public int MaxMessageLength { get; set; }
 
     /// <summary>
     /// The unique identifier of the current user, used to determine if they can delete their own report.
@@ -108,7 +107,7 @@
 
         if (MaxMessageLength > 0 && Report.Message.Length > MaxMessageLength)
         {
-            return Report.Message.Substring(0, MaxMessageLength - 3) + "...";
+            return Report.Message[..(MaxMessageLength - 3)] + "...";
         }
         return Report.Message;
     }

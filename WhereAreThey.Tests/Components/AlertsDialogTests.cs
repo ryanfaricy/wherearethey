@@ -53,7 +53,7 @@ public class AlertsDialogTests : ComponentTestBase
     public async Task AlertsDialog_SavesEmail_ToStorage_AfterSuccess()
     {
         // Arrange
-        _storageServiceMock.Setup(s => s.GetItemAsync("last-alert-email")).ReturnsAsync((string)null);
+        _storageServiceMock.Setup(s => s.GetItemAsync("last-alert-email")).ReturnsAsync((string)null!);
         _alertServiceMock.Setup(s => s.CreateAlertAsync(It.IsAny<Alert>(), It.IsAny<string>()))
             .ReturnsAsync(Result<Alert>.Success(new Alert()));
 
