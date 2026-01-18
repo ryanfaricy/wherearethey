@@ -71,8 +71,8 @@
 
     private async Task EditReport(LocationReport report)
     {
-        var result = await DialogService.OpenAsync<ReportDialog>($"Edit Report {report.Id}", 
-            new Dictionary<string, object> { { "Report", report }, { "IsAdminMode", true } },
+        var result = await DialogService.OpenAsync<AdminEditReportDialog>($"Edit Report {report.Id}", 
+            new Dictionary<string, object> { { "Report", report } },
             DialogConfigs.Admin);
 
         if (result == true)

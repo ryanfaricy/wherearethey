@@ -49,16 +49,6 @@
             <RadzenLabel Text="@L["Emergency_Checkbox"]" Component="IsEmergency" />
         </RadzenStack>
 
-        @if (IsAdminMode)
-        {
-            <RadzenFormField Text="User Identifier (Admin)" Variant="Variant.Outlined" Component="ReporterIdentifier" Style="width: 100%;">
-                <ChildContent>
-                    <RadzenTextBox Name="ReporterIdentifier" @bind-Value="@Report.ReporterIdentifier" Style="width: 100%; font-family: monospace;" 
-                                   Placeholder="system or device-id" />
-                </ChildContent>
-            </RadzenFormField>
-        }
-
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-3" JustifyContent="JustifyContent.End">
             <RadzenButton Text="@L["CANCEL"]" Click="@Cancel" ButtonStyle="ButtonStyle.Light" />
             <RadzenButton ButtonType="ButtonType.Submit" Text="@L["SUBMIT_REPORT"]" 
@@ -72,7 +62,6 @@
     [Parameter] public LocationReport Report { get; set; } = new();
     [Parameter] public Task<GeolocationPosition?>? LocationTask { get; set; }
     [Parameter] public bool UpdateReportLocation { get; set; } = true;
-    [Parameter] public bool IsAdminMode { get; set; }
     private bool _isSubmitting;
     private bool _isDeterminingLocation;
     private string? _approxAddress;
@@ -173,42 +162,25 @@
         _isSubmitting = true;
         try
         {
-            Result result;
-            if (IsAdminMode)
+            var addResult = await ReportService.AddReportAsync(Report);
+            if (addResult.IsSuccess)
             {
-                result = await ReportService.UpdateReportAsync(Report);
-                if (result.IsSuccess)
+                await ClearDraft();
+                if (Report.IsEmergency)
                 {
-                    NotificationService.Notify(NotificationSeverity.Success, "Report updated successfully");
+                    await HapticFeedbackService.VibrateEmergencyAsync();
                 }
-            }
-            else
-            {
-                var addResult = await ReportService.AddReportAsync(Report);
-                result = addResult;
-                if (addResult.IsSuccess)
+                else
                 {
-                    await ClearDraft();
-                    if (Report.IsEmergency)
-                    {
-                        await HapticFeedbackService.VibrateEmergencyAsync();
-                    }
-                    else
-                    {
-                        await HapticFeedbackService.VibrateSuccessAsync();
-                    }
-                    NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
+                    await HapticFeedbackService.VibrateSuccessAsync();
                 }
-            }
-
-            if (result.IsSuccess)
-            {
+                NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
                 DialogService.Close(true);
             }
             else
             {
                 await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], result.Error ?? "Unknown error");
+                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], addResult.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)

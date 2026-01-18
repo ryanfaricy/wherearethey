@@ -1,0 +1,103 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services
+@using WhereAreThey.Services.Interfaces
+@inject UserTimeZoneService TimeZoneService
+@inject IAdminService AdminService
+
+<RadzenCard @attributes="CardAttributes" @onclick="OnClick">
+    <RadzenStack Gap="0.5rem">
+        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">
+                @TimeZoneService.FormatLocal(Report.Timestamp, "g")
+            </RadzenText>
+            @if (Report.IsEmergency)
+            {
+                <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
+            }
+        </RadzenStack>
+
+        @if (!string.IsNullOrEmpty(Report.Message))
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">
+                @GetMessage()
+            </RadzenText>
+        }
+
+        @if (IsAdmin)
+        {
+            <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="@AdminDetailsStyle">
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Report.ReporterIdentifier</RadzenText>
+                    @if (OnEdit.HasDelegate)
+                    {
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@OnEdit" @onclick:stopPropagation="true" />
+                    }
+                </RadzenStack>
+                <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.LocationDisplay()</RadzenText>
+                @if (Report.HasReporterLocation())
+                {
+                    <RadzenText TextStyle="TextStyle.Caption">Rep: @Report.ReporterLocationDisplay()</RadzenText>
+                }
+            </RadzenStack>
+        }
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter] public LocationReport Report { get; set; } = null!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public int MaxMessageLength { get; set; } = 0;
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+
+    private string GetMessage()
+    {
+        if (Report == null || string.IsNullOrEmpty(Report.Message)) return "";
+        if (MaxMessageLength > 0 && Report.Message.Length > MaxMessageLength)
+        {
+            return Report.Message.Substring(0, MaxMessageLength - 3) + "...";
+        }
+        return Report.Message;
+    }
+
+    private string AdminDetailsStyle => Report != null && Report.IsEmergency 
+        ? "border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;" 
+        : "border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;";
+
+    private Dictionary<string, object> CardAttributes
+    {
+        get
+        {
+            var attrs = new Dictionary<string, object>();
+            var classes = new List<string> { "rz-p-2", "rz-mb-1" };
+            var styles = new List<string>();
+
+            if (Report.IsEmergency)
+            {
+                styles.Add("border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);");
+            }
+            else
+            {
+                styles.Add("border-left: 4px solid var(--rz-info);");
+            }
+
+            if (IsSelected)
+            {
+                attrs["id"] = "selected-report-card";
+                classes.Add("rz-border-primary rz-shadow-4");
+                styles.Add("border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;");
+            }
+
+            if (OnClick.HasDelegate)
+            {
+                styles.Add("cursor: pointer;");
+            }
+
+            if (classes.Any()) attrs["class"] = string.Join(" ", classes);
+            if (styles.Any()) attrs["style"] = string.Join(" ", styles);
+
+            return attrs;
+        }
+    }
+}

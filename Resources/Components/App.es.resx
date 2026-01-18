@@ -550,4 +550,13 @@
   <data name="Resume_Draft_Message" xml:space="preserve">
     <value>Tiene un informe sin guardar. ¿Le gustaría seguir completándolo?</value>
   </data>
+  <data name="EDIT" xml:space="preserve">
+    <value>EDITAR</value>
+  </data>
+  <data name="DELETE" xml:space="preserve">
+    <value>ELIMINAR</value>
+  </data>
+  <data name="Unnamed_Alert_Zone" xml:space="preserve">
+    <value>Zona de alerta sin nombre</value>
+  </data>
 </root>

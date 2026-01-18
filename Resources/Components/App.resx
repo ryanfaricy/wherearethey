@@ -574,4 +574,13 @@
   <data name="Resume_Draft_Message" xml:space="preserve">
     <value>You have an unsaved report. Would you like to resume filling it out?</value>
   </data>
+  <data name="EDIT" xml:space="preserve">
+    <value>EDIT</value>
+  </data>
+  <data name="DELETE" xml:space="preserve">
+    <value>DELETE</value>
+  </data>
+  <data name="Unnamed_Alert_Zone" xml:space="preserve">
+    <value>Unnamed Alert Zone</value>
+  </data>
 </root>

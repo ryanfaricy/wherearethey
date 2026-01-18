@@ -1,0 +1,146 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IReportService ReportService
+@inject IGeocodingService GeocodingService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@_report" Submit="@((LocationReport _) => Save())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenFormField Text="Address Search" Variant="Variant.Outlined" Style="width: 100%;">
+            <AddressSearch @bind-SearchValue="@_approxAddress" 
+                           OnResultSelected="@OnAddressResultSelected"
+                           Placeholder="Search for a location..." 
+                           CustomStyle="width: 100%;"
+                           InputType="search" />
+        </RadzenFormField>
+
+        <RadzenRow Gap="1rem">
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Latitude" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="@_report.Latitude" TValue="double" 
+                                   ShowUpDown="false" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeSM="6">
+                <RadzenFormField Text="Longitude" Variant="Variant.Outlined" Style="width: 100%;">
+                    <RadzenNumeric @bind-Value="@_report.Longitude" TValue="double" 
+                                   ShowUpDown="false" Style="width: 100%;" />
+                </RadzenFormField>
+            </RadzenColumn>
+        </RadzenRow>
+
+        <RadzenFormField Text="Message" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextArea Name="Message" @bind-Value="@_report.Message" Rows="3" Style="width: 100%;" MaxLength="500" />
+            </ChildContent>
+            <Helper>
+                <RadzenLengthValidator Component="Message" Max="500" Text="Message too long" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+            <RadzenCheckBox @bind-Value="@_report.IsEmergency" TValue="bool" Name="IsEmergency" />
+            <RadzenLabel Text="Emergency" Component="IsEmergency" />
+        </RadzenStack>
+
+        <RadzenFormField Text="Reporter Identifier" Variant="Variant.Outlined" Component="ReporterIdentifier" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="ReporterIdentifier" @bind-Value="@_report.ReporterIdentifier" Style="width: 100%; font-family: monospace;" 
+                               Placeholder="system or device-id" />
+            </ChildContent>
+        </RadzenFormField>
+
+        <RadzenExpansionPanel Text="Reporter Location Details">
+            <RadzenStack Gap="1rem" Class="rz-p-2">
+                <RadzenRow Gap="1rem">
+                    <RadzenColumn Size="12" SizeSM="6">
+                        <RadzenFormField Text="Reporter Lat" Variant="Variant.Outlined" Style="width: 100%;">
+                            <RadzenNumeric @bind-Value="@_report.ReporterLatitude" TValue="double?" 
+                                           ShowUpDown="false" Style="width: 100%;" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                    <RadzenColumn Size="12" SizeSM="6">
+                        <RadzenFormField Text="Reporter Lng" Variant="Variant.Outlined" Style="width: 100%;">
+                            <RadzenNumeric @bind-Value="@_report.ReporterLongitude" TValue="double?" 
+                                           ShowUpDown="false" Style="width: 100%;" />
+                        </RadzenFormField>
+                    </RadzenColumn>
+                </RadzenRow>
+            </RadzenStack>
+        </RadzenExpansionPanel>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SAVE CHANGES" 
+                          Icon="save" ButtonStyle="ButtonStyle.Primary" 
+                          IsBusy="@_isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public LocationReport Report { get; set; } = new();
+
+    private LocationReport _report = new();
+    private bool _isSubmitting;
+    private string? _approxAddress;
+
+    protected override void OnInitialized()
+    {
+        // Create a copy to edit
+        _report = new LocationReport
+        {
+            Id = Report.Id,
+            ExternalId = Report.ExternalId,
+            Latitude = Report.Latitude,
+            Longitude = Report.Longitude,
+            Timestamp = Report.Timestamp,
+            Message = Report.Message,
+            IsEmergency = Report.IsEmergency,
+            ReporterIdentifier = Report.ReporterIdentifier,
+            ReporterLatitude = Report.ReporterLatitude,
+            ReporterLongitude = Report.ReporterLongitude,
+        };
+        
+        _ = LoadAddress();
+    }
+
+    private async Task LoadAddress()
+    {
+        _approxAddress = await GeocodingService.ReverseGeocodeAsync(_report.Latitude, _report.Longitude);
+        StateHasChanged();
+    }
+
+    private void OnAddressResultSelected(GeocodingResult result)
+    {
+        _report.Latitude = result.Latitude;
+        _report.Longitude = result.Longitude;
+    }
+
+    private async Task Save()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var result = await ReportService.UpdateReportAsync(_report);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Report updated successfully");
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

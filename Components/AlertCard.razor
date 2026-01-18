@@ -9,24 +9,42 @@
                  JustifyContent="JustifyContent.SpaceBetween" 
                  AlignItems="@(IsMobile ? AlignItems.Start : AlignItems.Center)" 
                  Gap="@(IsMobile ? "1rem" : "0.5rem")">
-        <RadzenStack Gap="0">
+        <RadzenStack Gap="0" Style="flex: 1;">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
-                <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@Alert.Message</RadzenText>
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@(string.IsNullOrEmpty(Alert.Message) ? L["Unnamed_Alert_Zone"] : Alert.Message)</RadzenText>
                 @if (!Alert.IsVerified)
                 {
                     <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
                 }
             </RadzenStack>
             <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.LocationDisplay()</RadzenText>
-            <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(Alert.EncryptedEmail))</RadzenText>
+            @if (IsAdmin)
+            {
+                <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Alert.UserIdentifier</RadzenText>
+            }
+            else
+            {
+                <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(Alert.EncryptedEmail))</RadzenText>
+            }
         </RadzenStack>
         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" 
                      JustifyContent="@(IsMobile ? JustifyContent.End : JustifyContent.Start)" 
                      Class="@(IsMobile ? "rz-w-100" : "")">
-            <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
-                          Click="@OnShowOnMap" ToolTip="@L["Show_on_Map"]" />
-            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
-                          Click="@OnDeactivate" ToolTip="@L["Deactivate"]" />
+            @if (IsAdmin && OnEdit.HasDelegate)
+            {
+                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Variant="Variant.Flat"
+                              Click="@OnEdit" ToolTip="@L["EDIT"]" />
+            }
+            @if (OnShowOnMap.HasDelegate)
+            {
+                <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
+                              Click="@OnShowOnMap" ToolTip="@L["Show_on_Map"]" />
+            }
+            @if (OnDeactivate.HasDelegate)
+            {
+                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                              Click="@OnDeactivate" ToolTip="@(IsAdmin ? L["DELETE"] : L["Deactivate"])" />
+            }
         </RadzenStack>
     </RadzenStack>
 </RadzenCard>
@@ -35,20 +53,35 @@
     [Parameter] public Alert Alert { get; set; } = null!;
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public bool IsMobile { get; set; }
+    [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public bool ShowOrangeBorder { get; set; } = true;
     [Parameter] public EventCallback OnShowOnMap { get; set; }
     [Parameter] public EventCallback OnDeactivate { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
 
     private Dictionary<string, object> CardAttributes
     {
         get
         {
             var attrs = new Dictionary<string, object>();
+            var classes = new List<string> { "rz-p-2", "rz-mb-1" };
+            var styles = new List<string>();
+
+            if (ShowOrangeBorder)
+            {
+                styles.Add("border-left: 4px solid #ff9800;");
+            }
+
             if (IsSelected)
             {
                 attrs["id"] = "selected-alert-card";
-                attrs["class"] = "rz-border-primary rz-shadow-5";
-                attrs["style"] = "border-width: 2px;";
+                classes.Add("rz-border-primary rz-shadow-5");
+                styles.Add("border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;");
             }
+
+            if (classes.Any()) attrs["class"] = string.Join(" ", classes);
+            if (styles.Any()) attrs["style"] = string.Join(" ", styles);
+
             return attrs;
         }
     }

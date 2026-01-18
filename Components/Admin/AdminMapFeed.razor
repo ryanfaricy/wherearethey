@@ -41,24 +41,9 @@
                     }
                     @foreach (var report in MapState.Reports.Take(20))
                     {
-                        <RadzenCard Variant="Variant.Flat" 
-                                    Class="@(report.IsEmergency ? "rz-background-color-danger-lighter" : "rz-background-color-base-100")" 
-                                    Style="padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); cursor: pointer;"
-                                    @onclick="@(() => FocusReportOnMap(report))">
-                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween">
-                                <RadzenText TextStyle="TextStyle.Caption">@TimeZoneService.FormatLocal(report.Timestamp)</RadzenText>
-                                @if (report.IsEmergency)
-                                {
-                                    <RadzenBadge BadgeStyle="BadgeStyle.Danger" Text="EMERGENCY" />
-                                }
-                            </RadzenStack>
-                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-mt-2" Style="font-weight: 500;">
-                                @(report.Message?.Length > 100 ? report.Message[..97] + "..." : report.Message)
-                            </RadzenText>
-                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-1">
-                                <RadzenIcon Icon="location_on" Style="font-size: 0.8rem;" /> @report.LocationDisplay()
-                            </RadzenText>
-                        </RadzenCard>
+                        <ReportCard Report="@report" 
+                                    MaxMessageLength="100"
+                                    OnClick="@(() => FocusReportOnMap(report))" />
                     }
                 </RadzenStack>
             </div>
