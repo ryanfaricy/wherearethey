@@ -36,7 +36,9 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
 
     dotNetHelper = helper;
     const container = document.getElementById(elementId);
-    map = L.map(elementId).setView([initialLat, initialLng], (initialLat !== 0 || initialLng !== 0) ? 13 : 2);
+    map = L.map(elementId, {
+        preferCanvas: true,
+    }).setView([initialLat, initialLng], (initialLat !== 0 || initialLng !== 0) ? 13 : 2);
 
     markerClusterGroup = L.markerClusterGroup({
         showCoverageOnHover: false,
@@ -156,7 +158,6 @@ window.updateAlerts = function (alerts) {
             fillColor: '#ff9800',
             fillOpacity: 0.05,
             weight: 1.5,
-            dashArray: '10, 10',
             interactive: false
         }).addTo(map);
         alertLayers.push(circle);
