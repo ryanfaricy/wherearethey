@@ -7,6 +7,7 @@
 @inject DialogService DialogService
 @inject IHapticFeedbackService HapticFeedbackService
 @inject IJSRuntime JsRuntime
+@inject IClientStorageService StorageService
 @inject ILogger<AlertsDialog> Logger
 @inject IStringLocalizer<App> L
 <RadzenMediaQuery Query="(max-width: 768px)" Change="@(args => _isMobile = args)" />
@@ -131,7 +132,14 @@
                 _selectedTabIndex = 1;
             }
 
-            _userIdentifier = await JsRuntime.InvokeAsync<string>("getUserIdentifier");
+            _userIdentifier = await StorageService.GetUserIdentifierAsync();
+            
+            var lastEmail = await StorageService.GetItemAsync("last-alert-email");
+            if (!string.IsNullOrEmpty(lastEmail) && string.IsNullOrEmpty(_email))
+            {
+                _email = lastEmail;
+            }
+
             if (InitialLat.HasValue)
             {
                 _newAlert.Latitude = InitialLat.Value;
@@ -214,6 +222,7 @@
             var result = await AlertService.CreateAlertAsync(_newAlert, _email);
             if (result.IsSuccess)
             {
+                await StorageService.SetItemAsync("last-alert-email", _email);
                 await HapticFeedbackService.VibrateSuccessAsync();
                 NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
                 

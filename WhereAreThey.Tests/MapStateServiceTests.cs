@@ -42,6 +42,22 @@ public class MapStateServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task InitializeAsync_AdminMode_DoesNotLoadAlerts()
+    {
+        // Arrange
+        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, IsActive = true } };
+        // Even if GetAllAlertsAdminAsync would return alerts
+        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync(alerts);
+
+        // Act
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+
+        // Assert
+        Assert.Empty(_service.Alerts);
+        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.Never);
+    }
+
+    [Fact]
     public async Task LoadReportsAsync_LoadsReportsAndUpdatesMap()
     {
         // Arrange
@@ -104,6 +120,22 @@ public class MapStateServiceTests : IDisposable
         // Assert
         Assert.Empty(_service.Reports);
         _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleAlertAdded_AdminMode_Ignored()
+    {
+        // Arrange
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, IsActive = true };
+        _service.MapInitialized = true;
+
+        // Act
+        _eventServiceMock.Raise(e => e.OnAlertAdded += null, alert);
+
+        // Assert
+        Assert.Empty(_service.Alerts);
+        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.Never);
     }
 
     [Fact]

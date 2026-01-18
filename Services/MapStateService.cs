@@ -41,7 +41,10 @@ public class MapStateService : IMapStateService
 
             // When the map initializes, ensure it has the latest data
             _ = _mapService.UpdateHeatMapAsync(Reports);
-            _ = _mapService.UpdateAlertsAsync(Alerts);
+            if (!_isAdmin)
+            {
+                _ = _mapService.UpdateAlertsAsync(Alerts);
+            }
         }
     }
 
@@ -124,14 +127,14 @@ public class MapStateService : IMapStateService
     {
         if (_isAdmin)
         {
-            Alerts = (await _alertService.GetAllAlertsAdminAsync()).Where(a => a.IsActive).ToList();
+            Alerts = []; // Admin heat map should not display alert zones
         }
         else if (!string.IsNullOrEmpty(_userIdentifier))
         {
             Alerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
         }
 
-        if (MapInitialized)
+        if (MapInitialized && !_isAdmin)
         {
             await _mapService.UpdateAlertsAsync(Alerts);
         }
@@ -204,7 +207,7 @@ public class MapStateService : IMapStateService
             return;
         }
 
-        if (!_isAdmin && alert.UserIdentifier != _userIdentifier)
+        if (_isAdmin || (!_isAdmin && alert.UserIdentifier != _userIdentifier))
         {
             return;
         }
@@ -219,7 +222,7 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertUpdated(Alert alert)
     {
-        if (!_isAdmin && alert.UserIdentifier != _userIdentifier)
+        if (_isAdmin || (!_isAdmin && alert.UserIdentifier != _userIdentifier))
         {
             return;
         }
@@ -250,6 +253,11 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertDeleted(int id)
     {
+        if (_isAdmin)
+        {
+            return;
+        }
+
         var alert = Alerts.FirstOrDefault(a => a.Id == id);
         if (alert == null)
         {
