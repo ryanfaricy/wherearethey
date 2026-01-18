@@ -69,7 +69,10 @@ public class FeedbackService(
         }
     }
 
+    /// <inheritdoc />
     protected override void NotifyUpdated(Feedback entity) => EventService.NotifyFeedbackUpdated(entity);
+    
+    /// <inheritdoc />
     protected override void NotifyDeleted(Feedback entity)
     {
         EventService.NotifyFeedbackUpdated(entity);

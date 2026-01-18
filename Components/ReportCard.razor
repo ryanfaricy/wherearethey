@@ -59,13 +59,44 @@
 </RadzenCard>
 
 @code {
+    /// <summary>
+    /// The location report to display.
+    /// </summary>
     [Parameter] public LocationReport Report { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets whether this card is currently selected.
+    /// </summary>
     [Parameter] public bool IsSelected { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the current user has administrative privileges.
+    /// </summary>
     [Parameter] public bool IsAdmin { get; set; }
+
+    /// <summary>
+    /// Maximum number of characters to display from the message before truncating.
+    /// </summary>
     [Parameter] public int MaxMessageLength { get; set; } = 0;
+
+    /// <summary>
+    /// The unique identifier of the current user, used to determine if they can delete their own report.
+    /// </summary>
     [Parameter] public string? CurrentUserIdentifier { get; set; }
+
+    /// <summary>
+    /// Event raised when the card is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnClick { get; set; }
+
+    /// <summary>
+    /// Event raised when the edit button is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnEdit { get; set; }
+
+    /// <summary>
+    /// Event raised when the delete button is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnDelete { get; set; }
 
     private string GetMessage()

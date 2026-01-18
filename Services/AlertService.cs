@@ -304,7 +304,10 @@ public class AlertService(
         }
     }
 
+    /// <inheritdoc />
     protected override void NotifyUpdated(Alert entity) => EventService.NotifyAlertUpdated(entity);
+    
+    /// <inheritdoc />
     protected override void NotifyDeleted(Alert entity)
     {
         EventService.NotifyAlertUpdated(entity);

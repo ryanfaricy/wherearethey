@@ -124,7 +124,10 @@ public class ReportService(
         }
     }
 
+    /// <inheritdoc />
     protected override void NotifyUpdated(LocationReport entity) => EventService.NotifyReportUpdated(entity);
+    
+    /// <inheritdoc />
     protected override void NotifyDeleted(LocationReport entity) 
     {
         EventService.NotifyReportUpdated(entity);

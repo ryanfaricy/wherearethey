@@ -116,7 +116,10 @@ public class DonationService(
         return await SoftDeleteAsync(id);
     }
 
+    /// <inheritdoc />
     protected override void NotifyUpdated(Donation entity) => EventService.NotifyDonationUpdated(entity);
+    
+    /// <inheritdoc />
     protected override void NotifyDeleted(Donation entity)
     {
         EventService.NotifyDonationUpdated(entity);

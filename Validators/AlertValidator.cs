@@ -8,6 +8,10 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Validators;
 
+/// <summary>
+/// Validator for the <see cref="Alert"/> model.
+/// Enforces business rules such as cooldowns, limits, and content restrictions.
+/// </summary>
 public class AlertValidator : AbstractValidator<Alert>
 {
     public AlertValidator(

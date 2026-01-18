@@ -8,6 +8,9 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Validators;
 
+/// <summary>
+/// Validator for the <see cref="Feedback"/> model.
+/// </summary>
 public class FeedbackValidator : AbstractValidator<Feedback>
 {
     public FeedbackValidator(

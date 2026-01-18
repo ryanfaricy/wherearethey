@@ -4,7 +4,10 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <inheritdoc />
+/// <summary>
+/// Service responsible for maintaining the state of the map, including reports and alerts.
+/// Handles real-time updates and synchronization with the underlying map implementation.
+/// </summary>
 public class MapStateService : IMapStateService
 {
     private readonly IReportService _reportService;

@@ -54,13 +54,44 @@
 </RadzenCard>
 
 @code {
+    /// <summary>
+    /// The alert configuration to display.
+    /// </summary>
     [Parameter] public Alert Alert { get; set; } = null!;
+
+    /// <summary>
+    /// Gets or sets whether this card is currently selected.
+    /// </summary>
     [Parameter] public bool IsSelected { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the component is being rendered for a mobile device.
+    /// </summary>
     [Parameter] public bool IsMobile { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the current user has administrative privileges.
+    /// </summary>
     [Parameter] public bool IsAdmin { get; set; }
+
+    /// <summary>
+    /// Whether to show an orange border on the left side of the card.
+    /// </summary>
     [Parameter] public bool ShowOrangeBorder { get; set; } = true;
+
+    /// <summary>
+    /// Event raised when the "Show on Map" button is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnShowOnMap { get; set; }
+
+    /// <summary>
+    /// Event raised when the deactivate button is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnDeactivate { get; set; }
+
+    /// <summary>
+    /// Event raised when the edit button is clicked.
+    /// </summary>
     [Parameter] public EventCallback OnEdit { get; set; }
 
     private Dictionary<string, object> CardAttributes

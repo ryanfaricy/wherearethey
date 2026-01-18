@@ -29,6 +29,8 @@ public interface IEventService
     event Action<Alert> OnAlertAdded;
     /// <summary>Raised when an alert is updated.</summary>
     event Action<Alert> OnAlertUpdated;
+    /// <summary>Raised when an alert is deleted.</summary>
+    event Action<int> OnAlertDeleted;
     /// <summary>Raised when an entity is changed.</summary>
     event Action<object, EntityChangeType> OnEntityChanged;
 

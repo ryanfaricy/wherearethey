@@ -5,15 +5,30 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Components.Admin;
 
+/// <summary>
+/// Base class for administrative tab components that display a list of entities.
+/// Handles common logic such as real-time updates via event aggregation and data loading.
+/// </summary>
+/// <typeparam name="TEntity">The type of entity displayed in the tab.</typeparam>
 public abstract class AdminTabBase<TEntity> : ComponentBase, IDisposable 
     where TEntity : class, IAuditable
 {
     [Inject] protected IEventService EventService { get; set; } = null!;
     [Inject] protected ILogger<AdminTabBase<TEntity>> Logger { get; set; } = null!;
 
+    /// <summary>
+    /// Gets or sets whether the component is being rendered for a mobile device.
+    /// </summary>
     [Parameter] public bool IsMobile { get; set; }
 
+    /// <summary>
+    /// The list of items currently displayed in the tab.
+    /// </summary>
     protected List<TEntity> Items = [];
+
+    /// <summary>
+    /// Reference to the RadzenDataGrid if applicable.
+    /// </summary>
     protected RadzenDataGrid<TEntity>? Grid;
 
     protected override async Task OnInitializedAsync()
@@ -22,8 +37,15 @@ public abstract class AdminTabBase<TEntity> : ComponentBase, IDisposable
         EventService.OnEntityChanged += HandleEntityChanged;
     }
 
+    /// <summary>
+    /// Fetches the entities to be displayed. Must be implemented by derived classes.
+    /// </summary>
+    /// <returns>A list of entities.</returns>
     protected abstract Task<List<TEntity>> GetEntitiesAsync();
 
+    /// <summary>
+    /// Loads or reloads data from the service.
+    /// </summary>
     protected virtual async Task LoadData()
     {
         try
@@ -36,6 +58,11 @@ public abstract class AdminTabBase<TEntity> : ComponentBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Handles real-time entity change events.
+    /// </summary>
+    /// <param name="entity">The entity that changed.</param>
+    /// <param name="type">The type of change (Added, Updated, Deleted).</param>
     protected virtual void HandleEntityChanged(object entity, EntityChangeType type)
     {
         if (entity is TEntity typedEntity)
@@ -79,6 +106,9 @@ public abstract class AdminTabBase<TEntity> : ComponentBase, IDisposable
         }
     }
 
+    /// <summary>
+    /// Unsubscribes from events when the component is disposed.
+    /// </summary>
     public virtual void Dispose()
     {
         EventService.OnEntityChanged -= HandleEntityChanged;

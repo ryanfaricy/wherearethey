@@ -9,6 +9,10 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Validators;
 
+/// <summary>
+/// Validator for the <see cref="LocationReport"/> model.
+/// Enforces business rules such as cooldowns, location accuracy, and spam prevention.
+/// </summary>
 public class LocationReportValidator : AbstractValidator<LocationReport>
 {
     public LocationReportValidator(
