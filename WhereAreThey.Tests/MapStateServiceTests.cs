@@ -131,7 +131,7 @@ public class MapStateServiceTests : IDisposable
         _service.MapInitialized = true;
 
         // Act
-        _eventServiceMock.Raise(e => e.OnAlertAdded += null, alert);
+        await _eventServiceMock.RaiseAsync(e => e.OnAlertAdded += null, alert);
 
         // Assert
         Assert.Empty(_service.Alerts);
@@ -142,8 +142,8 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_RespectsIsAdminFlag()
     {
         // Setup mocks for alerts which are called during InitializeAsync
-        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync(new List<Alert>());
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(new List<Alert>());
+        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
 
         // 1. Test Admin Mode
         await _service.InitializeAsync("test-admin", isAdmin: true);

@@ -35,8 +35,7 @@ public class MapInteractionServiceTests : BunitContext
             _mapServiceMock.Object,
             _stateServiceMock.Object,
             _dialogService,
-            _adminServiceMock.Object,
-            localizerMock.Object);
+            _adminServiceMock.Object);
     }
 
     [Theory]
@@ -90,7 +89,7 @@ public class MapInteractionServiceTests : BunitContext
             if (type == typeof(ReportDetailsDialog))
             {
                 dialogOpened = true;
-                Assert.Equal(1, ((List<LocationReport>)parameters["Reports"]).Count);
+                Assert.Single(((List<LocationReport>)parameters["Reports"]));
             }
             _dialogService.Close();
         };
@@ -210,7 +209,7 @@ public class MapInteractionServiceTests : BunitContext
         var reports = new List<LocationReport> 
         { 
             new() { Id = 1, Latitude = 1, Longitude = 1 },
-            new() { Id = 2, Latitude = 0, Longitude = 0 }
+            new() { Id = 2, Latitude = 0, Longitude = 0 },
         };
         
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
@@ -276,7 +275,7 @@ public class MapInteractionServiceTests : BunitContext
             .Returns([]);
         
         // Click is at ~2.2km away from center (Latitude 0.02 is approx 2.2km at equator)
-        double lat = 0.02; 
+        var lat = 0.02; 
         double lng = 0;
 
         // Act

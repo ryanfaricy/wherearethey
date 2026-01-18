@@ -11,25 +11,23 @@ namespace WhereAreThey.Tests.Components;
 public class AlertsDialogTests : ComponentTestBase
 {
     private readonly Mock<IAlertService> _alertServiceMock;
-    private readonly Mock<IGeocodingService> _geocodingServiceMock;
     private readonly Mock<IClientStorageService> _storageServiceMock;
-    private readonly Mock<IHapticFeedbackService> _hapticServiceMock;
 
     public AlertsDialogTests()
     {
         _alertServiceMock = new Mock<IAlertService>();
-        _geocodingServiceMock = new Mock<IGeocodingService>();
+        var geocodingServiceMock = new Mock<IGeocodingService>();
         _storageServiceMock = new Mock<IClientStorageService>();
-        _hapticServiceMock = new Mock<IHapticFeedbackService>();
+        var hapticServiceMock = new Mock<IHapticFeedbackService>();
 
         Services.AddSingleton(_alertServiceMock.Object);
-        Services.AddSingleton(_geocodingServiceMock.Object);
+        Services.AddSingleton(geocodingServiceMock.Object);
         Services.AddSingleton(_storageServiceMock.Object);
-        Services.AddSingleton(_hapticServiceMock.Object);
+        Services.AddSingleton(hapticServiceMock.Object);
 
         _storageServiceMock.Setup(s => s.GetUserIdentifierAsync()).ReturnsAsync("test-user");
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>()))
-            .ReturnsAsync(new List<Alert>());
+            .ReturnsAsync([]);
     }
 
     [Fact]

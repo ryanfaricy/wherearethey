@@ -53,7 +53,7 @@
         }
     }
 
-    private string MaskEmail(string? email)
+    private static string MaskEmail(string? email)
     {
         if (string.IsNullOrEmpty(email)) return "****";
         var parts = email.Split('@');

@@ -1,6 +1,4 @@
-using Microsoft.Extensions.Localization;
 using Radzen;
-using WhereAreThey.Components;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
@@ -12,8 +10,7 @@ public class MapInteractionService(
     IMapService mapService,
     IMapStateService stateService,
     DialogService dialogService,
-    IAdminService adminService,
-    IStringLocalizer<App> L)
+    IAdminService adminService)
     : IMapInteractionService
 {
     /// <inheritdoc />
@@ -53,8 +50,8 @@ public class MapInteractionService(
         }
 
         // Favor explicit IDs if provided
-        int? selectedReportId = reportId;
-        int? selectedAlertId = alertId;
+        var selectedReportId = reportId;
+        var selectedAlertId = alertId;
 
         // If no explicit ID but we have nearby items, pick the closest
         if (!selectedReportId.HasValue && !selectedAlertId.HasValue)
@@ -88,8 +85,8 @@ public class MapInteractionService(
             { 
                 { "Reports", nearbyReports },
                 { "Alerts", nearbyAlerts },
-                { "SelectedReportId", selectedReportId },
-                { "SelectedAlertId", selectedAlertId }
+                { "SelectedReportId", selectedReportId! },
+                { "SelectedAlertId", selectedAlertId! },
             },
             DialogConfigs.Default);
 

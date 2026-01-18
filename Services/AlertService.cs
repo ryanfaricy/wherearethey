@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using FluentValidation;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
@@ -43,7 +41,7 @@ public class AlertService(
                 alert.RadiusKm = 160.9;
             }
             
-            var emailHash = ComputeHash(email);
+            var emailHash = HashUtils.ComputeHash(email);
             var isVerified = await context.EmailVerifications
                 .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
 
@@ -68,21 +66,11 @@ public class AlertService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating alert for email hash {EmailHash}", ComputeHash(email));
+            logger.LogError(ex, "Error creating alert for email hash {EmailHash}", HashUtils.ComputeHash(email));
             return Result<Alert>.Failure("An error occurred while creating the alert.");
         }
     }
 
-    /// <summary>
-    /// Computes a SHA256 hash of an email address for privacy-preserving verification checks.
-    /// </summary>
-    public static string ComputeHash(string email)
-    {
-        var normalizedEmail = email.Trim().ToLowerInvariant();
-        var bytes = Encoding.UTF8.GetBytes(normalizedEmail);
-        var hash = SHA256.HashData(bytes);
-        return Convert.ToHexString(hash);
-    }
 
     /// <inheritdoc />
     public async Task<Result> SendVerificationEmailAsync(string email, string emailHash)
@@ -309,7 +297,7 @@ public class AlertService(
             if (!string.IsNullOrEmpty(email))
             {
                 existing.EncryptedEmail = _protector.Protect(email);
-                existing.EmailHash = ComputeHash(email);
+                existing.EmailHash = HashUtils.ComputeHash(email);
             }
             
             await context.SaveChangesAsync();

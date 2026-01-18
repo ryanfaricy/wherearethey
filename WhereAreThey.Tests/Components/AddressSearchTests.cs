@@ -85,7 +85,7 @@ public class AddressSearchTests : ComponentTestBase
     public async Task AddressSearch_Clearing_TriggersCallbackWithEmptyString()
     {
         // Arrange
-        string? searchVal = "Initial";
+        var searchVal = "Initial";
         var cut = Render<AddressSearch>(parameters => parameters
             .Add(p => p.SearchValue, searchVal)
             .Add(p => p.SearchValueChanged, (string s) => searchVal = s)

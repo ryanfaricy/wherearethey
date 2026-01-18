@@ -187,7 +187,7 @@ public class AlertServiceTests
         Assert.False(alert.IsVerified);
 
         // Manually trigger verification email to create verification record
-        await service.SendVerificationEmailAsync(email, AlertService.ComputeHash(email));
+        await service.SendVerificationEmailAsync(email, HashUtils.ComputeHash(email));
 
         string? token;
         await using (var context = new ApplicationDbContext(options))
@@ -409,8 +409,8 @@ public class AlertServiceTests
         var email2 = "test@example.com";
 
         // Act
-        var hash1 = AlertService.ComputeHash(email1);
-        var hash2 = AlertService.ComputeHash(email2);
+        var hash1 = HashUtils.ComputeHash(email1);
+        var hash2 = HashUtils.ComputeHash(email2);
 
         // Assert
         Assert.Equal(hash1, hash2);
@@ -440,7 +440,7 @@ public class AlertServiceTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         var email = "verify@example.com";
-        var emailHash = AlertService.ComputeHash(email);
+        var emailHash = HashUtils.ComputeHash(email);
         var token = "secret-token";
 
         await using (var context = await factory.CreateDbContextAsync())
@@ -508,7 +508,7 @@ public class AlertServiceTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         var email = "already-verified@example.com";
-        var emailHash = AlertService.ComputeHash(email);
+        var emailHash = HashUtils.ComputeHash(email);
 
         await using (var context = await factory.CreateDbContextAsync())
         {
