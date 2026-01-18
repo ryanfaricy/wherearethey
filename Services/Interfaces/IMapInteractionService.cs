@@ -15,7 +15,7 @@ public interface IMapInteractionService
     /// <summary>
     /// Handles a right-click or long-press on the map to start a report.
     /// </summary>
-    Task HandleMapContextMenuAsync(double lat, double lng, string? userIdentifier = null, bool isAdmin = false);
+    Task HandleMapContextMenuAsync(double lat, double lng, string? userIdentifier = null, bool isAdmin = false, bool alertCreationMode = false);
 
     /// <summary>
     /// Calculates an appropriate search radius based on zoom level and interaction type.

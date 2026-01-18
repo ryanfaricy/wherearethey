@@ -102,8 +102,13 @@ public class MapInteractionService(
     }
 
     /// <inheritdoc />
-    public async Task HandleMapContextMenuAsync(double lat, double lng, string? userIdentifier = null, bool isAdmin = false)
+    public async Task HandleMapContextMenuAsync(double lat, double lng, string? userIdentifier = null, bool isAdmin = false, bool alertCreationMode = false)
     {
+        if (alertCreationMode)
+        {
+            return;
+        }
+
         var effectiveIsAdmin = isAdmin || await adminService.IsAdminAsync();
         
         var report = new LocationReport

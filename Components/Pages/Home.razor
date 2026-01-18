@@ -97,7 +97,7 @@
     private async Task OnHeatMapMoveEnd(HeatMap.MapLocationEventArgs args) => await OnMapMoveEnd(args.Lat, args.Lng);
     private void OnHeatMapUserInteracted() => OnUserInteractedWithMap();
     private async Task OnHeatMapLocationUpdated(GeolocationPosition position) => await OnLocationUpdated(position);
-    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, _userIdentifier);
+    private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, _userIdentifier, alertCreationMode: _alertCreationMode);
     private async Task OnHeatMapAlertDeleteClick(int alertId) => await OnAlertDeleteClick(alertId);
 
     private async Task OnHeatMapAlertAreaDefined(HeatMap.AlertAreaEventArgs args)

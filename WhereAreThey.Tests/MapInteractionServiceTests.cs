@@ -340,4 +340,22 @@ public class MapInteractionServiceTests : BunitContext
         Assert.True(result); // Handled (blocked)
         Assert.False(dialogOpened); // No dialog should open
     }
+
+    [Fact]
+    public async Task HandleMapContextMenuAsync_DoesNothing_WhenAlertCreationModeActive()
+    {
+        // Arrange
+        var dialogOpened = false;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            dialogOpened = true;
+            _dialogService.Close();
+        };
+
+        // Act
+        await _service.HandleMapContextMenuAsync(0, 0, alertCreationMode: true);
+
+        // Assert
+        Assert.False(dialogOpened);
+    }
 }

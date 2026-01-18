@@ -174,6 +174,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     });
 
     map.on('contextmenu', function(e) {
+        if (isAlertCreationMode) return;
         if (e.originalEvent) {
             L.DomEvent.preventDefault(e.originalEvent);
         }

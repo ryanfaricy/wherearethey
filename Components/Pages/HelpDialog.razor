@@ -19,6 +19,13 @@
         <RadzenText TextStyle="TextStyle.Subtitle1" Style="font-weight: bold;">@L["Map_Interactions"]</RadzenText>
         
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+            <RadzenIcon Icon="report_problem" Style="color: var(--rz-danger);" />
+            <RadzenText TextStyle="TextStyle.Body2">
+                <b>@L["Long_Press"]:</b> @L["Long_Press_Desc"]
+            </RadzenText>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenIcon Icon="touch_app" Style="color: var(--rz-info);" />
             <RadzenText TextStyle="TextStyle.Body2">
                 <b>@L["Tap_Heat_Area"]:</b> @L["Tap_Heat_Area_Desc"]
@@ -40,14 +47,7 @@
         </RadzenStack>
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-            <RadzenIcon Icon="report_problem" Style="color: var(--rz-danger);" />
-            <RadzenText TextStyle="TextStyle.Body2">
-                <b>@L["Long_Press"]:</b> @L["Long_Press_Desc"]
-            </RadzenText>
-        </RadzenStack>
-
-        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
-            <RadzenIcon Icon="draw" Style="color: #e65100;" />
+            <RadzenIcon Icon="notifications" Style="color: #e65100;" />
             <RadzenText TextStyle="TextStyle.Body2">
                 <b>@L["Orange_Pins"]:</b> @L["Orange_Pins_Desc"]
             </RadzenText>
