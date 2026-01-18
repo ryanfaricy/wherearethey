@@ -1,3 +1,4 @@
+@inherits LayoutComponentBase
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
@@ -45,8 +46,6 @@ else
 }
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    
     private List<AdminLoginAttempt> _loginAttempts = [];
     private RadzenDataGrid<AdminLoginAttempt>? _allLoginAttemptsGrid;
 

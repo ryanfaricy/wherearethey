@@ -1,3 +1,4 @@
+@inherits LayoutComponentBase
 @using System.Text.Json
 @using Fido2NetLib
 @using WhereAreThey.Models
@@ -110,10 +111,6 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    private Orientation StackOrientation => IsMobile ? Orientation.Vertical : Orientation.Horizontal;
-    private AlignItems StackAlign => IsMobile ? AlignItems.Stretch : AlignItems.Center;
-    
     private SystemSettings _systemSettings = new();
     private List<AdminPasskey>? _passkeys;
     private string _newKeyName = "";

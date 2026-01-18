@@ -10,16 +10,11 @@ namespace WhereAreThey.Components.Admin;
 /// Handles common logic such as real-time updates via event aggregation and data loading.
 /// </summary>
 /// <typeparam name="TEntity">The type of entity displayed in the tab.</typeparam>
-public abstract class AdminTabBase<TEntity> : ComponentBase, IDisposable 
+public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable 
     where TEntity : class, IAuditable
 {
     [Inject] protected IEventService EventService { get; set; } = null!;
     [Inject] protected ILogger<AdminTabBase<TEntity>> Logger { get; set; } = null!;
-
-    /// <summary>
-    /// Gets or sets whether the component is being rendered for a mobile device.
-    /// </summary>
-    [Parameter] public bool IsMobile { get; set; }
 
     /// <summary>
     /// The list of items currently displayed in the tab.
