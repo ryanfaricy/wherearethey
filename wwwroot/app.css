@@ -363,3 +363,10 @@ h1:focus {
     visibility: visible !important;
     opacity: 1 !important;
 }
+
+/* Alert Creation Mode - Disable interaction with markers/layers to allow drawing anywhere */
+.alert-creation-mode .leaflet-marker-icon,
+.alert-creation-mode .leaflet-marker-shadow,
+.alert-creation-mode .leaflet-interactive {
+    pointer-events: none !important;
+}

@@ -23,6 +23,105 @@ let selectionCenterMarker = null;
 let dragStartLatLng = null;
 let lastMoveLatLng = null;
 
+const onDragStart = function (e) {
+    if (!isAlertCreationMode || dragStartLatLng) return;
+    
+    // Ensure we have coordinates for touch events
+    const event = e.originalEvent || e;
+    const touches = event.touches && event.touches.length > 0 ? event.touches : null;
+    const latlng = e.latlng || (touches ? map.mouseEventToLatLng(touches[0]) : null);
+    
+    if (!latlng) return;
+
+    dragStartLatLng = latlng;
+    lastMoveLatLng = latlng;
+
+    if (event) {
+        L.DomEvent.stopPropagation(event);
+        if (event.cancelable) {
+            L.DomEvent.preventDefault(event);
+        }
+    }
+
+    selectionCenterMarker = L.circleMarker(dragStartLatLng, {
+        radius: 6,
+        color: '#fff',
+        fillColor: '#ff9800',
+        fillOpacity: 0.6,
+        weight: 2,
+        dashArray: '3, 3',
+        interactive: false
+    }).addTo(map);
+
+    selectionCircle = L.circle(dragStartLatLng, {
+        radius: 0,
+        color: '#ff9800',
+        fillColor: '#ff9800',
+        fillOpacity: 0.2,
+        weight: 2,
+        dashArray: '5, 5'
+    }).addTo(map);
+};
+
+const onDragMove = function (e) {
+    if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
+    
+    const event = e.originalEvent || e;
+    const touches = event.touches && event.touches.length > 0 ? event.touches : null;
+    const latlng = e.latlng || (touches ? map.mouseEventToLatLng(touches[0]) : null);
+    
+    if (!latlng) return;
+
+    lastMoveLatLng = latlng;
+    const radius = dragStartLatLng.distanceTo(latlng);
+    selectionCircle.setRadius(radius);
+    
+    if (event) {
+        if (event.cancelable) {
+            L.DomEvent.preventDefault(event);
+        }
+        L.DomEvent.stopPropagation(event);
+    }
+};
+
+const onDragEnd = function (e) {
+    if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
+    
+    const event = e.originalEvent || e;
+    let latlng = e.latlng;
+    if (!latlng && event) {
+         const touches = (event.changedTouches && event.changedTouches.length > 0) ? event.changedTouches : 
+                         ((event.touches && event.touches.length > 0) ? event.touches : null);
+         if (touches) {
+             latlng = map.mouseEventToLatLng(touches[0]);
+         }
+    }
+    
+    const endLatLng = latlng || lastMoveLatLng;
+    const radiusKm = dragStartLatLng.distanceTo(endLatLng) / 1000;
+    const center = dragStartLatLng;
+
+    if (event) {
+        L.DomEvent.stopPropagation(event);
+    }
+
+    // Cleanup
+    if (selectionCircle) {
+        map.removeLayer(selectionCircle);
+        selectionCircle = null;
+    }
+    if (selectionCenterMarker) {
+        map.removeLayer(selectionCenterMarker);
+        selectionCenterMarker = null;
+    }
+    dragStartLatLng = null;
+    lastMoveLatLng = null;
+
+    if (dotNetHelper && radiusKm > 0.01) {
+        dotNetHelper.invokeMethodAsync('OnAlertAreaDefined', center.lat, center.lng, radiusKm);
+    }
+};
+
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t, isAdmin) {
     if (t) translations = t;
     isAdminMode = isAdmin || false;
@@ -97,106 +196,19 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 
-    const onDragStart = function (e) {
-        if (!isAlertCreationMode || dragStartLatLng) return;
-        
-        // Ensure we have coordinates for touch events
-        const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 0 
-            ? map.mouseEventToLatLng(e.originalEvent.touches[0]) : null);
-        
-        if (!latlng) return;
-
-        dragStartLatLng = latlng;
-        lastMoveLatLng = latlng;
-
-        if (e.originalEvent) {
-            L.DomEvent.stopPropagation(e.originalEvent);
-            if (e.originalEvent.type === 'touchstart') {
-                L.DomEvent.preventDefault(e.originalEvent);
-            }
-        }
-
-        selectionCenterMarker = L.circleMarker(dragStartLatLng, {
-            radius: 6,
-            color: '#fff',
-            fillColor: '#ff9800',
-            fillOpacity: 0.6,
-            weight: 2,
-            dashArray: '3, 3',
-            interactive: false
-        }).addTo(map);
-
-        selectionCircle = L.circle(dragStartLatLng, {
-            radius: 0,
-            color: '#ff9800',
-            fillColor: '#ff9800',
-            fillOpacity: 0.2,
-            weight: 2,
-            dashArray: '5, 5'
-        }).addTo(map);
-    };
-
-    const onDragMove = function (e) {
-        if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
-        
-        const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 0 
-            ? map.mouseEventToLatLng(e.originalEvent.touches[0]) : null);
-        
-        if (!latlng) return;
-
-        lastMoveLatLng = latlng;
-        const radius = dragStartLatLng.distanceTo(latlng);
-        selectionCircle.setRadius(radius);
-        
-        if (e.originalEvent) {
-            L.DomEvent.preventDefault(e.originalEvent);
-            L.DomEvent.stopPropagation(e.originalEvent);
-        }
-    };
-
-    const onDragEnd = function (e) {
-        if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
-        
-        let latlng = e.latlng;
-        if (!latlng && e.originalEvent) {
-             if (e.originalEvent.changedTouches && e.originalEvent.changedTouches.length > 0) {
-                 latlng = map.mouseEventToLatLng(e.originalEvent.changedTouches[0]);
-             } else if (e.originalEvent.touches && e.originalEvent.touches.length > 0) {
-                 latlng = map.mouseEventToLatLng(e.originalEvent.touches[0]);
-             }
-        }
-        
-        const endLatLng = latlng || lastMoveLatLng;
-        const radiusKm = dragStartLatLng.distanceTo(endLatLng) / 1000;
-        const center = dragStartLatLng;
-
-        if (e.originalEvent) {
-            L.DomEvent.stopPropagation(e.originalEvent);
-        }
-
-        // Cleanup
-        if (selectionCircle) {
-            map.removeLayer(selectionCircle);
-            selectionCircle = null;
-        }
-        if (selectionCenterMarker) {
-            map.removeLayer(selectionCenterMarker);
-            selectionCenterMarker = null;
-        }
-        dragStartLatLng = null;
-        lastMoveLatLng = null;
-
-        if (dotNetHelper && radiusKm > 0.01) {
-            dotNetHelper.invokeMethodAsync('OnAlertAreaDefined', center.lat, center.lng, radiusKm);
-        }
-    };
+    // Using native listeners for touch to ensure non-passive for preventDefault
+    const mapContainer = map.getContainer();
+    
+    mapContainer.removeEventListener('touchstart', onDragStart);
+    mapContainer.removeEventListener('touchmove', onDragMove);
+    mapContainer.removeEventListener('touchend', onDragEnd);
+    mapContainer.addEventListener('touchstart', onDragStart, { passive: false });
+    mapContainer.addEventListener('touchmove', onDragMove, { passive: false });
+    mapContainer.addEventListener('touchend', onDragEnd, { passive: false });
 
     map.on('mousedown', onDragStart);
-    map.on('touchstart', onDragStart);
     map.on('mousemove', onDragMove);
-    map.on('touchmove', onDragMove);
     map.on('mouseup', onDragEnd);
-    map.on('touchend', onDragEnd);
 
     map.on('movestart', function() {
         if (!isProgrammaticMove && dotNetHelper) {
@@ -569,12 +581,20 @@ window.setAlertCreationMode = function (enabled) {
         if (enabled) {
             container.style.cursor = 'crosshair';
             container.style.touchAction = 'none';
+            container.classList.add('alert-creation-mode');
             map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.boxZoom.disable();
             if (map.tap) map.tap.disable();
         } else {
             container.style.cursor = '';
             container.style.touchAction = '';
+            container.classList.remove('alert-creation-mode');
             map.dragging.enable();
+            map.touchZoom.enable();
+            map.doubleClickZoom.enable();
+            map.boxZoom.enable();
             if (map.tap) map.tap.enable();
             
             // Cleanup
