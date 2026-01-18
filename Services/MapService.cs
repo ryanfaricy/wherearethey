@@ -85,4 +85,9 @@ public class MapService(IJSRuntime jsRuntime) : IMapService
     {
         return await jsRuntime.InvokeAsync<double>("getZoomLevel");
     }
+
+    public async Task SetAlertCreationModeAsync(bool enabled)
+    {
+        await jsRuntime.InvokeVoidAsync("setAlertCreationMode", enabled);
+    }
 }

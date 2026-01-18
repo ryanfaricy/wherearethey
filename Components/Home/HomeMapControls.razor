@@ -10,6 +10,11 @@
                                 Size="ButtonSize.Medium" ToolTip="Follow Me" 
                                 ToggleButtonStyle="ButtonStyle.Primary"
                                 Change="@OnFollowMeChange" />
+
+            <RadzenToggleButton @bind-Value="@AlertCreationModeValue" Icon="notifications_active" 
+                                ButtonStyle="ButtonStyle.Base" Variant="Variant.Flat" 
+                                Size="ButtonSize.Medium" ToolTip="Define Alert Area (Click & Drag)" 
+                                ToggleButtonStyle="ButtonStyle.Warning" />
             
             <RadzenSelectBar @bind-Value="@SelectedHoursValue" TValue="int" Change="@OnHoursChange"
                              Size="ButtonSize.Small" ButtonStyle="ButtonStyle.Base" 
@@ -51,6 +56,14 @@
     }
 
     [Parameter] public int ReportExpiryHours { get; set; }
+    
+    [Parameter] public bool AlertCreationMode { get; set; }
+    [Parameter] public EventCallback<bool> AlertCreationModeChanged { get; set; }
+    private bool AlertCreationModeValue
+    {
+        get => AlertCreationMode;
+        set => AlertCreationModeChanged.InvokeAsync(value);
+    }
     
     [Parameter] public EventCallback<GeocodingResult> OnAddressSelected { get; set; }
     [Parameter] public EventCallback<bool> OnFollowMeChange { get; set; }

@@ -23,59 +23,59 @@ public class MapInteractionService(
         var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick);
 
         var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm);
-        var nearbyAlerts = stateService.FindNearbyAlerts(lat, lng, searchRadiusKm);
+        
+        // For alerts, we want to know if we are actually clicking "on" or "inside" one
+        List<Alert> nearbyAlerts;
+        if (isMarkerClick || alertId.HasValue)
+        {
+            // For marker clicks or specific IDs, use standard search radius
+            nearbyAlerts = stateService.FindNearbyAlerts(lat, lng, searchRadiusKm);
+        }
+        else
+        {
+            // For general map clicks, we only "hit" an alert if we are INSIDE it 
+            // OR within a small tap tolerance (100m) of the center marker
+            nearbyAlerts = stateService.Alerts
+                .Where(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude) <= Math.Max(a.RadiusKm, 0.1))
+                .ToList();
+        }
 
-        if (!nearbyReports.Any() && !nearbyAlerts.Any() && !reportId.HasValue && !alertId.HasValue)
+        // If we didn't hit anything (no alerts, no reports, and not a specific marker),
+        // we fallback to the Create Alert dialog (by returning false)
+        if (!nearbyAlerts.Any() && !nearbyReports.Any() && !isMarkerClick && !reportId.HasValue && !alertId.HasValue)
         {
             return false;
         }
 
-        // If it's an alert marker click (verified by alertId), open AlertsDialog directly
-        if (alertId.HasValue)
-        {
-            await dialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
-                new Dictionary<string, object>
-                {
-                    { "SelectedAlertId", alertId.Value },
-                },
-                DialogConfigs.Default);
-            return true;
-        }
-
-        // Favor explicit report marker click
+        // Favor explicit IDs if provided
         int? selectedReportId = reportId;
-        if (!selectedReportId.HasValue && isMarkerClick && nearbyReports.Any())
+        int? selectedAlertId = alertId;
+
+        // If no explicit ID but we have nearby items, pick the closest
+        if (!selectedReportId.HasValue && !selectedAlertId.HasValue)
         {
-            // Pick the closest report if multiple are nearby
-            selectedReportId = nearbyReports
-                .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
-                .First().Id;
-        }
-        else if (!selectedReportId.HasValue && nearbyReports.Count == 1)
-        {
-            selectedReportId = nearbyReports[0].Id;
+            if (nearbyReports.Count == 1)
+            {
+                selectedReportId = nearbyReports[0].Id;
+            }
+            
+            if (nearbyAlerts.Any())
+            {
+                selectedAlertId = nearbyAlerts
+                    .OrderBy(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude))
+                    .First().Id;
+            }
         }
 
+        // If it's a marker click and we only have a single report/alert, we might want to highlight it on map
         if (selectedReportId.HasValue && !nearbyAlerts.Any() && nearbyReports.Count <= 1)
         {
             await mapService.SelectReportAsync(selectedReportId.Value);
         }
 
-        int? selectedAlertId = null;
-        if (isMarkerClick && nearbyAlerts.Any())
-        {
-             selectedAlertId = nearbyAlerts
-                .OrderBy(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude))
-                .First().Id;
-        }
-        else if (nearbyAlerts.Count == 1)
-        {
-            selectedAlertId = nearbyAlerts[0].Id;
-        }
-
         var isAdmin = await adminService.IsAdminAsync();
 
-        // Tapping on a blob or marker reveals area details
+        // Open ReportDetailsDialog for everything that hit the map (blobs or alert zones)
         var result = await dialogService.OpenAsync<ReportDetailsDialog>(isAdmin ? "ADMIN AREA DETAILS" : "AREA DETAILS",
             new Dictionary<string, object> 
             { 
@@ -86,13 +86,12 @@ public class MapInteractionService(
             },
             DialogConfigs.Default);
 
-        if (result == true) // If an alert was deleted
+        if (result == true) // If an alert was deleted/updated
         {
             await stateService.LoadAlertsAsync();
         }
             
         return true;
-
     }
 
     /// <inheritdoc />

@@ -45,18 +45,21 @@
                  ElementId="heatmap"
                  InitialLat="@_initialLat"
                  InitialLng="@_initialLng"
+                 AlertCreationMode="@_alertCreationMode"
                  OnMapClick="@OnHeatMapClick"
                  OnMapMoveEnd="@OnHeatMapMoveEnd"
                  OnUserInteractedWithMap="@OnHeatMapUserInteracted"
                  OnLocationUpdated="@OnHeatMapLocationUpdated"
                  OnMapContextMenu="@OnHeatMapContextMenu"
                  OnAlertDeleteClick="@OnHeatMapAlertDeleteClick"
+                 OnAlertAreaDefined="@OnHeatMapAlertAreaDefined"
                  OnManualPick="@HandleManualPick">
         
         <!-- Map Controls -->
         <HomeMapControls @bind-SearchAddress="@_searchAddress"
                          @bind-FollowMe="@_followMe"
                          @bind-SelectedHours="@_selectedHours"
+                         @bind-AlertCreationMode="@_alertCreationMode"
                          ReportExpiryHours="@_systemSettings.ReportExpiryHours"
                          OnAddressSelected="@OnAddressSelected"
                          OnFollowMeChange="@OnFollowMeChange"
@@ -79,13 +82,15 @@
     private string? _searchAddress;
     private double _initialLat;
     private double _initialLng;
+    private bool _alertCreationMode;
 
     private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
     {
         var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick, args.ReportId, args.AlertId);
         if (!handled && !args.IsMarkerClick)
         {
-            await ShowAlertsDialog(args.Lat, args.Lng);
+            var mapState = await MapService.GetMapStateAsync();
+            await ShowAlertsDialog(args.Lat, args.Lng, radiusKm: mapState?.RadiusKm);
         }
     }
 
@@ -94,6 +99,12 @@
     private async Task OnHeatMapLocationUpdated(GeolocationPosition position) => await OnLocationUpdated(position);
     private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, _userIdentifier);
     private async Task OnHeatMapAlertDeleteClick(int alertId) => await OnAlertDeleteClick(alertId);
+
+    private async Task OnHeatMapAlertAreaDefined(HeatMap.AlertAreaEventArgs args)
+    {
+        _alertCreationMode = false;
+        await ShowAlertsDialog(args.Lat, args.Lng, radiusKm: args.RadiusKm);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -348,7 +359,7 @@
     }
 
     private async Task OnAlertsClick() => await ShowAlertsDialog();
-    private async Task ShowAlertsDialog(double? lat = null, double? lng = null, int? alertId = null)
+    private async Task ShowAlertsDialog(double? lat = null, double? lng = null, int? alertId = null, double? radiusKm = null)
     {
         var parameters = new Dictionary<string, object>();
         if (alertId.HasValue)
@@ -363,7 +374,7 @@
             {
                 parameters.Add("InitialLat", lat ?? mapState.Lat);
                 parameters.Add("InitialLng", lng ?? mapState.Lng);
-                parameters.Add("InitialRadius", Math.Round(mapState.RadiusKm, 1));
+                parameters.Add("InitialRadius", radiusKm ?? Math.Round(mapState.RadiusKm, 1));
             }
         }
         catch (Exception) { /* Ignore */ }

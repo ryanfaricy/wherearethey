@@ -17,6 +17,10 @@ const PIN_ZOOM_THRESHOLD = 15;
 let translations = {};
 
 let isAdminMode = false;
+let isAlertCreationMode = false;
+let selectionCircle = null;
+let selectionCenterMarker = null;
+let dragStartLatLng = null;
 
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t, isAdmin) {
     if (t) translations = t;
@@ -32,6 +36,8 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
         userLocationMarker = null;
         userLocationCircle = null;
         ghostMarker = null;
+        selectionCircle = null;
+        selectionCenterMarker = null;
     }
 
     dotNetHelper = helper;
@@ -62,7 +68,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
 
     map.on('click', function(e) {
         if (dotNetHelper) {
-            dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng, false);
+            dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng, false, null, null);
         }
     });
 
@@ -88,6 +94,59 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
 
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
+
+    map.on('mousedown', function (e) {
+        if (!isAlertCreationMode) return;
+        dragStartLatLng = e.latlng;
+        map.dragging.disable();
+
+        selectionCenterMarker = L.circleMarker(dragStartLatLng, {
+            radius: 6,
+            color: '#fff',
+            fillColor: '#ff9800',
+            fillOpacity: 0.6,
+            weight: 2,
+            dashArray: '3, 3',
+            interactive: false
+        }).addTo(map);
+
+        selectionCircle = L.circle(dragStartLatLng, {
+            radius: 0,
+            color: '#ff9800',
+            fillColor: '#ff9800',
+            fillOpacity: 0.2,
+            weight: 2,
+            dashArray: '5, 5'
+        }).addTo(map);
+    });
+
+    map.on('mousemove', function (e) {
+        if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
+        const radius = dragStartLatLng.distanceTo(e.latlng);
+        selectionCircle.setRadius(radius);
+    });
+
+    map.on('mouseup', function (e) {
+        if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
+        const radiusKm = dragStartLatLng.distanceTo(e.latlng) / 1000;
+        const center = dragStartLatLng;
+
+        // Cleanup
+        if (selectionCircle) {
+            map.removeLayer(selectionCircle);
+            selectionCircle = null;
+        }
+        if (selectionCenterMarker) {
+            map.removeLayer(selectionCenterMarker);
+            selectionCenterMarker = null;
+        }
+        dragStartLatLng = null;
+        map.dragging.enable();
+
+        if (dotNetHelper && radiusKm > 0.01) {
+            dotNetHelper.invokeMethodAsync('OnAlertAreaDefined', center.lat, center.lng, radiusKm);
+        }
+    });
 
     map.on('movestart', function() {
         if (!isProgrammaticMove && dotNetHelper) {
@@ -452,6 +511,22 @@ window.focusReport = function(reportId) {
     }
 };
 
+window.setAlertCreationMode = function (enabled) {
+    isAlertCreationMode = enabled;
+    if (!enabled) {
+        if (selectionCircle) {
+            map.removeLayer(selectionCircle);
+            selectionCircle = null;
+        }
+        if (selectionCenterMarker) {
+            map.removeLayer(selectionCenterMarker);
+            selectionCenterMarker = null;
+        }
+        dragStartLatLng = null;
+        if (map) map.dragging.enable();
+    }
+};
+
 window.getMapState = function() {
     if (!map) return null;
     const center = map.getCenter();
@@ -461,8 +536,8 @@ window.getMapState = function() {
     // rather than the corner (circumscribed circle) to avoid "way too big" radius
     const northEdge = L.latLng(bounds.getNorth(), center.lng);
     const eastEdge = L.latLng(center.lat, bounds.getEast());
-    const distVertical = center.distanceTo(northEdge) / 2000;
-    const distHorizontal = center.distanceTo(eastEdge) / 2000;
+    const distVertical = center.distanceTo(northEdge) / 1000;
+    const distHorizontal = center.distanceTo(eastEdge) / 1000;
     const radiusKm = Math.min(distVertical, distHorizontal);
 
     return {

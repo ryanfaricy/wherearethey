@@ -16,6 +16,7 @@
     [Parameter] public double InitialLat { get; set; }
     [Parameter] public double InitialLng { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public bool AlertCreationMode { get; set; }
 
     [Parameter] public EventCallback<MapClickEventArgs> OnMapClick { get; set; }
     [Parameter] public EventCallback<MapLocationEventArgs> OnMapMoveEnd { get; set; }
@@ -23,9 +24,11 @@
     [Parameter] public EventCallback<GeolocationPosition> OnLocationUpdated { get; set; }
     [Parameter] public EventCallback<MapLocationEventArgs> OnMapContextMenu { get; set; }
     [Parameter] public EventCallback<int> OnAlertDeleteClick { get; set; }
+    [Parameter] public EventCallback<AlertAreaEventArgs> OnAlertAreaDefined { get; set; }
 
     private DotNetObjectReference<HeatMap>? _objRef;
     private bool _initialized;
+    private bool _lastAlertCreationMode;
 
     public async Task InitializeAsync(double lat, double lng)
     {
@@ -37,6 +40,15 @@
         InitialLat = lat;
         InitialLng = lng;
         await InitializeInternal();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_initialized && _lastAlertCreationMode != AlertCreationMode)
+        {
+            _lastAlertCreationMode = AlertCreationMode;
+            await MapService.SetAlertCreationModeAsync(AlertCreationMode);
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -132,6 +144,15 @@
         }
     }
 
+    [JSInvokable("OnAlertAreaDefined")]
+    public async Task OnAlertAreaDefinedInternal(double lat, double lng, double radiusKm)
+    {
+        if (OnAlertAreaDefined.HasDelegate)
+        {
+            await OnAlertAreaDefined.InvokeAsync(new AlertAreaEventArgs { Lat = lat, Lng = lng, RadiusKm = radiusKm });
+        }
+    }
+
     public DotNetObjectReference<HeatMap>? GetDotNetObjectReference() => _objRef;
 
     public void Dispose()
@@ -153,5 +174,12 @@
     {
         public double Lat { get; set; }
         public double Lng { get; set; }
+    }
+
+    public class AlertAreaEventArgs
+    {
+        public double Lat { get; set; }
+        public double Lng { get; set; }
+        public double RadiusKm { get; set; }
     }
 }

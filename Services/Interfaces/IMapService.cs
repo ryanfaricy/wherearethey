@@ -20,4 +20,5 @@ public interface IMapService
     Task<int> WatchLocationAsync(object objRef);
     Task StopWatchingAsync(int watchId);
     Task<double> GetZoomLevelAsync();
+    Task SetAlertCreationModeAsync(bool enabled);
 }

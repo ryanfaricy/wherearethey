@@ -142,6 +142,12 @@
   <data name="Tap_Empty_Area_Desc" xml:space="preserve">
     <value>Configure rápidamente una alerta para ese lugar específico.</value>
   </data>
+  <data name="Define_Alert_Area" xml:space="preserve">
+    <value>Definir área de alerta (Arrastrar)</value>
+  </data>
+  <data name="Define_Alert_Area_Desc" xml:space="preserve">
+    <value>Active este modo para definir un centro y un radio haciendo clic y arrastrando sobre el mapa.</value>
+  </data>
   <data name="Long_Press" xml:space="preserve">
     <value>Pulsación Larga / Clic Derecho</value>
   </data>

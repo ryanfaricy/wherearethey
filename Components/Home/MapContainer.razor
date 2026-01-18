@@ -10,12 +10,14 @@
              InitialLat="@InitialLat"
              InitialLng="@InitialLng"
              IsAdmin="@IsAdmin"
+             AlertCreationMode="@AlertCreationMode"
              OnMapClick="@OnMapClick"
              OnMapMoveEnd="@OnMapMoveEnd"
              OnUserInteractedWithMap="@OnUserInteractedWithMap"
              OnLocationUpdated="@OnLocationUpdated"
              OnMapContextMenu="@OnMapContextMenu"
-             OnAlertDeleteClick="@OnAlertDeleteClick" />
+             OnAlertDeleteClick="@OnAlertDeleteClick"
+             OnAlertAreaDefined="@OnAlertAreaDefined" />
     
     @ChildContent
 
@@ -28,6 +30,7 @@
     [Parameter] public double InitialLat { get; set; }
     [Parameter] public double InitialLng { get; set; }
     [Parameter] public bool IsAdmin { get; set; }
+    [Parameter] public bool AlertCreationMode { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     [Parameter] public EventCallback<HeatMap.MapClickEventArgs> OnMapClick { get; set; }
@@ -36,6 +39,7 @@
     [Parameter] public EventCallback<GeolocationPosition> OnLocationUpdated { get; set; }
     [Parameter] public EventCallback<HeatMap.MapLocationEventArgs> OnMapContextMenu { get; set; }
     [Parameter] public EventCallback<int> OnAlertDeleteClick { get; set; }
+    [Parameter] public EventCallback<HeatMap.AlertAreaEventArgs> OnAlertAreaDefined { get; set; }
     [Parameter] public EventCallback OnManualPick { get; set; }
 
     /// <summary>
