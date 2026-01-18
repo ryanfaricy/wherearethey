@@ -106,6 +106,24 @@ public class MapStateServiceTests : IDisposable
         _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Once);
     }
 
+    [Fact]
+    public async Task LoadReportsAsync_RespectsIsAdminFlag()
+    {
+        // Setup mocks for alerts which are called during InitializeAsync
+        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync(new List<Alert>());
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(new List<Alert>());
+
+        // 1. Test Admin Mode
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        await _service.LoadReportsAsync();
+        _reportServiceMock.Verify(s => s.GetAllReportsAsync(), Times.Once);
+
+        // 2. Switch to User Mode
+        await _service.InitializeAsync("test-user", isAdmin: false);
+        await _service.LoadReportsAsync(6);
+        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6), Times.Once);
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

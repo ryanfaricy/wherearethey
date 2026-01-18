@@ -123,7 +123,7 @@
     {
         InvokeAsync(async () =>
         {
-            await MapState.InitializeAsync(_userIdentifier, true);
+            await MapState.InitializeAsync(_userIdentifier, false);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -204,8 +204,7 @@
                 return;
             }
             
-            var isAdmin = await AdminService.IsAdminAsync();
-            await MapState.InitializeAsync(_userIdentifier, isAdmin);
+            await MapState.InitializeAsync(_userIdentifier, false);
             await MapState.LoadReportsAsync(_selectedHours);
             
             var isNew = await StorageService.IsNewUserAsync();
