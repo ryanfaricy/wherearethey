@@ -1,0 +1,66 @@
+@using Microsoft.Extensions.Localization
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IAlertService AlertService
+@inject IStringLocalizer<App> L
+
+<RadzenCard @attributes="CardAttributes">
+    <RadzenStack Orientation="@(IsMobile ? Orientation.Vertical : Orientation.Horizontal)" 
+                 JustifyContent="JustifyContent.SpaceBetween" 
+                 AlignItems="@(IsMobile ? AlignItems.Start : AlignItems.Center)" 
+                 Gap="@(IsMobile ? "1rem" : "0.5rem")">
+        <RadzenStack Gap="0">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
+                <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@Alert.Message</RadzenText>
+                @if (!Alert.IsVerified)
+                {
+                    <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
+                }
+            </RadzenStack>
+            <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.LocationDisplay()</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">@MaskEmail(AlertService.DecryptEmail(Alert.EncryptedEmail))</RadzenText>
+        </RadzenStack>
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" 
+                     JustifyContent="@(IsMobile ? JustifyContent.End : JustifyContent.Start)" 
+                     Class="@(IsMobile ? "rz-w-100" : "")">
+            <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" Variant="Variant.Flat"
+                          Click="@OnShowOnMap" ToolTip="@L["Show_on_Map"]" />
+            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Variant="Variant.Flat"
+                          Click="@OnDeactivate" ToolTip="@L["Deactivate"]" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenCard>
+
+@code {
+    [Parameter] public Alert Alert { get; set; } = null!;
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsMobile { get; set; }
+    [Parameter] public EventCallback OnShowOnMap { get; set; }
+    [Parameter] public EventCallback OnDeactivate { get; set; }
+
+    private Dictionary<string, object> CardAttributes
+    {
+        get
+        {
+            var attrs = new Dictionary<string, object>();
+            if (IsSelected)
+            {
+                attrs["id"] = "selected-alert-card";
+                attrs["class"] = "rz-border-primary rz-shadow-5";
+                attrs["style"] = "border-width: 2px;";
+            }
+            return attrs;
+        }
+    }
+
+    private string MaskEmail(string? email)
+    {
+        if (string.IsNullOrEmpty(email)) return "****";
+        var parts = email.Split('@');
+        if (parts.Length != 2) return "****";
+        var name = parts[0];
+        var domain = parts[1];
+        if (name.Length <= 2) return $"**@{domain}";
+        return $"{name[0]}***{name[^1]}@{domain}";
+    }
+}
