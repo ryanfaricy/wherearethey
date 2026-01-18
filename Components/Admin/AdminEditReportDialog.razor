@@ -44,6 +44,10 @@
             <RadzenLabel Text="Emergency" Component="IsEmergency" />
         </RadzenStack>
 
+        <RadzenFormField Text="Deleted At" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDatePicker @bind-Value="@_report.DeletedAt" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" AllowClear="true" />
+        </RadzenFormField>
+
         <RadzenFormField Text="Reporter Identifier" Variant="Variant.Outlined" Component="ReporterIdentifier" Style="width: 100%;">
             <ChildContent>
                 <RadzenTextBox Name="ReporterIdentifier" @bind-Value="@_report.ReporterIdentifier" Style="width: 100%; font-family: monospace;" 
@@ -101,6 +105,7 @@
             ReporterIdentifier = Report.ReporterIdentifier,
             ReporterLatitude = Report.ReporterLatitude,
             ReporterLongitude = Report.ReporterLongitude,
+            DeletedAt = Report.DeletedAt,
         };
         
         _ = LoadAddress();

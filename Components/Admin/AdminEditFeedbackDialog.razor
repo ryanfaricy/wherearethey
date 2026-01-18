@@ -1,0 +1,85 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IFeedbackService FeedbackService
+@inject NotificationService NotificationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@_feedback" Submit="@((Feedback _) => Save())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenFormField Text="Type" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDropDown @bind-Value="@_feedback.Type" Data="@_types" Style="width: 100%;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Message" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextArea Name="Message" @bind-Value="@_feedback.Message" Rows="5" Style="width: 100%;" MaxLength="1000" />
+            </ChildContent>
+            <Helper>
+                <RadzenLengthValidator Component="Message" Max="1000" Text="Message too long" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="User Identifier" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenTextBox @bind-Value="@_feedback.UserIdentifier" Style="width: 100%; font-family: monospace;" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Deleted At" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDatePicker @bind-Value="@_feedback.DeletedAt" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" AllowClear="true" />
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SAVE CHANGES" 
+                          Icon="save" ButtonStyle="ButtonStyle.Primary" 
+                          IsBusy="@_isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Feedback Feedback { get; set; } = new();
+
+    private Feedback _feedback = new();
+    private bool _isSubmitting;
+    private List<string> _types = ["Bug", "Feature", "General"];
+
+    protected override void OnInitialized()
+    {
+        // Create a copy to edit
+        _feedback = new Feedback
+        {
+            Id = Feedback.Id,
+            Type = Feedback.Type,
+            Message = Feedback.Message,
+            UserIdentifier = Feedback.UserIdentifier,
+            Timestamp = Feedback.Timestamp,
+            DeletedAt = Feedback.DeletedAt
+        };
+    }
+
+    private async Task Save()
+    {
+        _isSubmitting = true;
+        try
+        {
+            var result = await FeedbackService.UpdateFeedbackAsync(_feedback);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Feedback updated successfully");
+                DialogService.Close(true);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
+            }
+        }
+        catch (Exception ex)
+        {
+            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+}

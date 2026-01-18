@@ -24,4 +24,11 @@ public interface IFeedbackService
     /// </summary>
     /// <param name="id">The internal ID of the feedback entry.</param>
     Task DeleteFeedbackAsync(int id);
+
+    /// <summary>
+    /// Updates a feedback entry.
+    /// </summary>
+    /// <param name="feedback">The updated feedback details.</param>
+    /// <returns>The result of the update operation.</returns>
+    Task<Result> UpdateFeedbackAsync(Feedback feedback);
 }

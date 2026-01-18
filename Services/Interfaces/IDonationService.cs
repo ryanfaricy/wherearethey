@@ -43,4 +43,11 @@ public interface IDonationService
     /// <param name="donation">The updated donation.</param>
     /// <returns>The result of the update operation.</returns>
     Task<Result> UpdateDonationAsync(Donation donation);
+
+    /// <summary>
+    /// Soft deletes a donation.
+    /// </summary>
+    /// <param name="id">The donation identifier.</param>
+    /// <returns>The result of the delete operation.</returns>
+    Task<Result> DeleteDonationAsync(int id);
 }

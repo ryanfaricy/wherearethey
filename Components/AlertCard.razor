@@ -16,6 +16,10 @@
                 {
                     <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
                 }
+                @if (IsAdmin && Alert.DeletedAt != null)
+                {
+                    <RadzenBadge Text="DELETED" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
+                }
             </RadzenStack>
             <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.LocationDisplay()</RadzenText>
             @if (IsAdmin)

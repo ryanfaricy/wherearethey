@@ -61,6 +61,7 @@ public class ReportService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var report = await context.LocationReports
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
 
@@ -88,8 +89,8 @@ public class ReportService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.LocationReports
+            .IgnoreQueryFilters()
             .AsNoTracking()
-            .Where(r => r.DeletedAt == null)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
     }
@@ -98,7 +99,9 @@ public class ReportService(
     public async Task<Result> DeleteReportAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var report = await context.LocationReports.FindAsync(id);
+        var report = await context.LocationReports
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(r => r.Id == id);
         if (report == null)
         {
             return Result.Failure("Report not found.");
@@ -108,6 +111,7 @@ public class ReportService(
         await context.SaveChangesAsync();
         
         // Notify global event bus
+        eventService.NotifyReportUpdated(report);
         eventService.NotifyReportDeleted(id);
         return Result.Success();
     }

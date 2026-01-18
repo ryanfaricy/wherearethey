@@ -16,9 +16,43 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SystemSettings> Settings { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries<IAuditable>())
+        {
+            if (entry.State == EntityState.Added)
+            {
+                if (entry.Entity.CreatedAt == default)
+                {
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                }
+            }
+
+            if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+            {
+                // Ensure Kind is UTC for PostgreSQL
+                if (entry.Entity.CreatedAt.Kind != DateTimeKind.Utc)
+                {
+                    entry.Entity.CreatedAt = DateTime.SpecifyKind(entry.Entity.CreatedAt, DateTimeKind.Utc);
+                }
+
+                if (entry.Entity.DeletedAt.HasValue && entry.Entity.DeletedAt.Value.Kind != DateTimeKind.Utc)
+                {
+                    entry.Entity.DeletedAt = DateTime.SpecifyKind(entry.Entity.DeletedAt.Value, DateTimeKind.Utc);
+                }
+            }
+        }
+        return base.SaveChangesAsync(cancellationToken);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<LocationReport>().HasQueryFilter(e => e.DeletedAt == null);
+        modelBuilder.Entity<Alert>().HasQueryFilter(e => e.DeletedAt == null);
+        modelBuilder.Entity<Donation>().HasQueryFilter(e => e.DeletedAt == null);
+        modelBuilder.Entity<Feedback>().HasQueryFilter(e => e.DeletedAt == null);
 
         modelBuilder.Entity<LocationReport>(entity =>
         {
@@ -50,6 +84,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.CreatedAt);
+            entity.HasIndex(e => e.DeletedAt);
             entity.Property(e => e.Amount).HasPrecision(18, 2);
         });
 
@@ -64,6 +99,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.DeletedAt);
             entity.HasIndex(e => e.UserIdentifier);
         });
 

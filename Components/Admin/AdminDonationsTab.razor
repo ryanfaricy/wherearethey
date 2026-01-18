@@ -1,5 +1,6 @@
 @inject IDonationService DonationService
 @inject UserTimeZoneService TimeZoneService
+@inject NotificationService NotificationService
 @inject ILogger<AdminDonationsTab> Logger
 @inject IEventService EventService
 @inject DialogService DialogService
@@ -20,14 +21,22 @@
                         </RadzenText>
                         <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
                                      Text="@donation.Status" />
+                        @if (donation.DeletedAt != null)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                        }
                     </RadzenStack>
                     
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
                             @donation.Amount @donation.Currency.ToUpper()
                         </RadzenText>
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
-                                      Click="@(() => EditDonation(donation))" Text="EDIT" />
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
+                                          Click="@(() => EditDonation(donation))" Text="EDIT" />
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                          Click="@(() => DeleteDonation(donation.Id))" Text="DELETE" />
+                        </RadzenStack>
                     </RadzenStack>
                     
                     <RadzenText TextStyle="TextStyle.Caption"><b>Donor:</b> @donation.DonorEmail</RadzenText>
@@ -57,10 +66,26 @@ else
                                  Text="@donation.Status" />
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="Donation" Context="donation" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="60px">
+            <RadzenDataGridColumn TItem="Donation" Property="DeletedAt" Title="Deleted">
                 <Template Context="donation">
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
-                                  Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
+                    @if (donation.DeletedAt != null)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="YES" />
+                    }
+                    else
+                    {
+                        <RadzenText TextStyle="TextStyle.Caption">NO</RadzenText>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Donation" Context="donation" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="100px">
+                <Template Context="donation">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
+                                      Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
+                                      Click="@(() => DeleteDonation(donation.Id))" @onclick:stopPropagation="true" />
+                    </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -78,6 +103,7 @@ else
         await LoadData();
         EventService.OnDonationAdded += HandleDonationAdded;
         EventService.OnDonationUpdated += HandleDonationUpdated;
+        EventService.OnDonationDeleted += HandleDonationDeleted;
     }
 
     private async Task LoadData()
@@ -105,6 +131,25 @@ else
         }
     }
 
+    private async Task DeleteDonation(int id)
+    {
+        var confirm = await DialogService.Confirm("Are you sure you want to delete this donation?", "Delete Donation", 
+            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            var result = await DonationService.DeleteDonationAsync(id);
+            if (result.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, "Donation deleted");
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
+            }
+        }
+    }
+
     private void HandleDonationAdded(Donation donation)
     {
         InvokeAsync(async () =>
@@ -127,13 +172,31 @@ else
             if (index != -1)
             {
                 _donations[index] = donation;
-                if (_donationsGrid != null)
-                {
-                    await _donationsGrid.Reload();
-                }
-
-                StateHasChanged();
             }
+            else
+            {
+                _donations.Insert(0, donation);
+            }
+
+            if (_donationsGrid != null)
+            {
+                await _donationsGrid.Reload();
+            }
+
+            StateHasChanged();
+        });
+    }
+
+    private void HandleDonationDeleted(int id)
+    {
+        InvokeAsync(async () =>
+        {
+            if (_donationsGrid != null)
+            {
+                await _donationsGrid.Reload();
+            }
+
+            StateHasChanged();
         });
     }
 
@@ -141,5 +204,6 @@ else
     {
         EventService.OnDonationAdded -= HandleDonationAdded;
         EventService.OnDonationUpdated -= HandleDonationUpdated;
+        EventService.OnDonationDeleted -= HandleDonationDeleted;
     }
 }

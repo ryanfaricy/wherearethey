@@ -1,12 +1,13 @@
 namespace WhereAreThey.Models;
 
-public class LocationReport
+public class LocationReport : IAuditable
 {
     public int Id { get; set; }
     public Guid ExternalId { get; set; } = Guid.NewGuid();
     public double Latitude { get; set; }
     public double Longitude { get; set; }
     public DateTime Timestamp { get; set; }
+    public DateTime CreatedAt { get; set; }
     public string? Message { get; set; }
     public string? ReporterIdentifier { get; set; } // Anonymous identifier (e.g., session ID)
     public double? ReporterLatitude { get; set; }

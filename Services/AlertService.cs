@@ -177,6 +177,7 @@ public class AlertService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var alert = await context.Alerts
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ExternalId == externalId);
 
@@ -208,7 +209,9 @@ public class AlertService(
     public virtual async Task<Result> DeactivateAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var alert = await context.Alerts.FindAsync(id);
+        var alert = await context.Alerts
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (alert == null)
         {
             return Result.Failure("Alert not found.");
@@ -247,6 +250,7 @@ public class AlertService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Alerts
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
@@ -256,7 +260,9 @@ public class AlertService(
     public virtual async Task<Result> DeleteAlertAsync(int id)
     {
         await using var context = await contextFactory.CreateDbContextAsync();
-        var alert = await context.Alerts.FindAsync(id);
+        var alert = await context.Alerts
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (alert == null)
         {
             return Result.Failure("Alert not found.");
@@ -264,6 +270,7 @@ public class AlertService(
 
         alert.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
+        eventService.NotifyAlertUpdated(alert);
         eventService.NotifyAlertDeleted(id);
         return Result.Success();
     }
@@ -280,7 +287,9 @@ public class AlertService(
             }
 
             await using var context = await contextFactory.CreateDbContextAsync();
-            var existing = await context.Alerts.FindAsync(alert.Id);
+            var existing = await context.Alerts
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a => a.Id == alert.Id);
             if (existing == null)
             {
                 return Result.Failure("Alert not found.");

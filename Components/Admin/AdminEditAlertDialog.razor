@@ -71,14 +71,14 @@
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                <RadzenCheckBox @bind-Value="@_isActive" TValue="bool" Name="IsActive" />
-                <RadzenLabel Text="Active" Component="IsActive" />
-            </RadzenStack>
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
                 <RadzenCheckBox @bind-Value="@_alert.IsVerified" TValue="bool" Name="IsVerified" />
                 <RadzenLabel Text="Verified" Component="IsVerified" />
             </RadzenStack>
         </RadzenStack>
+
+        <RadzenFormField Text="Deleted At" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDatePicker @bind-Value="@_alert.DeletedAt" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" AllowClear="true" />
+        </RadzenFormField>
 
         <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
             <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
@@ -93,7 +93,6 @@
     [Parameter] public Alert Alert { get; set; } = new();
 
     private Alert _alert = new();
-    private bool _isActive;
     private string _email = "";
     private bool _isSubmitting;
     private string? _approxAddress;
@@ -117,7 +116,6 @@
             UserIdentifier = Alert.UserIdentifier,
         };
 
-        _isActive = Alert.DeletedAt == null;
         _email = AlertService.DecryptEmail(Alert.EncryptedEmail) ?? "";
         
         _ = LoadAddress();
@@ -140,8 +138,6 @@
         _isSubmitting = true;
         try
         {
-            _alert.DeletedAt = _isActive ? null : (_alert.DeletedAt ?? DateTime.UtcNow);
-            
             var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
             var newEmail = _email != originalEmail ? _email : null;
 

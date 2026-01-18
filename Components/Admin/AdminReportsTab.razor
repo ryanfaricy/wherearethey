@@ -23,6 +23,10 @@
                         </RadzenText>
                         <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
                                      Text="@(report.IsEmergency ? "EMERGENCY" : "NORMAL")" />
+                        @if (report.DeletedAt != null)
+                        {
+                            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                        }
                     </RadzenStack>
                     
                     <RadzenText TextStyle="TextStyle.Body1">@report.Message</RadzenText>
@@ -66,6 +70,18 @@ else
                 <Template Context="report">
                     <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
                                  Text="@(report.IsEmergency ? "YES" : "NO")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="LocationReport" Property="DeletedAt" Title="Status">
+                <Template Context="report">
+                    @if (report.DeletedAt != null)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                    }
+                    else
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="ACTIVE" />
+                    }
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="LocationReport" Title="Location">

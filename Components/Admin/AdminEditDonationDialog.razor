@@ -26,6 +26,10 @@
         <RadzenFormField Text="Status" Variant="Variant.Outlined" Style="width: 100%;">
             <RadzenDropDown @bind-Value="@_donation.Status" Data="@_statuses" Style="width: 100%;" />
         </RadzenFormField>
+
+        <RadzenFormField Text="Deleted At" Variant="Variant.Outlined" Style="width: 100%;">
+            <RadzenDatePicker @bind-Value="@_donation.DeletedAt" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" AllowClear="true" />
+        </RadzenFormField>
         
         <RadzenText TextStyle="TextStyle.Caption" Class="rz-mt-2">
             Payment ID: @(_donation.ExternalPaymentId ?? "N/A")
@@ -59,7 +63,8 @@
             DonorEmail = Donation.DonorEmail,
             Status = Donation.Status,
             CreatedAt = Donation.CreatedAt,
-            ExternalPaymentId = Donation.ExternalPaymentId
+            ExternalPaymentId = Donation.ExternalPaymentId,
+            DeletedAt = Donation.DeletedAt,
         };
     }
 

@@ -17,6 +17,10 @@
                 {
                     <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
                 }
+                @if (IsAdmin && Report.DeletedAt != null)
+                {
+                    <RadzenBadge Text="DELETED" BadgeStyle="BadgeStyle.Secondary" Size="BadgeSize.ExtraSmall" />
+                }
             </RadzenStack>
 
             @if (!string.IsNullOrEmpty(Report.Message))
@@ -74,7 +78,7 @@
         return Report.Message;
     }
 
-    private string AdminDetailsStyle => Report is { IsEmergency: true } 
+    private string AdminDetailsStyle => Report.IsEmergency
         ? "border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;" 
         : "border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;";
 

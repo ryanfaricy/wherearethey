@@ -102,22 +102,30 @@ else
         
         EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
         EventService.OnReportAdded += HandleReportAdded;
+        EventService.OnReportUpdated += HandleReportUpdated;
         EventService.OnReportDeleted += HandleReportDeleted;
         EventService.OnAlertAdded += HandleAlertAdded;
         EventService.OnAlertUpdated += HandleAlertUpdated;
         EventService.OnAlertDeleted += HandleAlertDeleted;
         EventService.OnDonationAdded += HandleDonationAdded;
+        EventService.OnDonationUpdated += HandleDonationUpdated;
+        EventService.OnDonationDeleted += HandleDonationDeleted;
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
+        EventService.OnFeedbackUpdated += HandleFeedbackUpdated;
         EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
     }
 
     private void HandleReportAdded(LocationReport _) => InvokeAsync(() => { _reportCount++; StateHasChanged(); });
+    private void HandleReportUpdated(LocationReport _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
     private void HandleReportDeleted(int _) => InvokeAsync(() => { _reportCount--; StateHasChanged(); });
     private void HandleAlertAdded(Alert _) => InvokeAsync(() => { _activeAlertCount++; StateHasChanged(); });
     private void HandleAlertUpdated(Alert _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
     private void HandleAlertDeleted(int _) => InvokeAsync(() => { _activeAlertCount--; StateHasChanged(); });
     private void HandleDonationAdded(Donation _) => InvokeAsync(() => { _donationCount++; StateHasChanged(); });
+    private void HandleDonationUpdated(Donation _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
+    private void HandleDonationDeleted(int _) => InvokeAsync(() => { _donationCount--; StateHasChanged(); });
     private void HandleFeedbackAdded(Feedback _) => InvokeAsync(() => { _feedbackCount++; StateHasChanged(); });
+    private void HandleFeedbackUpdated(Feedback _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
     private void HandleFeedbackDeleted(int _) => InvokeAsync(() => { _feedbackCount--; StateHasChanged(); });
 
     private async Task LoadData()
@@ -125,16 +133,16 @@ else
         try
         {
             var reports = await ReportService.GetAllReportsAsync();
-            _reportCount = reports.Count;
+            _reportCount = reports.Count(r => r.DeletedAt == null);
             
             var alerts = await AlertService.GetAllAlertsAdminAsync();
             _activeAlertCount = alerts.Count(a => a.DeletedAt == null);
             
             var donations = await DonationService.GetAllDonationsAsync();
-            _donationCount = donations.Count(d => d.IsSuccess());
+            _donationCount = donations.Count(d => d.IsSuccess() && d.DeletedAt == null);
             
             var feedbacks = await FeedbackService.GetAllFeedbackAsync();
-            _feedbackCount = feedbacks.Count;
+            _feedbackCount = feedbacks.Count(f => f.DeletedAt == null);
             
             var logins = await AdminService.GetRecentLoginAttemptsAsync();
             _loginAttempts = logins.Take(5).ToList();
@@ -154,12 +162,16 @@ else
     {
         EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
         EventService.OnReportAdded -= HandleReportAdded;
+        EventService.OnReportUpdated -= HandleReportUpdated;
         EventService.OnReportDeleted -= HandleReportDeleted;
         EventService.OnAlertAdded -= HandleAlertAdded;
         EventService.OnAlertUpdated -= HandleAlertUpdated;
         EventService.OnAlertDeleted -= HandleAlertDeleted;
         EventService.OnDonationAdded -= HandleDonationAdded;
+        EventService.OnDonationUpdated -= HandleDonationUpdated;
+        EventService.OnDonationDeleted -= HandleDonationDeleted;
         EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnFeedbackUpdated -= HandleFeedbackUpdated;
         EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
     }
 }

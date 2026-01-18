@@ -24,8 +24,14 @@
                     
                     <RadzenText TextStyle="TextStyle.Body1">@feedback.Message</RadzenText>
                     
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                         <RadzenText TextStyle="TextStyle.Caption"><b>User:</b> @feedback.UserIdentifier</RadzenText>
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" AlignItems="AlignItems.Center" Gap="0.5rem">
+                         <RadzenText TextStyle="TextStyle.Caption" Style="flex: 1;"><b>User:</b> @feedback.UserIdentifier</RadzenText>
+                         @if (feedback.DeletedAt != null)
+                         {
+                             <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                         }
+                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                      Click="@(() => EditFeedback(feedback))" Text="EDIT" />
                          <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
                                       Click="@(() => DeleteFeedback(feedback.Id))" Text="DELETE" />
                     </RadzenStack>
@@ -51,10 +57,26 @@ else
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
             <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" />
+            <RadzenDataGridColumn TItem="Feedback" Property="DeletedAt" Title="Status">
+                <Template Context="fb">
+                    @if (fb.DeletedAt != null)
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                    }
+                    else
+                    {
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="ACTIVE" />
+                    }
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
                 <Template Context="fb">
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                  Click="@(() => DeleteFeedback(fb.Id))" />
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                      Click="@(() => EditFeedback(fb))" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                      Click="@(() => DeleteFeedback(fb.Id))" />
+                    </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
         </Columns>
@@ -71,6 +93,7 @@ else
     {
         await LoadData();
         EventService.OnFeedbackAdded += HandleFeedbackAdded;
+        EventService.OnFeedbackUpdated += HandleFeedbackUpdated;
         EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
     }
 
@@ -83,6 +106,19 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading feedback");
+        }
+    }
+
+    private async Task EditFeedback(Feedback feedback)
+    {
+        var result = await DialogService.OpenAsync<AdminEditFeedbackDialog>($"Edit Feedback {feedback.Id}", 
+            new Dictionary<string, object> { { "Feedback", feedback } },
+            DialogConfigs.Admin);
+
+        if (result == true)
+        {
+            await LoadData();
+            StateHasChanged();
         }
     }
 
@@ -100,11 +136,33 @@ else
         });
     }
 
+    private void HandleFeedbackUpdated(Feedback feedback)
+    {
+        InvokeAsync(async () =>
+        {
+            var index = _feedbacks.FindIndex(f => f.Id == feedback.Id);
+            if (index != -1)
+            {
+                _feedbacks[index] = feedback;
+            }
+            else
+            {
+                _feedbacks.Insert(0, feedback);
+            }
+
+            if (_feedbacksGrid != null)
+            {
+                await _feedbacksGrid.Reload();
+            }
+
+            StateHasChanged();
+        });
+    }
+
     private void HandleFeedbackDeleted(int id)
     {
         InvokeAsync(async () =>
         {
-            _feedbacks.RemoveAll(f => f.Id == id);
             if (_feedbacksGrid != null)
             {
                 await _feedbacksGrid.Reload();
@@ -137,6 +195,7 @@ else
     public void Dispose()
     {
         EventService.OnFeedbackAdded -= HandleFeedbackAdded;
+        EventService.OnFeedbackUpdated -= HandleFeedbackUpdated;
         EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
     }
 }

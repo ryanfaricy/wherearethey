@@ -160,8 +160,13 @@ public class MapStateService : IMapStateService
 
     private void HandleReportAdded(LocationReport report)
     {
+        if (report.DeletedAt != null && !_isAdmin)
+        {
+            return;
+        }
+
         Reports.Insert(0, report);
-        if (MapInitialized)
+        if (MapInitialized && report.DeletedAt == null)
         {
             _ = _mapService.AddSingleReportAsync(report);
         }
@@ -171,8 +176,25 @@ public class MapStateService : IMapStateService
     private void HandleReportUpdated(LocationReport report)
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
+        
+        if (report.DeletedAt != null && !_isAdmin)
+        {
+            if (index != -1)
+            {
+                Reports.RemoveAt(index);
+                if (MapInitialized)
+                {
+                    _ = _mapService.RemoveSingleReportAsync(report.Id);
+                }
+                OnStateChanged?.Invoke();
+            }
+            return;
+        }
+
         if (index == -1)
         {
+            // Might have been previously deleted or new
+            HandleReportAdded(report);
             return;
         }
 
@@ -186,12 +208,33 @@ public class MapStateService : IMapStateService
 
     private async Task UpdateReportOnMap(LocationReport report)
     {
-        await _mapService.RemoveSingleReportAsync(report.Id);
-        await _mapService.AddSingleReportAsync(report);
+        if (report.DeletedAt != null && !_isAdmin)
+        {
+            await _mapService.RemoveSingleReportAsync(report.Id);
+        }
+        else
+        {
+            await _mapService.RemoveSingleReportAsync(report.Id);
+            await _mapService.AddSingleReportAsync(report);
+        }
     }
 
     private void HandleReportDeleted(int id)
     {
+        if (_isAdmin)
+        {
+            // For admins, we expect an Update event with DeletedAt set.
+            // If we only get a Deleted event, we don't know the DeletedAt value, 
+            // but we can at least mark it as deleted if we find it.
+            var report = Reports.FirstOrDefault(r => r.Id == id);
+            if (report != null && report.DeletedAt == null)
+            {
+                report.DeletedAt = DateTime.UtcNow;
+                OnStateChanged?.Invoke();
+            }
+            return;
+        }
+
         Reports.RemoveAll(r => r.Id == id);
         if (MapInitialized)
         {

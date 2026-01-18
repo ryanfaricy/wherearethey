@@ -55,6 +55,7 @@ public class DonationService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         var donation = await context.Donations
+            .IgnoreQueryFilters()
             .FirstOrDefaultAsync(d => d.ExternalPaymentId == paymentId);
         
         if (donation == null)
@@ -74,6 +75,7 @@ public class DonationService(
     {
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.Donations
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
@@ -85,7 +87,9 @@ public class DonationService(
         try
         {
             await using var context = await contextFactory.CreateDbContextAsync();
-            var existing = await context.Donations.FindAsync(donation.Id);
+            var existing = await context.Donations
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(d => d.Id == donation.Id);
             if (existing == null)
             {
                 return Result.Failure("Donation not found.");
@@ -96,6 +100,7 @@ public class DonationService(
             existing.DonorEmail = donation.DonorEmail;
             existing.Status = donation.Status;
             existing.Currency = donation.Currency;
+            existing.DeletedAt = donation.DeletedAt;
 
             await context.SaveChangesAsync();
             eventService.NotifyDonationUpdated(existing);
@@ -104,6 +109,32 @@ public class DonationService(
         catch (Exception ex)
         {
             return Result.Failure($"An error occurred while updating the donation: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteDonationAsync(int id)
+    {
+        try
+        {
+            await using var context = await contextFactory.CreateDbContextAsync();
+            var existing = await context.Donations
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(d => d.Id == id);
+            if (existing == null)
+            {
+                return Result.Failure("Donation not found.");
+            }
+
+            existing.DeletedAt = DateTime.UtcNow;
+            await context.SaveChangesAsync();
+            eventService.NotifyDonationUpdated(existing);
+            eventService.NotifyDonationDeleted(id);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while deleting the donation: {ex.Message}");
         }
     }
 }

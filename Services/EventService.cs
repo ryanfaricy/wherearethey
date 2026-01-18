@@ -17,9 +17,13 @@ public class EventService : IEventService
     /// <inheritdoc />
     public event Action<int>? OnFeedbackDeleted;
     /// <inheritdoc />
+    public event Action<Feedback>? OnFeedbackUpdated;
+    /// <inheritdoc />
     public event Action<Donation>? OnDonationAdded;
     /// <inheritdoc />
     public event Action<Donation>? OnDonationUpdated;
+    /// <inheritdoc />
+    public event Action<int>? OnDonationDeleted;
     /// <inheritdoc />
     public event Action<Alert>? OnAlertAdded;
     /// <inheritdoc />
@@ -48,9 +52,13 @@ public class EventService : IEventService
     /// <inheritdoc />
     public void NotifyFeedbackDeleted(int id) => OnFeedbackDeleted?.Invoke(id);
     /// <inheritdoc />
+    public void NotifyFeedbackUpdated(Feedback feedback) => OnFeedbackUpdated?.Invoke(feedback);
+    /// <inheritdoc />
     public void NotifyDonationAdded(Donation donation) => OnDonationAdded?.Invoke(donation);
     /// <inheritdoc />
     public void NotifyDonationUpdated(Donation donation) => OnDonationUpdated?.Invoke(donation);
+    /// <inheritdoc />
+    public void NotifyDonationDeleted(int id) => OnDonationDeleted?.Invoke(id);
     /// <inheritdoc />
     public void NotifyAlertAdded(Alert alert) => OnAlertAdded?.Invoke(alert);
     /// <inheritdoc />

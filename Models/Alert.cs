@@ -1,6 +1,6 @@
 namespace WhereAreThey.Models;
 
-public class Alert
+public class Alert : IAuditable
 {
     public int Id { get; set; }
     public Guid ExternalId { get; set; } = Guid.NewGuid();

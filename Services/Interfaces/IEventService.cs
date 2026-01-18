@@ -17,10 +17,14 @@ public interface IEventService
     event Action<Feedback> OnFeedbackAdded;
     /// <summary>Raised when feedback is deleted.</summary>
     event Action<int> OnFeedbackDeleted;
+    /// <summary>Raised when feedback is updated.</summary>
+    event Action<Feedback> OnFeedbackUpdated;
     /// <summary>Raised when a new donation is added.</summary>
     event Action<Donation> OnDonationAdded;
     /// <summary>Raised when a donation is updated.</summary>
     event Action<Donation> OnDonationUpdated;
+    /// <summary>Raised when a donation is deleted.</summary>
+    event Action<int> OnDonationDeleted;
     /// <summary>Raised when a new alert is added.</summary>
     event Action<Alert> OnAlertAdded;
     /// <summary>Raised when an alert is updated.</summary>
@@ -48,10 +52,14 @@ public interface IEventService
     void NotifyFeedbackAdded(Feedback feedback);
     /// <summary>Notifies subscribers that feedback has been deleted.</summary>
     void NotifyFeedbackDeleted(int id);
+    /// <summary>Notifies subscribers that feedback has been updated.</summary>
+    void NotifyFeedbackUpdated(Feedback feedback);
     /// <summary>Notifies subscribers that a donation has been added.</summary>
     void NotifyDonationAdded(Donation donation);
     /// <summary>Notifies subscribers that a donation has been updated.</summary>
     void NotifyDonationUpdated(Donation donation);
+    /// <summary>Notifies subscribers that a donation has been deleted.</summary>
+    void NotifyDonationDeleted(int id);
     /// <summary>Notifies subscribers that an alert has been added.</summary>
     void NotifyAlertAdded(Alert alert);
     /// <summary>Notifies subscribers that an alert has been updated.</summary>
