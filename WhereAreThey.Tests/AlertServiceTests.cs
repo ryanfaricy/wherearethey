@@ -89,7 +89,7 @@ public class AlertServiceTests
         var createdAlert = result.Value!;
         Assert.NotEqual(0, createdAlert.Id);
         Assert.NotEqual(originalExternalId, createdAlert.ExternalId);
-        Assert.True(createdAlert.IsActive);
+        Assert.Null(createdAlert.DeletedAt);
         Assert.False(createdAlert.IsVerified); // New alerts are not verified by default
         Assert.NotNull(createdAlert.EncryptedEmail);
         Assert.NotEqual(email, createdAlert.EncryptedEmail);
@@ -116,7 +116,6 @@ public class AlertServiceTests
                 Latitude = 40.0,
                 Longitude = -74.0,
                 RadiusKm = 5.0,
-                IsActive = true,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted",
@@ -127,7 +126,7 @@ public class AlertServiceTests
                 Latitude = 41.0,
                 Longitude = -75.0,
                 RadiusKm = 5.0,
-                IsActive = false,
+                DeletedAt = DateTime.UtcNow,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted",
@@ -143,7 +142,7 @@ public class AlertServiceTests
 
         // Assert
         Assert.Single(results);
-        Assert.True(results[0].IsActive);
+        Assert.Null(results[0].DeletedAt);
     }
 
     [Fact]
@@ -158,7 +157,7 @@ public class AlertServiceTests
         {
             context.Alerts.Add(new Alert
             {
-                Latitude = 40.0, Longitude = -74.0, RadiusKm = 5.0, IsActive = true, IsVerified = false,
+                Latitude = 40.0, Longitude = -74.0, RadiusKm = 5.0, IsVerified = false,
                 CreatedAt = DateTime.UtcNow, EncryptedEmail = "encrypted",
             });
             await context.SaveChangesAsync();
@@ -229,7 +228,6 @@ public class AlertServiceTests
                 Latitude = 40.0,
                 Longitude = -74.0,
                 RadiusKm = 5.0,
-                IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted",
             };
@@ -247,57 +245,8 @@ public class AlertServiceTests
         await using (var context = new ApplicationDbContext(options))
         {
             var deactivatedAlert = await context.Alerts.FindAsync(alertId);
-            Assert.False(deactivatedAlert!.IsActive);
+            Assert.NotNull(deactivatedAlert!.DeletedAt);
         }
-    }
-
-    [Fact]
-    public async Task GetActiveAlerts_ShouldNotReturnExpiredAlerts()
-    {
-        // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var service = CreateService(factory);
-        
-        int validAlertId;
-        await using (var context = new ApplicationDbContext(options))
-        {
-            var expiredAlert = new Alert
-            {
-                Latitude = 40.0,
-                Longitude = -74.0,
-                RadiusKm = 5.0,
-                IsActive = true,
-                IsVerified = true,
-                CreatedAt = DateTime.UtcNow.AddHours(-2),
-                ExpiresAt = DateTime.UtcNow.AddHours(-1),
-                EncryptedEmail = "encrypted",
-            };
-            
-            var validAlert = new Alert
-            {
-                Latitude = 41.0,
-                Longitude = -75.0,
-                RadiusKm = 5.0,
-                IsActive = true,
-                IsVerified = true,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddHours(1),
-                EncryptedEmail = "encrypted",
-            };
-
-            context.Alerts.Add(expiredAlert);
-            context.Alerts.Add(validAlert);
-            await context.SaveChangesAsync();
-            validAlertId = validAlert.Id;
-        }
-
-        // Act
-        var results = await service.GetActiveAlertsAsync();
-
-        // Assert
-        Assert.Single(results);
-        Assert.Equal(validAlertId, results[0].Id);
     }
 
     [Fact]
@@ -315,7 +264,6 @@ public class AlertServiceTests
                 Latitude = 40.0,
                 Longitude = -74.0,
                 RadiusKm = 10.0,
-                IsActive = true,
                 IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 EncryptedEmail = "encrypted",
@@ -350,12 +298,12 @@ public class AlertServiceTests
         {
             context.Alerts.Add(new Alert
             {
-                Latitude = 40, Longitude = -74, RadiusKm = 5, IsActive = true, IsVerified = true,
+                Latitude = 40, Longitude = -74, RadiusKm = 5, IsVerified = true,
                 UserIdentifier = userId1, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             context.Alerts.Add(new Alert
             {
-                Latitude = 41, Longitude = -75, RadiusKm = 5, IsActive = true, IsVerified = true,
+                Latitude = 41, Longitude = -75, RadiusKm = 5, IsVerified = true,
                 UserIdentifier = userId2, CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             await context.SaveChangesAsync();
@@ -487,7 +435,7 @@ public class AlertServiceTests
             context.Alerts.Add(new Alert
             {
                 Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0,
-                IsActive = true, IsVerified = false,
+                IsVerified = false,
                 CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             await context.SaveChangesAsync();
@@ -636,7 +584,7 @@ public class AlertServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1, IsActive = true };
+        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1 };
         
         await using (var context = await factory.CreateDbContextAsync())
         {
@@ -648,13 +596,13 @@ public class AlertServiceTests
         var result = await service.DeactivateAlertAsync(alert.Id);
 
         // Assert
-        Assert.True(result);
+        Assert.True(result.IsSuccess);
         _eventServiceMock.Verify(x => x.NotifyAlertUpdated(It.Is<Alert>(a => a.Id == alert.Id)), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())
         {
             var updated = await context.Alerts.FindAsync(alert.Id);
-            Assert.False(updated!.IsActive);
+            Assert.NotNull(updated!.DeletedAt);
         }
     }
 
@@ -682,7 +630,8 @@ public class AlertServiceTests
         await using (var context = await factory.CreateDbContextAsync())
         {
             var deleted = await context.Alerts.FindAsync(alert.Id);
-            Assert.Null(deleted);
+            Assert.NotNull(deleted);
+            Assert.NotNull(deleted.DeletedAt);
         }
     }
 }

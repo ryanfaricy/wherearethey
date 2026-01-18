@@ -202,7 +202,7 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertAdded(Alert alert)
     {
-        if (!alert.IsActive)
+        if (alert.DeletedAt != null)
         {
             return;
         }
@@ -230,7 +230,7 @@ public class MapStateService : IMapStateService
         var index = Alerts.FindIndex(a => a.Id == alert.Id);
         if (index != -1)
         {
-            if (alert.IsActive)
+            if (alert.DeletedAt == null)
             {
                 Alerts[index] = alert;
             }
@@ -245,7 +245,7 @@ public class MapStateService : IMapStateService
             }
             OnStateChanged?.Invoke();
         }
-        else if (alert.IsActive)
+        else if (alert.DeletedAt == null)
         {
             HandleAlertAdded(alert);
         }

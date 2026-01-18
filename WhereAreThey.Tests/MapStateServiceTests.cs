@@ -31,7 +31,7 @@ public class MapStateServiceTests : IDisposable
     public async Task InitializeAsync_LoadsInitialAlerts()
     {
         // Arrange
-        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, IsActive = true } };
+        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null } };
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(alerts);
 
         // Act
@@ -45,7 +45,7 @@ public class MapStateServiceTests : IDisposable
     public async Task InitializeAsync_AdminMode_DoesNotLoadAlerts()
     {
         // Arrange
-        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, IsActive = true } };
+        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null } };
         // Even if GetAllAlertsAdminAsync would return alerts
         _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync(alerts);
 
@@ -127,7 +127,7 @@ public class MapStateServiceTests : IDisposable
     {
         // Arrange
         await _service.InitializeAsync("test-admin", isAdmin: true);
-        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, IsActive = true };
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = null };
         _service.MapInitialized = true;
 
         // Act

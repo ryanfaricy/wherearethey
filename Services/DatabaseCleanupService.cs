@@ -57,15 +57,15 @@ public class DatabaseCleanupService(
             logger.LogInformation("Cleaned up {Count} unverified email verifications.", oldVerifications);
         }
 
-        // 3. Delete expired alerts
-        var alertCutoff = DateTime.UtcNow;
+        // 3. Delete soft-deleted alerts older than DataRetentionDays
+        var alertCleanupCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
         var expiredAlerts = await context.Alerts
-            .Where(a => a.ExpiresAt != null && a.ExpiresAt < alertCutoff)
+            .Where(a => a.DeletedAt != null && a.DeletedAt < alertCleanupCutoff)
             .ExecuteDeleteAsync();
             
         if (expiredAlerts > 0)
         {
-            logger.LogInformation("Cleaned up {Count} expired alerts.", expiredAlerts);
+            logger.LogInformation("Cleaned up {Count} soft-deleted alerts.", expiredAlerts);
         }
 
         // 4. Delete old admin login attempts (older than 90 days)

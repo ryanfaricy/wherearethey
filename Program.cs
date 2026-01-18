@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Radzen;
 using Serilog;
@@ -344,7 +345,7 @@ app.MapGet("/.well-known/web-app-origin-association", (IWebHostEnvironment env) 
 
 app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not HostAbortedException and not OperationCanceledException)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");
 }

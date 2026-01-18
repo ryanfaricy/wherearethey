@@ -12,6 +12,7 @@ public class LocationReport
     public double? ReporterLatitude { get; set; }
     public double? ReporterLongitude { get; set; }
     public bool IsEmergency { get; set; }
+    public DateTime? DeletedAt { get; set; }
     
     public string LocationDisplay(int digits = 4) => $"{Latitude.ToString($"F{digits}")}, {Longitude.ToString($"F{digits}")}";
     

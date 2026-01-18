@@ -57,9 +57,9 @@ public class DatabaseCleanupServiceTests
         context.EmailVerifications.Add(new EmailVerification { CreatedAt = now.AddHours(-25), EmailHash = "verified", Token = "t3", VerifiedAt = now }); // Old but verified
         
         // 3. Alerts
-        context.Alerts.Add(new Alert { ExpiresAt = now.AddHours(-1), Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // Expired
-        context.Alerts.Add(new Alert { ExpiresAt = now.AddHours(1), Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // Not expired
-        context.Alerts.Add(new Alert { ExpiresAt = null, Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // No expiry
+        context.Alerts.Add(new Alert { DeletedAt = now.AddDays(-31), Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // Old soft-deleted
+        context.Alerts.Add(new Alert { DeletedAt = now.AddDays(-29), Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // New soft-deleted
+        context.Alerts.Add(new Alert { DeletedAt = null, Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // Not deleted
         
         // 4. Login attempts
         context.AdminLoginAttempts.Add(new AdminLoginAttempt { Timestamp = now.AddDays(-91), IpAddress = "1" }); // Old

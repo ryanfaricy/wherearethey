@@ -71,7 +71,7 @@
 
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                <RadzenCheckBox @bind-Value="@_alert.IsActive" TValue="bool" Name="IsActive" />
+                <RadzenCheckBox @bind-Value="@_isActive" TValue="bool" Name="IsActive" />
                 <RadzenLabel Text="Active" Component="IsActive" />
             </RadzenStack>
             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
@@ -93,6 +93,7 @@
     [Parameter] public Alert Alert { get; set; } = new();
 
     private Alert _alert = new();
+    private bool _isActive;
     private string _email = "";
     private bool _isSubmitting;
     private string? _approxAddress;
@@ -111,12 +112,12 @@
             EncryptedEmail = Alert.EncryptedEmail,
             EmailHash = Alert.EmailHash,
             IsVerified = Alert.IsVerified,
-            IsActive = Alert.IsActive,
+            DeletedAt = Alert.DeletedAt,
             CreatedAt = Alert.CreatedAt,
-            ExpiresAt = Alert.ExpiresAt,
             UserIdentifier = Alert.UserIdentifier,
         };
 
+        _isActive = Alert.DeletedAt == null;
         _email = AlertService.DecryptEmail(Alert.EncryptedEmail) ?? "";
         
         _ = LoadAddress();
@@ -139,6 +140,8 @@
         _isSubmitting = true;
         try
         {
+            _alert.DeletedAt = _isActive ? null : (_alert.DeletedAt ?? DateTime.UtcNow);
+            
             var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
             var newEmail = _email != originalEmail ? _email : null;
 

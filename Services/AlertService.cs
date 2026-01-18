@@ -50,7 +50,7 @@ public class AlertService(
             alert.EmailHash = emailHash;
             alert.IsVerified = isVerified;
             alert.CreatedAt = DateTime.UtcNow;
-            alert.IsActive = true;
+            alert.DeletedAt = null;
             
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
@@ -189,7 +189,7 @@ public class AlertService(
         await using var context = await contextFactory.CreateDbContextAsync();
         var query = context.Alerts
             .AsNoTracking()
-            .Where(a => a.IsActive && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow));
+            .Where(a => a.DeletedAt == null);
 
         if (onlyVerified)
         {
@@ -214,7 +214,7 @@ public class AlertService(
             return Result.Failure("Alert not found.");
         }
 
-        alert.IsActive = false;
+        alert.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
         eventService.NotifyAlertUpdated(alert);
         return Result.Success();
@@ -231,7 +231,7 @@ public class AlertService(
         await using var context = await contextFactory.CreateDbContextAsync();
         var candidateAlerts = await context.Alerts
             .AsNoTracking()
-            .Where(a => a.IsActive && a.IsVerified && (a.ExpiresAt == null || a.ExpiresAt > DateTime.UtcNow))
+            .Where(a => a.DeletedAt == null && a.IsVerified)
             .Where(a => a.Latitude >= minLat && a.Latitude <= maxLat &&
                        a.Longitude >= minLon && a.Longitude <= maxLon)
             .ToListAsync();
@@ -262,7 +262,7 @@ public class AlertService(
             return Result.Failure("Alert not found.");
         }
 
-        context.Alerts.Remove(alert);
+        alert.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
         eventService.NotifyAlertDeleted(id);
         return Result.Success();
@@ -290,8 +290,7 @@ public class AlertService(
             existing.Longitude = alert.Longitude;
             existing.RadiusKm = alert.RadiusKm;
             existing.Message = alert.Message;
-            existing.IsActive = alert.IsActive;
-            existing.ExpiresAt = alert.ExpiresAt;
+            existing.DeletedAt = alert.DeletedAt;
             existing.IsVerified = alert.IsVerified;
 
             if (!string.IsNullOrEmpty(email))

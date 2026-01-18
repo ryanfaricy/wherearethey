@@ -26,7 +26,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
             entity.HasIndex(e => e.ExternalId).IsUnique();
             entity.HasIndex(e => e.Timestamp);
-            entity.HasIndex(e => new { e.Timestamp, e.Latitude, e.Longitude });
+            entity.HasIndex(e => e.DeletedAt);
+            entity.HasIndex(e => new { e.Timestamp, e.DeletedAt, e.Latitude, e.Longitude });
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
         });
@@ -36,8 +37,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
             entity.HasIndex(e => e.ExternalId).IsUnique();
-            entity.HasIndex(e => new { e.IsActive, e.IsVerified, e.Latitude, e.Longitude });
-            entity.HasIndex(e => e.IsActive);
+            entity.HasIndex(e => new { e.DeletedAt, e.IsVerified, e.Latitude, e.Longitude });
+            entity.HasIndex(e => e.DeletedAt);
             entity.HasIndex(e => e.UserIdentifier);
             entity.HasIndex(e => e.EmailHash);
             entity.HasIndex(e => e.IsVerified);

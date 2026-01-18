@@ -106,7 +106,7 @@
             _reportCount = reports.Count;
             
             var alerts = await AlertService.GetAllAlertsAdminAsync();
-            _activeAlertCount = alerts.Count(a => a.IsActive);
+            _activeAlertCount = alerts.Count(a => a.DeletedAt == null);
             
             var donations = await DonationService.GetAllDonationsAsync();
             _donationCount = donations.Count(d => d.IsSuccess());

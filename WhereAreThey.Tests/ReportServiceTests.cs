@@ -282,7 +282,6 @@ public class ReportServiceTests
             Latitude = 40.0, 
             Longitude = -74.0, 
             RadiusKm = 10.0, 
-            IsActive = true,
             UserIdentifier = "UserB",
             Message = "UserB's Area",
         };
@@ -345,5 +344,37 @@ public class ReportServiceTests
         Assert.True(result.IsSuccess);
         Assert.Equal(report.Id, result.Value!.Id);
         Assert.Equal(report.ExternalId, result.Value!.ExternalId);
+    }
+
+    [Fact]
+    public async Task DeleteReport_ShouldSoftDeleteReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.LocationReports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.DeleteReportAsync(report.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var deletedReport = await context.LocationReports.FindAsync(report.Id);
+            Assert.NotNull(deletedReport);
+            Assert.NotNull(deletedReport.DeletedAt);
+        }
+        
+        var recent = await service.GetRecentReportsAsync();
+        Assert.Empty(recent);
     }
 }

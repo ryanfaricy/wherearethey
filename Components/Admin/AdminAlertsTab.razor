@@ -24,10 +24,10 @@
                              Text="@(alert.IsVerified ? "YES" : "NO")" />
             </Template>
         </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Alert" Property="IsActive" Title="Active">
+        <RadzenDataGridColumn TItem="Alert" Property="DeletedAt" Title="Active">
             <Template Context="alert">
-                <RadzenBadge BadgeStyle="@(alert.IsActive ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                             Text="@(alert.IsActive ? "ACTIVE" : "OFF")" />
+                <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                             Text="@(alert.DeletedAt == null ? "ACTIVE" : "OFF")" />
             </Template>
         </RadzenDataGridColumn>
         <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Visible="@(!IsMobile)" />

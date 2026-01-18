@@ -78,7 +78,7 @@ public class ReportService(
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         return await context.LocationReports
             .AsNoTracking()
-            .Where(r => r.Timestamp >= cutoff)
+            .Where(r => r.DeletedAt == null && r.Timestamp >= cutoff)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
     }
@@ -89,6 +89,7 @@ public class ReportService(
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.LocationReports
             .AsNoTracking()
+            .Where(r => r.DeletedAt == null)
             .OrderByDescending(r => r.Timestamp)
             .ToListAsync();
     }
@@ -103,7 +104,7 @@ public class ReportService(
             return Result.Failure("Report not found.");
         }
 
-        context.LocationReports.Remove(report);
+        report.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
         
         // Notify global event bus

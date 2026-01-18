@@ -12,8 +12,7 @@ public class Alert
     public string? EmailHash { get; set; }
     public bool IsVerified { get; set; }
     public DateTime CreatedAt { get; set; }
-    public DateTime? ExpiresAt { get; set; }
-    public bool IsActive { get; set; }
+    public DateTime? DeletedAt { get; set; }
     public string? UserIdentifier { get; set; }
     
     public string LocationDisplay(int digits = 2) => $"{Latitude.ToString($"F{digits}")}, {Longitude.ToString($"F{digits}")}";
