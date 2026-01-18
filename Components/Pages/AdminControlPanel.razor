@@ -187,6 +187,8 @@
         _isAuthenticated = false;
         _passwordInput = "";
         await SessionStorage.DeleteAsync("isAdmin");
+        await LocalStorage.DeleteAsync("lastAdminLogin");
+        AdminService.NotifyAdminLogout();
     }
 
     private async Task OnKeyPress(KeyboardEventArgs e)

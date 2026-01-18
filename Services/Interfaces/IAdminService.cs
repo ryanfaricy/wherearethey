@@ -28,9 +28,19 @@ public interface IAdminService
     event Action OnAdminLogin;
 
     /// <summary>
+    /// Raised when an administrator logs out during the current session.
+    /// </summary>
+    event Action OnAdminLogout;
+
+    /// <summary>
     /// Notifies subscribers that a successful admin login has occurred.
     /// </summary>
     void NotifyAdminLogin();
+
+    /// <summary>
+    /// Notifies subscribers that an admin logout has occurred.
+    /// </summary>
+    void NotifyAdminLogout();
 
     /// <summary>
     /// Checks if the current user is an administrator based on local storage state.

@@ -20,10 +20,20 @@ public class AdminService(
     public event Action? OnAdminLogin;
 
     /// <inheritdoc />
+    public event Action? OnAdminLogout;
+
+    /// <inheritdoc />
     public void NotifyAdminLogin()
     {
         _isAdminCached = true;
         OnAdminLogin?.Invoke();
+    }
+
+    /// <inheritdoc />
+    public void NotifyAdminLogout()
+    {
+        _isAdminCached = false;
+        OnAdminLogout?.Invoke();
     }
 
     private bool? _isAdminCached;

@@ -40,7 +40,7 @@
                                 <Template Context="r">
                                     <RadzenCard id="@(r.Id == SelectedReportId ? "selected-report-card" : null)" Class="@GetReportCardClass(r)" Style="@GetReportCardStyle(r)">
                                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "g")</RadzenText>
                                             @if (r.IsEmergency)
                                             {
                                                 <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />

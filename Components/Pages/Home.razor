@@ -113,6 +113,7 @@
         EventService.OnSettingsChanged += HandleSettingsChanged;
         EventService.OnReportAdded += HandleReportAdded; // For notifications only
         AdminService.OnAdminLogin += HandleAdminLogin;
+        AdminService.OnAdminLogout += HandleAdminLogout;
 
         _systemSettings = await SettingsService.GetSettingsAsync();
         _selectedHours = _systemSettings.ReportExpiryHours;
@@ -123,6 +124,16 @@
         InvokeAsync(async () =>
         {
             await MapState.InitializeAsync(_userIdentifier, true);
+            await MapState.LoadReportsAsync(_selectedHours);
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAdminLogout()
+    {
+        InvokeAsync(async () =>
+        {
+            await MapState.InitializeAsync(_userIdentifier, false);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -599,6 +610,7 @@
         EventService.OnSettingsChanged -= HandleSettingsChanged;
         EventService.OnReportAdded -= HandleReportAdded;
         AdminService.OnAdminLogin -= HandleAdminLogin;
+        AdminService.OnAdminLogout -= HandleAdminLogout;
 
         if (_locationWatchId != -1)
         {

@@ -54,9 +54,11 @@ public class MapInteractionService(
         // If no explicit ID but we have nearby items, pick the closest
         if (!selectedReportId.HasValue && !selectedAlertId.HasValue)
         {
-            if (nearbyReports.Count == 1)
+            if (nearbyReports.Any())
             {
-                selectedReportId = nearbyReports[0].Id;
+                selectedReportId = nearbyReports
+                    .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
+                    .First().Id;
             }
             
             if (nearbyAlerts.Any())
@@ -130,8 +132,8 @@ public class MapInteractionService(
     public double CalculateSearchRadius(double zoom, bool isMarkerClick)
     {
         // - Marker clicks (isMarkerClick): 50m
-        // - High zoom map clicks: 200m tap tolerance for near-misses on mobile
-        // - Low zoom map clicks: 5km area search for heatmap blobs
+        // - High zoom map clicks: 500m tap tolerance for near-misses on mobile
+        // - Low zoom map clicks: 10km area search for heatmap blobs
         if (isMarkerClick)
         {
             return 0.05;
@@ -139,9 +141,9 @@ public class MapInteractionService(
         
         if (zoom >= 15)
         {
-            return 0.2;
+            return 0.5;
         }
         
-        return 5.0;
+        return 10.0;
     }
 }

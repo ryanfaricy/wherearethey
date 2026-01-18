@@ -10,8 +10,10 @@ public class MapStateService : IMapStateService
     private readonly IAlertService _alertService;
     private readonly IEventService _eventService;
     private readonly IMapService _mapService;
+    private readonly Timer? _pruneTimer;
     private string? _userIdentifier;
     private bool _isAdmin;
+    private int? _lastLoadedHours;
 
     /// <inheritdoc />
     public List<LocationReport> Reports { get; private set; } = [];
@@ -63,6 +65,35 @@ public class MapStateService : IMapStateService
         _eventService.OnAlertAdded += HandleAlertAdded;
         _eventService.OnAlertUpdated += HandleAlertUpdated;
         _eventService.OnAlertDeleted += HandleAlertDeleted;
+
+        _pruneTimer = new Timer(_ => PruneOldReports(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+    }
+
+    private void PruneOldReports()
+    {
+        if (_isAdmin || !_lastLoadedHours.HasValue)
+        {
+            return;
+        }
+
+        var cutoff = DateTime.UtcNow.AddHours(-_lastLoadedHours.Value);
+        var toRemove = Reports.Where(r => r.Timestamp < cutoff).ToList();
+        
+        if (toRemove.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var report in toRemove)
+        {
+            Reports.Remove(report);
+            if (MapInitialized)
+            {
+                _ = _mapService.RemoveSingleReportAsync(report.Id);
+            }
+        }
+        
+        OnStateChanged?.Invoke();
     }
 
     /// <inheritdoc />
@@ -76,6 +107,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadReportsAsync(int? hours = null)
     {
+        _lastLoadedHours = hours;
         Reports = _isAdmin 
             ? await _reportService.GetAllReportsAsync() 
             : await _reportService.GetRecentReportsAsync(hours);
@@ -237,6 +269,7 @@ public class MapStateService : IMapStateService
     {
         GC.SuppressFinalize(this);
         
+        _pruneTimer?.Dispose();
         _eventService.OnReportAdded -= HandleReportAdded;
         _eventService.OnReportUpdated -= HandleReportUpdated;
         _eventService.OnReportDeleted -= HandleReportDeleted;

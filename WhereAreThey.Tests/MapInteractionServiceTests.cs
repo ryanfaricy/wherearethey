@@ -40,9 +40,9 @@ public class MapInteractionServiceTests : BunitContext
     }
 
     [Theory]
-    [InlineData(10, false, 5.0)]
-    [InlineData(15, false, 0.2)]
-    [InlineData(16, false, 0.2)]
+    [InlineData(10, false, 10.0)]
+    [InlineData(15, false, 0.5)]
+    [InlineData(16, false, 0.5)]
     [InlineData(10, true, 0.05)]
     public void CalculateSearchRadius_ReturnsCorrectValues(double zoom, bool isMarkerClick, double expected)
     {
@@ -197,6 +197,44 @@ public class MapInteractionServiceTests : BunitContext
         // Assert
         Assert.True(result);
         Assert.True(dialogOpened);
+    }
+
+    [Fact]
+    public async Task HandleMapClickAsync_HighlightsClosestReport_WhenMultipleFound()
+    {
+        // Arrange
+        _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
+        _stateServiceMock.Setup(s => s.Alerts).Returns([]);
+        
+        // Closest should be report 2 (at 0,0)
+        var reports = new List<LocationReport> 
+        { 
+            new() { Id = 1, Latitude = 1, Longitude = 1 },
+            new() { Id = 2, Latitude = 0, Longitude = 0 }
+        };
+        
+        _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            .Returns(reports);
+        _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            .Returns([]);
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+
+        int? highlightedReportId = null;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            if (type == typeof(ReportDetailsDialog))
+            {
+                highlightedReportId = (int?)parameters["SelectedReportId"];
+            }
+            _dialogService.Close();
+        };
+
+        // Act - Click at 0,0
+        var result = await _service.HandleMapClickAsync(0, 0, false);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(2, highlightedReportId);
     }
 
     [Fact]
