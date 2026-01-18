@@ -8,43 +8,85 @@
 @using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
-<RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
-    <Columns>
-        <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Alert" Title="Email">
-            <Template Context="alert">
-                @AlertService.DecryptEmail(alert.EncryptedEmail)
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Alert" Property="Message" Title="Message" />
-        <RadzenDataGridColumn TItem="Alert" Property="UserIdentifier" Title="User Identifier" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
-            <Template Context="alert">
-                <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
-                             Text="@(alert.IsVerified ? "YES" : "NO")" />
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Alert" Property="DeletedAt" Title="Active">
-            <Template Context="alert">
-                <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                             Text="@(alert.DeletedAt == null ? "ACTIVE" : "OFF")" />
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
-            <Template Context="alert">
-                <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                    <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
-                                  Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
-                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
-                                  Click="@(() => EditAlert(alert))" ToolTip="Edit Alert" />
-                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                  Click="@(() => DeleteAlert(alert.Id))" />
+@if (IsMobile)
+{
+    <RadzenDataList Data="@_alerts" TItem="Alert" AllowPaging="true" PageSize="10">
+        <Template Context="alert">
+            <RadzenCard Class="rz-mb-4">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                            @AlertService.DecryptEmail(alert.EncryptedEmail)
+                        </RadzenText>
+                        <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
+                                     Text="@(alert.IsVerified ? "VERIFIED" : "PENDING")" />
+                    </RadzenStack>
+                    
+                    <RadzenText TextStyle="TextStyle.Body1">@alert.Message</RadzenText>
+                    
+                    <RadzenStack Gap="0.25rem">
+                        <RadzenText TextStyle="TextStyle.Caption"><b>User ID:</b> @alert.UserIdentifier</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption"><b>Radius:</b> @alert.RadiusKm km</RadzenText>
+                        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                             <RadzenText TextStyle="TextStyle.Caption"><b>Status:</b></RadzenText>
+                             <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                          Text="@(alert.DeletedAt == null ? "ACTIVE" : "OFF")" />
+                        </RadzenStack>
+                    </RadzenStack>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Class="rz-mt-2">
+                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                      Click="@(() => OpenOnMap(alert))" Text="MAP" />
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                      Click="@(() => EditAlert(alert))" Text="EDIT" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                      Click="@(() => DeleteAlert(alert.Id))" Text="DELETE" />
+                    </RadzenStack>
                 </RadzenStack>
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+            </RadzenCard>
+        </Template>
+    </RadzenDataList>
+}
+else
+{
+    <RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" />
+            <RadzenDataGridColumn TItem="Alert" Title="Email">
+                <Template Context="alert">
+                    @AlertService.DecryptEmail(alert.EncryptedEmail)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Alert" Property="Message" Title="Message" />
+            <RadzenDataGridColumn TItem="Alert" Property="UserIdentifier" Title="User Identifier" />
+            <RadzenDataGridColumn TItem="Alert" Property="IsVerified" Title="Verified">
+                <Template Context="alert">
+                    <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
+                                 Text="@(alert.IsVerified ? "YES" : "NO")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Alert" Property="DeletedAt" Title="Active">
+                <Template Context="alert">
+                    <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                 Text="@(alert.DeletedAt == null ? "ACTIVE" : "OFF")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" />
+            <RadzenDataGridColumn TItem="Alert" Title="Actions" Filterable="false" Sortable="false">
+                <Template Context="alert">
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                      Click="@(() => OpenOnMap(alert))" ToolTip="Show on Map" />
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                      Click="@(() => EditAlert(alert))" ToolTip="Edit Alert" />
+                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                      Click="@(() => DeleteAlert(alert.Id))" />
+                    </RadzenStack>
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
     [Parameter] public bool IsMobile { get; set; }

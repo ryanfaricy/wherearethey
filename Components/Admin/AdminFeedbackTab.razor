@@ -9,29 +9,57 @@
 @using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
-<RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
-    <Columns>
-        <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
-            <Template Context="feedback">
-                @TimeZoneService.FormatLocal(feedback.Timestamp)
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">
-            <Template Context="fb">
-                <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
-        <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
-            <Template Context="fb">
-                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                              Click="@(() => DeleteFeedback(fb.Id))" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+@if (IsMobile)
+{
+    <RadzenDataList Data="@_feedbacks" TItem="Feedback" AllowPaging="true" PageSize="10">
+        <Template Context="feedback">
+            <RadzenCard Class="rz-mb-4">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                            @TimeZoneService.FormatLocal(feedback.Timestamp)
+                        </RadzenText>
+                        <RadzenBadge BadgeStyle="@(feedback.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@feedback.Type" />
+                    </RadzenStack>
+                    
+                    <RadzenText TextStyle="TextStyle.Body1">@feedback.Message</RadzenText>
+                    
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                         <RadzenText TextStyle="TextStyle.Caption"><b>User:</b> @feedback.UserIdentifier</RadzenText>
+                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                      Click="@(() => DeleteFeedback(feedback.Id))" Text="DELETE" />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenCard>
+        </Template>
+    </RadzenDataList>
+}
+else
+{
+    <RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" />
+            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
+                <Template Context="feedback">
+                    @TimeZoneService.FormatLocal(feedback.Timestamp)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">
+                <Template Context="fb">
+                    <RadzenBadge BadgeStyle="@(fb.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@fb.Type" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Feedback" Property="Message" Title="Message" />
+            <RadzenDataGridColumn TItem="Feedback" Property="UserIdentifier" Title="User Passphrase" />
+            <RadzenDataGridColumn TItem="Feedback" Title="Actions" Filterable="false" Sortable="false">
+                <Template Context="fb">
+                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                  Click="@(() => DeleteFeedback(fb.Id))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
     [Parameter] public bool IsMobile { get; set; }

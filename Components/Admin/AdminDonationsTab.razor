@@ -8,33 +8,64 @@
 @using WhereAreThey.Services.Interfaces
 @implements IDisposable
 
-<RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
-    <Columns>
-        <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
-            <Template Context="donation">
-                @TimeZoneService.FormatLocal(donation.CreatedAt)
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
-            <Template Context="donation">
-                @donation.Amount @donation.Currency.ToUpper()
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
-            <Template Context="donation">
-                <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
-                             Text="@donation.Status" />
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="Donation" Context="donation" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="60px">
-            <Template Context="donation">
-                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
-                              Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+@if (IsMobile)
+{
+    <RadzenDataList Data="@_donations" TItem="Donation" AllowPaging="true" PageSize="10">
+        <Template Context="donation">
+            <RadzenCard Class="rz-mb-4">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                            @TimeZoneService.FormatLocal(donation.CreatedAt)
+                        </RadzenText>
+                        <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                                     Text="@donation.Status" />
+                    </RadzenStack>
+                    
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
+                            @donation.Amount @donation.Currency.ToUpper()
+                        </RadzenText>
+                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
+                                      Click="@(() => EditDonation(donation))" Text="EDIT" />
+                    </RadzenStack>
+                    
+                    <RadzenText TextStyle="TextStyle.Caption"><b>Donor:</b> @donation.DonorEmail</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </Template>
+    </RadzenDataList>
+}
+else
+{
+    <RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
+                <Template Context="donation">
+                    @TimeZoneService.FormatLocal(donation.CreatedAt)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Donation" Property="DonorEmail" Title="Donor" />
+            <RadzenDataGridColumn TItem="Donation" Property="Amount" Title="Amount">
+                <Template Context="donation">
+                    @donation.Amount @donation.Currency.ToUpper()
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Donation" Property="Status" Title="Status">
+                <Template Context="donation">
+                    <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                                 Text="@donation.Status" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Donation" Context="donation" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Width="60px">
+                <Template Context="donation">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
+                                  Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
     [Parameter] public bool IsMobile { get; set; }

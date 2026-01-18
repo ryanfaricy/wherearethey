@@ -5,22 +5,44 @@
 @inject UserTimeZoneService TimeZoneService
 @inject ILogger<AdminLoginsTab> Logger
 
-<RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true" Density="@(IsMobile ? Density.Compact : Density.Default)">
-    <Columns>
-        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
-            <Template Context="attempt">
-                @TimeZoneService.FormatLocal(attempt.Timestamp)
-            </Template>
-        </RadzenDataGridColumn>
-        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" Visible="@(!IsMobile)" />
-        <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
-            <Template Context="attempt">
-                <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
-                             Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
-            </Template>
-        </RadzenDataGridColumn>
-    </Columns>
-</RadzenDataGrid>
+@if (IsMobile)
+{
+    <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowPaging="true" PageSize="10">
+        <Template Context="attempt">
+            <RadzenCard Class="rz-mb-4">
+                <RadzenStack Gap="0.5rem">
+                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                            @TimeZoneService.FormatLocal(attempt.Timestamp)
+                        </RadzenText>
+                        <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                     Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+                    </RadzenStack>
+                    <RadzenText TextStyle="TextStyle.Caption"><b>IP Address:</b> @attempt.IpAddress</RadzenText>
+                </RadzenStack>
+            </RadzenCard>
+        </Template>
+    </RadzenDataList>
+}
+else
+{
+    <RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <Columns>
+            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+                <Template Context="attempt">
+                    @TimeZoneService.FormatLocal(attempt.Timestamp)
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />
+            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IsSuccessful" Title="Status">
+                <Template Context="attempt">
+                    <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                 Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+}
 
 @code {
     [Parameter] public bool IsMobile { get; set; }

@@ -45,7 +45,13 @@
             <RadzenButton Text="LOGOUT" Click="@Logout" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
         </RadzenStack>
 
-        <RadzenTabs RenderMode="TabRenderMode.Client">
+        <style>
+            .admin-tabs .rz-tabview-nav {
+                display: flex;
+                flex-wrap: wrap;
+            }
+        </style>
+        <RadzenTabs RenderMode="TabRenderMode.Client" Class="admin-tabs">
             <Tabs>
                 <RadzenTabsItem Text="@(_isMobile ? "" : "REAL-TIME")" Icon="bolt">
                     <AdminMapFeed />
@@ -69,7 +75,7 @@
                     <AdminLoginsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
                 <RadzenTabsItem Text="@(_isMobile ? "" : "SETTINGS")" Icon="settings">
-                    <AdminSettingsTab />
+                    <AdminSettingsTab IsMobile="@_isMobile" />
                 </RadzenTabsItem>
             </Tabs>
         </RadzenTabs>

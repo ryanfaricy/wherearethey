@@ -59,28 +59,61 @@
             }
             else
             {
-                <RadzenDataGrid Data="@_passkeys" TItem="AdminPasskey">
-                    <Columns>
-                        <RadzenDataGridColumn TItem="AdminPasskey" Property="Name" Title="Name" />
-                        <RadzenDataGridColumn TItem="AdminPasskey" Property="CreatedAt" Title="Created" FormatString="{0:d}" />
-                        <RadzenDataGridColumn TItem="AdminPasskey" Title="Actions" Width="100px">
-                            <Template Context="key">
-                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeletePasskey(key.Id))" />
-                            </Template>
-                        </RadzenDataGridColumn>
-                    </Columns>
-                </RadzenDataGrid>
+                @if (IsMobile)
+                {
+                    <RadzenDataList Data="@_passkeys" TItem="AdminPasskey">
+                        <Template Context="key">
+                            <RadzenCard Class="rz-mb-2 rz-p-2">
+                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                    <RadzenStack Gap="0">
+                                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">@key.Name</RadzenText>
+                                        <RadzenText TextStyle="TextStyle.Caption">Created: @key.CreatedAt.ToShortDateString()</RadzenText>
+                                    </RadzenStack>
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeletePasskey(key.Id))" />
+                                </RadzenStack>
+                            </RadzenCard>
+                        </Template>
+                    </RadzenDataList>
+                }
+                else
+                {
+                    <RadzenDataGrid Data="@_passkeys" TItem="AdminPasskey">
+                        <Columns>
+                            <RadzenDataGridColumn TItem="AdminPasskey" Property="Name" Title="Name" />
+                            <RadzenDataGridColumn TItem="AdminPasskey" Property="CreatedAt" Title="Created" FormatString="{0:d}" />
+                            <RadzenDataGridColumn TItem="AdminPasskey" Title="Actions" Width="100px">
+                                <Template Context="key">
+                                    <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" Click="@(() => DeletePasskey(key.Id))" />
+                                </Template>
+                            </RadzenDataGridColumn>
+                        </Columns>
+                    </RadzenDataGrid>
+                }
             }
 
-            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mt-4">
-                <RadzenTextBox @bind-Value="@_newKeyName" Placeholder="Passkey Name (e.g. My Phone)" Style="width: 250px;" />
-                <RadzenButton Text="REGISTER NEW PASSKEY" Icon="add" Click="@RegisterPasskey" ButtonStyle="ButtonStyle.Secondary" Disabled="@(string.IsNullOrEmpty(_newKeyName))" />
+            <RadzenStack Orientation="@_stackOrientation" 
+                         AlignItems="@_stackAlign" 
+                         Gap="1rem" Class="rz-mt-4">
+                @if (IsMobile)
+                {
+                    <RadzenTextBox @bind-Value="@_newKeyName" Placeholder="Passkey Name (e.g. My Phone)" Class="rz-w-100" />
+                }
+                else
+                {
+                    <RadzenTextBox @bind-Value="@_newKeyName" Placeholder="Passkey Name (e.g. My Phone)" Style="width: 250px" />
+                }
+                <RadzenButton Text="REGISTER NEW PASSKEY" Icon="add" Click="@RegisterPasskey" 
+                              ButtonStyle="ButtonStyle.Secondary" Disabled="@(string.IsNullOrEmpty(_newKeyName))" />
             </RadzenStack>
         </RadzenStack>
     </RadzenCard>
 </RadzenStack>
 
 @code {
+    [Parameter] public bool IsMobile { get; set; }
+    private Orientation _stackOrientation => IsMobile ? Orientation.Vertical : Orientation.Horizontal;
+    private AlignItems _stackAlign => IsMobile ? AlignItems.Stretch : AlignItems.Center;
+    
     private SystemSettings _systemSettings = new();
     private List<AdminPasskey>? _passkeys;
     private string _newKeyName = "";
