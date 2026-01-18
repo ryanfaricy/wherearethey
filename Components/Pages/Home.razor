@@ -15,6 +15,7 @@
 @inject IMapStateService MapState
 @inject IMapInteractionService MapInteraction
 @inject IClientLocationService ClientLocation
+@inject IAdminService AdminService
 @using System.Globalization
 @using System.Text.Json
 @using Microsoft.AspNetCore.WebUtilities
@@ -81,7 +82,7 @@
 
     private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
     {
-        var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick);
+        var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick, args.ReportId, args.AlertId);
         if (!handled && !args.IsMarkerClick)
         {
             await ShowAlertsDialog(args.Lat, args.Lng);
@@ -100,9 +101,20 @@
         ClientLocation.OnStateChanged += HandleStateChanged;
         EventService.OnSettingsChanged += HandleSettingsChanged;
         EventService.OnReportAdded += HandleReportAdded; // For notifications only
+        AdminService.OnAdminLogin += HandleAdminLogin;
 
         _systemSettings = await SettingsService.GetSettingsAsync();
         _selectedHours = _systemSettings.ReportExpiryHours;
+    }
+
+    private void HandleAdminLogin()
+    {
+        InvokeAsync(async () =>
+        {
+            await MapState.InitializeAsync(_userIdentifier, true);
+            await MapState.LoadReportsAsync(_selectedHours);
+            StateHasChanged();
+        });
     }
 
     private void HandleStateChanged() => InvokeAsync(StateHasChanged);
@@ -170,7 +182,8 @@
                 return;
             }
             
-            await MapState.InitializeAsync(_userIdentifier);
+            var isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             
             var isNew = await StorageService.IsNewUserAsync();
@@ -574,6 +587,7 @@
         ClientLocation.OnStateChanged -= HandleStateChanged;
         EventService.OnSettingsChanged -= HandleSettingsChanged;
         EventService.OnReportAdded -= HandleReportAdded;
+        AdminService.OnAdminLogin -= HandleAdminLogin;
 
         if (_locationWatchId != -1)
         {

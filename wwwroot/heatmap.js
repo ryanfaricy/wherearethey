@@ -131,14 +131,25 @@ function onMarkerClick(e) {
         L.DomEvent.stopPropagation(e.originalEvent);
     }
     const latlng = e.target.getLatLng();
+    
+    const reportId = e.target.reportId || null;
+    const alertId = e.target.alertData ? e.target.alertData.id : null;
+
     if (dotNetHelper) {
-        dotNetHelper.invokeMethodAsync('OnMapClick', latlng.lat, latlng.lng, true);
+        dotNetHelper.invokeMethodAsync('OnMapClick', latlng.lat, latlng.lng, true, reportId, alertId);
     }
     
-    if (e.target.reportId) {
-        window.selectReport(e.target.reportId);
+    if (reportId) {
+        window.selectReport(reportId);
     }
 }
+
+window.scrollToElement = function (id) {
+    const element = document.getElementById(id);
+    if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+};
 
 window.updateAlerts = function (alerts) {
     if (!map) return;
@@ -147,7 +158,6 @@ window.updateAlerts = function (alerts) {
     alertLayers.forEach(layer => map.removeLayer(layer));
     alertLayers = [];
 
-    if (isAdminMode) return;
     if (!alerts || !alerts.length) return;
 
     alerts.forEach(alert => {
@@ -339,29 +349,30 @@ function addReportMarker(r) {
         
         marker.reporterLayer = L.layerGroup([reporterMarker, line]);
         
-        // Show reporter info only when zoomed in enough or marker is visible
-        marker.on('add', function() {
-            if (map.getZoom() >= PIN_ZOOM_THRESHOLD) {
-                marker.reporterLayer.addTo(map);
-            }
-        });
-        
-        marker.on('remove', function() {
-            if (map.hasLayer(marker.reporterLayer)) {
-                map.removeLayer(marker.reporterLayer);
-            }
-        });
-
-        // Also handle zoom changes
-        map.on('zoomend', function() {
-            if (map.hasLayer(marker)) {
-                if (map.getZoom() >= PIN_ZOOM_THRESHOLD) {
+        // Admin optimization: ONLY show reporter info for the SELECTED report
+        // This prevents the map from becoming cluttered with hundreds of circles/lines
+        const updateReporterLayer = () => {
+            if (map && marker.reporterLayer) {
+                const isSelected = r.id === selectedReportId;
+                const shouldShow = isSelected && map.getZoom() >= PIN_ZOOM_THRESHOLD;
+                
+                if (shouldShow) {
                     if (!map.hasLayer(marker.reporterLayer)) marker.reporterLayer.addTo(map);
                 } else {
                     if (map.hasLayer(marker.reporterLayer)) map.removeLayer(marker.reporterLayer);
                 }
             }
+        };
+
+        marker.on('add', updateReporterLayer);
+        marker.on('remove', () => {
+            if (map.hasLayer(marker.reporterLayer)) map.removeLayer(marker.reporterLayer);
         });
+
+        map.on('zoomend', updateReporterLayer);
+        
+        // We also need to trigger this when selection changes
+        // This is handled in window.selectReport
     }
 
     reportMarkers.push(marker);
@@ -408,6 +419,16 @@ window.selectReport = function(reportId) {
                 m.setZIndexOffset(1000);
             } else {
                 m.setZIndexOffset(0);
+            }
+            
+            // If it's admin mode, we also need to update the reporterLayer visibility
+            if (isAdminMode && m.reporterLayer && map.hasLayer(m)) {
+                const shouldShow = isSel && map.getZoom() >= PIN_ZOOM_THRESHOLD;
+                if (shouldShow) {
+                    if (!map.hasLayer(m.reporterLayer)) m.reporterLayer.addTo(map);
+                } else {
+                    if (map.hasLayer(m.reporterLayer)) map.removeLayer(m.reporterLayer);
+                }
             }
         }
     });

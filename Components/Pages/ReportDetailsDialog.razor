@@ -7,11 +7,12 @@
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject IAdminService AdminService
+@inject IJSRuntime JsRuntime
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
     
-    <RadzenTabs RenderMode="TabRenderMode.Client">
+    <RadzenTabs RenderMode="TabRenderMode.Client" @bind-SelectedIndex="_selectedTabIndex">
         <Tabs>
             <RadzenTabsItem Text="Reports" Icon="visibility">
                 <RadzenStack Gap="0.5rem">
@@ -37,59 +38,33 @@
                         <div style="max-height: 400px; overflow-y: auto;">
                             <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="LocationReport">
                                 <Template Context="r">
-                                    @if (r.IsEmergency)
-                                    {
-                                        <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);">
-                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
+                                    <RadzenCard id="@(r.Id == SelectedReportId ? "selected-report-card" : null)" Class="@GetReportCardClass(r)" Style="@GetReportCardStyle(r)">
+                                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
+                                            <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
+                                            @if (r.IsEmergency)
+                                            {
                                                 <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
-                                            </RadzenStack>
-                                            @if (!string.IsNullOrEmpty(r.Message))
-                                            {
-                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
                                             }
-                                            @if (_isAdmin)
-                                            {
-                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;">
-                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
-                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
-                                                    </RadzenStack>
-                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
-                                                    @if (r.HasReporterLocation())
-                                                    {
-                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
-                                                    }
+                                        </RadzenStack>
+                                        @if (!string.IsNullOrEmpty(r.Message))
+                                        {
+                                            <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
+                                        }
+                                        @if (_isAdmin)
+                                        {
+                                            <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="@(r.IsEmergency ? "border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;" : "border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;")">
+                                                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                                                    <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
+                                                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
                                                 </RadzenStack>
-                                            }
-                                        </RadzenCard>
-                                    }
-                                    else
-                                    {
-                                        <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid var(--rz-info);">
-                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween">
-                                                <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">@TimeZoneService.FormatLocal(r.Timestamp, "t")</RadzenText>
+                                                <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
+                                                @if (r.HasReporterLocation())
+                                                {
+                                                    <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
+                                                }
                                             </RadzenStack>
-                                            @if (!string.IsNullOrEmpty(r.Message))
-                                            {
-                                                <RadzenText TextStyle="TextStyle.Body2" Class="rz-text-wrap" Style="font-size: 0.85rem;">@r.Message</RadzenText>
-                                            }
-                                            @if (_isAdmin)
-                                            {
-                                                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
-                                                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                                                        <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @r.ReporterIdentifier</RadzenText>
-                                                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Click="@(() => EditReport(r))" />
-                                                    </RadzenStack>
-                                                    <RadzenText TextStyle="TextStyle.Caption">Loc: @r.LocationDisplay()</RadzenText>
-                                                    @if (r.HasReporterLocation())
-                                                    {
-                                                        <RadzenText TextStyle="TextStyle.Caption">Rep: @r.ReporterLocationDisplay()</RadzenText>
-                                                    }
-                                                </RadzenStack>
-                                            }
-                                        </RadzenCard>
-                                    }
+                                        }
+                                    </RadzenCard>
                                 </Template>
                             </RadzenDataList>
                         </div>
@@ -112,7 +87,7 @@
                         <div style="max-height: 300px; overflow-y: auto;">
                             <RadzenDataList Data="@Alerts" TItem="Alert">
                                 <Template Context="a">
-                                    <RadzenCard Class="rz-p-2 rz-mb-1" Style="border-left: 4px solid #ff9800;">
+                                    <RadzenCard id="@(a.Id == SelectedAlertId ? "selected-alert-card" : null)" Class="@GetAlertCardClass(a)" Style="@GetAlertCardStyle(a)">
                                         <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                                             <RadzenStack Gap="0">
                                                 <RadzenText TextStyle="TextStyle.Subtitle2" Style="margin-bottom: 0;">@GetAlertName(a)</RadzenText>
@@ -154,9 +129,47 @@
 @code {
     [Parameter] public List<LocationReport> Reports { get; set; } = [];
     [Parameter] public List<Alert> Alerts { get; set; } = [];
+    [Parameter] public int? SelectedReportId { get; set; }
+    [Parameter] public int? SelectedAlertId { get; set; }
 
     private bool _alertDeleted;
     private bool _isAdmin;
+    private int _selectedTabIndex;
+
+    private string GetReportCardClass(LocationReport r)
+    {
+        var baseClass = "rz-p-2 rz-mb-1";
+        return r.Id == SelectedReportId ? $"{baseClass} rz-border-primary rz-shadow-4" : baseClass;
+    }
+
+    private string GetReportCardStyle(LocationReport r)
+    {
+        var style = r.IsEmergency
+            ? "border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);"
+            : "border-left: 4px solid var(--rz-info);";
+
+        if (r.Id == SelectedReportId)
+        {
+            style += " border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;";
+        }
+        return style;
+    }
+
+    private string GetAlertCardClass(Alert a)
+    {
+        var baseClass = "rz-p-2 rz-mb-1";
+        return a.Id == SelectedAlertId ? $"{baseClass} rz-border-primary rz-shadow-4" : baseClass;
+    }
+
+    private string GetAlertCardStyle(Alert a)
+    {
+        var style = "border-left: 4px solid #ff9800;";
+        if (a.Id == SelectedAlertId)
+        {
+            style += " border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;";
+        }
+        return style;
+    }
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
@@ -164,6 +177,11 @@
     protected override async Task OnInitializedAsync()
     {
         _isAdmin = await AdminService.IsAdminAsync();
+
+        if (SelectedAlertId.HasValue && !SelectedReportId.HasValue)
+        {
+            _selectedTabIndex = 1;
+        }
     }
 
     private async Task EditReport(LocationReport report)
@@ -205,6 +223,23 @@
         {
             _alertDeleted = true; // Trigger refresh on close
             DialogService.Close(true); // Close details and refresh map
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Small delay to ensure the DOM is ready and tabs are rendered
+            await Task.Delay(100);
+            if (SelectedReportId.HasValue)
+            {
+                await JsRuntime.InvokeVoidAsync("scrollToElement", "selected-report-card");
+            }
+            else if (SelectedAlertId.HasValue)
+            {
+                await JsRuntime.InvokeVoidAsync("scrollToElement", "selected-alert-card");
+            }
         }
     }
 

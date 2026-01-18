@@ -84,7 +84,7 @@
                 {
                     <RadzenDataList @ref="_dataList" Data="@_activeAlerts" TItem="Alert" AllowPaging="true" PageSize="3">
                         <Template Context="alert">
-                            <RadzenCard Class="@GetAlertCardClass(alert)" Style="@GetAlertCardStyle(alert)">
+                            <RadzenCard id="@(alert.Id == SelectedAlertId ? "selected-alert-card" : null)" Class="@GetAlertCardClass(alert)" Style="@GetAlertCardStyle(alert)">
                                 <RadzenStack Orientation="@(_isMobile ? Orientation.Vertical : Orientation.Horizontal)" JustifyContent="JustifyContent.SpaceBetween" AlignItems="@(_isMobile ? AlignItems.Start : AlignItems.Center)" Gap="@(_isMobile ? "1rem" : "0.5rem")">
                                     <RadzenStack Gap="0">
                                         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Wrap="FlexWrap.Wrap" Gap="0.5rem">
@@ -180,6 +180,8 @@
                     {
                         await _dataList.GoToPage(page);
                     }
+                    await Task.Delay(100);
+                    await JsRuntime.InvokeVoidAsync("scrollToElement", "selected-alert-card");
                 }
             }
 

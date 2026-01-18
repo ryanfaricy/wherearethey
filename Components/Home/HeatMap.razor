@@ -72,11 +72,18 @@
     }
 
     [JSInvokable("OnMapClick")]
-    public async Task OnMapClickInternal(double lat, double lng, bool isMarkerClick)
+    public async Task OnMapClickInternal(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null)
     {
         if (OnMapClick.HasDelegate)
         {
-            await OnMapClick.InvokeAsync(new MapClickEventArgs { Lat = lat, Lng = lng, IsMarkerClick = isMarkerClick });
+            await OnMapClick.InvokeAsync(new MapClickEventArgs 
+            { 
+                Lat = lat, 
+                Lng = lng, 
+                IsMarkerClick = isMarkerClick,
+                ReportId = reportId,
+                AlertId = alertId
+            });
         }
     }
 
@@ -138,6 +145,8 @@
         public double Lat { get; set; }
         public double Lng { get; set; }
         public bool IsMarkerClick { get; set; }
+        public int? ReportId { get; set; }
+        public int? AlertId { get; set; }
     }
 
     public class MapLocationEventArgs

@@ -17,7 +17,7 @@ public class MapInteractionService(
     : IMapInteractionService
 {
     /// <inheritdoc />
-    public async Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick)
+    public async Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null)
     {
         var zoom = await mapService.GetZoomLevelAsync();
         var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick);
@@ -25,27 +25,52 @@ public class MapInteractionService(
         var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm);
         var nearbyAlerts = stateService.FindNearbyAlerts(lat, lng, searchRadiusKm);
 
-        if (!nearbyReports.Any() && !nearbyAlerts.Any())
+        if (!nearbyReports.Any() && !nearbyAlerts.Any() && !reportId.HasValue && !alertId.HasValue)
         {
             return false;
         }
 
-        // If it's an alert marker click, open AlertsDialog directly
-        if (isMarkerClick && nearbyAlerts.Any())
+        // If it's an alert marker click (verified by alertId), open AlertsDialog directly
+        if (alertId.HasValue)
         {
             await dialogService.OpenAsync<AlertsDialog>(L["ALERTS"],
                 new Dictionary<string, object>
                 {
-                    { "SelectedAlertId", nearbyAlerts[0].Id },
+                    { "SelectedAlertId", alertId.Value },
                 },
                 DialogConfigs.Default);
             return true;
         }
-        
-        // If it's a single report, highlight it immediately for better feedback
-        if (nearbyReports.Count == 1 && !nearbyAlerts.Any())
+
+        // Favor explicit report marker click
+        int? selectedReportId = reportId;
+        if (!selectedReportId.HasValue && isMarkerClick && nearbyReports.Any())
         {
-            await mapService.SelectReportAsync(nearbyReports[0].Id);
+            // Pick the closest report if multiple are nearby
+            selectedReportId = nearbyReports
+                .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
+                .First().Id;
+        }
+        else if (!selectedReportId.HasValue && nearbyReports.Count == 1)
+        {
+            selectedReportId = nearbyReports[0].Id;
+        }
+
+        if (selectedReportId.HasValue && !nearbyAlerts.Any() && nearbyReports.Count <= 1)
+        {
+            await mapService.SelectReportAsync(selectedReportId.Value);
+        }
+
+        int? selectedAlertId = null;
+        if (isMarkerClick && nearbyAlerts.Any())
+        {
+             selectedAlertId = nearbyAlerts
+                .OrderBy(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude))
+                .First().Id;
+        }
+        else if (nearbyAlerts.Count == 1)
+        {
+            selectedAlertId = nearbyAlerts[0].Id;
         }
 
         var isAdmin = await adminService.IsAdminAsync();
@@ -56,6 +81,8 @@ public class MapInteractionService(
             { 
                 { "Reports", nearbyReports },
                 { "Alerts", nearbyAlerts },
+                { "SelectedReportId", selectedReportId },
+                { "SelectedAlertId", selectedAlertId }
             },
             DialogConfigs.Default);
 
