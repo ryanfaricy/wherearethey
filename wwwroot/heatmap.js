@@ -21,6 +21,7 @@ let isAlertCreationMode = false;
 let selectionCircle = null;
 let selectionCenterMarker = null;
 let dragStartLatLng = null;
+let lastMoveLatLng = null;
 
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t, isAdmin) {
     if (t) translations = t;
@@ -67,6 +68,7 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     updateMapTheme();
 
     map.on('click', function(e) {
+        if (isAlertCreationMode) return;
         if (dotNetHelper) {
             dotNetHelper.invokeMethodAsync('OnMapClick', e.latlng.lat, e.latlng.lng, false, null, null);
         }
@@ -95,10 +97,24 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
     // Re-enable double click zoom if we are not using dblclick for custom actions
     map.doubleClickZoom.enable();
 
-    map.on('mousedown', function (e) {
-        if (!isAlertCreationMode) return;
-        dragStartLatLng = e.latlng;
-        map.dragging.disable();
+    const onDragStart = function (e) {
+        if (!isAlertCreationMode || dragStartLatLng) return;
+        
+        // Ensure we have coordinates for touch events
+        const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 0 
+            ? map.mouseEventToLatLng(e.originalEvent.touches[0]) : null);
+        
+        if (!latlng) return;
+
+        dragStartLatLng = latlng;
+        lastMoveLatLng = latlng;
+
+        if (e.originalEvent) {
+            L.DomEvent.stopPropagation(e.originalEvent);
+            if (e.originalEvent.type === 'touchstart') {
+                L.DomEvent.preventDefault(e.originalEvent);
+            }
+        }
 
         selectionCenterMarker = L.circleMarker(dragStartLatLng, {
             radius: 6,
@@ -118,18 +134,45 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
             weight: 2,
             dashArray: '5, 5'
         }).addTo(map);
-    });
+    };
 
-    map.on('mousemove', function (e) {
+    const onDragMove = function (e) {
         if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
-        const radius = dragStartLatLng.distanceTo(e.latlng);
+        
+        const latlng = e.latlng || (e.originalEvent && e.originalEvent.touches && e.originalEvent.touches.length > 0 
+            ? map.mouseEventToLatLng(e.originalEvent.touches[0]) : null);
+        
+        if (!latlng) return;
+
+        lastMoveLatLng = latlng;
+        const radius = dragStartLatLng.distanceTo(latlng);
         selectionCircle.setRadius(radius);
-    });
+        
+        if (e.originalEvent) {
+            L.DomEvent.preventDefault(e.originalEvent);
+            L.DomEvent.stopPropagation(e.originalEvent);
+        }
+    };
 
-    map.on('mouseup', function (e) {
+    const onDragEnd = function (e) {
         if (!isAlertCreationMode || !dragStartLatLng || !selectionCircle) return;
-        const radiusKm = dragStartLatLng.distanceTo(e.latlng) / 1000;
+        
+        let latlng = e.latlng;
+        if (!latlng && e.originalEvent) {
+             if (e.originalEvent.changedTouches && e.originalEvent.changedTouches.length > 0) {
+                 latlng = map.mouseEventToLatLng(e.originalEvent.changedTouches[0]);
+             } else if (e.originalEvent.touches && e.originalEvent.touches.length > 0) {
+                 latlng = map.mouseEventToLatLng(e.originalEvent.touches[0]);
+             }
+        }
+        
+        const endLatLng = latlng || lastMoveLatLng;
+        const radiusKm = dragStartLatLng.distanceTo(endLatLng) / 1000;
         const center = dragStartLatLng;
+
+        if (e.originalEvent) {
+            L.DomEvent.stopPropagation(e.originalEvent);
+        }
 
         // Cleanup
         if (selectionCircle) {
@@ -141,12 +184,19 @@ window.initHeatMap = function (elementId, initialLat, initialLng, reports, helpe
             selectionCenterMarker = null;
         }
         dragStartLatLng = null;
-        map.dragging.enable();
+        lastMoveLatLng = null;
 
         if (dotNetHelper && radiusKm > 0.01) {
             dotNetHelper.invokeMethodAsync('OnAlertAreaDefined', center.lat, center.lng, radiusKm);
         }
-    });
+    };
+
+    map.on('mousedown', onDragStart);
+    map.on('touchstart', onDragStart);
+    map.on('mousemove', onDragMove);
+    map.on('touchmove', onDragMove);
+    map.on('mouseup', onDragEnd);
+    map.on('touchend', onDragEnd);
 
     map.on('movestart', function() {
         if (!isProgrammaticMove && dotNetHelper) {
@@ -194,6 +244,7 @@ function onMarkerClick(e) {
     const reportId = e.target.reportId || null;
     const alertId = e.target.alertData ? e.target.alertData.id : null;
 
+    if (isAlertCreationMode) return;
     if (dotNetHelper) {
         dotNetHelper.invokeMethodAsync('OnMapClick', latlng.lat, latlng.lng, true, reportId, alertId);
     }
@@ -513,17 +564,31 @@ window.focusReport = function(reportId) {
 
 window.setAlertCreationMode = function (enabled) {
     isAlertCreationMode = enabled;
-    if (!enabled) {
-        if (selectionCircle) {
-            map.removeLayer(selectionCircle);
-            selectionCircle = null;
+    if (map) {
+        const container = map.getContainer();
+        if (enabled) {
+            container.style.cursor = 'crosshair';
+            container.style.touchAction = 'none';
+            map.dragging.disable();
+            if (map.tap) map.tap.disable();
+        } else {
+            container.style.cursor = '';
+            container.style.touchAction = '';
+            map.dragging.enable();
+            if (map.tap) map.tap.enable();
+            
+            // Cleanup
+            if (selectionCircle) {
+                map.removeLayer(selectionCircle);
+                selectionCircle = null;
+            }
+            if (selectionCenterMarker) {
+                map.removeLayer(selectionCenterMarker);
+                selectionCenterMarker = null;
+            }
+            dragStartLatLng = null;
+            lastMoveLatLng = null;
         }
-        if (selectionCenterMarker) {
-            map.removeLayer(selectionCenterMarker);
-            selectionCenterMarker = null;
-        }
-        dragStartLatLng = null;
-        if (map) map.dragging.enable();
     }
 };
 

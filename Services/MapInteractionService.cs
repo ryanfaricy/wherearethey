@@ -17,8 +17,13 @@ public class MapInteractionService(
     : IMapInteractionService
 {
     /// <inheritdoc />
-    public async Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null)
+    public async Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null, bool alertCreationMode = false)
     {
+        if (alertCreationMode)
+        {
+            return true; // Don't handle clicks in alert creation mode
+        }
+
         var zoom = await mapService.GetZoomLevelAsync();
         var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick);
 

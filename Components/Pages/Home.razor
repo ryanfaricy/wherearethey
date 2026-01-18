@@ -86,7 +86,7 @@
 
     private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
     {
-        var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick, args.ReportId, args.AlertId);
+        var handled = await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick, args.ReportId, args.AlertId, _alertCreationMode);
         if (!handled && !args.IsMarkerClick)
         {
             var mapState = await MapService.GetMapStateAsync();

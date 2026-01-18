@@ -315,4 +315,29 @@ public class MapInteractionServiceTests : BunitContext
         Assert.True(result);
         Assert.True(dialogOpened);
     }
+
+    [Fact]
+    public async Task HandleMapClickAsync_DoesNothing_WhenAlertCreationModeActive()
+    {
+        // Arrange
+        _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
+        
+        var reports = new List<LocationReport> { new() { Id = 1 } };
+        _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            .Returns(reports);
+        
+        var dialogOpened = false;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            dialogOpened = true;
+            _dialogService.Close();
+        };
+
+        // Act - Call with alertCreationMode = true
+        var result = await _service.HandleMapClickAsync(0, 0, false, alertCreationMode: true);
+
+        // Assert
+        Assert.True(result); // Handled (blocked)
+        Assert.False(dialogOpened); // No dialog should open
+    }
 }

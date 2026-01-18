@@ -10,7 +10,7 @@ public interface IMapInteractionService
     /// Handles a click on the map or a marker.
     /// </summary>
     /// <returns>True if the interaction was handled (e.g. dialog opened).</returns>
-    Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null);
+    Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null, bool alertCreationMode = false);
 
     /// <summary>
     /// Handles a right-click or long-press on the map to start a report.

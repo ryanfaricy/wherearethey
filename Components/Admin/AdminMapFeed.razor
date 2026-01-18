@@ -119,7 +119,7 @@
         }
     }
 
-    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick);
+    private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args) => await MapInteraction.HandleMapClickAsync(args.Lat, args.Lng, args.IsMarkerClick, args.ReportId, args.AlertId, alertCreationMode: false);
 
     private async Task OnHeatMapContextMenu(HeatMap.MapLocationEventArgs args) => await MapInteraction.HandleMapContextMenuAsync(args.Lat, args.Lng, isAdmin: true);
 
