@@ -8,10 +8,11 @@
 <RadzenTemplateForm Data="@_alert" Submit="@((Alert _) => Save())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="Address Search" Variant="Variant.Outlined" Style="width: 100%;">
-            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
-                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                Placeholder="Search for a location..." Style="width: 100%;"
-                                InputType="search" />
+            <AddressSearch @bind-SearchValue="@_approxAddress" 
+                           OnResultSelected="@OnAddressResultSelected"
+                           Placeholder="Search for a location..." 
+                           CustomStyle="width: 100%;"
+                           InputType="search" />
         </RadzenFormField>
 
         <RadzenRow Gap="1rem">
@@ -95,7 +96,6 @@
     private string _email = "";
     private bool _isSubmitting;
     private string? _approxAddress;
-    private List<GeocodingResult> _geocodingResults = [];
 
     protected override void OnInitialized()
     {
@@ -128,30 +128,10 @@
         StateHasChanged();
     }
 
-    private async Task OnAddressSearch(LoadDataArgs args)
+    private void OnAddressResultSelected(GeocodingResult result)
     {
-        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
-        {
-            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
-        }
-    }
-
-    private void OnAddressSelected(object value)
-    {
-        if (value is not string address)
-        {
-            return;
-        }
-
-        var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
-        if (selected == null)
-        {
-            return;
-        }
-
-        _alert.Latitude = selected.Latitude;
-        _alert.Longitude = selected.Longitude;
-        _approxAddress = selected.Address;
+        _alert.Latitude = result.Latitude;
+        _alert.Longitude = result.Longitude;
     }
 
     private async Task Save()

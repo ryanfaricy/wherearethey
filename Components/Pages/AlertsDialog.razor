@@ -21,10 +21,11 @@
                 <RadzenTemplateForm Data="@_newAlert" Submit="@((Alert _) => CreateAlert())">
                     <RadzenStack Gap="1rem">
                         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-                            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
-                                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;"
-                                                InputType="search" />
+                            <AddressSearch @bind-SearchValue="@_approxAddress" 
+                                           OnResultSelected="@OnAddressResultSelected"
+                                           Placeholder="@L["Search_Address_Placeholder"]" 
+                                           CustomStyle="width: 100%;"
+                                           InputType="search" />
                         </RadzenFormField>
 
                         <RadzenRow Gap="1rem">
@@ -118,7 +119,6 @@
     private string _email = "";
     private List<Alert> _activeAlerts = [];
     private RadzenDataList<Alert> _dataList;
-    private List<GeocodingResult> _geocodingResults = [];
     private bool _isSubmitting;
     private string? _userIdentifier;
     private string? _approxAddress;
@@ -181,31 +181,10 @@
         }
     }
 
-    private async Task OnAddressSearch(LoadDataArgs args)
+    private void OnAddressResultSelected(GeocodingResult result)
     {
-        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
-        {
-            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
-        }
-    }
-
-    private void OnAddressSelected(object value)
-    {
-        if (value is not string address)
-        {
-            return;
-        }
-        
-        var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
-        
-        if (selected == null)
-        {
-            return;
-        }
-        
-        _newAlert.Latitude = selected.Latitude;
-        _newAlert.Longitude = selected.Longitude;
-        _approxAddress = selected.Address;
+        _newAlert.Latitude = result.Latitude;
+        _newAlert.Longitude = result.Longitude;
     }
 
     private async Task CreateAlert()

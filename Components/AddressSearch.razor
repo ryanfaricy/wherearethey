@@ -4,13 +4,15 @@
 
 <RadzenAutoComplete Value="@SearchValue" Data="@_geocodingResults" TextProperty="Address" LoadData="@OnAddressSearch"
                     Change="@OnAddressSelected" Style="@CustomStyle" InputClass="@InputClass"
-                    Placeholder="Search for an address..." />
+                    Placeholder="@Placeholder" InputType="@InputType" />
 
 @code {
     [Parameter] public string SearchValue { get; set; } = "";
     [Parameter] public EventCallback<string> SearchValueChanged { get; set; }
     [Parameter] public string CustomStyle { get; set; } = "flex: 1; min-width: 100px;";
     [Parameter] public string InputClass { get; set; } = "search-input";
+    [Parameter] public string Placeholder { get; set; } = "Search for an address...";
+    [Parameter] public string InputType { get; set; } = "text";
     
     [Parameter] public EventCallback<GeocodingResult> OnResultSelected { get; set; }
 

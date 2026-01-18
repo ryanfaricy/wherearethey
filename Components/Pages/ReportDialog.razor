@@ -15,10 +15,11 @@
 <RadzenTemplateForm Data="@Report" Submit="@((LocationReport _) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
-            <RadzenAutoComplete @bind-Value="@_approxAddress" Data="@_geocodingResults" TextProperty="Address" 
-                                LoadData="@OnAddressSearch" Change="@OnAddressSelected"
-                                Placeholder="@L["Search_Address_Placeholder"]" Style="width: 100%;"
-                                InputType="search" />
+            <AddressSearch @bind-SearchValue="@_approxAddress" 
+                           OnResultSelected="@OnAddressResultSelected"
+                           Placeholder="@L["Search_Address_Placeholder"]" 
+                           CustomStyle="width: 100%;"
+                           InputType="search" />
         </RadzenFormField>
 
         @if (_isDeterminingLocation)
@@ -75,7 +76,6 @@
     private bool _isSubmitting;
     private bool _isDeterminingLocation;
     private string? _approxAddress;
-    private List<GeocodingResult> _geocodingResults = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -156,27 +156,11 @@
         }
     }
 
-    private async Task OnAddressSearch(LoadDataArgs args)
+    private async Task OnAddressResultSelected(GeocodingResult result)
     {
-        if (!string.IsNullOrWhiteSpace(args.Filter) && args.Filter.Length > 3)
-        {
-            _geocodingResults = await GeocodingService.SearchAsync(args.Filter);
-        }
-    }
-
-    private async Task OnAddressSelected(object value)
-    {
-        if (value is string address)
-        {
-            var selected = _geocodingResults.FirstOrDefault(r => r.Address == address);
-            if (selected != null)
-            {
-                Report.Latitude = selected.Latitude;
-                Report.Longitude = selected.Longitude;
-                _approxAddress = selected.Address;
-                await SaveDraft();
-            }
-        }
+        Report.Latitude = result.Latitude;
+        Report.Longitude = result.Longitude;
+        await SaveDraft();
     }
 
     private async Task SubmitReport()
