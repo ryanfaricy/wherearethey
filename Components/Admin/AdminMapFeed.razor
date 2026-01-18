@@ -46,6 +46,7 @@
                                     MaxMessageLength="100"
                                     IsAdmin="true"
                                     OnClick="@(() => FocusReportOnMap(report))"
+                                    OnEdit="@(() => EditReport(report))"
                                     OnDelete="@(() => DeleteReport(report))" />
                     }
                 </RadzenStack>
@@ -121,6 +122,13 @@
             await AlertService.DeleteAlertAsync(alertId);
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
         }
+    }
+
+    private async Task EditReport(LocationReport report)
+    {
+        await DialogService.OpenAsync<AdminEditReportDialog>($"Edit Report {report.Id}", 
+            new Dictionary<string, object> { { "Report", report } },
+            DialogConfigs.Admin);
     }
 
     private async Task DeleteReport(LocationReport report)

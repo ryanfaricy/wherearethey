@@ -74,7 +74,7 @@
         return Report.Message;
     }
 
-    private string AdminDetailsStyle => Report != null && Report.IsEmergency 
+    private string AdminDetailsStyle => Report is { IsEmergency: true } 
         ? "border-top: 1px dashed rgba(255,0,0,0.2); opacity: 0.8;" 
         : "border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;";
 
