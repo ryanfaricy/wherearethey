@@ -1,17 +1,15 @@
+@inherits AdminTabBase<Donation>
 @inject IDonationService DonationService
 @inject UserTimeZoneService TimeZoneService
 @inject NotificationService NotificationService
-@inject ILogger<AdminDonationsTab> Logger
-@inject IEventService EventService
 @inject DialogService DialogService
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
-@implements IDisposable
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@_donations" TItem="Donation" AllowPaging="true" PageSize="10">
+    <RadzenDataList Data="@Items" TItem="Donation" AllowPaging="true" PageSize="10">
         <Template Context="donation">
             <RadzenCard Class="rz-mb-4">
                 <RadzenStack Gap="0.5rem">
@@ -47,7 +45,7 @@
 }
 else
 {
-    <RadzenDataGrid @ref="_donationsGrid" Data="@_donations" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                 <Template Context="donation">
@@ -93,30 +91,7 @@ else
 }
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    
-    private List<Donation> _donations = [];
-    private RadzenDataGrid<Donation>? _donationsGrid;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-        EventService.OnDonationAdded += HandleDonationAdded;
-        EventService.OnDonationUpdated += HandleDonationUpdated;
-        EventService.OnDonationDeleted += HandleDonationDeleted;
-    }
-
-    private async Task LoadData()
-    {
-        try
-        {
-            _donations = await DonationService.GetAllDonationsAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading donations");
-        }
-    }
+    protected override Task<List<Donation>> GetEntitiesAsync() => DonationService.GetAllDonationsAsync();
 
     private async Task EditDonation(Donation donation)
     {
@@ -148,62 +123,5 @@ else
                 NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
             }
         }
-    }
-
-    private void HandleDonationAdded(Donation donation)
-    {
-        InvokeAsync(async () =>
-        {
-            _donations.Insert(0, donation);
-            if (_donationsGrid != null)
-            {
-                await _donationsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleDonationUpdated(Donation donation)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _donations.FindIndex(d => d.Id == donation.Id);
-            if (index != -1)
-            {
-                _donations[index] = donation;
-            }
-            else
-            {
-                _donations.Insert(0, donation);
-            }
-
-            if (_donationsGrid != null)
-            {
-                await _donationsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleDonationDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            if (_donationsGrid != null)
-            {
-                await _donationsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    public void Dispose()
-    {
-        EventService.OnDonationAdded -= HandleDonationAdded;
-        EventService.OnDonationUpdated -= HandleDonationUpdated;
-        EventService.OnDonationDeleted -= HandleDonationDeleted;
     }
 }

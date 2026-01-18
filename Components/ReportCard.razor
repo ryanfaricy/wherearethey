@@ -70,7 +70,11 @@
 
     private string GetMessage()
     {
-        if (Report == null || string.IsNullOrEmpty(Report.Message)) return "";
+        if (Report == null || string.IsNullOrEmpty(Report.Message))
+        {
+            return "";
+        }
+
         if (MaxMessageLength > 0 && Report.Message.Length > MaxMessageLength)
         {
             return Report.Message.Substring(0, MaxMessageLength - 3) + "...";
@@ -111,8 +115,15 @@
                 styles.Add("cursor: pointer;");
             }
 
-            if (classes.Any()) attrs["class"] = string.Join(" ", classes);
-            if (styles.Any()) attrs["style"] = string.Join(" ", styles);
+            if (classes.Any())
+            {
+                attrs["class"] = string.Join(" ", classes);
+            }
+
+            if (styles.Any())
+            {
+                attrs["style"] = string.Join(" ", styles);
+            }
 
             return attrs;
         }

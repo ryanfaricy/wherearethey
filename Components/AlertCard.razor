@@ -83,8 +83,15 @@
                 styles.Add("border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;");
             }
 
-            if (classes.Any()) attrs["class"] = string.Join(" ", classes);
-            if (styles.Any()) attrs["style"] = string.Join(" ", styles);
+            if (classes.Any())
+            {
+                attrs["class"] = string.Join(" ", classes);
+            }
+
+            if (styles.Any())
+            {
+                attrs["style"] = string.Join(" ", styles);
+            }
 
             return attrs;
         }
@@ -92,12 +99,24 @@
 
     private static string MaskEmail(string? email)
     {
-        if (string.IsNullOrEmpty(email)) return "****";
+        if (string.IsNullOrEmpty(email))
+        {
+            return "****";
+        }
+
         var parts = email.Split('@');
-        if (parts.Length != 2) return "****";
+        if (parts.Length != 2)
+        {
+            return "****";
+        }
+
         var name = parts[0];
         var domain = parts[1];
-        if (name.Length <= 2) return $"**@{domain}";
+        if (name.Length <= 2)
+        {
+            return $"**@{domain}";
+        }
+
         return $"{name[0]}***{name[^1]}@{domain}";
     }
 }

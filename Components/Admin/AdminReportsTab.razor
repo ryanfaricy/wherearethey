@@ -1,19 +1,18 @@
+@inherits AdminTabBase<LocationReport>
 @inject IReportService ReportService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject IJSRuntime JsRuntime
-@inject ILogger<AdminReportsTab> Logger
 @inject IMapStateService MapState
 @using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
-@implements IDisposable
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@MapState.Reports" TItem="LocationReport" AllowPaging="true" PageSize="10" WrapItems="true">
+    <RadzenDataList Data="@Items" TItem="LocationReport" AllowPaging="true" PageSize="10" WrapItems="true">
         <Template Context="report">
             <RadzenCard Class="@(report.IsEmergency ? "rz-mb-4 report-emergency" : "rz-mb-4 report-normal")">
                 <RadzenStack Gap="0.5rem">
@@ -51,7 +50,7 @@
 }
 else
 {
-    <RadzenDataGrid @ref="_reportsGrid" Data="@MapState.Reports" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" />
             <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
@@ -106,21 +105,14 @@ else
 }
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    
-    private RadzenDataGrid<LocationReport>? _reportsGrid;
-
     protected override async Task OnInitializedAsync()
     {
-        MapState.OnStateChanged += HandleStateChanged;
+        await base.OnInitializedAsync();
         await MapState.InitializeAsync(null, isAdmin: true);
         await MapState.LoadReportsAsync();
     }
 
-    private void HandleStateChanged() => InvokeAsync(() => {
-        _reportsGrid?.Reload();
-        StateHasChanged();
-    });
+    protected override Task<List<LocationReport>> GetEntitiesAsync() => ReportService.GetAllReportsAsync();
 
     private async Task EditReport(LocationReport report)
     {
@@ -130,7 +122,7 @@ else
 
         if (result == true)
         {
-            _reportsGrid?.Reload();
+            Grid?.Reload();
             StateHasChanged();
         }
     }
@@ -158,10 +150,5 @@ else
     {
         var url = $"/?reportId={report.ExternalId}";
         await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
-    }
-
-    public void Dispose()
-    {
-        MapState.OnStateChanged -= HandleStateChanged;
     }
 }

@@ -1,3 +1,4 @@
+using WhereAreThey.Helpers;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
@@ -62,12 +63,7 @@ public class MapStateService : IMapStateService
         _eventService = eventService;
         _mapService = mapService;
 
-        _eventService.OnReportAdded += HandleReportAdded;
-        _eventService.OnReportUpdated += HandleReportUpdated;
-        _eventService.OnReportDeleted += HandleReportDeleted;
-        _eventService.OnAlertAdded += HandleAlertAdded;
-        _eventService.OnAlertUpdated += HandleAlertUpdated;
-        _eventService.OnAlertDeleted += HandleAlertDeleted;
+        _eventService.OnEntityChanged += HandleEntityChanged;
 
         _pruneTimer = new Timer(_ => PruneOldReports(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
@@ -158,9 +154,43 @@ public class MapStateService : IMapStateService
             .ToList();
     }
 
+    private void HandleEntityChanged(object entity, EntityChangeType type)
+    {
+        if (entity is LocationReport report)
+        {
+            switch (type)
+            {
+                case EntityChangeType.Added:
+                    HandleReportAdded(report);
+                    break;
+                case EntityChangeType.Updated:
+                    HandleReportUpdated(report);
+                    break;
+                case EntityChangeType.Deleted:
+                    HandleReportDeleted(report.Id);
+                    break;
+            }
+        }
+        else if (entity is Alert alert)
+        {
+            switch (type)
+            {
+                case EntityChangeType.Added:
+                    HandleAlertAdded(alert);
+                    break;
+                case EntityChangeType.Updated:
+                    HandleAlertUpdated(alert);
+                    break;
+                case EntityChangeType.Deleted:
+                    HandleAlertDeleted(alert.Id);
+                    break;
+            }
+        }
+    }
+
     private void HandleReportAdded(LocationReport report)
     {
-        if (report.DeletedAt != null && !_isAdmin)
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
         {
             return;
         }
@@ -177,17 +207,19 @@ public class MapStateService : IMapStateService
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
         
-        if (report.DeletedAt != null && !_isAdmin)
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
         {
-            if (index != -1)
+            if (index == -1)
             {
-                Reports.RemoveAt(index);
-                if (MapInitialized)
-                {
-                    _ = _mapService.RemoveSingleReportAsync(report.Id);
-                }
-                OnStateChanged?.Invoke();
+                return;
             }
+
+            Reports.RemoveAt(index);
+            if (MapInitialized)
+            {
+                _ = _mapService.RemoveSingleReportAsync(report.Id);
+            }
+            OnStateChanged?.Invoke();
             return;
         }
 
@@ -208,7 +240,7 @@ public class MapStateService : IMapStateService
 
     private async Task UpdateReportOnMap(LocationReport report)
     {
-        if (report.DeletedAt != null && !_isAdmin)
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
         {
             await _mapService.RemoveSingleReportAsync(report.Id);
         }
@@ -227,11 +259,13 @@ public class MapStateService : IMapStateService
             // If we only get a Deleted event, we don't know the DeletedAt value, 
             // but we can at least mark it as deleted if we find it.
             var report = Reports.FirstOrDefault(r => r.Id == id);
-            if (report != null && report.DeletedAt == null)
+            if (report is not { DeletedAt: null })
             {
-                report.DeletedAt = DateTime.UtcNow;
-                OnStateChanged?.Invoke();
+                return;
             }
+
+            report.DeletedAt = DateTime.UtcNow;
+            OnStateChanged?.Invoke();
             return;
         }
 
@@ -321,11 +355,6 @@ public class MapStateService : IMapStateService
         GC.SuppressFinalize(this);
         
         _pruneTimer?.Dispose();
-        _eventService.OnReportAdded -= HandleReportAdded;
-        _eventService.OnReportUpdated -= HandleReportUpdated;
-        _eventService.OnReportDeleted -= HandleReportDeleted;
-        _eventService.OnAlertAdded -= HandleAlertAdded;
-        _eventService.OnAlertUpdated -= HandleAlertUpdated;
-        _eventService.OnAlertDeleted -= HandleAlertDeleted;
+        _eventService.OnEntityChanged -= HandleEntityChanged;
     }
 }

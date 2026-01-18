@@ -19,7 +19,7 @@ public class AlertService(
     IOptions<AppOptions> appOptions,
     IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
-    IValidator<Alert> validator) : IAlertService
+    IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService), IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
@@ -34,7 +34,7 @@ public class AlertService(
                 return Result<Alert>.Failure(validationResult);
             }
 
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
 
             if (alert.RadiusKm > 160.9)
             {
@@ -55,7 +55,8 @@ public class AlertService(
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
 
-            eventService.NotifyAlertAdded(alert);
+            EventService.NotifyAlertAdded(alert);
+            EventService.NotifyEntityChanged(alert, EntityChangeType.Added);
             
             if (!alert.IsVerified)
             {
@@ -77,7 +78,7 @@ public class AlertService(
     {
         try
         {
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
             var verification = await context.EmailVerifications
                 .FirstOrDefaultAsync(v => v.EmailHash == emailHash);
 
@@ -117,7 +118,7 @@ public class AlertService(
     /// <inheritdoc />
     public virtual async Task<Result> VerifyEmailAsync(string token)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var verification = await context.EmailVerifications
             .FirstOrDefaultAsync(v => v.Token == token);
 
@@ -147,10 +148,11 @@ public class AlertService(
         
         foreach (var alert in alerts)
         {
-            eventService.NotifyAlertUpdated(alert);
+            EventService.NotifyAlertUpdated(alert);
+            EventService.NotifyEntityChanged(alert, EntityChangeType.Updated);
         }
 
-        eventService.NotifyEmailVerified(verification.EmailHash);
+        EventService.NotifyEmailVerified(verification.EmailHash);
         return Result.Success();
     }
 
@@ -175,7 +177,7 @@ public class AlertService(
     /// <inheritdoc />
     public async Task<Result<Alert>> GetAlertByExternalIdAsync(Guid externalId)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var alert = await context.Alerts
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -187,7 +189,7 @@ public class AlertService(
     /// <inheritdoc />
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var query = context.Alerts
             .AsNoTracking()
             .Where(a => a.DeletedAt == null);
@@ -208,7 +210,7 @@ public class AlertService(
     /// <inheritdoc />
     public virtual async Task<Result> DeactivateAlertAsync(int id)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var alert = await context.Alerts
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(a => a.Id == id);
@@ -219,7 +221,7 @@ public class AlertService(
 
         alert.DeletedAt = DateTime.UtcNow;
         await context.SaveChangesAsync();
-        eventService.NotifyAlertUpdated(alert);
+        EventService.NotifyAlertUpdated(alert);
         return Result.Success();
     }
 
@@ -231,7 +233,7 @@ public class AlertService(
         const double maxRadiusKm = 160.9;
         var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(latitude, longitude, maxRadiusKm);
 
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var candidateAlerts = await context.Alerts
             .AsNoTracking()
             .Where(a => a.DeletedAt == null && a.IsVerified)
@@ -246,33 +248,15 @@ public class AlertService(
 
     // Admin methods
     /// <inheritdoc />
-    public virtual async Task<List<Alert>> GetAllAlertsAdminAsync()
+    public virtual async Task<List<Alert>> GetAllAlertsAsync()
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.Alerts
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .OrderByDescending(a => a.CreatedAt)
-            .ToListAsync();
+        return await GetAllAsync(isAdmin: true);
     }
 
     /// <inheritdoc />
     public virtual async Task<Result> DeleteAlertAsync(int id)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        var alert = await context.Alerts
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(a => a.Id == id);
-        if (alert == null)
-        {
-            return Result.Failure("Alert not found.");
-        }
-
-        alert.DeletedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync();
-        eventService.NotifyAlertUpdated(alert);
-        eventService.NotifyAlertDeleted(id);
-        return Result.Success();
+        return await SoftDeleteAsync(id);
     }
 
     /// <inheritdoc />
@@ -286,7 +270,7 @@ public class AlertService(
                 return Result.Failure(validationResult);
             }
 
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
             var existing = await context.Alerts
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a => a.Id == alert.Id);
@@ -309,7 +293,8 @@ public class AlertService(
             }
             
             await context.SaveChangesAsync();
-            eventService.NotifyAlertUpdated(existing);
+            EventService.NotifyAlertUpdated(existing);
+            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }
         catch (Exception ex)
@@ -317,5 +302,12 @@ public class AlertService(
             logger.LogError(ex, "Error updating alert {AlertId}", alert.Id);
             return Result.Failure("An error occurred while updating the alert.");
         }
+    }
+
+    protected override void NotifyUpdated(Alert entity) => EventService.NotifyAlertUpdated(entity);
+    protected override void NotifyDeleted(Alert entity)
+    {
+        EventService.NotifyAlertUpdated(entity);
+        EventService.NotifyAlertDeleted(entity.Id);
     }
 }

@@ -29,8 +29,9 @@ public interface IEventService
     event Action<Alert> OnAlertAdded;
     /// <summary>Raised when an alert is updated.</summary>
     event Action<Alert> OnAlertUpdated;
-    /// <summary>Raised when an alert is deleted.</summary>
-    event Action<int> OnAlertDeleted;
+    /// <summary>Raised when an entity is changed.</summary>
+    event Action<object, EntityChangeType> OnEntityChanged;
+
     /// <summary>Raised when system settings are changed.</summary>
     event Action<SystemSettings> OnSettingsChanged;
     /// <summary>Raised when an administrative login attempt occurs.</summary>
@@ -66,6 +67,8 @@ public interface IEventService
     void NotifyAlertUpdated(Alert alert);
     /// <summary>Notifies subscribers that an alert has been deleted.</summary>
     void NotifyAlertDeleted(int id);
+    /// <summary>Notifies subscribers that an entity has changed.</summary>
+    void NotifyEntityChanged<T>(T entity, EntityChangeType type) where T : IAuditable;
     /// <summary>Notifies subscribers that settings have changed.</summary>
     void NotifySettingsChanged(SystemSettings settings);
     /// <summary>Notifies subscribers of an admin login attempt.</summary>

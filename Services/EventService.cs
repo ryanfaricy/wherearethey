@@ -31,6 +31,8 @@ public class EventService : IEventService
     /// <inheritdoc />
     public event Action<int>? OnAlertDeleted;
     /// <inheritdoc />
+    public event Action<object, EntityChangeType>? OnEntityChanged;
+    /// <inheritdoc />
     public event Action<SystemSettings>? OnSettingsChanged;
     /// <inheritdoc />
     public event Action<AdminLoginAttempt>? OnAdminLoginAttempt;
@@ -65,6 +67,8 @@ public class EventService : IEventService
     public void NotifyAlertUpdated(Alert alert) => OnAlertUpdated?.Invoke(alert);
     /// <inheritdoc />
     public void NotifyAlertDeleted(int id) => OnAlertDeleted?.Invoke(id);
+    /// <inheritdoc />
+    public void NotifyEntityChanged<T>(T entity, EntityChangeType type) where T : IAuditable => OnEntityChanged?.Invoke(entity, type);
     /// <inheritdoc />
     public void NotifySettingsChanged(SystemSettings settings) => OnSettingsChanged?.Invoke(settings);
     /// <inheritdoc />

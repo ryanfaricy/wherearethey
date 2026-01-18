@@ -13,7 +13,7 @@ namespace WhereAreThey.Services;
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
-    IOptions<SquareOptions> squareOptions) : IDonationService
+    IOptions<SquareOptions> squareOptions) : BaseService<Donation>(contextFactory, eventService), IDonationService
 {
     private readonly SquareOptions _options = squareOptions.Value;
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
@@ -42,18 +42,19 @@ public class DonationService(
     /// <inheritdoc />
     public async Task<Donation> RecordDonationAsync(Donation donation)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         donation.CreatedAt = DateTime.UtcNow;
         context.Donations.Add(donation);
         await context.SaveChangesAsync();
-        eventService.NotifyDonationAdded(donation);
+        EventService.NotifyDonationAdded(donation);
+        EventService.NotifyEntityChanged(donation, EntityChangeType.Added);
         return donation;
     }
 
     /// <inheritdoc />
     public async Task<bool> UpdateDonationStatusAsync(string paymentId, string status)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var donation = await context.Donations
             .IgnoreQueryFilters()
             .FirstOrDefaultAsync(d => d.ExternalPaymentId == paymentId);
@@ -65,7 +66,8 @@ public class DonationService(
 
         donation.Status = status;
         await context.SaveChangesAsync();
-        eventService.NotifyDonationUpdated(donation);
+        EventService.NotifyDonationUpdated(donation);
+        EventService.NotifyEntityChanged(donation, EntityChangeType.Updated);
         return true;
     }
 
@@ -73,12 +75,7 @@ public class DonationService(
     /// <inheritdoc />
     public async Task<List<Donation>> GetAllDonationsAsync()
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.Donations
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .OrderByDescending(d => d.CreatedAt)
-            .ToListAsync();
+        return await GetAllAsync(isAdmin: true);
     }
 
     /// <inheritdoc />
@@ -86,7 +83,7 @@ public class DonationService(
     {
         try
         {
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
             var existing = await context.Donations
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(d => d.Id == donation.Id);
@@ -103,7 +100,8 @@ public class DonationService(
             existing.DeletedAt = donation.DeletedAt;
 
             await context.SaveChangesAsync();
-            eventService.NotifyDonationUpdated(existing);
+            EventService.NotifyDonationUpdated(existing);
+            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }
         catch (Exception ex)
@@ -115,26 +113,13 @@ public class DonationService(
     /// <inheritdoc />
     public async Task<Result> DeleteDonationAsync(int id)
     {
-        try
-        {
-            await using var context = await contextFactory.CreateDbContextAsync();
-            var existing = await context.Donations
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(d => d.Id == id);
-            if (existing == null)
-            {
-                return Result.Failure("Donation not found.");
-            }
+        return await SoftDeleteAsync(id);
+    }
 
-            existing.DeletedAt = DateTime.UtcNow;
-            await context.SaveChangesAsync();
-            eventService.NotifyDonationUpdated(existing);
-            eventService.NotifyDonationDeleted(id);
-            return Result.Success();
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure($"An error occurred while deleting the donation: {ex.Message}");
-        }
+    protected override void NotifyUpdated(Donation entity) => EventService.NotifyDonationUpdated(entity);
+    protected override void NotifyDeleted(Donation entity)
+    {
+        EventService.NotifyDonationUpdated(entity);
+        EventService.NotifyDonationDeleted(entity.Id);
     }
 }

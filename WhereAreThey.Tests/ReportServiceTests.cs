@@ -369,7 +369,7 @@ public class ReportServiceTests
         
         await using (var context = await factory.CreateDbContextAsync())
         {
-            var deletedReport = await context.LocationReports.FindAsync(report.Id);
+            var deletedReport = await context.LocationReports.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == report.Id);
             Assert.NotNull(deletedReport);
             Assert.NotNull(deletedReport.DeletedAt);
         }

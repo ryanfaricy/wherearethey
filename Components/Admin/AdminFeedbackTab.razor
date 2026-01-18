@@ -1,17 +1,15 @@
+@inherits AdminTabBase<Feedback>
 @inject IFeedbackService FeedbackService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
-@inject ILogger<AdminFeedbackTab> Logger
-@inject IEventService EventService
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
-@implements IDisposable
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@_feedbacks" TItem="Feedback" AllowPaging="true" PageSize="10">
+    <RadzenDataList Data="@Items" TItem="Feedback" AllowPaging="true" PageSize="10">
         <Template Context="feedback">
             <RadzenCard Class="rz-mb-4">
                 <RadzenStack Gap="0.5rem">
@@ -42,7 +40,7 @@
 }
 else
 {
-    <RadzenDataGrid @ref="_feedbacksGrid" Data="@_feedbacks" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" />
             <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
@@ -84,30 +82,7 @@ else
 }
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    
-    private List<Feedback> _feedbacks = [];
-    private RadzenDataGrid<Feedback>? _feedbacksGrid;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-        EventService.OnFeedbackAdded += HandleFeedbackAdded;
-        EventService.OnFeedbackUpdated += HandleFeedbackUpdated;
-        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
-    }
-
-    private async Task LoadData()
-    {
-        try
-        {
-            _feedbacks = await FeedbackService.GetAllFeedbackAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading feedback");
-        }
-    }
+    protected override Task<List<Feedback>> GetEntitiesAsync() => FeedbackService.GetAllFeedbackAsync();
 
     private async Task EditFeedback(Feedback feedback)
     {
@@ -120,56 +95,6 @@ else
             await LoadData();
             StateHasChanged();
         }
-    }
-
-    private void HandleFeedbackAdded(Feedback feedback)
-    {
-        InvokeAsync(async () =>
-        {
-            _feedbacks.Insert(0, feedback);
-            if (_feedbacksGrid != null)
-            {
-                await _feedbacksGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleFeedbackUpdated(Feedback feedback)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _feedbacks.FindIndex(f => f.Id == feedback.Id);
-            if (index != -1)
-            {
-                _feedbacks[index] = feedback;
-            }
-            else
-            {
-                _feedbacks.Insert(0, feedback);
-            }
-
-            if (_feedbacksGrid != null)
-            {
-                await _feedbacksGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleFeedbackDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            if (_feedbacksGrid != null)
-            {
-                await _feedbacksGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
     }
 
     private async Task DeleteFeedback(int id)
@@ -186,16 +111,8 @@ else
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to delete feedback {FeedbackId}", id);
                 NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
             }
         }
-    }
-
-    public void Dispose()
-    {
-        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
-        EventService.OnFeedbackUpdated -= HandleFeedbackUpdated;
-        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
     }
 }

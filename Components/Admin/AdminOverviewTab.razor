@@ -101,32 +101,59 @@ else
         await LoadData();
         
         EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
-        EventService.OnReportAdded += HandleReportAdded;
-        EventService.OnReportUpdated += HandleReportUpdated;
-        EventService.OnReportDeleted += HandleReportDeleted;
-        EventService.OnAlertAdded += HandleAlertAdded;
-        EventService.OnAlertUpdated += HandleAlertUpdated;
-        EventService.OnAlertDeleted += HandleAlertDeleted;
-        EventService.OnDonationAdded += HandleDonationAdded;
-        EventService.OnDonationUpdated += HandleDonationUpdated;
-        EventService.OnDonationDeleted += HandleDonationDeleted;
-        EventService.OnFeedbackAdded += HandleFeedbackAdded;
-        EventService.OnFeedbackUpdated += HandleFeedbackUpdated;
-        EventService.OnFeedbackDeleted += HandleFeedbackDeleted;
+        EventService.OnEntityChanged += HandleEntityChanged;
     }
 
-    private void HandleReportAdded(LocationReport _) => InvokeAsync(() => { _reportCount++; StateHasChanged(); });
-    private void HandleReportUpdated(LocationReport _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
-    private void HandleReportDeleted(int _) => InvokeAsync(() => { _reportCount--; StateHasChanged(); });
-    private void HandleAlertAdded(Alert _) => InvokeAsync(() => { _activeAlertCount++; StateHasChanged(); });
-    private void HandleAlertUpdated(Alert _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
-    private void HandleAlertDeleted(int _) => InvokeAsync(() => { _activeAlertCount--; StateHasChanged(); });
-    private void HandleDonationAdded(Donation _) => InvokeAsync(() => { _donationCount++; StateHasChanged(); });
-    private void HandleDonationUpdated(Donation _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
-    private void HandleDonationDeleted(int _) => InvokeAsync(() => { _donationCount--; StateHasChanged(); });
-    private void HandleFeedbackAdded(Feedback _) => InvokeAsync(() => { _feedbackCount++; StateHasChanged(); });
-    private void HandleFeedbackUpdated(Feedback _) => InvokeAsync(async () => { await LoadData(); StateHasChanged(); });
-    private void HandleFeedbackDeleted(int _) => InvokeAsync(() => { _feedbackCount--; StateHasChanged(); });
+    private void HandleEntityChanged(object entity, EntityChangeType type)
+    {
+        InvokeAsync(async () =>
+        {
+            if (type == EntityChangeType.Added)
+            {
+                if (entity is LocationReport)
+                {
+                    _reportCount++;
+                }
+                else if (entity is Alert)
+                {
+                    _activeAlertCount++;
+                }
+                else if (entity is Donation donation && donation.IsSuccess())
+                {
+                    _donationCount++;
+                }
+                else if (entity is Feedback)
+                {
+                    _feedbackCount++;
+                }
+            }
+            else if (type == EntityChangeType.Deleted)
+            {
+                if (entity is LocationReport)
+                {
+                    _reportCount--;
+                }
+                else if (entity is Alert)
+                {
+                    _activeAlertCount--;
+                }
+                else if (entity is Donation)
+                {
+                    _donationCount--;
+                }
+                else if (entity is Feedback)
+                {
+                    _feedbackCount--;
+                }
+            }
+            else if (type == EntityChangeType.Updated)
+            {
+                // For updates, it's safer to reload counts to handle status changes (e.g. donation success)
+                await LoadData();
+            }
+            StateHasChanged();
+        });
+    }
 
     private async Task LoadData()
     {
@@ -135,7 +162,7 @@ else
             var reports = await ReportService.GetAllReportsAsync();
             _reportCount = reports.Count(r => r.DeletedAt == null);
             
-            var alerts = await AlertService.GetAllAlertsAdminAsync();
+            var alerts = await AlertService.GetAllAlertsAsync();
             _activeAlertCount = alerts.Count(a => a.DeletedAt == null);
             
             var donations = await DonationService.GetAllDonationsAsync();
@@ -161,17 +188,6 @@ else
     public void Dispose()
     {
         EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
-        EventService.OnReportAdded -= HandleReportAdded;
-        EventService.OnReportUpdated -= HandleReportUpdated;
-        EventService.OnReportDeleted -= HandleReportDeleted;
-        EventService.OnAlertAdded -= HandleAlertAdded;
-        EventService.OnAlertUpdated -= HandleAlertUpdated;
-        EventService.OnAlertDeleted -= HandleAlertDeleted;
-        EventService.OnDonationAdded -= HandleDonationAdded;
-        EventService.OnDonationUpdated -= HandleDonationUpdated;
-        EventService.OnDonationDeleted -= HandleDonationDeleted;
-        EventService.OnFeedbackAdded -= HandleFeedbackAdded;
-        EventService.OnFeedbackUpdated -= HandleFeedbackUpdated;
-        EventService.OnFeedbackDeleted -= HandleFeedbackDeleted;
+        EventService.OnEntityChanged -= HandleEntityChanged;
     }
 }

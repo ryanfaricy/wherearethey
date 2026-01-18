@@ -79,7 +79,7 @@ public interface IAlertService
     /// Gets all alerts for administrative purposes.
     /// </summary>
     /// <returns>A list of all alerts.</returns>
-    Task<List<Alert>> GetAllAlertsAdminAsync();
+    Task<List<Alert>> GetAllAlertsAsync();
 
     /// <summary>
     /// Permanently deletes an alert.

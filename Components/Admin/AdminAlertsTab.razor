@@ -1,16 +1,14 @@
+@inherits AdminTabBase<Alert>
 @inject IAlertService AlertService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
-@inject ILogger<AdminAlertsTab> Logger
-@inject IEventService EventService
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@implements IDisposable
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@_alerts" TItem="Alert" AllowPaging="true" PageSize="10">
+    <RadzenDataList Data="@Items" TItem="Alert" AllowPaging="true" PageSize="10">
         <Template Context="alert">
             <RadzenCard Class="rz-mb-4">
                 <RadzenStack Gap="0.5rem">
@@ -49,7 +47,7 @@
 }
 else
 {
-    <RadzenDataGrid @ref="_alertsGrid" Data="@_alerts" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Alert" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="Alert" Property="Id" Title="ID" />
             <RadzenDataGridColumn TItem="Alert" Title="Email">
@@ -89,80 +87,7 @@ else
 }
 
 @code {
-    [Parameter] public bool IsMobile { get; set; }
-    
-    private List<Alert> _alerts = [];
-    private RadzenDataGrid<Alert>? _alertsGrid;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadData();
-        EventService.OnAlertAdded += HandleAlertAdded;
-        EventService.OnAlertUpdated += HandleAlertUpdated;
-        EventService.OnAlertDeleted += HandleAlertDeleted;
-    }
-
-    private async Task LoadData()
-    {
-        try
-        {
-            _alerts = await AlertService.GetAllAlertsAdminAsync();
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error loading alerts");
-        }
-    }
-
-    private void HandleAlertAdded(Alert alert)
-    {
-        InvokeAsync(async () =>
-        {
-            _alerts.Insert(0, alert);
-            if (_alertsGrid != null)
-            {
-                await _alertsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertUpdated(Alert alert)
-    {
-        InvokeAsync(async () =>
-        {
-            var index = _alerts.FindIndex(a => a.Id == alert.Id);
-            if (index != -1)
-            {
-                _alerts[index] = alert;
-            }
-            else
-            {
-                _alerts.Insert(0, alert);
-            }
-            
-            if (_alertsGrid != null)
-            {
-                await _alertsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
-
-    private void HandleAlertDeleted(int id)
-    {
-        InvokeAsync(async () =>
-        {
-            if (_alertsGrid != null)
-            {
-                await _alertsGrid.Reload();
-            }
-
-            StateHasChanged();
-        });
-    }
+    protected override Task<List<Alert>> GetEntitiesAsync() => AlertService.GetAllAlertsAsync();
 
     private async Task DeleteAlert(int id)
     {
@@ -199,12 +124,5 @@ else
         {
             await LoadData();
         }
-    }
-
-    public void Dispose()
-    {
-        EventService.OnAlertAdded -= HandleAlertAdded;
-        EventService.OnAlertUpdated -= HandleAlertUpdated;
-        EventService.OnAlertDeleted -= HandleAlertDeleted;
     }
 }

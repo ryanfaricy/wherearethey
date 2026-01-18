@@ -14,7 +14,7 @@ public class ReportService(
     ISettingsService settingsService,
     IEventService eventService,
     IValidator<LocationReport> validator,
-    ILogger<ReportService> logger) : IReportService
+    ILogger<ReportService> logger) : BaseService<LocationReport>(contextFactory, eventService), IReportService
 {
     /// <inheritdoc />
     public async Task<Result<LocationReport>> AddReportAsync(LocationReport report)
@@ -27,7 +27,7 @@ public class ReportService(
                 return Result<LocationReport>.Failure(validationResult);
             }
 
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
 
             report.ExternalId = Guid.NewGuid();
             report.Timestamp = DateTime.UtcNow;
@@ -35,7 +35,8 @@ public class ReportService(
             await context.SaveChangesAsync();
 
             // Notify global event bus
-            eventService.NotifyReportAdded(report);
+            EventService.NotifyReportAdded(report);
+            EventService.NotifyEntityChanged(report, EntityChangeType.Added);
 
             try
             {
@@ -59,7 +60,7 @@ public class ReportService(
     /// <inheritdoc />
     public async Task<Result<LocationReport>> GetReportByExternalIdAsync(Guid externalId)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var report = await context.LocationReports
             .IgnoreQueryFilters()
             .AsNoTracking()
@@ -71,7 +72,7 @@ public class ReportService(
     /// <inheritdoc />
     public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
+        await using var context = await ContextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
         
         // Use the global expiry setting if no hours provided
@@ -87,33 +88,13 @@ public class ReportService(
     /// <inheritdoc />
     public async Task<List<LocationReport>> GetAllReportsAsync()
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        return await context.LocationReports
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .OrderByDescending(r => r.Timestamp)
-            .ToListAsync();
+        return await GetAllAsync(isAdmin: true);
     }
 
     /// <inheritdoc />
     public async Task<Result> DeleteReportAsync(int id)
     {
-        await using var context = await contextFactory.CreateDbContextAsync();
-        var report = await context.LocationReports
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r => r.Id == id);
-        if (report == null)
-        {
-            return Result.Failure("Report not found.");
-        }
-
-        report.DeletedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync();
-        
-        // Notify global event bus
-        eventService.NotifyReportUpdated(report);
-        eventService.NotifyReportDeleted(id);
-        return Result.Success();
+        return await SoftDeleteAsync(id);
     }
 
     /// <inheritdoc />
@@ -127,12 +108,13 @@ public class ReportService(
                 return Result.Failure(validationResult);
             }
 
-            await using var context = await contextFactory.CreateDbContextAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
             context.LocationReports.Update(report);
             await context.SaveChangesAsync();
             
             // Notify global event bus
-            eventService.NotifyReportUpdated(report);
+            EventService.NotifyReportUpdated(report);
+            EventService.NotifyEntityChanged(report, EntityChangeType.Updated);
             return Result.Success();
         }
         catch (Exception ex)
@@ -140,5 +122,12 @@ public class ReportService(
             logger.LogError(ex, "Error updating report {ReportId}", report.Id);
             return Result.Failure("An error occurred while updating the report.");
         }
+    }
+
+    protected override void NotifyUpdated(LocationReport entity) => EventService.NotifyReportUpdated(entity);
+    protected override void NotifyDeleted(LocationReport entity) 
+    {
+        EventService.NotifyReportUpdated(entity);
+        EventService.NotifyReportDeleted(entity.Id);
     }
 }

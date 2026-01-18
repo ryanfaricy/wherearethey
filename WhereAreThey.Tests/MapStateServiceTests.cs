@@ -47,7 +47,7 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null } };
         // Even if GetAllAlertsAdminAsync would return alerts
-        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync(alerts);
+        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync(alerts);
 
         // Act
         await _service.InitializeAsync("test-admin", isAdmin: true);
@@ -143,7 +143,7 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_RespectsIsAdminFlag()
     {
         // Setup mocks for alerts which are called during InitializeAsync
-        _alertServiceMock.Setup(s => s.GetAllAlertsAdminAsync()).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
 
         // 1. Test Admin Mode

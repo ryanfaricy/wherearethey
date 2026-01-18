@@ -11,10 +11,24 @@ This document provides a high-level overview of the application architecture, da
 ## 🏗️ Technical Stack
 - **Framework**: .NET 10.0 (Blazor Server)
 - **UI**: Radzen Blazor Components (Material Theme)
-- **Database**: PostgreSQL with Entity Framework Core 9.0
+- **Database**: PostgreSQL with Entity Framework Core 10.0
+- **Patterns**: Generic Base Service, Event Aggregator, Visibility Policies
 - **Payments**: Square (via Square .NET SDK and Web Payments SDK)
 - **Maps**: Leaflet (Frontend) & Mapbox (Geocoding / Static Maps)
 - **Localization**: .NET `IStringLocalizer` with `.resx` files.
+
+## 🏗️ Architectural Patterns
+
+### 1. Generic Base Service (DRY & SOLID)
+Most entities (`LocationReport`, `Alert`, `Donation`, `Feedback`) implement `IAuditable`, which includes `CreatedAt` and `DeletedAt`. Business services inherit from `BaseService<T>`, centralizing:
+- **Soft-Delete**: Automatic handling of `DeletedAt` and notifications.
+- **Admin Filtering**: `GetAllAsync(bool isAdmin)` handles `IgnoreQueryFilters()` automatically.
+
+### 2. Event Aggregation Pattern
+`IEventService` provides a generic `OnEntityChanged` event. This allows UI components (like Admin tabs or the Overview dashboard) to listen to a single event stream instead of multiple specialized events.
+
+### 3. Visibility Policies
+The `VisibilityPolicy` helper centralizes the logic for "ShouldShow" (e.g., `isAdmin || DeletedAt == null`), ensuring consistency between the Map, Lists, and API responses.
 
 ## 🧩 Key Components & Services
 
@@ -58,6 +72,7 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 - **AsNoTracking()**: Used for all read-only queries in services to reduce memory overhead and CPU cycles.
 - **Bounding Box Filters**: Used in `GetMatchingAlertsAsync` and `GetReportsInRadiusAsync` to filter records at the database level before performing expensive Haversine distance calculations in memory.
 - **DbContextFactory**: Essential for Blazor Server to avoid thread-safety issues with DbContext.
+- **Global Query Filters**: Soft-delete is enforced at the DB level using EF Core global query filters. Services can use `.IgnoreQueryFilters()` when admin access is required.
 
 ### 2. UI & Assets
 - **Response Compression**: Enabled for HTTPS to speed up initial load.
@@ -72,6 +87,7 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 - **Integration Testing**: Database interactions are tested using SQLite in-memory and EF Core In-Memory providers.
 - **Mocking**: `Moq` is used to isolate services from external dependencies like `HttpClient`, `IEmailService`, and `IBackgroundJobClient`.
 - **Validation Testing**: `FluentValidation` rules are extensively tested to ensure anti-spam and security constraints are honored.
+- **Generic Component Testing**: `AdminTabBase` allows for testing shared UI logic (data loading, event handling) once for all entity types.
 
 ## 🤖 AI Development Guidelines
 1. **Always Use `AsNoTracking()`** for read-only service methods.
@@ -81,4 +97,6 @@ User emails for alerts are encrypted using the `.NET Data Protection API` before
 5. **Interface-Based DI**: Register all services via interfaces in `Program.cs`. Inject interfaces into constructors.
 6. **Centralized Validation**: Use FluentValidation builders (`LocationReportValidator`, etc.) for any submission-related checks (spam, content, distance).
 7. **Decouple Post-Processing**: Use `IReportProcessingService` for non-blocking tasks that occur after a report is saved.
-8. **Update Tests**: Any logic change in services MUST be accompanied by a test update in `WhereAreThey.Tests`.
+8. **Inherit from `BaseService<T>`**: New business services for auditable entities should inherit from `BaseService<T>` to gain automatic soft-delete and admin filtering.
+9. **Use `OnEntityChanged`**: Prefer the generic `OnEntityChanged` event for UI updates unless specialized payload is required.
+10. **Update Tests**: Any logic change in services MUST be accompanied by a test update in `WhereAreThey.Tests`.
