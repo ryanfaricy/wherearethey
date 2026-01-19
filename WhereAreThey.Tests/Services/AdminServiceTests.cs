@@ -80,4 +80,33 @@ public class AdminServiceTests
         Assert.True(result.IsFailure);
         Assert.Contains("Too many failed login attempts", result.Error);
     }
+
+    [Fact]
+    public void NotifyAdminLogin_SetsCachedStatusAndTriggersEvent()
+    {
+        // Arrange
+        bool eventTriggered = false;
+        _service.OnAdminLogin += () => eventTriggered = true;
+
+        // Act
+        _service.NotifyAdminLogin();
+
+        // Assert
+        Assert.True(eventTriggered);
+    }
+
+    [Fact]
+    public void NotifyAdminLogout_ResetsCachedStatusAndTriggersEvent()
+    {
+        // Arrange
+        bool eventTriggered = false;
+        _service.OnAdminLogout += () => eventTriggered = true;
+        _service.NotifyAdminLogin(); // Set it to true first
+
+        // Act
+        _service.NotifyAdminLogout();
+
+        // Assert
+        Assert.True(eventTriggered);
+    }
 }
