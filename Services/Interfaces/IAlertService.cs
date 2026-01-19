@@ -53,7 +53,6 @@ public interface IAlertService
     /// <returns>A list of active alerts.</returns>
     Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true);
 
-
     /// <summary>
     /// Updates an existing alert.
     /// </summary>
