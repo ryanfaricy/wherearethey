@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Square;
@@ -13,7 +14,8 @@ namespace WhereAreThey.Services;
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
-    IOptions<SquareOptions> squareOptions) : BaseService<Donation>(contextFactory, eventService), IDonationService
+    IOptions<SquareOptions> squareOptions,
+    IValidator<Donation> validator) : BaseService<Donation>(contextFactory, eventService), IDonationService
 {
     private readonly SquareOptions _options = squareOptions.Value;
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
@@ -39,15 +41,29 @@ public class DonationService(
 
         return result;
     }
+
     /// <inheritdoc />
-    public async Task<Donation> RecordDonationAsync(Donation donation)
+    public async Task<Result<Donation>> CreateDonationAsync(Donation donation)
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        donation.CreatedAt = DateTime.UtcNow;
-        context.Donations.Add(donation);
-        await context.SaveChangesAsync();
-        EventService.NotifyEntityChanged(donation, EntityChangeType.Added);
-        return donation;
+        try
+        {
+            var validationResult = await validator.ValidateAsync(donation);
+            if (!validationResult.IsValid)
+            {
+                return Result<Donation>.Failure(validationResult);
+            }
+
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            donation.CreatedAt = DateTime.UtcNow;
+            context.Donations.Add(donation);
+            await context.SaveChangesAsync();
+            EventService.NotifyEntityChanged(donation, EntityChangeType.Added);
+            return Result<Donation>.Success(donation);
+        }
+        catch (Exception ex)
+        {
+            return Result<Donation>.Failure($"An error occurred while recording the donation: {ex.Message}");
+        }
     }
 
     /// <inheritdoc />
@@ -81,6 +97,12 @@ public class DonationService(
     {
         try
         {
+            var validationResult = await validator.ValidateAsync(donation);
+            if (!validationResult.IsValid)
+            {
+                return Result.Failure(validationResult);
+            }
+
             await using var context = await ContextFactory.CreateDbContextAsync();
             var existing = await context.Donations
                 .IgnoreQueryFilters()
@@ -91,11 +113,12 @@ public class DonationService(
             }
 
             existing.Amount = donation.Amount;
-            existing.DonorName = donation.DonorName;
-            existing.DonorEmail = donation.DonorEmail;
-            existing.Status = donation.Status;
+            existing.CreatedAt = donation.CreatedAt;
             existing.Currency = donation.Currency;
             existing.DeletedAt = donation.DeletedAt;
+            existing.DonorEmail = donation.DonorEmail;
+            existing.DonorName = donation.DonorName;
+            existing.Status = donation.Status;
 
             await context.SaveChangesAsync();
             EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);

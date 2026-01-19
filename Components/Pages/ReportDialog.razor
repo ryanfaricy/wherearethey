@@ -162,7 +162,7 @@
         _isSubmitting = true;
         try
         {
-            var addResult = await ReportService.AddReportAsync(Report);
+            var addResult = await ReportService.CreateReportAsync(Report);
             if (addResult.IsSuccess)
             {
                 await ClearDraft();

@@ -8,11 +8,11 @@ namespace WhereAreThey.Services.Interfaces;
 public interface IReportService
 {
     /// <summary>
-    /// Adds a new location report.
+    /// Creates a new location report.
     /// </summary>
-    /// <param name="report">The report to add.</param>
-    /// <returns>A Result containing the added report or an error message.</returns>
-    Task<Result<LocationReport>> AddReportAsync(LocationReport report);
+    /// <param name="report">The report to create.</param>
+    /// <returns>A Result containing the created report or an error message.</returns>
+    Task<Result<LocationReport>> CreateReportAsync(LocationReport report);
 
     /// <summary>
     /// Gets a report by its external identifier.

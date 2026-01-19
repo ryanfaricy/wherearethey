@@ -13,15 +13,27 @@ public class FeedbackService(
     IValidator<Feedback> validator) : BaseService<Feedback>(contextFactory, eventService), IFeedbackService
 {
     /// <inheritdoc />
-    public async Task AddFeedbackAsync(Feedback feedback)
+    public async Task<Result<Feedback>> CreateFeedbackAsync(Feedback feedback)
     {
-        await validator.ValidateAndThrowAsync(feedback);
+        try
+        {
+            var validationResult = await validator.ValidateAsync(feedback);
+            if (!validationResult.IsValid)
+            {
+                return Result<Feedback>.Failure(validationResult);
+            }
 
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        context.Feedbacks.Add(feedback);
-        await context.SaveChangesAsync();
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            context.Feedbacks.Add(feedback);
+            await context.SaveChangesAsync();
 
-        EventService.NotifyEntityChanged(feedback, EntityChangeType.Added);
+            EventService.NotifyEntityChanged(feedback, EntityChangeType.Added);
+            return Result<Feedback>.Success(feedback);
+        }
+        catch (Exception ex)
+        {
+            return Result<Feedback>.Failure($"An error occurred while creating feedback: {ex.Message}");
+        }
     }
 
     /// <inheritdoc />
@@ -31,9 +43,9 @@ public class FeedbackService(
     }
 
     /// <inheritdoc />
-    public async Task DeleteFeedbackAsync(int id)
+    public async Task<Result> DeleteFeedbackAsync(int id)
     {
-        await SoftDeleteAsync(id);
+        return await SoftDeleteAsync(id);
     }
 
     /// <inheritdoc />
@@ -41,22 +53,31 @@ public class FeedbackService(
     {
         try
         {
-            await validator.ValidateAndThrowAsync(feedback);
+            var validationResult = await validator.ValidateAsync(feedback);
+            if (!validationResult.IsValid)
+            {
+                return Result.Failure(validationResult);
+            }
+
             await using var context = await ContextFactory.CreateDbContextAsync();
             var existing = await context.Feedbacks
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(f => f.Id == feedback.Id);
+            
             if (existing == null)
             {
                 return Result.Failure("Feedback not found.");
             }
 
-            existing.Type = feedback.Type;
-            existing.Message = feedback.Message;
-            existing.UserIdentifier = feedback.UserIdentifier;
+            existing.CreatedAt = feedback.CreatedAt;
             existing.DeletedAt = feedback.DeletedAt;
+            existing.Message = feedback.Message;
+            existing.Type = feedback.Type;
+            existing.UserIdentifier = feedback.UserIdentifier;
 
             await context.SaveChangesAsync();
+            
+            // Notify global event bus
             EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
             return Result.Success();
         }

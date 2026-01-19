@@ -272,17 +272,20 @@ public class AlertService(
             var existing = await context.Alerts
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(a => a.Id == alert.Id);
+            
             if (existing == null)
             {
                 return Result.Failure("Alert not found.");
             }
 
-            existing.Latitude = alert.Latitude;
-            existing.Longitude = alert.Longitude;
-            existing.RadiusKm = alert.RadiusKm;
-            existing.Message = alert.Message;
+            existing.CreatedAt = alert.CreatedAt;
             existing.DeletedAt = alert.DeletedAt;
             existing.IsVerified = alert.IsVerified;
+            existing.Latitude = alert.Latitude;
+            existing.Longitude = alert.Longitude;
+            existing.Message = alert.Message;
+            existing.RadiusKm = alert.RadiusKm;
+            existing.UserIdentifier = alert.UserIdentifier;
 
             if (!string.IsNullOrEmpty(email))
             {

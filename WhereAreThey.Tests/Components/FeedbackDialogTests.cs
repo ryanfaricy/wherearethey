@@ -19,6 +19,9 @@ public class FeedbackDialogTests : ComponentTestBase
         _feedbackServiceMock = new Mock<IFeedbackService>();
         _hapticServiceMock = new Mock<IHapticFeedbackService>();
         
+        _feedbackServiceMock.Setup(s => s.CreateFeedbackAsync(It.IsAny<Feedback>()))
+            .ReturnsAsync(Result<Feedback>.Success(new Feedback()));
+
         // Use real Radzen services instead of mocks to avoid constructor issues
         // They are already registered by AddRadzenComponents in ComponentTestBase
 
@@ -60,7 +63,7 @@ public class FeedbackDialogTests : ComponentTestBase
         await cut.InvokeAsync(() => form.Instance.Submit.InvokeAsync(new Feedback()));
 
         // Assert
-        _feedbackServiceMock.Verify(s => s.AddFeedbackAsync(It.Is<Feedback>(f => f.Message == "Test feedback message")), Times.Once);
+        _feedbackServiceMock.Verify(s => s.CreateFeedbackAsync(It.Is<Feedback>(f => f.Message == "Test feedback message")), Times.Once);
         _hapticServiceMock.Verify(s => s.VibrateSuccessAsync(), Times.Once);
     }
 
@@ -88,6 +91,6 @@ public class FeedbackDialogTests : ComponentTestBase
 
         // Assert
         Assert.EndsWith("/cp", nav.Uri);
-        _feedbackServiceMock.Verify(s => s.AddFeedbackAsync(It.IsAny<Feedback>()), Times.Never);
+        _feedbackServiceMock.Verify(s => s.CreateFeedbackAsync(It.IsAny<Feedback>()), Times.Never);
     }
 }

@@ -103,7 +103,7 @@ public class AntiSpamTests
         };
 
         // Act
-        var result = await service.AddReportAsync(report);
+        var result = await service.CreateReportAsync(report);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -137,8 +137,8 @@ public class AntiSpamTests
         };
 
         // Act
-        await service.AddReportAsync(report1);
-        var result = await service.AddReportAsync(report2);
+        await service.CreateReportAsync(report1);
+        var result = await service.CreateReportAsync(report2);
         
         // Assert
         Assert.True(result.IsFailure);
@@ -164,7 +164,7 @@ public class AntiSpamTests
         };
 
         // Act
-        var result = await service.AddReportAsync(report);
+        var result = await service.CreateReportAsync(report);
 
         // Assert
         Assert.True(result.IsFailure);
@@ -247,9 +247,9 @@ public class AntiSpamTests
         
         // Check cooldown
         var report = new LocationReport { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
-        await service.AddReportAsync(report);
+        await service.CreateReportAsync(report);
         
-        var resultCooldown = await service.AddReportAsync(report);
+        var resultCooldown = await service.CreateReportAsync(report);
         Assert.True(resultCooldown.IsFailure);
         Assert.Contains("10 minutes", resultCooldown.Error);
 
@@ -260,7 +260,7 @@ public class AntiSpamTests
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
             CreatedAt = DateTime.UtcNow,
         };
-        var resultDist = await service.AddReportAsync(farReport);
+        var resultDist = await service.CreateReportAsync(farReport);
         Assert.True(resultDist.IsFailure);
         Assert.Contains("50.0 miles", resultDist.Error);
     }

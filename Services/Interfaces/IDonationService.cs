@@ -17,11 +17,11 @@ public interface IDonationService
     Task<CreatePaymentResponse> CreateSquarePaymentAsync(decimal amount, string sourceId);
 
     /// <summary>
-    /// Records a donation in the system.
+    /// Records a new donation in the system.
     /// </summary>
     /// <param name="donation">The donation details.</param>
-    /// <returns>The recorded donation.</returns>
-    Task<Donation> RecordDonationAsync(Donation donation);
+    /// <returns>A Result containing the recorded donation or an error message.</returns>
+    Task<Result<Donation>> CreateDonationAsync(Donation donation);
 
     /// <summary>
     /// Updates the status of a donation.

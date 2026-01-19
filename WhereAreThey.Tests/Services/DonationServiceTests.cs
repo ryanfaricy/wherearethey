@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -5,11 +6,14 @@ using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
+using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests.Services;
 
 public class DonationServiceTests
 {
+    private readonly IValidator<Donation> _validator = new DonationValidator();
+
     private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -37,13 +41,13 @@ public class DonationServiceTests
     }
 
     [Fact]
-    public async Task RecordDonation_ShouldSaveDonation()
+    public async Task CreateDonation_ShouldSaveDonation()
     {
         // Arrange
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        IDonationService service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper());
+        IDonationService service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -52,15 +56,16 @@ public class DonationServiceTests
         };
 
         // Act
-        var result = await service.RecordDonationAsync(donation);
+        var result = await service.CreateDonationAsync(donation);
 
         // Assert
-        Assert.NotEqual(0, result.Id);
-        Assert.Equal(25.00m, result.Amount);
-        Assert.True(result.CreatedAt <= DateTime.UtcNow);
+        Assert.True(result.IsSuccess);
+        Assert.NotEqual(0, result.Value!.Id);
+        Assert.Equal(25.00m, result.Value.Amount);
+        Assert.True(result.Value.CreatedAt <= DateTime.UtcNow);
 
         await using var context = new ApplicationDbContext(options);
-        var saved = await context.Donations.FindAsync(result.Id);
+        var saved = await context.Donations.FindAsync(result.Value.Id);
         Assert.NotNull(saved);
         Assert.Equal("Test Donor", saved.DonorName);
     }
@@ -72,7 +77,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper());
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
         var piId = "pi_123";
 
         await using (var context = new ApplicationDbContext(options))
@@ -105,7 +110,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper());
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");
@@ -121,7 +126,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper());
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
 
         Donation initial;
         await using (var context = new ApplicationDbContext(options))

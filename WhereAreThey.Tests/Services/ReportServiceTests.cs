@@ -106,7 +106,7 @@ public class ReportServiceTests
         };
 
         // Act
-        var result = await service.AddReportAsync(report);
+        var result = await service.CreateReportAsync(report);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -134,7 +134,7 @@ public class ReportServiceTests
         };
 
         // Act
-        await service.AddReportAsync(report);
+        await service.CreateReportAsync(report);
 
         // Assert
         _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<LocationReport>(r => r.Message == report.Message), EntityChangeType.Added), Times.Once);
@@ -208,7 +208,7 @@ public class ReportServiceTests
         var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
 
         // Act
-        await service.AddReportAsync(report);
+        await service.CreateReportAsync(report);
 
         // Assert
         _backgroundJobClientMock.Verify(x => x.Create(
@@ -308,7 +308,7 @@ public class ReportServiceTests
         };
 
         // Act
-        await service.AddReportAsync(report);
+        await service.CreateReportAsync(report);
 
         // Wait for background task
         await Task.Delay(1000);

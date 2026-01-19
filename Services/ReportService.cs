@@ -17,7 +17,7 @@ public class ReportService(
     ILogger<ReportService> logger) : BaseService<LocationReport>(contextFactory, eventService), IReportService
 {
     /// <inheritdoc />
-    public async Task<Result<LocationReport>> AddReportAsync(LocationReport report)
+    public async Task<Result<LocationReport>> CreateReportAsync(LocationReport report)
     {
         try
         {
@@ -108,7 +108,26 @@ public class ReportService(
             }
 
             await using var context = await ContextFactory.CreateDbContextAsync();
-            context.LocationReports.Update(report);
+            var existing = await context.LocationReports
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(a => a.Id == report.Id);
+            
+            if (existing == null)
+            {
+                return Result.Failure("Report not found.");
+            }
+
+            existing.CreatedAt = report.CreatedAt;
+            existing.DeletedAt = report.DeletedAt;
+            existing.ExternalId = report.ExternalId;
+            existing.IsEmergency = report.IsEmergency;
+            existing.Latitude = report.Latitude;
+            existing.Longitude = report.Longitude;
+            existing.Message = report.Message;
+            existing.ReporterIdentifier = report.ReporterIdentifier;
+            existing.ReporterLatitude = report.ReporterLatitude;
+            existing.ReporterLongitude = report.ReporterLongitude;
+            
             await context.SaveChangesAsync();
             
             // Notify global event bus

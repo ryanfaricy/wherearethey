@@ -85,10 +85,18 @@
             }
 
             _feedback.UserIdentifier = _userIdentifier;
-            await FeedbackService.AddFeedbackAsync(_feedback);
-            await HapticFeedbackService.VibrateSuccessAsync();
-            NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
-            DialogService.Close(true);
+            var result = await FeedbackService.CreateFeedbackAsync(_feedback);
+            if (result.IsSuccess)
+            {
+                await HapticFeedbackService.VibrateSuccessAsync();
+                NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], result.Error ?? "Unknown error");
+            }
         }
         catch (Exception ex)
         {

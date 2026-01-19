@@ -67,7 +67,7 @@ public class FeedbackTests
     }
 
     [Fact]
-    public async Task AddFeedback_ShouldSucceed_WhenValid()
+    public async Task CreateFeedback_ShouldSucceed_WhenValid()
     {
         // Arrange
         var options = CreateOptions();
@@ -81,16 +81,17 @@ public class FeedbackTests
         };
 
         // Act
-        await service.AddFeedbackAsync(feedback);
+        var result = await service.CreateFeedbackAsync(feedback);
 
         // Assert
+        Assert.True(result.IsSuccess);
         var all = await service.GetAllFeedbackAsync();
         Assert.Single(all);
         Assert.Equal("Test message", all[0].Message);
     }
 
     [Fact]
-    public async Task AddFeedback_ShouldFail_WhenTooFrequent()
+    public async Task CreateFeedback_ShouldFail_WhenTooFrequent()
     {
         // Arrange
         var options = CreateOptions();
@@ -100,15 +101,16 @@ public class FeedbackTests
         var feedback2 = new Feedback { Type = "Bug", Message = "Msg 2", UserIdentifier = "UserA" };
 
         // Act
-        await service.AddFeedbackAsync(feedback1);
+        await service.CreateFeedbackAsync(feedback1);
+        var result = await service.CreateFeedbackAsync(feedback2);
         
         // Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddFeedbackAsync(feedback2));
-        Assert.Contains("5 minutes", ex.Message);
+        Assert.True(result.IsFailure);
+        Assert.Contains("5 minutes", result.Error);
     }
 
     [Fact]
-    public async Task AddFeedback_ShouldFail_WhenMessageContainsLinks()
+    public async Task CreateFeedback_ShouldFail_WhenMessageContainsLinks()
     {
         // Arrange
         var options = CreateOptions();
@@ -121,9 +123,12 @@ public class FeedbackTests
             UserIdentifier = "UserA",
         };
 
-        // Act & Assert
-        var ex = await Assert.ThrowsAsync<ValidationException>(() => service.AddFeedbackAsync(feedback));
-        Assert.Contains("Links are not allowed", ex.Message);
+        // Act
+        var result = await service.CreateFeedbackAsync(feedback);
+
+        // Assert
+        Assert.True(result.IsFailure);
+        Assert.Contains("Links are not allowed", result.Error);
     }
 
     [Fact]
@@ -135,7 +140,7 @@ public class FeedbackTests
         var service = CreateService(factory);
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
-        await service.AddFeedbackAsync(feedback);
+        await service.CreateFeedbackAsync(feedback);
         var added = (await service.GetAllFeedbackAsync())[0];
 
         // Act
@@ -148,7 +153,7 @@ public class FeedbackTests
     }
 
     [Fact]
-    public async Task AddFeedback_ShouldSucceed_WhenAutoReportedContainsLinks()
+    public async Task CreateFeedback_ShouldSucceed_WhenAutoReportedContainsLinks()
     {
         // Arrange
         var options = CreateOptions();
@@ -162,15 +167,16 @@ public class FeedbackTests
         };
 
         // Act
-        await service.AddFeedbackAsync(feedback);
+        var result = await service.CreateFeedbackAsync(feedback);
 
         // Assert
+        Assert.True(result.IsSuccess);
         var all = await service.GetAllFeedbackAsync();
         Assert.Single(all);
     }
 
     [Fact]
-    public async Task AddFeedback_ShouldSucceed_WhenAutoReportedIsFrequent()
+    public async Task CreateFeedback_ShouldSucceed_WhenAutoReportedIsFrequent()
     {
         // Arrange
         var options = CreateOptions();
@@ -180,8 +186,8 @@ public class FeedbackTests
         var feedback2 = new Feedback { Type = "Bug", Message = "[AUTO-REPORTED] Error 2", UserIdentifier = "system" };
 
         // Act
-        await service.AddFeedbackAsync(feedback1);
-        await service.AddFeedbackAsync(feedback2);
+        await service.CreateFeedbackAsync(feedback1);
+        await service.CreateFeedbackAsync(feedback2);
 
         // Assert
         var all = await service.GetAllFeedbackAsync();

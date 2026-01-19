@@ -8,10 +8,11 @@ namespace WhereAreThey.Services.Interfaces;
 public interface IFeedbackService
 {
     /// <summary>
-    /// Adds a new feedback entry.
+    /// Creates a new feedback entry.
     /// </summary>
     /// <param name="feedback">The feedback details.</param>
-    Task AddFeedbackAsync(Feedback feedback);
+    /// <returns>A Result containing the created feedback or an error message.</returns>
+    Task<Result<Feedback>> CreateFeedbackAsync(Feedback feedback);
 
     /// <summary>
     /// Gets all feedback entries for administrative review.
@@ -23,7 +24,8 @@ public interface IFeedbackService
     /// Deletes a feedback entry.
     /// </summary>
     /// <param name="id">The internal ID of the feedback entry.</param>
-    Task DeleteFeedbackAsync(int id);
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> DeleteFeedbackAsync(int id);
 
     /// <summary>
     /// Updates a feedback entry.

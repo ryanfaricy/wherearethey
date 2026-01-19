@@ -181,23 +181,31 @@
             // 3. Record donation
             _donation.Status = "completed";
             _donation.ExternalPaymentId = response.Payment.Id;
-            await DonationService.RecordDonationAsync(_donation);
+            var recordResult = await DonationService.CreateDonationAsync(_donation);
 
-            NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
-            await HapticFeedbackService.VibrateSuccessAsync();
-            
-            var displayName = string.IsNullOrWhiteSpace(_donation.DonorName) ? "Anonymous" : _donation.DonorName;
-            _recentDonations.Insert(0, new DonationDisplay 
-            { 
-                DisplayName = displayName, 
-                Amount = _donation.Amount, 
-                TimeAgo = "just now",
-            });
+            if (recordResult.IsSuccess)
+            {
+                NotificationService.Notify(NotificationSeverity.Success, L["Donation_Success"]);
+                await HapticFeedbackService.VibrateSuccessAsync();
+                
+                var displayName = string.IsNullOrWhiteSpace(_donation.DonorName) ? "Anonymous" : _donation.DonorName;
+                _recentDonations.Insert(0, new DonationDisplay 
+                { 
+                    DisplayName = displayName, 
+                    Amount = _donation.Amount, 
+                    TimeAgo = "just now",
+                });
 
-            _donation = new Donation { Amount = 10 };
-            
-            // Close the dialog after successful payment
-            DialogService.Close(true);
+                _donation = new Donation { Amount = 10 };
+                
+                // Close the dialog after successful payment
+                DialogService.Close(true);
+            }
+            else
+            {
+                await HapticFeedbackService.VibrateErrorAsync();
+                NotificationService.Notify(NotificationSeverity.Error, "Recording failed", recordResult.Error ?? "Unknown error");
+            }
         }
         catch (Exception ex)
         {
