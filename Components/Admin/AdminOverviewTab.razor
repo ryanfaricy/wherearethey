@@ -51,7 +51,7 @@
 <RadzenText TextStyle="TextStyle.H6" Class="rz-mt-4 rz-mb-2">Recent Login Attempts</RadzenText>
 @if (IsMobile)
 {
-    <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt">
+    <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowPaging="true" PageSize="10">
         <Template Context="attempt">
             <RadzenCard Class="@($"app-card {(attempt.IsSuccessful ? "app-card-success" : "app-card-danger")}")">
                 <RadzenStack Gap="0.5rem">

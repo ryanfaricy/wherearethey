@@ -11,7 +11,7 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10" WrapItems="true">
+    <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10">
         <Template Context="report">
             <RadzenCard Class="@($"app-card {(report.IsEmergency ? "app-card-danger" : "app-card-info")}")">
                 <RadzenStack Gap="0.5rem">

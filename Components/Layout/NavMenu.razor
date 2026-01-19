@@ -55,6 +55,7 @@
     {
         _systemSettings = await SettingsService.GetSettingsAsync();
         AdminService.OnAdminLogin += HandleAdminLogin;
+        AdminService.OnAdminLogout += HandleAdminLogout;
         MapState.OnStateChanged += HandleMapStateChanged;
         ClientLocation.OnStateChanged += HandleLocationChanged;
     }
@@ -62,6 +63,18 @@
     private void HandleAdminLogin()
     {
         _showAdminShortcut = true;
+        InvokeAsync(async () =>
+        {
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
+            await MapState.LoadReportsAsync();
+            StateHasChanged();
+        });
+    }
+
+    private void HandleAdminLogout()
+    {
+        _showAdminShortcut = false;
         InvokeAsync(async () =>
         {
             _isAdmin = await AdminService.IsAdminAsync();
@@ -115,6 +128,7 @@
     public void Dispose()
     {
         AdminService.OnAdminLogin -= HandleAdminLogin;
+        AdminService.OnAdminLogout -= HandleAdminLogout;
         MapState.OnStateChanged -= HandleMapStateChanged;
         ClientLocation.OnStateChanged -= HandleLocationChanged;
     }

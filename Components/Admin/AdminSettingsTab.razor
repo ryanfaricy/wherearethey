@@ -62,7 +62,7 @@
             {
                 @if (IsMobile)
                 {
-                    <RadzenDataList Data="@_passkeys" TItem="AdminPasskey">
+                    <RadzenDataList Data="@_passkeys" TItem="AdminPasskey" AllowPaging="true" PageSize="10">
                         <Template Context="key">
                             <RadzenCard Class="app-card app-card-info">
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">

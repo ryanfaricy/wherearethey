@@ -40,7 +40,7 @@
                         </RadzenText>
 
                         <div style="max-height: 400px; overflow-y: auto;">
-                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="Report">
+                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="Report" AllowPaging="true" PageSize="10">
                                 <Template Context="r">
                                     <ReportCard Report="@r" 
                                                 IsSelected="@(r.Id == SelectedReportId)"
@@ -68,7 +68,7 @@
                     @if (Alerts.Any())
                     {
                         <div style="max-height: 300px; overflow-y: auto;">
-                            <RadzenDataList Data="@Alerts" TItem="Alert">
+                            <RadzenDataList Data="@Alerts" TItem="Alert" AllowPaging="true" PageSize="10">
                                 <Template Context="a">
                                     <AlertCard Alert="@a" 
                                                IsSelected="@(a.Id == SelectedAlertId)"

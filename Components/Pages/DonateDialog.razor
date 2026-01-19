@@ -85,7 +85,7 @@
             <RadzenTabsItem Text="@L["Recent"]">
                 @if (_recentDonations.Any())
                 {
-                    <RadzenDataList Data="@_recentDonations" TItem="DonationDisplay" PageSize="4">
+                    <RadzenDataList Data="@_recentDonations" TItem="DonationDisplay" AllowPaging="true" PageSize="5">
                         <Template Context="d">
                             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center" Class="rz-mb-2 rz-p-2 rz-border-radius-2" Style="background-color: var(--rz-success-lighter);">
                                 <RadzenStack Gap="0">

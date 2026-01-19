@@ -176,6 +176,10 @@ public class MapStateService : IMapStateService
     {
         _userIdentifier = userIdentifier;
         _isAdmin = isAdmin;
+        if (!_isAdmin)
+        {
+            _showDeleted = false;
+        }
         await LoadAlertsAsync();
     }
 

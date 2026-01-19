@@ -9,7 +9,7 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Feedback" AllowPaging="true" PageSize="10" WrapItems="true">
+    <RadzenDataList Data="@Items" TItem="Feedback" AllowPaging="true" PageSize="10">
         <Template Context="feedback">
             <RadzenCard Class="@($"app-card {(feedback.Type == "Bug" ? "app-card-danger" : "app-card-info")}")">
                 <RadzenStack Gap="0.5rem">

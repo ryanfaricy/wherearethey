@@ -326,6 +326,21 @@ public class MapStateServiceTests : IDisposable
         _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Never);
     }
 
+    [Fact]
+    public async Task InitializeAsync_ResetShowDeleted_WhenNotAdmin()
+    {
+        // Arrange
+        _service.ShowDeleted = true;
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        Assert.True(_service.ShowDeleted);
+
+        // Act
+        await _service.InitializeAsync("test-user", isAdmin: false);
+
+        // Assert
+        Assert.False(_service.ShowDeleted);
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);
