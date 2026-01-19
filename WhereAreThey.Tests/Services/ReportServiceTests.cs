@@ -22,11 +22,13 @@ public class ReportServiceTests
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
+    private readonly Mock<IBaseUrlProvider> _baseUrlProviderMock = new();
     private readonly Mock<IAdminService> _adminServiceMock = new();
 
     public ReportServiceTests()
     {
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+        _baseUrlProviderMock.Setup(x => x.GetBaseUrl()).Returns("https://test.com");
     }
 
     private static IStringLocalizer<App> CreateLocalizer()
@@ -84,7 +86,7 @@ public class ReportServiceTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new ReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
-        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, _baseUrlProviderMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]
@@ -256,6 +258,7 @@ public class ReportServiceTests
             sp.GetRequiredService<IEmailService>(), 
             sp.GetRequiredService<IBackgroundJobClient>(), 
             _eventServiceMock.Object, 
+            _baseUrlProviderMock.Object,
             sp.GetRequiredService<IOptions<AppOptions>>(), 
             sp.GetRequiredService<IEmailTemplateService>(),
             new Mock<ILogger<AlertService>>().Object, 
@@ -272,7 +275,7 @@ public class ReportServiceTests
                 task.GetAwaiter().GetResult();
             });
 
-        var service = new ReportService(factory, backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, reportValidator, new Mock<ILogger<ReportService>>().Object);
+        var service = new ReportService(factory, backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, _baseUrlProviderMock.Object, reportValidator, new Mock<ILogger<ReportService>>().Object);
         var alertService = serviceProvider.GetRequiredService<IAlertService>();
         
         // User B sets up an alert

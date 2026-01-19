@@ -1,8 +1,10 @@
-@using System.Globalization
+﻿@using System.Globalization
 @using Microsoft.Extensions.Options
 @using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
 @inject IOptions<AppOptions> AppOptions
 @inject IOptions<SquareOptions> SquareOptions
+@inject IBaseUrlProvider BaseUrlProvider
 <!DOCTYPE html>
 <html lang="@CultureInfo.CurrentCulture.TwoLetterISOLanguageName">
 
@@ -122,14 +124,14 @@
     <!-- Social Media Meta Tags -->
     <meta property="og:title" content="AreTheyHere - Live Heat Map"/>
     <meta property="og:description" content="Live anonymous incident reporting and heat map."/>
-    <meta property="og:image" content="@(AppOptions.Value.BaseUrl.TrimEnd('/'))/favicon.png"/>
+    <meta property="og:image" content="@($"{BaseUrlProvider.GetBaseUrl()}/favicon.png")"/>
     <meta property="og:type" content="website"/>
-    <meta property="og:url" content="@AppOptions.Value.BaseUrl"/>
+    <meta property="og:url" content="@BaseUrlProvider.GetBaseUrl()"/>
 
     <meta name="twitter:card" content="summary"/>
     <meta name="twitter:title" content="AreTheyHere - Live Heat Map"/>
     <meta name="twitter:description" content="Live anonymous incident reporting and heat map."/>
-    <meta name="twitter:image" content="@(AppOptions.Value.BaseUrl.TrimEnd('/'))/favicon.png"/>
+    <meta name="twitter:image" content="@($"{BaseUrlProvider.GetBaseUrl()}/favicon.png")"/>
 
     <HeadOutlet @rendermode="InteractiveServer"/>
 </head>

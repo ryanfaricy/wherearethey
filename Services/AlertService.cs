@@ -16,6 +16,7 @@ public class AlertService(
     IEmailService emailService,
     IBackgroundJobClient backgroundJobClient,
     IEventService eventService,
+    IBaseUrlProvider baseUrlProvider,
     IOptions<AppOptions> appOptions,
     IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
@@ -59,7 +60,8 @@ public class AlertService(
             
             if (!alert.IsVerified)
             {
-                backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash));
+                var baseUrl = baseUrlProvider.GetBaseUrl();
+                backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
 
             return Result<Alert>.Success(alert);
@@ -73,7 +75,7 @@ public class AlertService(
 
 
     /// <inheritdoc />
-    public async Task<Result> SendVerificationEmailAsync(string email, string emailHash)
+    public async Task<Result> SendVerificationEmailAsync(string email, string emailHash, string? baseUrl = null)
     {
         try
         {
@@ -97,8 +99,8 @@ public class AlertService(
                 return Result.Success(); // Already verified
             }
 
-            var baseUrl = appOptions.Value.BaseUrl;
-            var verificationLink = $"{baseUrl}/verify-email?token={verification.Token}";
+            var actualBaseUrl = baseUrl ?? appOptions.Value.BaseUrl;
+            var verificationLink = $"{actualBaseUrl.TrimEnd('/')}/verify-email?token={verification.Token}";
 
             var subject = "Verify your email for alerts";
             var viewModel = new VerificationEmailViewModel { VerificationLink = verificationLink };

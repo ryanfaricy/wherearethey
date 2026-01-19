@@ -84,4 +84,34 @@ public class ReportProcessingServiceTests
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task ProcessReport_ShouldUseProvidedBaseUrl()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
+        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg" };
+        var customBaseUrl = "https://custom.com";
+
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+        _alertServiceMock.Setup(a => a.DecryptEmail(alert.EncryptedEmail)).Returns("test@example.com");
+        _geocodingServiceMock.Setup(g => g.ReverseGeocodeAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync("123 Test St");
+
+        _emailTemplateServiceMock.Setup(t => t.RenderTemplateAsync("AlertEmail", It.IsAny<AlertEmailViewModel>()))
+            .Callback<string, object>((_, model) => {
+                var viewModel = (AlertEmailViewModel)model;
+                Assert.StartsWith(customBaseUrl, viewModel.HeatMapUrl);
+            })
+            .ReturnsAsync("Rendered email body");
+
+        // Act
+        await service.ProcessReportAsync(report, customBaseUrl);
+
+        // Assert
+        _emailTemplateServiceMock.Verify(t => t.RenderTemplateAsync("AlertEmail", It.IsAny<AlertEmailViewModel>()), Times.Once);
+    }
 }

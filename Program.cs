@@ -160,6 +160,7 @@ builder.Services.AddScoped<IClientLocationService, ClientLocationService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IMapNavigationManager, MapNavigationManager>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
+builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IFido2>(sp =>
 {
     var appOptions = sp.GetRequiredService<IOptions<AppOptions>>().Value;
@@ -291,7 +292,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> applicationOptions, IHttpClientFactory httpClientFactory) => 
+app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> applicationOptions, IHttpClientFactory httpClientFactory, IBaseUrlProvider baseUrlProvider) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid))
     {
@@ -319,7 +320,7 @@ app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportServi
     var request = new HttpRequestMessage(HttpMethod.Get, mapboxUrl);
     
     // Use the BaseUrl as Referer as requested
-    var referer = applicationOptions.Value.BaseUrl;
+    var referer = baseUrlProvider.GetBaseUrl();
     request.Headers.Referrer = new Uri(referer);
 
     var response = await httpClient.SendAsync(request);

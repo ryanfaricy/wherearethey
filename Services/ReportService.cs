@@ -13,6 +13,7 @@ public class ReportService(
     IBackgroundJobClient backgroundJobClient,
     ISettingsService settingsService,
     IEventService eventService,
+    IBaseUrlProvider baseUrlProvider,
     IValidator<Report> validator,
     ILogger<ReportService> logger) : BaseService<Report>(contextFactory, eventService), IReportService
 {
@@ -39,8 +40,9 @@ public class ReportService(
 
             try
             {
+                var baseUrl = baseUrlProvider.GetBaseUrl();
                 // Enqueue background processing (geocoding, alerts) using Hangfire
-                backgroundJobClient.Enqueue<IReportProcessingService>(service => service.ProcessReportAsync(report));
+                backgroundJobClient.Enqueue<IReportProcessingService>(service => service.ProcessReportAsync(report, baseUrl));
             }
             catch (Exception ex)
             {

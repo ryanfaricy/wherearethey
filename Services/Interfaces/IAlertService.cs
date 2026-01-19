@@ -20,8 +20,9 @@ public interface IAlertService
     /// </summary>
     /// <param name="email">The email address to verify.</param>
     /// <param name="emailHash">The hash of the email address.</param>
+    /// <param name="baseUrl">The base URL for links in the email (optional).</param>
     /// <returns>A Result indicating success or failure.</returns>
-    Task<Result> SendVerificationEmailAsync(string email, string emailHash);
+    Task<Result> SendVerificationEmailAsync(string email, string emailHash, string? baseUrl = null);
 
     /// <summary>
     /// Verifies an email address using a token.

@@ -48,6 +48,7 @@ public class PersistenceTests
             new Mock<IEmailService>().Object,
             new Mock<IBackgroundJobClient>().Object,
             new Mock<IEventService>().Object,
+            new Mock<IBaseUrlProvider>().Object,
             Options.Create(new AppOptions()),
             new Mock<IEmailTemplateService>().Object,
             new Mock<ILogger<AlertService>>().Object,
@@ -97,6 +98,7 @@ public class PersistenceTests
             new Mock<IBackgroundJobClient>().Object,
             new Mock<ISettingsService>().Object,
             new Mock<IEventService>().Object,
+            new Mock<IBaseUrlProvider>().Object,
             validatorMock.Object,
             new Mock<ILogger<ReportService>>().Object
         );

@@ -17,7 +17,7 @@ public class ReportProcessingService(
     ILogger<ReportProcessingService> logger) : IReportProcessingService
 {
     /// <inheritdoc />
-    public async Task ProcessReportAsync(Report report)
+    public async Task ProcessReportAsync(Report report, string? baseUrl = null)
     {
         try
         {
@@ -25,7 +25,7 @@ public class ReportProcessingService(
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
-            var baseUrl = appOptions.Value.BaseUrl;
+            var actualBaseUrl = (baseUrl ?? appOptions.Value.BaseUrl).TrimEnd('/');
 
             // Approximate address
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
@@ -35,11 +35,11 @@ public class ReportProcessingService(
 
             // Map thumbnail
             var mapThumbnailHtml = "";
-            var heatMapUrl = $"{baseUrl}/?reportId={report.ExternalId}";
+            var heatMapUrl = $"{actualBaseUrl}/?reportId={report.ExternalId}";
 
             if (!string.IsNullOrEmpty(settings.MapboxToken))
             {
-                var mapUrl = $"{baseUrl}/api/map/proxy?reportId={report.ExternalId}";
+                var mapUrl = $"{actualBaseUrl}/api/map/proxy?reportId={report.ExternalId}";
                 mapThumbnailHtml = $"<p><a href='{heatMapUrl}'><img src='{mapUrl}' alt='Map Location' style='max-width: 100%; height: auto; border-radius: 8px;' /></a></p>";
             }
 

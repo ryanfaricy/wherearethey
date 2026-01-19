@@ -15,13 +15,15 @@ namespace WhereAreThey.Tests.Services;
 public class AntiSpamTests
 {
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
-    private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
     private readonly Mock<IAdminService> _adminServiceMock = new();
+    private readonly Mock<IBaseUrlProvider> _baseUrlProviderMock = new();
+    private readonly Mock<ILogger<ReportService>> _loggerMock = new();
 
     public AntiSpamTests()
     {
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+        _baseUrlProviderMock.Setup(x => x.GetBaseUrl()).Returns("https://test.com");
     }
 
     private static IStringLocalizer<App> CreateLocalizer()
@@ -82,7 +84,7 @@ public class AntiSpamTests
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
         var validator = new ReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
-        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
+        return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, _baseUrlProviderMock.Object, validator, _loggerMock.Object);
     }
 
     [Fact]

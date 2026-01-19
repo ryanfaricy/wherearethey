@@ -11,5 +11,6 @@ public interface IReportProcessingService
     /// Processes a report in the background.
     /// </summary>
     /// <param name="report">The report to process.</param>
-    Task ProcessReportAsync(Report report);
+    /// <param name="baseUrl">The base URL for links in notifications (optional).</param>
+    Task ProcessReportAsync(Report report, string? baseUrl = null);
 }
