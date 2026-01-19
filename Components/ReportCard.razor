@@ -120,9 +120,11 @@
         get
         {
             var attrs = new Dictionary<string, object>();
-            var classes = new List<string> { "app-card" };
-            
-            classes.Add(Report.IsEmergency ? "app-card-danger" : "app-card-info");
+            var classes = new List<string>
+            {
+                "app-card",
+                Report.IsEmergency ? "app-card-report-emergency" : "app-card-report",
+            };
 
             if (IsSelected)
             {

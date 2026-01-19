@@ -13,7 +13,7 @@
 {
     <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10">
         <Template Context="report">
-            <RadzenCard Class="@($"app-card {(report.IsEmergency ? "app-card-danger" : "app-card-info")}")">
+            <RadzenCard Class="@($"app-card {(report.IsEmergency ? "app-card-report-emergency" : "app-card-report")}")">
                 <RadzenStack Gap="0.5rem">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">

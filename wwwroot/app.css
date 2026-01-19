@@ -106,6 +106,15 @@ h1:focus {
     border-left: 4px solid var(--rz-info) !important;
 }
 
+.app-card-report {
+    border-left: 4px solid var(--rz-danger) !important;
+}
+
+.app-card-report-emergency {
+    border-left: 4px solid var(--rz-danger) !important;
+    background-color: var(--rz-danger-lighter) !important;
+}
+
 .app-card-danger {
     border-left: 4px solid var(--rz-danger) !important;
     background-color: var(--rz-danger-lighter) !important;
