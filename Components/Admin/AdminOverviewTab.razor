@@ -7,6 +7,7 @@
 @inject UserTimeZoneService TimeZoneService
 @inject UserConnectionService UserConnectionService
 @inject IEventService EventService
+@inject IMapStateService MapState
 @inject ILogger<AdminOverviewTab> Logger
 @using WhereAreThey.Models
 @using WhereAreThey.Services
@@ -101,55 +102,24 @@ else
         
         EventService.OnConnectionCountChanged += HandleConnectionCountChanged;
         EventService.OnEntityChanged += HandleEntityChanged;
+        MapState.OnStateChanged += HandleMapStateChanged;
+    }
+
+    private void HandleMapStateChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadData();
+            StateHasChanged();
+        });
     }
 
     private void HandleEntityChanged(object entity, EntityChangeType type)
     {
         InvokeAsync(async () =>
         {
-            if (type == EntityChangeType.Added)
-            {
-                if (entity is Report)
-                {
-                    _reportCount++;
-                }
-                else if (entity is Alert)
-                {
-                    _activeAlertCount++;
-                }
-                else if (entity is Donation donation && donation.IsSuccess())
-                {
-                    _donationCount++;
-                }
-                else if (entity is Feedback)
-                {
-                    _feedbackCount++;
-                }
-            }
-            else if (type == EntityChangeType.Deleted)
-            {
-                if (entity is Report)
-                {
-                    _reportCount--;
-                }
-                else if (entity is Alert)
-                {
-                    _activeAlertCount--;
-                }
-                else if (entity is Donation)
-                {
-                    _donationCount--;
-                }
-                else if (entity is Feedback)
-                {
-                    _feedbackCount--;
-                }
-            }
-            else if (type == EntityChangeType.Updated)
-            {
-                // For updates, it's safer to reload counts to handle status changes (e.g. donation success)
-                await LoadData();
-            }
+            // Always reload for consistency and to avoid complex logic around showDeleted
+            await LoadData();
             StateHasChanged();
         });
     }
@@ -158,17 +128,19 @@ else
     {
         try
         {
+            var showDeleted = MapState.ShowDeleted;
+
             var reports = await ReportService.GetAllReportsAsync();
-            _reportCount = reports.Count(r => r.DeletedAt == null);
+            _reportCount = reports.Count(r => showDeleted || r.DeletedAt == null);
             
             var alerts = await AlertService.GetAllAlertsAsync();
-            _activeAlertCount = alerts.Count(a => a.DeletedAt == null);
+            _activeAlertCount = alerts.Count(a => showDeleted || a.DeletedAt == null);
             
             var donations = await DonationService.GetAllDonationsAsync();
-            _donationCount = donations.Count(d => d.IsSuccess() && d.DeletedAt == null);
+            _donationCount = donations.Count(d => d.IsSuccess() && (showDeleted || d.DeletedAt == null));
             
             var feedbacks = await FeedbackService.GetAllFeedbackAsync();
-            _feedbackCount = feedbacks.Count(f => f.DeletedAt == null);
+            _feedbackCount = feedbacks.Count(f => showDeleted || f.DeletedAt == null);
             
             var logins = await AdminService.GetRecentLoginAttemptsAsync();
             _loginAttempts = logins.Take(5).ToList();
@@ -188,5 +160,6 @@ else
     {
         EventService.OnConnectionCountChanged -= HandleConnectionCountChanged;
         EventService.OnEntityChanged -= HandleEntityChanged;
+        MapState.OnStateChanged -= HandleMapStateChanged;
     }
 }
