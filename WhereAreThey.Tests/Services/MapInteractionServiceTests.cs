@@ -357,4 +357,44 @@ public class MapInteractionServiceTests : BunitContext
         // Assert
         Assert.False(dialogOpened);
     }
+
+    [Fact]
+    public async Task HandleMapClickAsync_IncludesExplicitReportId_EvenIfOutsideRadius()
+    {
+        // Arrange
+        var lat = 10.0;
+        var lng = 10.0;
+        var explicitReportId = 999;
+        var explicitReport = new Report { Id = explicitReportId, Latitude = 20.0, Longitude = 20.0 }; // Far away
+
+        _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15.0);
+        _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            .Returns(new List<Report>()); // None nearby
+        _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
+            .Returns(new List<Alert>()); // None nearby
+        _stateServiceMock.Setup(s => s.Alerts).Returns([]);
+        _stateServiceMock.Setup(s => s.Reports)
+            .Returns(new List<Report> { explicitReport });
+        
+        _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
+
+        var dialogOpened = false;
+        _dialogService.OnOpen += (title, type, parameters, options) =>
+        {
+            if (type == typeof(ReportDetailsDialog))
+            {
+                dialogOpened = true;
+                var reports = (List<Report>)parameters["Reports"];
+                Assert.Contains(reports, r => r.Id == explicitReportId);
+            }
+            _dialogService.Close();
+        };
+
+        // Act
+        var result = await _service.HandleMapClickAsync(lat, lng, isMarkerClick: false, reportId: explicitReportId);
+
+        // Assert
+        Assert.True(result);
+        Assert.True(dialogOpened);
+    }
 }

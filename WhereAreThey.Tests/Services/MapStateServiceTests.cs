@@ -348,6 +348,21 @@ public class MapStateServiceTests : IDisposable
         _service.Dispose();
     }
     [Fact]
+    public void AddReportToState_AddsReport_EvenIfOld()
+    {
+        // Arrange
+        var report = new Report { Id = 1, CreatedAt = DateTime.UtcNow.AddHours(-48), Latitude = 0, Longitude = 0 };
+        _service.Reports.Clear();
+
+        // Act
+        _service.AddReportToState(report);
+
+        // Assert
+        Assert.Single(_service.Reports);
+        Assert.Equal(1, _service.Reports[0].Id);
+    }
+
+    [Fact]
     public async Task MapStateService_ShouldBeThreadSafe_WhenHandlingManyEvents()
     {
         // Arrange

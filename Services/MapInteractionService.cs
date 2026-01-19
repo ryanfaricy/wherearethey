@@ -26,6 +26,16 @@ public class MapInteractionService(
 
         var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm);
         
+        // Ensure the explicitly requested report is included, even if coordinates are slightly off
+        if (reportId.HasValue && !nearbyReports.Any(r => r.Id == reportId.Value))
+        {
+            var report = stateService.Reports.FirstOrDefault(r => r.Id == reportId.Value);
+            if (report != null)
+            {
+                nearbyReports.Insert(0, report);
+            }
+        }
+
         // For alerts, we want to know if we are actually clicking "on" or "inside" one
         List<Alert> nearbyAlerts;
         if (isMarkerClick || alertId.HasValue)
@@ -40,6 +50,16 @@ public class MapInteractionService(
             nearbyAlerts = stateService.Alerts
                 .Where(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude) <= Math.Max(a.RadiusKm, 0.1))
                 .ToList();
+        }
+
+        // Ensure the explicitly requested alert is included
+        if (alertId.HasValue && !nearbyAlerts.Any(a => a.Id == alertId.Value))
+        {
+            var alert = stateService.Alerts.FirstOrDefault(a => a.Id == alertId.Value);
+            if (alert != null)
+            {
+                nearbyAlerts.Insert(0, alert);
+            }
         }
 
         // If we didn't hit anything (no alerts, no reports, and not a specific marker),

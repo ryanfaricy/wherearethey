@@ -317,17 +317,25 @@
     private async Task HandleFocusReportAsync(int reportId)
     {
         var report = MapState.Reports.FirstOrDefault(r => r.Id == reportId);
+        bool fetchedFromService = false;
         if (report == null)
         {
             var result = await ReportService.GetReportByIdAsync(reportId);
             if (result.IsSuccess)
             {
                 report = result.Value;
+                fetchedFromService = true;
             }
         }
 
         if (report != null)
         {
+            if (fetchedFromService)
+            {
+                // Force it into state and on the map so focusing and clicking works
+                MapState.AddReportToState(report);
+                await MapService.AddSingleReportAsync(report);
+            }
             await MapService.FocusReportAsync(report.Id, triggerClick: false);
             await MapInteraction.HandleMapClickAsync(report.Latitude, report.Longitude, isMarkerClick: true, reportId: report.Id);
         }

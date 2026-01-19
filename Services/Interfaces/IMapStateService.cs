@@ -62,4 +62,10 @@ public interface IMapStateService : IDisposable
     /// Finds alerts near a coordinate.
     /// </summary>
     List<Alert> FindNearbyAlerts(double lat, double lng, double radiusKm);
+
+    /// <summary>
+    /// Forcefully adds a report to the state, even if it doesn't meet visibility criteria.
+    /// Used for focusing specific reports from links.
+    /// </summary>
+    void AddReportToState(Report report);
 }

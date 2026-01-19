@@ -277,6 +277,20 @@ public class MapStateService : IMapStateService
             .ToList();
     }
 
+    /// <inheritdoc />
+    public void AddReportToState(Report report)
+    {
+        lock (_lock)
+        {
+            if (Reports.Any(r => r.Id == report.Id))
+            {
+                return;
+            }
+            Reports.Insert(0, report);
+        }
+        OnStateChanged?.Invoke();
+    }
+
     private void HandleEntityChanged(object entity, EntityChangeType type)
     {
         if (entity is Report report)
