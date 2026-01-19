@@ -6,7 +6,7 @@ namespace WhereAreThey.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options), IDataProtectionKeyContext
 {
-    public DbSet<LocationReport> LocationReports { get; set; }
+    public DbSet<Report> Reports { get; set; }
     public DbSet<Alert> Alerts { get; set; }
     public DbSet<EmailVerification> EmailVerifications { get; set; }
     public DbSet<Donation> Donations { get; set; }
@@ -20,6 +20,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         foreach (var entry in ChangeTracker.Entries<IAuditable>())
         {
+            if (entry.State == EntityState.Deleted)
+            {
+                entry.State = EntityState.Modified;
+                entry.Entity.DeletedAt = DateTime.UtcNow;
+            }
+
             if (entry.State == EntityState.Added)
             {
                 if (entry.Entity.CreatedAt == default)
@@ -51,12 +57,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<LocationReport>().HasQueryFilter(e => e.DeletedAt == null);
+        modelBuilder.Entity<Report>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Alert>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Donation>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Feedback>().HasQueryFilter(e => e.DeletedAt == null);
 
-        modelBuilder.Entity<LocationReport>(entity =>
+        modelBuilder.Entity<Report>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
@@ -66,6 +72,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(e => new { e.CreatedAt, e.DeletedAt, e.Latitude, e.Longitude });
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
+            entity.ToTable("Reports");
         });
 
         modelBuilder.Entity<Alert>(entity =>

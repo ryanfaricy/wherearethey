@@ -48,8 +48,8 @@ public class DatabaseCleanupServiceTests
         var now = DateTime.UtcNow;
         
         // 1. Reports
-        context.LocationReports.Add(new LocationReport { CreatedAt = now.AddDays(-31), Latitude = 0, Longitude = 0 }); // Old
-        context.LocationReports.Add(new LocationReport { CreatedAt = now.AddDays(-29), Latitude = 0, Longitude = 0 }); // New
+        context.Reports.Add(new Report { CreatedAt = now.AddDays(-31), Latitude = 0, Longitude = 0 }); // Old
+        context.Reports.Add(new Report { CreatedAt = now.AddDays(-29), Latitude = 0, Longitude = 0 }); // New
         
         // 2. Verifications
         context.EmailVerifications.Add(new EmailVerification { CreatedAt = now.AddHours(-25), EmailHash = "old", Token = "t1" }); // Old
@@ -77,7 +77,7 @@ public class DatabaseCleanupServiceTests
         await service.PublicCleanupDatabaseAsync();
 
         // Assert
-        Assert.Equal(1, await context.LocationReports.IgnoreQueryFilters().CountAsync());
+        Assert.Equal(1, await context.Reports.IgnoreQueryFilters().CountAsync());
         Assert.Equal(2, await context.EmailVerifications.CountAsync()); // One new, one old-but-verified
         Assert.Equal(2, await context.Alerts.IgnoreQueryFilters().CountAsync());
         Assert.Equal(1, await context.AdminLoginAttempts.CountAsync());

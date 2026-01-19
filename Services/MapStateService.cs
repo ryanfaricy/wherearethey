@@ -20,7 +20,7 @@ public class MapStateService : IMapStateService
     private int? _lastLoadedHours;
 
     /// <inheritdoc />
-    public List<LocationReport> Reports { get; private set; } = [];
+    public List<Report> Reports { get; private set; } = [];
 
     /// <inheritdoc />
     public List<Alert> Alerts { get; private set; } = [];
@@ -144,7 +144,7 @@ public class MapStateService : IMapStateService
     }
 
     /// <inheritdoc />
-    public List<LocationReport> FindNearbyReports(double lat, double lng, double radiusKm)
+    public List<Report> FindNearbyReports(double lat, double lng, double radiusKm)
     {
         return Reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= radiusKm)
@@ -162,7 +162,7 @@ public class MapStateService : IMapStateService
 
     private void HandleEntityChanged(object entity, EntityChangeType type)
     {
-        if (entity is LocationReport report)
+        if (entity is Report report)
         {
             switch (type)
             {
@@ -194,7 +194,7 @@ public class MapStateService : IMapStateService
         }
     }
 
-    private void HandleReportAdded(LocationReport report)
+    private void HandleReportAdded(Report report)
     {
         if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
         {
@@ -209,7 +209,7 @@ public class MapStateService : IMapStateService
         OnStateChanged?.Invoke();
     }
 
-    private void HandleReportUpdated(LocationReport report)
+    private void HandleReportUpdated(Report report)
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
         
@@ -244,7 +244,7 @@ public class MapStateService : IMapStateService
         OnStateChanged?.Invoke();
     }
 
-    private async Task UpdateReportOnMap(LocationReport report)
+    private async Task UpdateReportOnMap(Report report)
     {
         if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
         {

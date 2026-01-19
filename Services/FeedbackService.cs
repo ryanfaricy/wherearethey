@@ -51,39 +51,12 @@ public class FeedbackService(
     /// <inheritdoc />
     public async Task<Result> UpdateFeedbackAsync(Feedback feedback)
     {
-        try
+        var validationResult = await validator.ValidateAsync(feedback);
+        if (!validationResult.IsValid)
         {
-            var validationResult = await validator.ValidateAsync(feedback);
-            if (!validationResult.IsValid)
-            {
-                return Result.Failure(validationResult);
-            }
-
-            await using var context = await ContextFactory.CreateDbContextAsync();
-            var existing = await context.Feedbacks
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(f => f.Id == feedback.Id);
-            
-            if (existing == null)
-            {
-                return Result.Failure("Feedback not found.");
-            }
-
-            existing.CreatedAt = feedback.CreatedAt;
-            existing.DeletedAt = feedback.DeletedAt;
-            existing.Message = feedback.Message;
-            existing.Type = feedback.Type;
-            existing.UserIdentifier = feedback.UserIdentifier;
-
-            await context.SaveChangesAsync();
-            
-            // Notify global event bus
-            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
-            return Result.Success();
+            return Result.Failure(validationResult);
         }
-        catch (Exception ex)
-        {
-            return Result.Failure($"An error occurred while updating feedback: {ex.Message}");
-        }
+
+        return await UpdateAsync(feedback);
     }
 }

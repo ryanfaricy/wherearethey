@@ -109,7 +109,7 @@ else
         {
             if (type == EntityChangeType.Added)
             {
-                if (entity is LocationReport)
+                if (entity is Report)
                 {
                     _reportCount++;
                 }
@@ -128,7 +128,7 @@ else
             }
             else if (type == EntityChangeType.Deleted)
             {
-                if (entity is LocationReport)
+                if (entity is Report)
                 {
                     _reportCount--;
                 }

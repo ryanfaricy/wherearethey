@@ -53,14 +53,14 @@ public class LocationServiceTests
         var centerLat = 40.7128;
         var centerLon = -74.0060;
         
-        var nearReport = new LocationReport
+        var nearReport = new Report
         {
             Latitude = 40.7580, // ~5 km away
             Longitude = -73.9855,
             CreatedAt = DateTime.UtcNow,
         };
         
-        var farReport = new LocationReport
+        var farReport = new Report
         {
             Latitude = 42.3601, // ~200 km away
             Longitude = -71.0589,
@@ -69,8 +69,8 @@ public class LocationServiceTests
 
         await using (var context = new ApplicationDbContext(options))
         {
-            context.LocationReports.Add(nearReport);
-            context.LocationReports.Add(farReport);
+            context.Reports.Add(nearReport);
+            context.Reports.Add(farReport);
             await context.SaveChangesAsync();
         }
 
@@ -95,13 +95,13 @@ public class LocationServiceTests
 
         // Point inside roughly 10km north
         // 1 degree lat approx 111km -> 10km is ~0.09 degrees
-        var insideRadius = new LocationReport { Latitude = 40.0 + (9.9 / 111.0), Longitude = -74.0, CreatedAt = DateTime.UtcNow };
-        var justOutsideRadius = new LocationReport { Latitude = 40.0 + (10.2 / 111.0), Longitude = -74.0, CreatedAt = DateTime.UtcNow };
+        var insideRadius = new Report { Latitude = 40.0 + (9.9 / 111.0), Longitude = -74.0, CreatedAt = DateTime.UtcNow };
+        var justOutsideRadius = new Report { Latitude = 40.0 + (10.2 / 111.0), Longitude = -74.0, CreatedAt = DateTime.UtcNow };
 
         await using (var context = new ApplicationDbContext(options))
         {
-            context.LocationReports.Add(insideRadius);
-            context.LocationReports.Add(justOutsideRadius);
+            context.Reports.Add(insideRadius);
+            context.Reports.Add(justOutsideRadius);
             await context.SaveChangesAsync();
         }
 

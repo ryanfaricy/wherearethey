@@ -4,10 +4,10 @@ namespace WhereAreThey.Services.Interfaces;
 
 public interface IMapService
 {
-    Task InitMapAsync(string elementId, double initialLat, double initialLng, List<LocationReport> reports, object objRef, List<Alert> alerts, object translations, bool isAdmin = false);
-    Task UpdateHeatMapAsync(List<LocationReport> reports, bool shouldFitBounds = true);
+    Task InitMapAsync(string elementId, double initialLat, double initialLng, List<Report> reports, object objRef, List<Alert> alerts, object translations, bool isAdmin = false);
+    Task UpdateHeatMapAsync(List<Report> reports, bool shouldFitBounds = true);
     Task UpdateAlertsAsync(List<Alert> alerts);
-    Task AddSingleReportAsync(LocationReport report);
+    Task AddSingleReportAsync(Report report);
     Task RemoveSingleReportAsync(int reportId);
     Task FocusReportAsync(int reportId);
     Task SelectReportAsync(int reportId);

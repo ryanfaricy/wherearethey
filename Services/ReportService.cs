@@ -13,25 +13,25 @@ public class ReportService(
     IBackgroundJobClient backgroundJobClient,
     ISettingsService settingsService,
     IEventService eventService,
-    IValidator<LocationReport> validator,
-    ILogger<ReportService> logger) : BaseService<LocationReport>(contextFactory, eventService), IReportService
+    IValidator<Report> validator,
+    ILogger<ReportService> logger) : BaseService<Report>(contextFactory, eventService), IReportService
 {
     /// <inheritdoc />
-    public async Task<Result<LocationReport>> CreateReportAsync(LocationReport report)
+    public async Task<Result<Report>> CreateReportAsync(Report report)
     {
         try
         {
             var validationResult = await validator.ValidateAsync(report);
             if (!validationResult.IsValid)
             {
-                return Result<LocationReport>.Failure(validationResult);
+                return Result<Report>.Failure(validationResult);
             }
 
             await using var context = await ContextFactory.CreateDbContextAsync();
 
             report.ExternalId = Guid.NewGuid();
             report.CreatedAt = DateTime.UtcNow;
-            context.LocationReports.Add(report);
+            context.Reports.Add(report);
             await context.SaveChangesAsync();
 
             // Notify global event bus
@@ -47,29 +47,29 @@ public class ReportService(
                 logger.LogError(ex, "Error enqueuing report processing job");
             }
 
-            return Result<LocationReport>.Success(report);
+            return Result<Report>.Success(report);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error adding location report at {Lat}, {Lng}", report.Latitude, report.Longitude);
-            return Result<LocationReport>.Failure("An error occurred while adding the location report.");
+            logger.LogError(ex, "Error adding report at {Lat}, {Lng}", report.Latitude, report.Longitude);
+            return Result<Report>.Failure("An error occurred while adding the report.");
         }
     }
 
     /// <inheritdoc />
-    public async Task<Result<LocationReport>> GetReportByExternalIdAsync(Guid externalId)
+    public async Task<Result<Report>> GetReportByExternalIdAsync(Guid externalId)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
-        var report = await context.LocationReports
+        var report = await context.Reports
             .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
 
-        return report != null ? Result<LocationReport>.Success(report) : Result<LocationReport>.Failure("Report not found.");
+        return report != null ? Result<Report>.Success(report) : Result<Report>.Failure("Report not found.");
     }
 
     /// <inheritdoc />
-    public async Task<List<LocationReport>> GetRecentReportsAsync(int? hours = null)
+    public async Task<List<Report>> GetRecentReportsAsync(int? hours = null)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
@@ -77,7 +77,7 @@ public class ReportService(
         // Use the global expiry setting if no hours provided
         var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
-        return await context.LocationReports
+        return await context.Reports
             .AsNoTracking()
             .Where(r => r.DeletedAt == null && r.CreatedAt >= cutoff)
             .OrderByDescending(r => r.CreatedAt)
@@ -85,7 +85,7 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task<List<LocationReport>> GetAllReportsAsync()
+    public async Task<List<Report>> GetAllReportsAsync()
     {
         return await GetAllAsync(isAdmin: true);
     }
@@ -97,47 +97,14 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task<Result> UpdateReportAsync(LocationReport report)
+    public async Task<Result> UpdateReportAsync(Report report)
     {
-        try
+        var validationResult = await validator.ValidateAsync(report);
+        if (!validationResult.IsValid)
         {
-            var validationResult = await validator.ValidateAsync(report);
-            if (!validationResult.IsValid)
-            {
-                return Result.Failure(validationResult);
-            }
-
-            await using var context = await ContextFactory.CreateDbContextAsync();
-            var existing = await context.LocationReports
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(a => a.Id == report.Id);
-            
-            if (existing == null)
-            {
-                return Result.Failure("Report not found.");
-            }
-
-            existing.CreatedAt = report.CreatedAt;
-            existing.DeletedAt = report.DeletedAt;
-            existing.ExternalId = report.ExternalId;
-            existing.IsEmergency = report.IsEmergency;
-            existing.Latitude = report.Latitude;
-            existing.Longitude = report.Longitude;
-            existing.Message = report.Message;
-            existing.ReporterIdentifier = report.ReporterIdentifier;
-            existing.ReporterLatitude = report.ReporterLatitude;
-            existing.ReporterLongitude = report.ReporterLongitude;
-            
-            await context.SaveChangesAsync();
-            
-            // Notify global event bus
-            EventService.NotifyEntityChanged(report, EntityChangeType.Updated);
-            return Result.Success();
+            return Result.Failure(validationResult);
         }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error updating report {ReportId}", report.Id);
-            return Result.Failure("An error occurred while updating the report.");
-        }
+
+        return await UpdateAsync(report);
     }
 }

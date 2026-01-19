@@ -150,13 +150,13 @@
 
     private void HandleEntityChanged(object entity, EntityChangeType type)
     {
-        if (entity is LocationReport report && type == EntityChangeType.Added)
+        if (entity is Report report && type == EntityChangeType.Added)
         {
             HandleReportAdded(report);
         }
     }
 
-    private void HandleReportAdded(LocationReport report)
+    private void HandleReportAdded(Report report)
     {
         InvokeAsync(async () =>
         {
@@ -292,7 +292,7 @@
         {
             try
             {
-                var draft = JsonSerializer.Deserialize<LocationReport>(draftJson);
+                var draft = JsonSerializer.Deserialize<Report>(draftJson);
                 if (draft != null && DateTime.UtcNow - draft.CreatedAt < TimeSpan.FromHours(24))
                 {
                     var resume = await DialogService.Confirm(L["Resume_Draft_Message"], L["Resume_Draft_Title"]);
@@ -386,7 +386,7 @@
             initialLng = mapState?.Lng ?? 0;
         }
 
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = initialLat,
             Longitude = initialLng,
@@ -415,7 +415,7 @@
         await MapService.ShowGhostPinAsync(position.Coords.Latitude, position.Coords.Longitude);
         try
         {
-            var report = new LocationReport
+            var report = new Report
             {
                 Latitude = position.Coords.Latitude,
                 Longitude = position.Coords.Longitude,
@@ -506,7 +506,7 @@
         }
     }
 
-    private async Task ShowReportDialog(LocationReport report, Task<GeolocationPosition?>? locationTask = null, bool updateReportLocation = true)
+    private async Task ShowReportDialog(Report report, Task<GeolocationPosition?>? locationTask = null, bool updateReportLocation = true)
     {
         var result = await DialogService.OpenAsync<ReportDialog>("REPORT LOCATION",
             new Dictionary<string, object> 

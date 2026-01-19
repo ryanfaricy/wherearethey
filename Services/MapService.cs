@@ -6,12 +6,12 @@ namespace WhereAreThey.Services;
 
 public class MapService(IJSRuntime jsRuntime) : IMapService
 {
-    public async Task InitMapAsync(string elementId, double initialLat, double initialLng, List<LocationReport> reports, object objRef, List<Alert> alerts, object translations, bool isAdmin = false)
+    public async Task InitMapAsync(string elementId, double initialLat, double initialLng, List<Report> reports, object objRef, List<Alert> alerts, object translations, bool isAdmin = false)
     {
         await jsRuntime.InvokeVoidAsync("initHeatMap", elementId, initialLat, initialLng, reports, objRef, alerts, translations, isAdmin);
     }
 
-    public async Task UpdateHeatMapAsync(List<LocationReport> reports, bool shouldFitBounds = true)
+    public async Task UpdateHeatMapAsync(List<Report> reports, bool shouldFitBounds = true)
     {
         await jsRuntime.InvokeVoidAsync("updateHeatMap", reports, shouldFitBounds);
     }
@@ -21,7 +21,7 @@ public class MapService(IJSRuntime jsRuntime) : IMapService
         await jsRuntime.InvokeVoidAsync("updateAlerts", alerts);
     }
 
-    public async Task AddSingleReportAsync(LocationReport report)
+    public async Task AddSingleReportAsync(Report report)
     {
         await jsRuntime.InvokeVoidAsync("addSingleReport", report);
     }

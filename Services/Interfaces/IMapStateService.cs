@@ -11,7 +11,7 @@ public interface IMapStateService : IDisposable
     /// <summary>
     /// The current list of active reports.
     /// </summary>
-    List<LocationReport> Reports { get; }
+    List<Report> Reports { get; }
 
     /// <summary>
     /// The current list of active alerts.
@@ -46,7 +46,7 @@ public interface IMapStateService : IDisposable
     /// <summary>
     /// Finds reports near a coordinate.
     /// </summary>
-    List<LocationReport> FindNearbyReports(double lat, double lng, double radiusKm);
+    List<Report> FindNearbyReports(double lat, double lng, double radiusKm);
 
     /// <summary>
     /// Finds alerts near a coordinate.

@@ -1,4 +1,4 @@
-﻿@inject NavigationManager NavigationManager
+@inject NavigationManager NavigationManager
 @inject DialogService DialogService
 @inject IMapService MapService
 @inject IClientStorageService StorageService
@@ -94,7 +94,7 @@
         }
         catch { /* Map might not be available yet */ }
 
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = initialLat,
             Longitude = initialLng,

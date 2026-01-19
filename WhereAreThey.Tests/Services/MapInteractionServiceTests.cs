@@ -76,7 +76,7 @@ public class MapInteractionServiceTests : BunitContext
         // Arrange
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
         _stateServiceMock.Setup(s => s.Alerts).Returns([]);
-        var reports = new List<LocationReport> { new() { Id = 1 } };
+        var reports = new List<Report> { new() { Id = 1 } };
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
             .Returns(reports);
         _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
@@ -89,7 +89,7 @@ public class MapInteractionServiceTests : BunitContext
             if (type == typeof(ReportDetailsDialog))
             {
                 dialogOpened = true;
-                Assert.Single(((List<LocationReport>)parameters["Reports"]));
+                Assert.Single(((List<Report>)parameters["Reports"]));
             }
             _dialogService.Close();
         };
@@ -139,7 +139,7 @@ public class MapInteractionServiceTests : BunitContext
     {
         // Arrange
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
-        var reports = new List<LocationReport> { new() { Id = 1 } };
+        var reports = new List<Report> { new() { Id = 1 } };
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
             .Returns(reports);
         _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
@@ -172,7 +172,7 @@ public class MapInteractionServiceTests : BunitContext
         // Arrange
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
         var alerts = new List<Alert> { new() { Id = 1, Latitude = 0, Longitude = 0, RadiusKm = 1.0 } };
-        var reports = new List<LocationReport> { new() { Id = 1, Latitude = 0, Longitude = 0 } };
+        var reports = new List<Report> { new() { Id = 1, Latitude = 0, Longitude = 0 } };
         _stateServiceMock.Setup(s => s.Alerts).Returns(alerts);
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
             .Returns(reports);
@@ -206,7 +206,7 @@ public class MapInteractionServiceTests : BunitContext
         _stateServiceMock.Setup(s => s.Alerts).Returns([]);
         
         // Closest should be report 2 (at 0,0)
-        var reports = new List<LocationReport> 
+        var reports = new List<Report> 
         { 
             new() { Id = 1, Latitude = 1, Longitude = 1 },
             new() { Id = 2, Latitude = 0, Longitude = 0 },
@@ -321,7 +321,7 @@ public class MapInteractionServiceTests : BunitContext
         // Arrange
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15);
         
-        var reports = new List<LocationReport> { new() { Id = 1 } };
+        var reports = new List<Report> { new() { Id = 1 } };
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
             .Returns(reports);
         

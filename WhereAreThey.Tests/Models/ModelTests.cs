@@ -5,17 +5,17 @@ namespace WhereAreThey.Tests.Models;
 public class ModelTests
 {
     [Fact]
-    public void LocationReport_LocationDisplay_ReturnsFormattedString()
+    public void Report_LocationDisplay_ReturnsFormattedString()
     {
-        var report = new LocationReport { Latitude = 10.123456, Longitude = -20.654321 };
+        var report = new Report { Latitude = 10.123456, Longitude = -20.654321 };
         Assert.Equal("10.1235, -20.6543", report.LocationDisplay());
         Assert.Equal("10.12, -20.65", report.LocationDisplay(2));
     }
 
     [Fact]
-    public void LocationReport_HasReporterLocation_ChecksValues()
+    public void Report_HasReporterLocation_ChecksValues()
     {
-        var report = new LocationReport();
+        var report = new Report();
         Assert.False(report.HasReporterLocation());
         
         report.ReporterLatitude = 0;
@@ -26,9 +26,9 @@ public class ModelTests
     }
 
     [Fact]
-    public void LocationReport_ReporterLocationDisplay_ReturnsFormattedOrNA()
+    public void Report_ReporterLocationDisplay_ReturnsFormattedOrNA()
     {
-        var report = new LocationReport();
+        var report = new Report();
         Assert.Equal("N/A", report.ReporterLocationDisplay());
         
         report.ReporterLatitude = 1.23456;

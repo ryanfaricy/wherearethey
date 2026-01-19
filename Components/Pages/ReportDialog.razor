@@ -12,7 +12,7 @@
 @inject ILogger<ReportDialog> Logger
 @inject IStringLocalizer<App> L
 
-<RadzenTemplateForm Data="@Report" Submit="@((LocationReport _) => SubmitReport())">
+<RadzenTemplateForm Data="@Report" Submit="@((Report _) => SubmitReport())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="@L["Search_Address"]" Variant="Variant.Outlined" Style="width: 100%;">
             <AddressSearch @bind-SearchValue="@_approxAddress" 
@@ -59,7 +59,7 @@
 </RadzenTemplateForm>
 
 @code {
-    [Parameter] public LocationReport Report { get; set; } = new();
+    [Parameter] public Report Report { get; set; } = new();
     [Parameter] public Task<GeolocationPosition?>? LocationTask { get; set; }
     [Parameter] public bool UpdateReportLocation { get; set; } = true;
     private bool _isSubmitting;

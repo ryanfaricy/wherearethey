@@ -35,7 +35,7 @@ public class ReportProcessingServiceTests
     {
         // Arrange
         var service = CreateService();
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
         var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg" };
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
@@ -68,7 +68,7 @@ public class ReportProcessingServiceTests
         // Arrange
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ThrowsAsync(new Exception("Test exception"));
         var service = CreateService();
-        var report = new LocationReport { Id = 1 };
+        var report = new Report { Id = 1 };
 
         // Act
         var exception = await Record.ExceptionAsync(() => service.ProcessReportAsync(report));

@@ -14,7 +14,7 @@ public class LocationService(
     ILogger<LocationService> logger) : ILocationService
 {
     /// <inheritdoc />
-    public async Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
+    public async Task<List<Report>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
         try
         {
@@ -27,7 +27,7 @@ public class LocationService(
             // Step 1: Simple bounding box calculation to filter at DB level
             var (minLat, maxLat, minLon, maxLon) = GeoUtils.GetBoundingBox(latitude, longitude, radiusKm);
 
-            var reports = await context.LocationReports
+            var reports = await context.Reports
                 .AsNoTracking()
                 .Where(r => r.CreatedAt >= cutoff &&
                            r.Latitude >= minLat && r.Latitude <= maxLat &&

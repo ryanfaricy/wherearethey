@@ -39,7 +39,7 @@
                         </RadzenText>
 
                         <div style="max-height: 400px; overflow-y: auto;">
-                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="LocationReport">
+                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="Report">
                                 <Template Context="r">
                                     <ReportCard Report="@r" 
                                                 IsSelected="@(r.Id == SelectedReportId)"
@@ -93,7 +93,7 @@
 </RadzenStack>
 
 @code {
-    [Parameter] public List<LocationReport> Reports { get; set; } = [];
+    [Parameter] public List<Report> Reports { get; set; } = [];
     [Parameter] public List<Alert> Alerts { get; set; } = [];
     [Parameter] public int? SelectedReportId { get; set; }
     [Parameter] public int? SelectedAlertId { get; set; }
@@ -130,7 +130,7 @@
         }
     }
 
-    private async Task DeleteReport(LocationReport report)
+    private async Task DeleteReport(Report report)
     {
         var confirmed = await DialogService.Confirm("Are you sure you want to delete this report?", 
             "Delete Report", new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });

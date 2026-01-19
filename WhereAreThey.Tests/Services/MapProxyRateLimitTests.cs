@@ -42,7 +42,7 @@ public class MapProxyRateLimitTests : IClassFixture<WebApplicationFactory<Progra
                 var settingsServiceMock = new Mock<ISettingsService>();
 
                 reportServiceMock.Setup(s => s.GetReportByExternalIdAsync(It.IsAny<Guid>()))
-                    .ReturnsAsync(Result<LocationReport>.Success(new LocationReport { Latitude = 0, Longitude = 0 }));
+                    .ReturnsAsync(Result<Report>.Success(new Report { Latitude = 0, Longitude = 0 }));
 
                 settingsServiceMock.Setup(s => s.GetSettingsAsync())
                     .ReturnsAsync(new SystemSettings { MapboxToken = "test-token" });

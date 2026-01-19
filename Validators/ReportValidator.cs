@@ -10,12 +10,12 @@ using WhereAreThey.Services.Interfaces;
 namespace WhereAreThey.Validators;
 
 /// <summary>
-/// Validator for the <see cref="LocationReport"/> model.
+/// Validator for the <see cref="Report"/> model.
 /// Enforces business rules such as cooldowns, location accuracy, and spam prevention.
 /// </summary>
-public class LocationReportValidator : AbstractValidator<LocationReport>
+public class ReportValidator : AbstractValidator<Report>
 {
-    public LocationReportValidator(
+    public ReportValidator(
         IDbContextFactory<ApplicationDbContext> contextFactory,
         ISettingsService settingsService,
         IAdminService adminService,
@@ -48,7 +48,7 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                 await using var dbContext = await contextFactory.CreateDbContextAsync(cancellation);
                 var cutoff = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
                 
-                var hasRecent = await dbContext.LocationReports
+                var hasRecent = await dbContext.Reports
                     .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.CreatedAt >= cutoff, cancellation);
 
                 if (hasRecent)

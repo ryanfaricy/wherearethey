@@ -83,7 +83,7 @@ public class ReportServiceTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
+        var validator = new ReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
         return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
@@ -94,7 +94,7 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = 40.7128,
             Longitude = -74.0060,
@@ -122,7 +122,7 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = 40.7128,
             Longitude = -74.0060,
@@ -137,7 +137,7 @@ public class ReportServiceTests
         await service.CreateReportAsync(report);
 
         // Assert
-        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<LocationReport>(r => r.Message == report.Message), EntityChangeType.Added), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<Report>(r => r.Message == report.Message), EntityChangeType.Added), Times.Once);
     }
 
     [Fact]
@@ -150,22 +150,22 @@ public class ReportServiceTests
 
         await using (var context = new ApplicationDbContext(options))
         {
-            var oldReport = new LocationReport
+            var oldReport = new Report
             {
                 Latitude = 40.0,
                 Longitude = -74.0,
                 CreatedAt = DateTime.UtcNow.AddHours(-48),
             };
             
-            var recentReport = new LocationReport
+            var recentReport = new Report
             {
                 Latitude = 41.0,
                 Longitude = -75.0,
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
             };
 
-            context.LocationReports.Add(oldReport);
-            context.LocationReports.Add(recentReport);
+            context.Reports.Add(oldReport);
+            context.Reports.Add(recentReport);
             await context.SaveChangesAsync();
         }
 
@@ -187,7 +187,7 @@ public class ReportServiceTests
 
         await using (var context = new ApplicationDbContext(options))
         {
-            context.LocationReports.Add(new LocationReport { CreatedAt = DateTime.UtcNow });
+            context.Reports.Add(new Report { CreatedAt = DateTime.UtcNow });
             await context.SaveChangesAsync();
         }
 
@@ -205,7 +205,7 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ReporterLatitude = 40.0, ReporterLongitude = -74.0, ReporterIdentifier = "test-user" };
 
         // Act
         await service.CreateReportAsync(report);
@@ -233,7 +233,7 @@ public class ReportServiceTests
             });
         var settingsService = CreateSettingsService(factory);
         var alertValidator = new AlertValidator(factory, settingsService, CreateLocalizer());
-        var reportValidator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, CreateLocalizer());
+        var reportValidator = new ReportValidator(factory, settingsService, _adminServiceMock.Object, CreateLocalizer());
         var appOptions = Options.Create(new AppOptions());
         var backgroundJobClientMock = new Mock<IBackgroundJobClient>();
         
@@ -296,7 +296,7 @@ public class ReportServiceTests
         }
 
         // User A reports something nearby (roughly 1.1km away)
-        var report = new LocationReport 
+        var report = new Report 
         { 
             Latitude = 40.01, 
             Longitude = -74.0,
@@ -329,11 +329,11 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
         
         await using (var context = await factory.CreateDbContextAsync())
         {
-            context.LocationReports.Add(report);
+            context.Reports.Add(report);
             await context.SaveChangesAsync();
         }
 
@@ -353,11 +353,11 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow };
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow };
 
         await using (var context = await factory.CreateDbContextAsync())
         {
-            context.LocationReports.Add(report);
+            context.Reports.Add(report);
             await context.SaveChangesAsync();
         }
 
@@ -369,7 +369,7 @@ public class ReportServiceTests
         
         await using (var context = await factory.CreateDbContextAsync())
         {
-            var deletedReport = await context.LocationReports.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == report.Id);
+            var deletedReport = await context.Reports.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == report.Id);
             Assert.NotNull(deletedReport);
             Assert.NotNull(deletedReport.DeletedAt);
         }

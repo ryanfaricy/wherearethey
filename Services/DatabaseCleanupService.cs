@@ -37,7 +37,7 @@ public class DatabaseCleanupService(
 
         // 1. Delete reports older than DataRetentionDays
         var reportCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
-        var oldReports = await context.LocationReports
+        var oldReports = await context.Reports
             .IgnoreQueryFilters()
             .Where(r => r.CreatedAt < reportCutoff)
             .ExecuteDeleteAsync();

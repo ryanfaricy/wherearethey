@@ -17,7 +17,7 @@ public class EventServiceTests
             receivedEntity = entity;
             receivedType = type;
         };
-        var report = new LocationReport { Id = 1 };
+        var report = new Report { Id = 1 };
 
         // Act
         service.NotifyEntityChanged(report, EntityChangeType.Added);
@@ -39,7 +39,7 @@ public class EventServiceTests
             receivedEntity = entity;
             receivedType = type;
         };
-        var report = new LocationReport { Id = 123 };
+        var report = new Report { Id = 123 };
 
         // Act
         service.NotifyEntityChanged(report, EntityChangeType.Deleted);

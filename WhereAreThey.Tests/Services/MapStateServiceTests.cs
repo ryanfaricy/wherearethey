@@ -61,7 +61,7 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_LoadsReportsAndUpdatesMap()
     {
         // Arrange
-        var reports = new List<LocationReport> { new() { Id = 1, Latitude = 10, Longitude = 10 } };
+        var reports = new List<Report> { new() { Id = 1, Latitude = 10, Longitude = 10 } };
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>())).ReturnsAsync(reports);
         _service.MapInitialized = true;
 
@@ -77,8 +77,8 @@ public class MapStateServiceTests : IDisposable
     public void FindNearbyReports_ReturnsFilteredList()
     {
         // Arrange
-        var report1 = new LocationReport { Id = 1, Latitude = 0, Longitude = 0 };
-        var report2 = new LocationReport { Id = 2, Latitude = 10, Longitude = 10 };
+        var report1 = new Report { Id = 1, Latitude = 0, Longitude = 0 };
+        var report2 = new Report { Id = 2, Latitude = 10, Longitude = 10 };
         _service.Reports.Add(report1);
         _service.Reports.Add(report2);
 
@@ -95,7 +95,7 @@ public class MapStateServiceTests : IDisposable
     public void HandleReportAdded_TriggeredByEvent_AddsToListAndNotifiesMap()
     {
         // Arrange
-        var report = new LocationReport { Id = 1, Latitude = 0, Longitude = 0 };
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0 };
         _service.MapInitialized = true;
 
         // Act
@@ -110,7 +110,7 @@ public class MapStateServiceTests : IDisposable
     public void HandleReportDeleted_TriggeredByEvent_RemovesFromListAndNotifiesMap()
     {
         // Arrange
-        var report = new LocationReport { Id = 1, Latitude = 0, Longitude = 0 };
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0 };
         _service.Reports.Add(report);
         _service.MapInitialized = true;
 
@@ -165,7 +165,7 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_AdminMode_FiltersDeletedReports()
     {
         // Arrange
-        var reports = new List<LocationReport> 
+        var reports = new List<Report> 
         { 
             new() { Id = 1, DeletedAt = null },
             new() { Id = 2, DeletedAt = DateTime.UtcNow },

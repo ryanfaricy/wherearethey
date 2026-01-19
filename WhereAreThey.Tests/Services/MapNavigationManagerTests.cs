@@ -54,9 +54,9 @@ public class MapNavigationManagerTests
     {
         // Arrange
         var guid = Guid.NewGuid();
-        var report = new LocationReport { Id = 123, Latitude = 1.2, Longitude = 3.4 };
+        var report = new Report { Id = 123, Latitude = 1.2, Longitude = 3.4 };
         _reportServiceMock.Setup(s => s.GetReportByExternalIdAsync(guid))
-            .ReturnsAsync(Result<LocationReport>.Success(report));
+            .ReturnsAsync(Result<Report>.Success(report));
         _navManager.SetUri($"http://localhost/?reportId={guid}");
 
         // Act

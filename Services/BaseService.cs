@@ -37,7 +37,8 @@ public abstract class BaseService<T>(
     }
 
     /// <summary>
-    /// Soft-deletes an entity by setting its <see cref="IAuditable.DeletedAt"/> property.
+    /// Soft-deletes an entity.
+    /// Logic for setting DeletedAt is handled by ApplicationDbContext.
     /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
     /// </summary>
     /// <param name="id">The primary key of the entity to delete.</param>
@@ -56,7 +57,7 @@ public abstract class BaseService<T>(
                 return Result.Failure("Not found");
             }
 
-            entity.DeletedAt = DateTime.UtcNow;
+            context.Set<T>().Remove(entity);
             await context.SaveChangesAsync();
 
             // Notify generic change
@@ -68,6 +69,38 @@ public abstract class BaseService<T>(
         catch (Exception ex)
         {
             return Result.Failure($"An error occurred while deleting the entity: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Updates an existing entity.
+    /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
+    /// </summary>
+    /// <param name="entity">The entity with updated values.</param>
+    /// <returns>A success result if updated; otherwise, a failure result.</returns>
+    protected virtual async Task<Result> UpdateAsync(T entity)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var existing = await context.Set<T>()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(e => e.Id == entity.Id);
+
+            if (existing == null)
+            {
+                return Result.Failure($"{typeof(T).Name} not found.");
+            }
+
+            context.Entry(existing).CurrentValues.SetValues(entity);
+            await context.SaveChangesAsync();
+
+            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while updating the entity: {ex.Message}");
         }
     }
 }

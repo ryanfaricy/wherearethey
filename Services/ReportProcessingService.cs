@@ -17,7 +17,7 @@ public class ReportProcessingService(
     ILogger<ReportProcessingService> logger) : IReportProcessingService
 {
     /// <inheritdoc />
-    public async Task ProcessReportAsync(LocationReport report)
+    public async Task ProcessReportAsync(Report report)
     {
         try
         {

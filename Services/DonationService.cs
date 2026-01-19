@@ -95,39 +95,13 @@ public class DonationService(
     /// <inheritdoc />
     public async Task<Result> UpdateDonationAsync(Donation donation)
     {
-        try
+        var validationResult = await validator.ValidateAsync(donation);
+        if (!validationResult.IsValid)
         {
-            var validationResult = await validator.ValidateAsync(donation);
-            if (!validationResult.IsValid)
-            {
-                return Result.Failure(validationResult);
-            }
-
-            await using var context = await ContextFactory.CreateDbContextAsync();
-            var existing = await context.Donations
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(d => d.Id == donation.Id);
-            if (existing == null)
-            {
-                return Result.Failure("Donation not found.");
-            }
-
-            existing.Amount = donation.Amount;
-            existing.CreatedAt = donation.CreatedAt;
-            existing.Currency = donation.Currency;
-            existing.DeletedAt = donation.DeletedAt;
-            existing.DonorEmail = donation.DonorEmail;
-            existing.DonorName = donation.DonorName;
-            existing.Status = donation.Status;
-
-            await context.SaveChangesAsync();
-            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
-            return Result.Success();
+            return Result.Failure(validationResult);
         }
-        catch (Exception ex)
-        {
-            return Result.Failure($"An error occurred while updating the donation: {ex.Message}");
-        }
+
+        return await UpdateAsync(donation);
     }
 
     /// <inheritdoc />

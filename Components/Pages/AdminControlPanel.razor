@@ -210,7 +210,7 @@
             return;
         }
 
-        if (entity is LocationReport report)
+        if (entity is Report report)
         {
             HandleReportAdded(report);
         }
@@ -224,7 +224,7 @@
         }
     }
 
-    private void HandleReportAdded(LocationReport report)
+    private void HandleReportAdded(Report report)
     {
         if (!_isAuthenticated)
         {

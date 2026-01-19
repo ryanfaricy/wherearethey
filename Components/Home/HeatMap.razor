@@ -11,7 +11,7 @@
 @code {
     [Parameter] public string ElementId { get; set; } = "heatmap";
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
-    [Parameter] public List<LocationReport> Reports { get; set; } = [];
+    [Parameter] public List<Report> Reports { get; set; } = [];
     [Parameter] public List<Alert>? Alerts { get; set; }
     [Parameter] public double InitialLat { get; set; }
     [Parameter] public double InitialLng { get; set; }

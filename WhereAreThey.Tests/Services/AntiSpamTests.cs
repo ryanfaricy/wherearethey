@@ -81,7 +81,7 @@ public class AntiSpamTests
     {
         var localizer = CreateLocalizer();
         var settingsService = CreateSettingsService(factory);
-        var validator = new LocationReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
+        var validator = new ReportValidator(factory, settingsService, _adminServiceMock.Object, localizer);
         return new ReportService(factory, _backgroundJobClientMock.Object, settingsService, _eventServiceMock.Object, validator, _loggerMock.Object);
     }
 
@@ -93,7 +93,7 @@ public class AntiSpamTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = 40.0,
             Longitude = -74.0,
@@ -118,7 +118,7 @@ public class AntiSpamTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         
-        var report1 = new LocationReport
+        var report1 = new Report
         {
             Latitude = 40.0,
             Longitude = -74.0,
@@ -127,7 +127,7 @@ public class AntiSpamTests
             ReporterIdentifier = "UserA-Passphrase",
         };
 
-        var report2 = new LocationReport
+        var report2 = new Report
         {
             Latitude = 40.0,
             Longitude = -74.0,
@@ -153,7 +153,7 @@ public class AntiSpamTests
         var factory = CreateFactory(options);
         var service = CreateService(factory);
         
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = 40.0,
             Longitude = -74.0,
@@ -182,13 +182,13 @@ public class AntiSpamTests
         await using (var context = new ApplicationDbContext(options))
         {
             // Report from 12 hours ago
-            context.LocationReports.Add(new LocationReport 
+            context.Reports.Add(new Report 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
                 CreatedAt = DateTime.UtcNow.AddHours(-12),
             });
             // Report from 2 hours ago
-            context.LocationReports.Add(new LocationReport 
+            context.Reports.Add(new Report 
             { 
                 Latitude = 41.0, Longitude = -75.0, 
                 CreatedAt = DateTime.UtcNow.AddHours(-2),
@@ -231,7 +231,7 @@ public class AntiSpamTests
         await using (var context = new ApplicationDbContext(options))
         {
             // Report from 12 hours ago - should now be included
-            context.LocationReports.Add(new LocationReport 
+            context.Reports.Add(new Report 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
                 CreatedAt = DateTime.UtcNow.AddHours(-12),
@@ -246,7 +246,7 @@ public class AntiSpamTests
         Assert.Single(results);
         
         // Check cooldown
-        var report = new LocationReport { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
+        var report = new Report { ReporterIdentifier = "UserB-Passphrase", Latitude = 40, Longitude = -74, ReporterLatitude = 40, ReporterLongitude = -74 };
         await service.CreateReportAsync(report);
         
         var resultCooldown = await service.CreateReportAsync(report);
@@ -254,7 +254,7 @@ public class AntiSpamTests
         Assert.Contains("10 minutes", resultCooldown.Error);
 
         // Check distance
-        var farReport = new LocationReport { 
+        var farReport = new Report { 
             ReporterIdentifier = "UserC-Passphrase", 
             Latitude = 40, Longitude = -74, 
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away

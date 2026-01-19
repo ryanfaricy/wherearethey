@@ -41,7 +41,7 @@ public class PassphraseGeneratorTests
         var passphrase = PassphraseGenerator.Generate();
 
         // Assert
-        // Minimum length in LocationReportValidator is 8
+        // Minimum length in ReportValidator is 8
         Assert.True(passphrase.Length >= 8);
     }
 }

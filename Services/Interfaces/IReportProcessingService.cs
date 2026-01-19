@@ -8,8 +8,8 @@ namespace WhereAreThey.Services.Interfaces;
 public interface IReportProcessingService
 {
     /// <summary>
-    /// Processes a new location report.
+    /// Processes a report in the background.
     /// </summary>
     /// <param name="report">The report to process.</param>
-    Task ProcessReportAsync(LocationReport report);
+    Task ProcessReportAsync(Report report);
 }

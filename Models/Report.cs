@@ -3,7 +3,7 @@ namespace WhereAreThey.Models;
 /// <summary>
 /// Represents a location report submitted by a user.
 /// </summary>
-public class LocationReport : IAuditable
+public class Report : IAuditable
 {
     /// <inheritdoc />
     public int Id { get; set; }

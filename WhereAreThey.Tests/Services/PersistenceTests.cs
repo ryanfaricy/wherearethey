@@ -86,8 +86,8 @@ public class PersistenceTests
         // Arrange
         var (context, factory) = await CreateContextAndFactoryAsync();
         
-        var validatorMock = new Mock<IValidator<LocationReport>>();
-        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<LocationReport>(), It.IsAny<CancellationToken>()))
+        var validatorMock = new Mock<IValidator<Report>>();
+        validatorMock.Setup(v => v.ValidateAsync(It.IsAny<Report>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FluentValidation.Results.ValidationResult());
 
         var service = new ReportService(
@@ -100,27 +100,27 @@ public class PersistenceTests
         );
 
         var originalCreatedAt = new DateTime(2025, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = 1,
             Longitude = 1,
             CreatedAt = originalCreatedAt
         };
-        context.LocationReports.Add(report);
+        context.Reports.Add(report);
         await context.SaveChangesAsync();
 
         // Act
         var newCreatedAt = new DateTime(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         var newDeletedAt = new DateTime(2024, 12, 31, 23, 59, 59, DateTimeKind.Utc);
         
-        var reportToUpdate = await context.LocationReports.IgnoreQueryFilters().AsNoTracking().FirstAsync(r => r.Id == report.Id);
+        var reportToUpdate = await context.Reports.IgnoreQueryFilters().AsNoTracking().FirstAsync(r => r.Id == report.Id);
         reportToUpdate.CreatedAt = newCreatedAt;
         reportToUpdate.DeletedAt = newDeletedAt;
 
         await service.UpdateReportAsync(reportToUpdate);
 
         // Assert
-        var updatedReport = await context.LocationReports.IgnoreQueryFilters().AsNoTracking().FirstAsync(r => r.Id == report.Id);
+        var updatedReport = await context.Reports.IgnoreQueryFilters().AsNoTracking().FirstAsync(r => r.Id == report.Id);
         Assert.Equal(newCreatedAt, updatedReport.CreatedAt);
         Assert.Equal(newDeletedAt, updatedReport.DeletedAt);
     }

@@ -268,34 +268,13 @@ public class AlertService(
                 return Result.Failure(validationResult);
             }
 
-            await using var context = await ContextFactory.CreateDbContextAsync();
-            var existing = await context.Alerts
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(a => a.Id == alert.Id);
-            
-            if (existing == null)
-            {
-                return Result.Failure("Alert not found.");
-            }
-
-            existing.CreatedAt = alert.CreatedAt;
-            existing.DeletedAt = alert.DeletedAt;
-            existing.IsVerified = alert.IsVerified;
-            existing.Latitude = alert.Latitude;
-            existing.Longitude = alert.Longitude;
-            existing.Message = alert.Message;
-            existing.RadiusKm = alert.RadiusKm;
-            existing.UserIdentifier = alert.UserIdentifier;
-
             if (!string.IsNullOrEmpty(email))
             {
-                existing.EncryptedEmail = _protector.Protect(email);
-                existing.EmailHash = HashUtils.ComputeHash(email);
+                alert.EncryptedEmail = _protector.Protect(email);
+                alert.EmailHash = HashUtils.ComputeHash(email);
             }
-            
-            await context.SaveChangesAsync();
-            EventService.NotifyEntityChanged(existing, EntityChangeType.Updated);
-            return Result.Success();
+
+            return await UpdateAsync(alert);
         }
         catch (Exception ex)
         {

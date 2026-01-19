@@ -14,7 +14,7 @@ public interface ILocationService
     /// <param name="longitude">The center longitude.</param>
     /// <param name="radiusKm">The search radius in kilometers.</param>
     /// <returns>A list of reports within the radius.</returns>
-    Task<List<LocationReport>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm);
+    Task<List<Report>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm);
 
     /// <summary>
     /// Formats a UTC timestamp into a local time string based on coordinates.

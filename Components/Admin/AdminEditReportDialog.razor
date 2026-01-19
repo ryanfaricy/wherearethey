@@ -5,7 +5,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 
-<RadzenTemplateForm Data="@_report" Submit="@((LocationReport _) => Save())">
+<RadzenTemplateForm Data="@_report" Submit="@((Report _) => Save())">
     <RadzenStack Gap="1rem" Class="rz-p-4">
         <RadzenFormField Text="Address Search" Variant="Variant.Outlined" Style="width: 100%;">
             <AddressSearch @bind-SearchValue="@_approxAddress" 
@@ -93,16 +93,16 @@
 </RadzenTemplateForm>
 
 @code {
-    [Parameter] public LocationReport Report { get; set; } = new();
+    [Parameter] public Report Report { get; set; } = new();
 
-    private LocationReport _report = new();
+    private Report _report = new();
     private bool _isSubmitting;
     private string? _approxAddress;
 
     protected override void OnInitialized()
     {
         // Create a copy to edit
-        _report = new LocationReport
+        _report = new Report
         {
             Id = Report.Id,
             ExternalId = Report.ExternalId,

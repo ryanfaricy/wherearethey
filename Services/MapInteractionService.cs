@@ -108,7 +108,7 @@ public class MapInteractionService(
 
         var effectiveIsAdmin = isAdmin || await adminService.IsAdminAsync();
         
-        var report = new LocationReport
+        var report = new Report
         {
             Latitude = lat,
             Longitude = lng,

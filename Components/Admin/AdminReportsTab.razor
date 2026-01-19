@@ -1,4 +1,4 @@
-@inherits AdminTabBase<LocationReport>
+@inherits AdminTabBase<Report>
 @inject IReportService ReportService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -11,7 +11,7 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="LocationReport" AllowPaging="true" PageSize="10" WrapItems="true">
+    <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10" WrapItems="true">
         <Template Context="report">
             <RadzenCard Class="@(report.IsEmergency ? "rz-mb-4 report-emergency" : "rz-mb-4 report-normal")">
                 <RadzenStack Gap="0.5rem">
@@ -49,28 +49,28 @@
 }
 else
 {
-    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Report" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
-            <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" />
-            <RadzenDataGridColumn TItem="LocationReport" Property="CreatedAt" Title="Time">
+            <RadzenDataGridColumn TItem="Report" Property="Id" Title="ID" />
+            <RadzenDataGridColumn TItem="Report" Property="CreatedAt" Title="Time">
                 <Template Context="report">
                     @TimeZoneService.FormatLocal(report.CreatedAt)
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />
-            <RadzenDataGridColumn TItem="LocationReport" Property="ReporterIdentifier" Title="Reporter Passphrase" />
-            <RadzenDataGridColumn TItem="LocationReport" Title="Reporter Location">
+            <RadzenDataGridColumn TItem="Report" Property="Message" Title="Message" />
+            <RadzenDataGridColumn TItem="Report" Property="ReporterIdentifier" Title="Reporter Passphrase" />
+            <RadzenDataGridColumn TItem="Report" Title="Reporter Location">
                 <Template Context="report">
                     @report.ReporterLocationDisplay()
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LocationReport" Property="IsEmergency" Title="Emergency">
+            <RadzenDataGridColumn TItem="Report" Property="IsEmergency" Title="Emergency">
                 <Template Context="report">
                     <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
                                  Text="@(report.IsEmergency ? "YES" : "NO")" />
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LocationReport" Property="DeletedAt" Title="Status">
+            <RadzenDataGridColumn TItem="Report" Property="DeletedAt" Title="Status">
                 <Template Context="report">
                     @if (report.DeletedAt != null)
                     {
@@ -82,12 +82,12 @@ else
                     }
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LocationReport" Title="Location">
+            <RadzenDataGridColumn TItem="Report" Title="Location">
                 <Template Context="report">
                     @report.LocationDisplay()
                 </Template>
             </RadzenDataGridColumn>
-            <RadzenDataGridColumn TItem="LocationReport" Title="Actions" Filterable="false" Sortable="false">
+            <RadzenDataGridColumn TItem="Report" Title="Actions" Filterable="false" Sortable="false">
                 <Template Context="report">
                     <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
                         <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
@@ -111,7 +111,7 @@ else
         await MapState.LoadReportsAsync();
     }
 
-    protected override Task<List<LocationReport>> GetEntitiesAsync() => ReportService.GetAllReportsAsync();
+    protected override Task<List<Report>> GetEntitiesAsync() => ReportService.GetAllReportsAsync();
 
     private async Task EditReport(IEntity report)
     {
@@ -145,7 +145,7 @@ else
         }
     }
 
-    private async Task OpenOnMap(LocationReport report)
+    private async Task OpenOnMap(Report report)
     {
         var url = $"/?reportId={report.ExternalId}";
         await JsRuntime.InvokeVoidAsync("window.open", url, "_blank");
