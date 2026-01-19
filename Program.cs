@@ -292,7 +292,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IOptions<AppOptions> applicationOptions, IHttpClientFactory httpClientFactory, IBaseUrlProvider baseUrlProvider) => 
+app.MapGet("/api/map/proxy", async (string? reportId, IReportService reportService, ISettingsService settingsService, IHttpClientFactory httpClientFactory, IBaseUrlProvider baseUrlProvider) => 
 {
     if (string.IsNullOrEmpty(reportId) || !Guid.TryParse(reportId, out var rGuid))
     {

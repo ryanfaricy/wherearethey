@@ -2,6 +2,7 @@ using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
+// ReSharper disable MethodHasAsyncOverload
 
 namespace WhereAreThey.Tests.Services;
 
@@ -11,7 +12,6 @@ public class MapStateServiceTests : IDisposable
     private readonly Mock<IAlertService> _alertServiceMock;
     private readonly Mock<IEventService> _eventServiceMock;
     private readonly Mock<IMapService> _mapServiceMock;
-    private readonly Mock<ISettingsService> _settingsServiceMock;
     private readonly MapStateService _service;
 
     public MapStateServiceTests()
@@ -20,20 +20,20 @@ public class MapStateServiceTests : IDisposable
         _alertServiceMock = new Mock<IAlertService>();
         _eventServiceMock = new Mock<IEventService>();
         _mapServiceMock = new Mock<IMapService>();
-        _settingsServiceMock = new Mock<ISettingsService>();
+        var settingsServiceMock = new Mock<ISettingsService>();
 
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
-        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
+        settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
         
         _service = new MapStateService(
             _reportServiceMock.Object,
             _alertServiceMock.Object,
             _eventServiceMock.Object,
             _mapServiceMock.Object,
-            _settingsServiceMock.Object);
+            settingsServiceMock.Object);
     }
 
     [Fact]
@@ -157,7 +157,7 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
-            .ReturnsAsync(new List<Report> { report });
+            .ReturnsAsync([report]);
         
         await _service.InitializeAsync("test-admin", isAdmin: true);
         _service.ShowDeleted = true; // This will trigger LoadReportsAsync and populate Reports with our report
@@ -277,7 +277,7 @@ public class MapStateServiceTests : IDisposable
         // Current report is recent
         var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
-            .ReturnsAsync(new List<Report> { report });
+            .ReturnsAsync([report]);
             
         await _service.LoadReportsAsync(24); // Set window to 24h
         _service.MapInitialized = true;

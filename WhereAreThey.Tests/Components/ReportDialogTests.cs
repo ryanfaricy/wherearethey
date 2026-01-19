@@ -1,9 +1,7 @@
 using Bunit;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Radzen;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
@@ -51,14 +49,15 @@ public class ReportDialogTests : ComponentTestBase
     [Fact]
     public async Task OnInitialized_ShouldReverseGeocode()
     {
+        await Task.CompletedTask;
+        
         // Arrange
         var report = new Report { Latitude = 40.0, Longitude = -70.0 };
         _geocodingServiceMock.Setup(s => s.ReverseGeocodeAsync(40.0, -70.0))
             .ReturnsAsync("123 Main St");
 
         // Act
-        var cut = Render<ReportDialog>(parameters => parameters
-            .Add(p => p.Report, report));
+        Render<ReportDialog>(parameters => parameters.Add(p => p.Report, report));
 
         // Assert
         _geocodingServiceMock.Verify(s => s.ReverseGeocodeAsync(40.0, -70.0), Times.Once);

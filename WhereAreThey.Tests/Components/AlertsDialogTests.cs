@@ -42,7 +42,6 @@ public class AlertsDialogTests : ComponentTestBase
         var cut = Render<AlertsDialog>();
 
         // Assert
-        var emailField = cut.FindComponent<RadzenTextBox>(); // There are multiple, but the email one is near the bottom
         // Better way to find it is by name if possible, or just check all textboxes
         var textboxes = cut.FindComponents<RadzenTextBox>();
         var emailTextBox = textboxes.FirstOrDefault(t => t.Instance.Name == "Email");

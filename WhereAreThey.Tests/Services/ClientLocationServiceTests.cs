@@ -53,6 +53,7 @@ public class ClientLocationServiceTests
         
         // Assert initial state
         Assert.True(_service.IsLocating);
+        Assert.True(stateChanged);
 
         var manualPosition = new GeolocationPosition { Coords = new GeolocationCoordinates { Latitude = 3, Longitude = 4 } };
         _service.ConfirmManualPick(manualPosition);
