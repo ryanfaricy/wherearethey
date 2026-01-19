@@ -145,6 +145,10 @@ public class MapStateServiceTests : IDisposable
         // Setup mocks for alerts which are called during InitializeAsync
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
+        
+        // Setup report mocks
+        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>())).ReturnsAsync([]);
 
         // 1. Test Admin Mode
         await _service.InitializeAsync("test-admin", isAdmin: true);
@@ -155,6 +159,26 @@ public class MapStateServiceTests : IDisposable
         await _service.InitializeAsync("test-user", isAdmin: false);
         await _service.LoadReportsAsync(6);
         _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6), Times.Once);
+    }
+
+    [Fact]
+    public async Task LoadReportsAsync_AdminMode_FiltersDeletedReports()
+    {
+        // Arrange
+        var reports = new List<LocationReport> 
+        { 
+            new() { Id = 1, DeletedAt = null },
+            new() { Id = 2, DeletedAt = DateTime.UtcNow }
+        };
+        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync(reports);
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+
+        // Act
+        await _service.LoadReportsAsync();
+
+        // Assert
+        Assert.Single(_service.Reports);
+        Assert.Equal(1, _service.Reports[0].Id);
     }
 
     public void Dispose()

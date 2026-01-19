@@ -14,5 +14,5 @@ public static class VisibilityPolicy
     /// <param name="isAdmin">Whether the current user has administrative privileges.</param>
     /// <returns>True if the entity should be visible; otherwise, false.</returns>
     public static bool ShouldShow(IAuditable entity, bool isAdmin) 
-        => isAdmin || entity.DeletedAt == null;
+        => entity.DeletedAt == null;
 }

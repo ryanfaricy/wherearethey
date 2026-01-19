@@ -16,9 +16,9 @@
 @inject IMapInteractionService MapInteraction
 @inject IClientLocationService ClientLocation
 @inject IAdminService AdminService
+@inject IMapNavigationManager MapNavigationManager
 @using System.Globalization
 @using System.Text.Json
-@using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Components.Home
 @using WhereAreThey.Models
@@ -217,64 +217,18 @@
             
             var isNew = await StorageService.IsNewUserAsync();
 
-            double initialLat = 0;
-            double initialLng = 0;
-            double? initialRadius = null;
-            int? focusReportId = null;
-
             // Check query parameters
-            var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-            var query = QueryHelpers.ParseQuery(uri.Query);
-
-            if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
+            var navState = await MapNavigationManager.GetNavigationStateAsync();
+            if (navState.SelectedHours.HasValue)
             {
-                _selectedHours = h;
+                _selectedHours = navState.SelectedHours.Value;
                 await MapState.LoadReportsAsync(_selectedHours);
             }
 
-            if (query.TryGetValue("reportId", out var reportIdStr))
-            {
-                if (Guid.TryParse(reportIdStr, out var rGuid))
-                {
-                    var result = await ReportService.GetReportByExternalIdAsync(rGuid);
-                    if (result.IsSuccess)
-                    {
-                        var report = result.Value!;
-                        focusReportId = report.Id;
-                        initialLat = report.Latitude;
-                        initialLng = report.Longitude;
-                    }
-                }
-                else if (int.TryParse(reportIdStr, out var rId))
-                {
-                    focusReportId = rId;
-                }
-            }
-
-            if (query.TryGetValue("alertId", out var alertIdStr) && Guid.TryParse(alertIdStr, out var aGuid))
-            {
-                var result = await AlertService.GetAlertByExternalIdAsync(aGuid);
-                if (result.IsSuccess)
-                {
-                    var alert = result.Value!;
-                    initialLat = alert.Latitude;
-                    initialLng = alert.Longitude;
-                    initialRadius = alert.RadiusKm;
-                }
-            }
-
-            if (initialLat == 0 && query.TryGetValue("lat", out var latStr) && double.TryParse(latStr, CultureInfo.InvariantCulture, out var lat))
-            {
-                initialLat = lat;
-            }
-            if (initialLng == 0 && query.TryGetValue("lng", out var lngStr) && double.TryParse(lngStr, CultureInfo.InvariantCulture, out var lng))
-            {
-                initialLng = lng;
-            }
-            if (!initialRadius.HasValue && query.TryGetValue("radius", out var radiusStr) && double.TryParse(radiusStr, CultureInfo.InvariantCulture, out var radius))
-            {
-                initialRadius = radius;
-            }
+            double initialLat = navState.InitialLat ?? 0;
+            double initialLng = navState.InitialLng ?? 0;
+            double? initialRadius = navState.InitialRadius;
+            int? focusReportId = navState.FocusReportId;
 
             if (initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {

@@ -158,6 +158,7 @@ builder.Services.AddScoped<IMapStateService, MapStateService>();
 builder.Services.AddScoped<IMapInteractionService, MapInteractionService>();
 builder.Services.AddScoped<IClientLocationService, ClientLocationService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
+builder.Services.AddScoped<IMapNavigationManager, MapNavigationManager>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
 builder.Services.AddScoped<IFido2>(sp =>
 {

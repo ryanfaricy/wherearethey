@@ -110,9 +110,12 @@ public class MapStateService : IMapStateService
     public async Task LoadReportsAsync(int? hours = null)
     {
         _lastLoadedHours = hours;
-        Reports = _isAdmin 
+        var allReports = _isAdmin 
             ? await _reportService.GetAllReportsAsync() 
             : await _reportService.GetRecentReportsAsync(hours);
+        
+        // Even for admins, we only want to show non-deleted reports in the "real-time" state
+        Reports = allReports.Where(r => r.DeletedAt == null).ToList();
         
         if (MapInitialized)
         {
