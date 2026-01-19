@@ -3,31 +3,42 @@
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @inject IAdminService AdminService
+@inject Microsoft.Extensions.Localization.IStringLocalizer<App> L
 @inject UserTimeZoneService TimeZoneService
 @inject ILogger<AdminLoginsTab> Logger
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowPaging="true" PageSize="10">
-        <Template Context="attempt">
-            <RadzenCard Class="@($"app-card {(attempt.IsSuccessful ? "app-card-success" : "app-card-danger")}")">
-                <RadzenStack Gap="0.5rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(attempt.CreatedAt)
-                        </RadzenText>
-                        <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
-                                     Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+    @if (_loginAttempts.Any())
+    {
+        <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowPaging="true" PageSize="10">
+            <Template Context="attempt">
+                <RadzenCard Class="@($"app-card {(attempt.IsSuccessful ? "app-card-success" : "app-card-danger")}")">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                                @TimeZoneService.FormatLocal(attempt.CreatedAt)
+                            </RadzenText>
+                            <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
+                                         Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
+                        </RadzenStack>
+                        <RadzenText TextStyle="TextStyle.Caption"><b>IP Address:</b> @attempt.IpAddress</RadzenText>
                     </RadzenStack>
-                    <RadzenText TextStyle="TextStyle.Caption"><b>IP Address:</b> @attempt.IpAddress</RadzenText>
-                </RadzenStack>
-            </RadzenCard>
-        </Template>
-    </RadzenDataList>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_login_attempts"]</RadzenText>
+    }
 }
 else
 {
     <RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <EmptyTemplate>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_login_attempts"]</RadzenText>
+        </EmptyTemplate>
         <Columns>
             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="CreatedAt" Title="Time">
                 <Template Context="attempt">

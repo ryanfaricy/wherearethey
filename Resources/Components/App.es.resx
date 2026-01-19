@@ -562,4 +562,22 @@
   <data name="RECENT_REPORTS" xml:space="preserve">
     <value>Reportes Recientes</value>
   </data>
+  <data name="No_reports_found" xml:space="preserve">
+    <value>No se encontraron reportes.</value>
+  </data>
+  <data name="No_alerts_found" xml:space="preserve">
+    <value>No se encontraron zonas de alerta.</value>
+  </data>
+  <data name="No_feedback_found" xml:space="preserve">
+    <value>No se encontraron comentarios.</value>
+  </data>
+  <data name="No_donations_found" xml:space="preserve">
+    <value>No se encontraron donaciones.</value>
+  </data>
+  <data name="No_login_attempts" xml:space="preserve">
+    <value>No se registraron intentos de inicio de sesión.</value>
+  </data>
+  <data name="No_recent_reports" xml:space="preserve">
+    <value>No hay reportes recientes.</value>
+  </data>
 </root>

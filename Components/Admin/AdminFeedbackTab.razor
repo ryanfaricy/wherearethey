@@ -9,38 +9,48 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Feedback" AllowPaging="true" PageSize="10">
-        <Template Context="feedback">
-            <RadzenCard Class="@($"app-card {(feedback.Type == "Bug" ? "app-card-danger" : "app-card-info")}")">
-                <RadzenStack Gap="0.5rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(feedback.CreatedAt)
-                        </RadzenText>
-                        <RadzenBadge BadgeStyle="@(feedback.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@feedback.Type" />
+    @if (Items.Any())
+    {
+        <RadzenDataList Data="@Items" TItem="Feedback" AllowPaging="true" PageSize="10">
+            <Template Context="feedback">
+                <RadzenCard Class="@($"app-card {(feedback.Type == "Bug" ? "app-card-danger" : "app-card-info")}")">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                                @TimeZoneService.FormatLocal(feedback.CreatedAt)
+                            </RadzenText>
+                            <RadzenBadge BadgeStyle="@(feedback.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@feedback.Type" />
+                        </RadzenStack>
+                        
+                        <RadzenText TextStyle="TextStyle.Body1">@feedback.Message</RadzenText>
+                        
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" AlignItems="AlignItems.Center" Gap="0.5rem">
+                             <RadzenText TextStyle="TextStyle.Caption" Style="flex: 1;"><b>User:</b> @feedback.UserIdentifier</RadzenText>
+                             @if (feedback.DeletedAt != null)
+                             {
+                                 <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                             }
+                             <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                          Click="@(() => EditFeedback(feedback))" Text="EDIT" />
+                             <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                          Click="@(() => DeleteFeedback(feedback.Id))" Text="DELETE" />
+                        </RadzenStack>
                     </RadzenStack>
-                    
-                    <RadzenText TextStyle="TextStyle.Body1">@feedback.Message</RadzenText>
-                    
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End" AlignItems="AlignItems.Center" Gap="0.5rem">
-                         <RadzenText TextStyle="TextStyle.Caption" Style="flex: 1;"><b>User:</b> @feedback.UserIdentifier</RadzenText>
-                         @if (feedback.DeletedAt != null)
-                         {
-                             <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
-                         }
-                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
-                                      Click="@(() => EditFeedback(feedback))" Text="EDIT" />
-                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                      Click="@(() => DeleteFeedback(feedback.Id))" Text="DELETE" />
-                    </RadzenStack>
-                </RadzenStack>
-            </RadzenCard>
-        </Template>
-    </RadzenDataList>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_feedback_found"]</RadzenText>
+    }
 }
 else
 {
     <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <EmptyTemplate>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_feedback_found"]</RadzenText>
+        </EmptyTemplate>
         <Columns>
             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" />
             <RadzenDataGridColumn TItem="Feedback" Property="CreatedAt" Title="Time">

@@ -17,6 +17,7 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     [Inject] protected IEventService EventService { get; set; } = null!;
     [Inject] protected IMapStateService MapState { get; set; } = null!;
     [Inject] protected ILogger<AdminTabBase<TEntity>> Logger { get; set; } = null!;
+    [Inject] protected Microsoft.Extensions.Localization.IStringLocalizer<App> L { get; set; } = null!;
 
     /// <summary>
     /// The list of items currently displayed in the tab.

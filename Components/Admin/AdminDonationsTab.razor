@@ -9,43 +9,53 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Donation" AllowPaging="true" PageSize="10">
-        <Template Context="donation">
-            <RadzenCard Class="app-card app-card-success">
-                <RadzenStack Gap="0.5rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(donation.CreatedAt)
-                        </RadzenText>
-                        <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
-                                     Text="@donation.Status" />
-                        @if (donation.DeletedAt != null)
-                        {
-                            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
-                        }
-                    </RadzenStack>
-                    
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                        <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
-                            @donation.Amount @donation.Currency.ToUpper()
-                        </RadzenText>
-                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
-                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
-                                          Click="@(() => EditDonation(donation))" Text="EDIT" />
-                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                          Click="@(() => DeleteDonation(donation.Id))" Text="DELETE" />
+    @if (Items.Any())
+    {
+        <RadzenDataList Data="@Items" TItem="Donation" AllowPaging="true" PageSize="10">
+            <Template Context="donation">
+                <RadzenCard Class="app-card app-card-success">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                                @TimeZoneService.FormatLocal(donation.CreatedAt)
+                            </RadzenText>
+                            <RadzenBadge BadgeStyle="@(donation.IsSuccess() ? BadgeStyle.Success : BadgeStyle.Secondary)" 
+                                         Text="@donation.Status" />
+                            @if (donation.DeletedAt != null)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                            }
                         </RadzenStack>
+                        
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenText TextStyle="TextStyle.H6" Class="rz-m-0">
+                                @donation.Amount @donation.Currency.ToUpper()
+                            </RadzenText>
+                            <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                                <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
+                                              Click="@(() => EditDonation(donation))" Text="EDIT" />
+                                <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                              Click="@(() => DeleteDonation(donation.Id))" Text="DELETE" />
+                            </RadzenStack>
+                        </RadzenStack>
+                        
+                        <RadzenText TextStyle="TextStyle.Caption"><b>Donor:</b> @donation.DonorEmail</RadzenText>
                     </RadzenStack>
-                    
-                    <RadzenText TextStyle="TextStyle.Caption"><b>Donor:</b> @donation.DonorEmail</RadzenText>
-                </RadzenStack>
-            </RadzenCard>
-        </Template>
-    </RadzenDataList>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_donations_found"]</RadzenText>
+    }
 }
 else
 {
     <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <EmptyTemplate>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_donations_found"]</RadzenText>
+        </EmptyTemplate>
         <Columns>
             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                 <Template Context="donation">

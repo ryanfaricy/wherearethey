@@ -11,45 +11,55 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10">
-        <Template Context="report">
-            <RadzenCard Class="@($"app-card {(report.IsEmergency ? "app-card-report-emergency" : "app-card-report")}")">
-                <RadzenStack Gap="0.5rem">
-                    <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
-                        <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(report.CreatedAt)
-                        </RadzenText>
-                        <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
-                                     Text="@(report.IsEmergency ? "EMERGENCY" : "NORMAL")" />
-                        @if (report.DeletedAt != null)
-                        {
-                            <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
-                        }
-                    </RadzenStack>
-                    
-                    <RadzenText TextStyle="TextStyle.Body1">@report.Message</RadzenText>
-                    
-                    <RadzenStack Gap="0.25rem">
-                        <RadzenText TextStyle="TextStyle.Caption"><b>Reporter Location:</b> @report.ReporterLocationDisplay()</RadzenText>
-                        <RadzenText TextStyle="TextStyle.Caption"><b>Incident Location:</b> @report.LocationDisplay()</RadzenText>
-                    </RadzenStack>
+    @if (Items.Any())
+    {
+        <RadzenDataList Data="@Items" TItem="Report" AllowPaging="true" PageSize="10">
+            <Template Context="report">
+                <RadzenCard Class="@($"app-card {(report.IsEmergency ? "app-card-report-emergency" : "app-card-report")}")">
+                    <RadzenStack Gap="0.5rem">
+                        <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
+                            <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
+                                @TimeZoneService.FormatLocal(report.CreatedAt)
+                            </RadzenText>
+                            <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
+                                         Text="@(report.IsEmergency ? "EMERGENCY" : "NORMAL")" />
+                            @if (report.DeletedAt != null)
+                            {
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                            }
+                        </RadzenStack>
+                        
+                        <RadzenText TextStyle="TextStyle.Body1">@report.Message</RadzenText>
+                        
+                        <RadzenStack Gap="0.25rem">
+                            <RadzenText TextStyle="TextStyle.Caption"><b>Reporter Location:</b> @report.ReporterLocationDisplay()</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption"><b>Incident Location:</b> @report.LocationDisplay()</RadzenText>
+                        </RadzenStack>
 
-                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Class="rz-mt-2">
-                        <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
-                                      Click="@(() => OpenOnMap(report))" Text="MAP" />
-                        <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
-                                      Click="@(() => EditReport(report))" Text="EDIT" />
-                        <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                      Click="@(() => DeleteReport(report.Id))" Text="DELETE" />
+                        <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Class="rz-mt-2">
+                            <RadzenButton Icon="travel_explore" ButtonStyle="ButtonStyle.Info" Size="ButtonSize.Small" 
+                                          Click="@(() => OpenOnMap(report))" Text="MAP" />
+                            <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
+                                          Click="@(() => EditReport(report))" Text="EDIT" />
+                            <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
+                                          Click="@(() => DeleteReport(report.Id))" Text="DELETE" />
+                        </RadzenStack>
                     </RadzenStack>
-                </RadzenStack>
-            </RadzenCard>
-        </Template>
-    </RadzenDataList>
+                </RadzenCard>
+            </Template>
+        </RadzenDataList>
+    }
+    else
+    {
+        <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_reports_found"]</RadzenText>
+    }
 }
 else
 {
     <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Report" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+        <EmptyTemplate>
+            <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_reports_found"]</RadzenText>
+        </EmptyTemplate>
         <Columns>
             <RadzenDataGridColumn TItem="Report" Property="Id" Title="ID" />
             <RadzenDataGridColumn TItem="Report" Property="CreatedAt" Title="Time">

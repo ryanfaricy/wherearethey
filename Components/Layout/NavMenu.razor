@@ -36,9 +36,16 @@
 
     <RadzenStack Gap="0.5rem" Class="rz-p-4" Style="flex: 1 1 auto; overflow-y: auto;">
         <RadzenText TextStyle="TextStyle.Subtitle2" Text="@L["RECENT_REPORTS"]" Style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;" />
-        @foreach (var report in _recentReports)
+        @if (_recentReports.Any())
         {
-            <ReportCard Report="@report" OnClick="@(() => OnReportCardClick(report))" MaxMessageLength="100" />
+            @foreach (var report in _recentReports)
+            {
+                <ReportCard Report="@report" OnClick="@(() => OnReportCardClick(report))" MaxMessageLength="100" />
+            }
+        }
+        else
+        {
+            <RadzenText TextStyle="TextStyle.Body2" Class="opacity-75 rz-p-2">@L["No_recent_reports"]</RadzenText>
         }
     </RadzenStack>
 </RadzenStack>
