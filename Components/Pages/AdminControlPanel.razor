@@ -1,4 +1,5 @@
 @page "/cp"
+@inject NavigationManager NavigationManager
 @inject IAdminService AdminService
 @inject IMapStateService MapState
 @inject IAdminPasskeyService PasskeyService
@@ -128,8 +129,8 @@
                 else
                 {
                     // Localhost bypass for debugging
-                    var host = HttpContextAccessor.HttpContext?.Request.Host.Host;
-                    if (host is "localhost" or "127.0.0.1")
+                    var uri = new Uri(NavigationManager.Uri);
+                    if (uri.Host is "localhost" or "127.0.0.1")
                     {
                         Logger.LogInformation("Localhost detected - bypassing admin login");
                         _isAuthenticated = true;

@@ -154,18 +154,6 @@
                     _showAdminShortcut = true;
                     StateHasChanged();
                 }
-                else
-                {
-                    // Localhost bypass for debugging
-                    var uri = new Uri(NavigationManager.Uri);
-                    if (uri.Host is "localhost" or "127.0.0.1")
-                    {
-                        _showAdminShortcut = true;
-                        await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
-                        AdminService.NotifyAdminLogin();
-                        StateHasChanged();
-                    }
-                }
             }
             catch (Exception)
             {
