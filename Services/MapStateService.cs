@@ -45,7 +45,7 @@ public class MapStateService : IMapStateService
 
             // When the map initializes, ensure it has the latest data
             _ = _mapService.UpdateHeatMapAsync(Reports);
-            if (!_isAdmin)
+            if (Alerts.Any())
             {
                 _ = _mapService.UpdateAlertsAsync(Alerts);
             }
@@ -127,16 +127,16 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAlertsAsync()
     {
-        if (_isAdmin)
-        {
-            Alerts = []; // Admin heat map should not display alert zones
-        }
-        else if (!string.IsNullOrEmpty(_userIdentifier))
+        if (!string.IsNullOrEmpty(_userIdentifier))
         {
             Alerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
         }
+        else
+        {
+            Alerts = [];
+        }
 
-        if (MapInitialized && !_isAdmin)
+        if (MapInitialized)
         {
             await _mapService.UpdateAlertsAsync(Alerts);
         }
@@ -290,7 +290,8 @@ public class MapStateService : IMapStateService
             return;
         }
 
-        if (_isAdmin || (!_isAdmin && alert.UserIdentifier != _userIdentifier))
+        // Don't show other users' alerts unless we are an admin
+        if (alert.UserIdentifier != _userIdentifier && !_isAdmin)
         {
             return;
         }
@@ -305,7 +306,8 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertUpdated(Alert alert)
     {
-        if (_isAdmin || (!_isAdmin && alert.UserIdentifier != _userIdentifier))
+        // Don't show other users' alerts unless we are an admin
+        if (alert.UserIdentifier != _userIdentifier && !_isAdmin)
         {
             return;
         }

@@ -288,9 +288,15 @@ window.updateAlerts = function (alerts) {
     if (!alerts || !alerts.length) return;
 
     alerts.forEach(alert => {
+        const lat = alert.latitude || alert.Latitude;
+        const lng = alert.longitude || alert.Longitude;
+        const radiusKm = alert.radiusKm || alert.RadiusKm || 5.0;
+
+        if (lat === undefined || lng === undefined) return;
+
         // Create circle
-        const circle = L.circle([alert.latitude, alert.longitude], {
-            radius: alert.radiusKm * 1000,
+        const circle = L.circle([lat, lng], {
+            radius: radiusKm * 1000,
             color: '#e65100', // Darker orange
             fillColor: '#ff9800',
             fillOpacity: 0.05,
@@ -307,14 +313,14 @@ window.updateAlerts = function (alerts) {
             iconAnchor: [22, 22]
         });
 
-        const marker = L.marker([alert.latitude, alert.longitude], {
+        const marker = L.marker([lat, lng], {
             icon: alertIcon
         }).addTo(map);
 
         marker.alertData = alert;
         marker.on('click', onMarkerClick);
 
-        marker.bindTooltip(alert.message || translations.Alert_Zone || 'Alert Zone', {
+        marker.bindTooltip(alert.message || alert.Message || translations.Alert_Zone || 'Alert Zone', {
             permanent: false,
             direction: 'top'
         });
