@@ -112,6 +112,21 @@
                     _isAuthenticated = true;
                     StateHasChanged();
                 }
+                else
+                {
+                    // Localhost bypass for debugging
+                    var host = HttpContextAccessor.HttpContext?.Request.Host.Host;
+                    if (host is "localhost" or "127.0.0.1")
+                    {
+                        Logger.LogInformation("Localhost detected - bypassing admin login");
+                        _isAuthenticated = true;
+                        await SessionStorage.SetAsync("isAdmin", true);
+                        await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
+                        AdminService.NotifyAdminLogin();
+                        NotificationService.Notify(NotificationSeverity.Info, "Debug Mode", "Admin login bypassed on localhost");
+                        StateHasChanged();
+                    }
+                }
             }
             catch (Exception ex)
             {

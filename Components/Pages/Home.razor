@@ -120,7 +120,8 @@
     {
         InvokeAsync(async () =>
         {
-            await MapState.InitializeAsync(_userIdentifier);
+            var isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -130,7 +131,8 @@
     {
         InvokeAsync(async () =>
         {
-            await MapState.InitializeAsync(_userIdentifier);
+            var isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -209,7 +211,8 @@
                 return;
             }
             
-            await MapState.InitializeAsync(_userIdentifier);
+            var isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             
             var isNew = await StorageService.IsNewUserAsync();

@@ -54,11 +54,22 @@
             try
             {
                 var result = await LocalStorage.GetAsync<DateTime>("lastAdminLogin");
-                if (result.Success)
+                var isValidLogin = result is { Success: true } && (DateTime.UtcNow - result.Value).TotalDays <= 7;
+                
+                if (isValidLogin)
                 {
-                    if ((DateTime.UtcNow - result.Value).TotalDays <= 7)
+                    _showAdminShortcut = true;
+                    StateHasChanged();
+                }
+                else
+                {
+                    // Localhost bypass for debugging
+                    var uri = new Uri(NavigationManager.Uri);
+                    if (uri.Host is "localhost" or "127.0.0.1")
                     {
                         _showAdminShortcut = true;
+                        await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
+                        AdminService.NotifyAdminLogin();
                         StateHasChanged();
                     }
                 }
