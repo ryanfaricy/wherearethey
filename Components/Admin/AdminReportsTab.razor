@@ -137,8 +137,14 @@ else
 
     private async Task DeleteReport(int id)
     {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this report?", "Delete Report", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? "Are you sure you want to PERMANENTLY delete this report? This cannot be undone." 
+            : "Are you sure you want to delete this report?";
+        var title = isHardDelete ? "Hard Delete Report" : "Delete Report";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
         
         if (confirm == true)
         {

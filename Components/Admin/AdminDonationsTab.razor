@@ -107,7 +107,7 @@ else
     {
         var result = await DialogService.OpenAsync<AdminEditDonationDialog>("EDIT DONATION",
             new Dictionary<string, object> { { "Donation", donation } },
-            new DialogOptions { Width = "400px" });
+            DialogConfigs.Admin);
 
         if (result == true)
         {
@@ -118,8 +118,14 @@ else
 
     private async Task DeleteDonation(int id)
     {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this donation?", "Delete Donation", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? "Are you sure you want to PERMANENTLY delete this donation? This cannot be undone." 
+            : "Are you sure you want to delete this donation?";
+        var title = isHardDelete ? "Hard Delete Donation" : "Delete Donation";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
         
         if (confirm == true)
         {

@@ -109,8 +109,14 @@ else
 
     private async Task DeleteFeedback(int id)
     {
-        var confirm = await DialogService.Confirm("Are you sure you want to delete this feedback?", "Delete Feedback", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? "Are you sure you want to PERMANENTLY delete this feedback? This cannot be undone." 
+            : "Are you sure you want to delete this feedback?";
+        var title = isHardDelete ? "Hard Delete Feedback" : "Delete Feedback";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
         
         if (confirm == true)
         {

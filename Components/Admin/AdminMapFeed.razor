@@ -112,12 +112,18 @@
 
     private async Task OnHeatMapAlertDeleteClick(int alertId)
     {
-        var confirmed = await DialogService.Confirm("Are you sure you want to delete this alert zone?", "Delete Alert", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? "Are you sure you want to PERMANENTLY delete this alert zone? This cannot be undone." 
+            : "Are you sure you want to delete this alert zone?";
+        var title = isHardDelete ? "Hard Delete Alert" : "Delete Alert";
+
+        var confirmed = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
 
         if (confirmed == true)
         {
-            await AlertService.DeleteAlertAsync(alertId);
+            await AlertService.DeleteAlertAsync(alertId, MapState.ShowDeleted);
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
         }
     }
@@ -131,8 +137,14 @@
 
     private async Task DeleteReport(IEntity report)
     {
-        var confirmed = await DialogService.Confirm("Are you sure you want to delete this report?", "Delete Report", 
-            new ConfirmOptions { OkButtonText = "Yes", CancelButtonText = "No" });
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? "Are you sure you want to PERMANENTLY delete this report? This cannot be undone." 
+            : "Are you sure you want to delete this report?";
+        var title = isHardDelete ? "Hard Delete Report" : "Delete Report";
+
+        var confirmed = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
 
         if (confirmed == true)
         {
