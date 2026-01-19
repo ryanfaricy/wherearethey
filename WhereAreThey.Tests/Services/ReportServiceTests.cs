@@ -506,4 +506,32 @@ public class ReportServiceTests : IDisposable
             Assert.Null(deletedReport); // Should be gone
         }
     }
+    [Fact]
+    public async Task GetRecentReports_WithIncludeDeletedTrue_ShouldReturnDeletedReports()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var deletedReport = new Report
+            {
+                Latitude = 40.0,
+                Longitude = -74.0,
+                CreatedAt = DateTime.UtcNow.AddHours(-1),
+                DeletedAt = DateTime.UtcNow,
+                ReporterIdentifier = "test"
+            };
+            context.Reports.Add(deletedReport);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var results = await service.GetRecentReportsAsync(hours: 24, includeDeleted: true);
+
+        // Assert
+        Assert.Single(results);
+    }
 }

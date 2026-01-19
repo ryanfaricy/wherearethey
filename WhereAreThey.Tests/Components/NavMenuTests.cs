@@ -111,7 +111,7 @@ public class NavMenuTests : ComponentTestBase
     }
 
     [Fact]
-    public void NavMenu_ClickingItem_TriggersCallback()
+    public async Task NavMenu_ClickingItem_TriggersCallback()
     {
         // Arrange
         var clicked = false;
@@ -125,7 +125,7 @@ public class NavMenuTests : ComponentTestBase
         // Act
         // Use cut.InvokeAsync to simulate the click if necessary, but RadzenPanelMenuItem click 
         // usually triggers the Click event callback
-        cut.InvokeAsync(() => item.Instance.Click.InvokeAsync(null));
+        await cut.InvokeAsync(() => item.Instance.Click.InvokeAsync(null));
 
         // Assert
         Assert.True(clicked);

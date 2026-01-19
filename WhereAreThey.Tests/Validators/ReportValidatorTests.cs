@@ -384,4 +384,36 @@ public class ReportValidatorTests
         // Assert
         Assert.True(result.IsValid, string.Join(", ", result.Errors.Select(e => e.ErrorMessage)));
     }
+    [Fact]
+    public async Task Validator_ShouldFail_WhenInCooldown_EvenIfDeleted()
+    {
+        // Arrange
+        var (context, factory) = await CreateContextAndFactoryAsync();
+        var identifier = "user123456";
+        var cooldown = 5;
+        context.Reports.Add(new Report 
+        { 
+            ReporterIdentifier = identifier, 
+            CreatedAt = DateTime.UtcNow.AddMinutes(-2),
+            DeletedAt = DateTime.UtcNow,
+            Latitude = 0, Longitude = 0,
+        });
+        await context.SaveChangesAsync();
+
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportCooldownMinutes = cooldown });
+        var validator = new ReportValidator(factory, _settingsServiceMock.Object, _adminServiceMock.Object, _localizerMock.Object);
+        var report = new Report 
+        { 
+            ReporterIdentifier = identifier,
+            Latitude = 0, Longitude = 0,
+            ReporterLatitude = 0, ReporterLongitude = 0,
+        };
+
+        // Act
+        var result = await validator.ValidateAsync(report);
+
+        // Assert
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.PropertyName == nameof(Report.ReporterIdentifier));
+    }
 }

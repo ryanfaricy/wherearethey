@@ -49,6 +49,7 @@ public class ReportValidator : AbstractValidator<Report>
                 var cutoff = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
                 
                 var hasRecent = await dbContext.Reports
+                    .IgnoreQueryFilters()
                     .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.CreatedAt >= cutoff, cancellation);
 
                 if (hasRecent)

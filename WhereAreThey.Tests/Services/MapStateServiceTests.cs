@@ -347,4 +347,25 @@ public class MapStateServiceTests : IDisposable
         
         _service.Dispose();
     }
+    [Fact]
+    public async Task MapStateService_ShouldBeThreadSafe_WhenHandlingManyEvents()
+    {
+        // Arrange
+        await _service.InitializeAsync("test-user", false);
+
+        int numberOfReports = 100; // Reduced for performance in regular suite
+        var tasks = new List<Task>();
+
+        // Act
+        for (int i = 0; i < numberOfReports; i++)
+        {
+            var report = new Report { Id = i, CreatedAt = DateTime.UtcNow, Latitude = 0, Longitude = 0 };
+            tasks.Add(Task.Run(() => _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Added)));
+        }
+
+        await Task.WhenAll(tasks);
+
+        // Assert
+        Assert.Equal(numberOfReports, _service.Reports.Count);
+    }
 }

@@ -16,6 +16,7 @@ public class MapStateService : IMapStateService
     private readonly IMapService _mapService;
     private readonly ISettingsService _settingsService;
     private readonly Timer? _pruneTimer;
+    private readonly object _lock = new();
     private string? _userIdentifier;
     private bool _isAdmin;
     private int? _lastLoadedHours;
@@ -152,17 +153,25 @@ public class MapStateService : IMapStateService
         
         var cutoff = DateTime.UtcNow.AddHours(-hours);
         
-        var toRemove = Reports.Where(r => r.CreatedAt < cutoff).ToList();
-        
-        if (toRemove.Count == 0)
+        List<Report> toRemove;
+        lock (_lock)
         {
-            return;
+            toRemove = Reports.Where(r => r.CreatedAt < cutoff).ToList();
+            
+            if (toRemove.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var report in toRemove)
+            {
+                Reports.Remove(report);
+            }
         }
 
-        foreach (var report in toRemove)
+        if (MapInitialized)
         {
-            Reports.Remove(report);
-            if (MapInitialized)
+            foreach (var report in toRemove)
             {
                 _ = _mapService.RemoveSingleReportAsync(report.Id);
             }
@@ -190,7 +199,10 @@ public class MapStateService : IMapStateService
         _isAllLoaded = false;
         
         var allReports = await _reportService.GetRecentReportsAsync(hours, _isAdmin && ShowDeleted);
-        Reports = allReports.Where(ShouldShowReport).ToList();
+        lock (_lock)
+        {
+            Reports = allReports.Where(ShouldShowReport).ToList();
+        }
         
         if (MapInitialized)
         {
@@ -206,7 +218,10 @@ public class MapStateService : IMapStateService
         _isAllLoaded = true;
         
         var allReports = await _reportService.GetAllReportsAsync();
-        Reports = allReports.Where(ShouldShowReport).ToList();
+        lock (_lock)
+        {
+            Reports = allReports.Where(ShouldShowReport).ToList();
+        }
         
         if (MapInitialized)
         {
@@ -218,18 +233,24 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAlertsAsync()
     {
+        List<Alert> loadedAlerts;
         if (_isAdmin)
         {
             var allAlerts = await _alertService.GetAllAlertsAsync();
-            Alerts = allAlerts.Where(a => VisibilityPolicy.ShouldShow(a, _isAdmin, ShowDeleted)).ToList();
+            loadedAlerts = allAlerts.Where(a => VisibilityPolicy.ShouldShow(a, _isAdmin, ShowDeleted)).ToList();
         }
         else if (!string.IsNullOrEmpty(_userIdentifier))
         {
-            Alerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
+            loadedAlerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
         }
         else
         {
-            Alerts = [];
+            loadedAlerts = [];
+        }
+
+        lock (_lock)
+        {
+            Alerts = loadedAlerts;
         }
 
         if (MapInitialized)
@@ -297,7 +318,11 @@ public class MapStateService : IMapStateService
             return;
         }
 
-        Reports.Insert(0, report);
+        lock (_lock)
+        {
+            Reports.Insert(0, report);
+        }
+        
         if (MapInitialized)
         {
             _ = _mapService.AddSingleReportAsync(report);
@@ -307,37 +332,59 @@ public class MapStateService : IMapStateService
 
     private void HandleReportUpdated(Report report)
     {
-        var index = Reports.FindIndex(r => r.Id == report.Id);
-        
-        if (!ShouldShowReport(report))
-        {
-            if (index == -1)
-            {
-                return;
-            }
+        bool changed = false;
+        bool shouldShow = ShouldShowReport(report);
+        bool callUpdateOnMap = false;
+        bool callRemoveOnMap = false;
+        bool callHandleAdded = false;
 
-            Reports.RemoveAt(index);
-            if (MapInitialized)
+        lock (_lock)
+        {
+            var index = Reports.FindIndex(r => r.Id == report.Id);
+            
+            if (!shouldShow)
             {
-                _ = _mapService.RemoveSingleReportAsync(report.Id);
+                if (index != -1)
+                {
+                    Reports.RemoveAt(index);
+                    changed = true;
+                    callRemoveOnMap = true;
+                }
             }
-            OnStateChanged?.Invoke();
-            return;
+            else if (index == -1)
+            {
+                // Might have been previously deleted or new
+                callHandleAdded = true;
+            }
+            else
+            {
+                Reports[index] = report;
+                changed = true;
+                callUpdateOnMap = true;
+            }
         }
 
-        if (index == -1)
+        if (callHandleAdded)
         {
-            // Might have been previously deleted or new
             HandleReportAdded(report);
             return;
         }
 
-        Reports[index] = report;
-        if (MapInitialized)
+        if (changed)
         {
-            _ = UpdateReportOnMap(report);
+            if (MapInitialized)
+            {
+                if (callRemoveOnMap)
+                {
+                    _ = _mapService.RemoveSingleReportAsync(report.Id);
+                }
+                else if (callUpdateOnMap)
+                {
+                    _ = UpdateReportOnMap(report);
+                }
+            }
+            OnStateChanged?.Invoke();
         }
-        OnStateChanged?.Invoke();
     }
 
     private async Task UpdateReportOnMap(Report report)
@@ -355,21 +402,25 @@ public class MapStateService : IMapStateService
 
     private void HandleReportDeleted(int id)
     {
-        var index = Reports.FindIndex(r => r.Id == id);
-        if (index == -1)
+        bool changed = false;
+        lock (_lock)
         {
-            return;
+            var index = Reports.FindIndex(r => r.Id == id);
+            if (index != -1)
+            {
+                Reports.RemoveAt(index);
+                changed = true;
+            }
         }
 
-        // A Deleted event now uniquely identifies a HARD delete.
-        // It should always be removed from the state.
-        Reports.RemoveAt(index);
-        if (MapInitialized)
+        if (changed)
         {
-            _ = _mapService.RemoveSingleReportAsync(id);
+            if (MapInitialized)
+            {
+                _ = _mapService.RemoveSingleReportAsync(id);
+            }
+            OnStateChanged?.Invoke();
         }
-        
-        OnStateChanged?.Invoke();
     }
 
     private void HandleAlertAdded(Alert alert)
@@ -385,8 +436,12 @@ public class MapStateService : IMapStateService
             return;
         }
 
-        Alerts ??= [];
-        Alerts.Insert(0, alert);
+        lock (_lock)
+        {
+            Alerts ??= [];
+            Alerts.Insert(0, alert);
+        }
+        
         if (MapInitialized)
         {
             _ = _mapService.UpdateAlertsAsync(Alerts);
@@ -402,47 +457,65 @@ public class MapStateService : IMapStateService
             return;
         }
 
-        var index = Alerts.FindIndex(a => a.Id == alert.Id);
-        if (index != -1)
+        bool changed = false;
+        bool callHandleAdded = false;
+
+        lock (_lock)
         {
-            if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
+            var index = Alerts.FindIndex(a => a.Id == alert.Id);
+            if (index != -1)
             {
-                Alerts[index] = alert;
+                if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
+                {
+                    Alerts[index] = alert;
+                }
+                else
+                {
+                    Alerts.RemoveAt(index);
+                }
+                changed = true;
             }
-            else
+            else if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
             {
-                Alerts.RemoveAt(index);
+                callHandleAdded = true;
             }
-            
+        }
+
+        if (callHandleAdded)
+        {
+            HandleAlertAdded(alert);
+        }
+        else if (changed)
+        {
             if (MapInitialized)
             {
                 _ = _mapService.UpdateAlertsAsync(Alerts);
             }
             OnStateChanged?.Invoke();
         }
-        else if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
-        {
-            HandleAlertAdded(alert);
-        }
     }
 
     private void HandleAlertDeleted(int id)
     {
-        var index = Alerts.FindIndex(a => a.Id == id);
-        if (index == -1)
+        bool changed = false;
+        lock (_lock)
         {
-            return;
+            var index = Alerts.FindIndex(a => a.Id == id);
+            if (index != -1)
+            {
+                Alerts.RemoveAt(index);
+                changed = true;
+            }
         }
 
-        // A Deleted event now uniquely identifies a HARD delete.
-        // It should always be removed from the state.
-        Alerts.RemoveAt(index);
-        if (MapInitialized)
+        if (changed)
         {
-            _ = _mapService.UpdateAlertsAsync(Alerts);
+            if (MapInitialized)
+            {
+                _ = _mapService.UpdateAlertsAsync(Alerts);
+            }
+            OnStateChanged?.Invoke();
         }
-        
-        OnStateChanged?.Invoke();
     }
 
     /// <inheritdoc />

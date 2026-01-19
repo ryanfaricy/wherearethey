@@ -90,12 +90,18 @@ public class ReportService(
         var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         
-        var query = context.Reports
-            .AsNoTracking()
-            .Where(r => r.CreatedAt >= cutoff);
+        var query = context.Reports.AsNoTracking();
+
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+        
+        query = query.Where(r => r.CreatedAt >= cutoff);
 
         if (!includeDeleted)
         {
+            // Redundant due to global filter but keeping for explicit clarity if filter is removed
             query = query.Where(r => r.DeletedAt == null);
         }
 
