@@ -17,7 +17,6 @@
 @inject IClientLocationService ClientLocation
 @inject IAdminService AdminService
 @inject IMapNavigationManager MapNavigationManager
-@using System.Globalization
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Components.Home
@@ -225,10 +224,10 @@
                 await MapState.LoadReportsAsync(_selectedHours);
             }
 
-            double initialLat = navState.InitialLat ?? 0;
-            double initialLng = navState.InitialLng ?? 0;
-            double? initialRadius = navState.InitialRadius;
-            int? focusReportId = navState.FocusReportId;
+            var initialLat = navState.InitialLat ?? 0;
+            var initialLng = navState.InitialLng ?? 0;
+            var initialRadius = navState.InitialRadius;
+            var focusReportId = navState.FocusReportId;
 
             if (initialLat == 0 && initialLng == 0 && !focusReportId.HasValue)
             {
@@ -294,7 +293,7 @@
             try
             {
                 var draft = JsonSerializer.Deserialize<LocationReport>(draftJson);
-                if (draft != null && DateTime.UtcNow - draft.Timestamp < TimeSpan.FromHours(24))
+                if (draft != null && DateTime.UtcNow - draft.CreatedAt < TimeSpan.FromHours(24))
                 {
                     var resume = await DialogService.Confirm(L["Resume_Draft_Message"], L["Resume_Draft_Title"]);
                     if (resume == true)

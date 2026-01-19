@@ -106,6 +106,8 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     /// </summary>
     public virtual void Dispose()
     {
+        GC.SuppressFinalize(this);
+        
         EventService.OnEntityChanged -= HandleEntityChanged;
     }
 }

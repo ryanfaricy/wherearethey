@@ -11,7 +11,7 @@ public class EventServiceTests
         // Arrange
         var service = new EventService();
         object? receivedEntity = null;
-        EntityChangeType receivedType = EntityChangeType.Updated;
+        var receivedType = EntityChangeType.Updated;
         service.OnEntityChanged += (entity, type) => 
         {
             receivedEntity = entity;
@@ -33,7 +33,7 @@ public class EventServiceTests
         // Arrange
         var service = new EventService();
         object? receivedEntity = null;
-        EntityChangeType receivedType = EntityChangeType.Added;
+        var receivedType = EntityChangeType.Added;
         service.OnEntityChanged += (entity, type) => 
         {
             receivedEntity = entity;

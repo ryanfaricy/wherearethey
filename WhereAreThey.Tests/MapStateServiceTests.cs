@@ -168,7 +168,7 @@ public class MapStateServiceTests : IDisposable
         var reports = new List<LocationReport> 
         { 
             new() { Id = 1, DeletedAt = null },
-            new() { Id = 2, DeletedAt = DateTime.UtcNow }
+            new() { Id = 2, DeletedAt = DateTime.UtcNow },
         };
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync(reports);
         await _service.InitializeAsync("test-admin", isAdmin: true);

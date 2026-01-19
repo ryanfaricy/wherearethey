@@ -79,7 +79,7 @@ public class MapStateService : IMapStateService
         }
 
         var cutoff = DateTime.UtcNow.AddHours(-_lastLoadedHours.Value);
-        var toRemove = Reports.Where(r => r.Timestamp < cutoff).ToList();
+        var toRemove = Reports.Where(r => r.CreatedAt < cutoff).ToList();
         
         if (toRemove.Count == 0)
         {
@@ -148,7 +148,7 @@ public class MapStateService : IMapStateService
     {
         return Reports
             .Where(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude) <= radiusKm)
-            .OrderByDescending(r => r.Timestamp)
+            .OrderByDescending(r => r.CreatedAt)
             .ToList();
     }
 

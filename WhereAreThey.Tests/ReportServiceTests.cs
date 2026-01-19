@@ -112,7 +112,7 @@ public class ReportServiceTests
         Assert.True(result.IsSuccess);
         Assert.NotEqual(0, result.Value!.Id);
         Assert.Equal(40.7128, result.Value!.Latitude);
-        Assert.True(result.Value!.Timestamp <= DateTime.UtcNow);
+        Assert.True(result.Value!.CreatedAt <= DateTime.UtcNow);
     }
 
     [Fact]
@@ -154,14 +154,14 @@ public class ReportServiceTests
             {
                 Latitude = 40.0,
                 Longitude = -74.0,
-                Timestamp = DateTime.UtcNow.AddHours(-48),
+                CreatedAt = DateTime.UtcNow.AddHours(-48),
             };
             
             var recentReport = new LocationReport
             {
                 Latitude = 41.0,
                 Longitude = -75.0,
-                Timestamp = DateTime.UtcNow.AddHours(-2),
+                CreatedAt = DateTime.UtcNow.AddHours(-2),
             };
 
             context.LocationReports.Add(oldReport);
@@ -187,7 +187,7 @@ public class ReportServiceTests
 
         await using (var context = new ApplicationDbContext(options))
         {
-            context.LocationReports.Add(new LocationReport { Timestamp = DateTime.UtcNow });
+            context.LocationReports.Add(new LocationReport { CreatedAt = DateTime.UtcNow });
             await context.SaveChangesAsync();
         }
 
@@ -329,7 +329,7 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
         
         await using (var context = await factory.CreateDbContextAsync())
         {
@@ -353,7 +353,7 @@ public class ReportServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var service = CreateService(factory);
-        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, Timestamp = DateTime.UtcNow };
+        var report = new LocationReport { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow };
 
         await using (var context = await factory.CreateDbContextAsync())
         {

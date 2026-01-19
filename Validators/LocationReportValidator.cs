@@ -49,7 +49,7 @@ public class LocationReportValidator : AbstractValidator<LocationReport>
                 var cutoff = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
                 
                 var hasRecent = await dbContext.LocationReports
-                    .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.Timestamp >= cutoff, cancellation);
+                    .AnyAsync(r => r.ReporterIdentifier == report.ReporterIdentifier && r.CreatedAt >= cutoff, cancellation);
 
                 if (hasRecent)
                 {

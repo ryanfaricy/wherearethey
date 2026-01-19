@@ -77,7 +77,7 @@ public class MapNavigationManager(
             FocusReportId = focusReportId,
             InitialLat = initialLat,
             InitialLng = initialLng,
-            InitialRadius = initialRadius
+            InitialRadius = initialRadius,
         };
     }
 }

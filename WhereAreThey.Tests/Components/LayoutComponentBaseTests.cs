@@ -1,7 +1,5 @@
-using Bunit;
 using Radzen;
 using WhereAreThey.Components.Admin;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 

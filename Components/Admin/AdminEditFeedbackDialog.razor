@@ -26,7 +26,7 @@
         <RadzenRow Gap="1rem">
             <RadzenColumn Size="12" SizeSM="6">
                 <RadzenFormField Text="Created At" Variant="Variant.Outlined" Style="width: 100%;">
-                    <RadzenDatePicker @bind-Value="@_feedback.Timestamp" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" />
+                    <RadzenDatePicker @bind-Value="@_feedback.CreatedAt" ShowTime="true" ShowSeconds="true" DateFormat="MM/dd/yyyy HH:mm:ss" Style="width: 100%;" />
                 </RadzenFormField>
             </RadzenColumn>
             <RadzenColumn Size="12" SizeSM="6">
@@ -61,7 +61,7 @@
             Type = Feedback.Type,
             Message = Feedback.Message,
             UserIdentifier = Feedback.UserIdentifier,
-            Timestamp = Feedback.Timestamp,
+            CreatedAt = Feedback.CreatedAt,
             DeletedAt = Feedback.DeletedAt,
         };
     }

@@ -61,9 +61,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.Property(e => e.ExternalId).HasDefaultValueSql("gen_random_uuid()");
             entity.HasIndex(e => e.ExternalId).IsUnique();
-            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.DeletedAt);
-            entity.HasIndex(e => new { e.Timestamp, e.DeletedAt, e.Latitude, e.Longitude });
+            entity.HasIndex(e => new { e.CreatedAt, e.DeletedAt, e.Latitude, e.Longitude });
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
         });
@@ -100,7 +100,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<Feedback>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.DeletedAt);
             entity.HasIndex(e => e.UserIdentifier);
         });
@@ -108,7 +108,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<AdminLoginAttempt>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Timestamp);
+            entity.HasIndex(e => e.CreatedAt);
             entity.HasIndex(e => e.IpAddress);
         });
 

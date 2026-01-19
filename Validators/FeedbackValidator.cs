@@ -40,7 +40,7 @@ public class FeedbackValidator : AbstractValidator<Feedback>
                 var cutoff = DateTime.UtcNow.AddMinutes(-settings.ReportCooldownMinutes);
                 
                 var hasRecent = await dbContext.Feedbacks
-                    .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.Timestamp >= cutoff, cancellation);
+                    .AnyAsync(f => f.UserIdentifier == feedback.UserIdentifier && f.CreatedAt >= cutoff, cancellation);
 
                 if (hasRecent)
                 {

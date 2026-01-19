@@ -23,11 +23,6 @@ public class Feedback : IAuditable
     /// </summary>
     public string? UserIdentifier { get; set; }
 
-    /// <summary>
-    /// The timestamp when the feedback was submitted.
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
     /// <inheritdoc />
     public DateTime CreatedAt { get; set; }
 

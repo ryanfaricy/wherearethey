@@ -159,7 +159,7 @@ public class AdminPasskeyService(
         await using var context = await contextFactory.CreateDbContextAsync();
         var attempt = new AdminLoginAttempt
         {
-            Timestamp = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
             IpAddress = ipAddress,
             IsSuccessful = isSuccessful,
         };

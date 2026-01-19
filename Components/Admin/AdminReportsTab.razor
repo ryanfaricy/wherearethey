@@ -17,7 +17,7 @@
                 <RadzenStack Gap="0.5rem">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(report.Timestamp)
+                            @TimeZoneService.FormatLocal(report.CreatedAt)
                         </RadzenText>
                         <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
                                      Text="@(report.IsEmergency ? "EMERGENCY" : "NORMAL")" />
@@ -52,9 +52,9 @@ else
     <RadzenDataGrid @ref="Grid" Data="@Items" TItem="LocationReport" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="LocationReport" Property="Id" Title="ID" />
-            <RadzenDataGridColumn TItem="LocationReport" Property="Timestamp" Title="Time">
+            <RadzenDataGridColumn TItem="LocationReport" Property="CreatedAt" Title="Time">
                 <Template Context="report">
-                    @TimeZoneService.FormatLocal(report.Timestamp)
+                    @TimeZoneService.FormatLocal(report.CreatedAt)
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="LocationReport" Property="Message" Title="Message" />

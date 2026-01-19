@@ -83,7 +83,7 @@
     {
         try
         {
-            Report.Timestamp = DateTime.UtcNow;
+            Report.CreatedAt = DateTime.UtcNow;
             var json = JsonSerializer.Serialize(Report);
             await StorageService.SetItemAsync("report_draft", json);
         }

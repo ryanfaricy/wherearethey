@@ -185,13 +185,13 @@ public class AntiSpamTests
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-12),
+                CreatedAt = DateTime.UtcNow.AddHours(-12),
             });
             // Report from 2 hours ago
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 41.0, Longitude = -75.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-2),
+                CreatedAt = DateTime.UtcNow.AddHours(-2),
             });
             await context.SaveChangesAsync();
         }
@@ -234,7 +234,7 @@ public class AntiSpamTests
             context.LocationReports.Add(new LocationReport 
             { 
                 Latitude = 40.0, Longitude = -74.0, 
-                Timestamp = DateTime.UtcNow.AddHours(-12),
+                CreatedAt = DateTime.UtcNow.AddHours(-12),
             });
             await context.SaveChangesAsync();
         }
@@ -258,7 +258,7 @@ public class AntiSpamTests
             ReporterIdentifier = "UserC-Passphrase", 
             Latitude = 40, Longitude = -74, 
             ReporterLatitude = 41.0, ReporterLongitude = -74, // ~111km away
-            Timestamp = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
         };
         var resultDist = await service.AddReportAsync(farReport);
         Assert.True(resultDist.IsFailure);

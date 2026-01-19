@@ -23,11 +23,6 @@ public class LocationReport : IAuditable
     /// </summary>
     public double Longitude { get; set; }
 
-    /// <summary>
-    /// The timestamp when the incident occurred or was reported.
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
     /// <inheritdoc />
     public DateTime CreatedAt { get; set; }
 

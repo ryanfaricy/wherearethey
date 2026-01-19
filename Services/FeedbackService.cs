@@ -18,7 +18,6 @@ public class FeedbackService(
         await validator.ValidateAndThrowAsync(feedback);
 
         await using var context = await ContextFactory.CreateDbContextAsync();
-        feedback.Timestamp = DateTime.UtcNow;
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();
 

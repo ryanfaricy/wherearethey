@@ -34,8 +34,8 @@
                     @if (Reports.Any())
                     {
                         <RadzenText TextStyle="TextStyle.Caption">
-                            <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentTimestamp) 
-                            <span class="rz-color-info">(@DateTimeUtils.GetTimeAgo(MostRecentTimestamp))</span>
+                            <strong>Most recent:</strong> @TimeZoneService.FormatLocal(MostRecentCreatedAt) 
+                            <span class="rz-color-info">(@DateTimeUtils.GetTimeAgo(MostRecentCreatedAt))</span>
                         </RadzenText>
 
                         <div style="max-height: 400px; overflow-y: auto;">
@@ -104,7 +104,7 @@
     private int _selectedTabIndex;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
-    private DateTime MostRecentTimestamp => Reports.Any() ? Reports.Max(r => r.Timestamp) : DateTime.MinValue;
+    private DateTime MostRecentCreatedAt => Reports.Any() ? Reports.Max(r => r.CreatedAt) : DateTime.MinValue;
 
     protected override async Task OnInitializedAsync()
     {

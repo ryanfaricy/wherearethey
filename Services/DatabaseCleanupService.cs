@@ -39,7 +39,7 @@ public class DatabaseCleanupService(
         var reportCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
         var oldReports = await context.LocationReports
             .IgnoreQueryFilters()
-            .Where(r => r.Timestamp < reportCutoff)
+            .Where(r => r.CreatedAt < reportCutoff)
             .ExecuteDeleteAsync();
         
         if (oldReports > 0)
@@ -73,7 +73,7 @@ public class DatabaseCleanupService(
         // 4. Delete old admin login attempts (older than 90 days)
         var loginAttemptCutoff = DateTime.UtcNow.AddDays(-90);
         var oldLoginAttempts = await context.AdminLoginAttempts
-            .Where(a => a.Timestamp < loginAttemptCutoff)
+            .Where(a => a.CreatedAt < loginAttemptCutoff)
             .ExecuteDeleteAsync();
             
         if (oldLoginAttempts > 0)
@@ -85,7 +85,7 @@ public class DatabaseCleanupService(
         var feedbackCutoff = DateTime.UtcNow.AddYears(-1);
         var oldFeedback = await context.Feedbacks
             .IgnoreQueryFilters()
-            .Where(f => f.Timestamp < feedbackCutoff)
+            .Where(f => f.CreatedAt < feedbackCutoff)
             .ExecuteDeleteAsync();
             
         if (oldFeedback > 0)

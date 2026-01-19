@@ -14,7 +14,7 @@
                 <RadzenStack Gap="0.5rem">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(attempt.Timestamp)
+                            @TimeZoneService.FormatLocal(attempt.CreatedAt)
                         </RadzenText>
                         <RadzenBadge BadgeStyle="@(attempt.IsSuccessful ? BadgeStyle.Success : BadgeStyle.Danger)" 
                                      Text="@(attempt.IsSuccessful ? "SUCCESS" : "FAILED")" />
@@ -29,9 +29,9 @@ else
 {
     <RadzenDataGrid @ref="_allLoginAttemptsGrid" Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
-            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="Timestamp" Title="Time">
+            <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="CreatedAt" Title="Time">
                 <Template Context="attempt">
-                    @TimeZoneService.FormatLocal(attempt.Timestamp)
+                    @TimeZoneService.FormatLocal(attempt.CreatedAt)
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="AdminLoginAttempt" Property="IpAddress" Title="IP Address" />

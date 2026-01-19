@@ -15,7 +15,7 @@
                 <RadzenStack Gap="0.5rem">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">
-                            @TimeZoneService.FormatLocal(feedback.Timestamp)
+                            @TimeZoneService.FormatLocal(feedback.CreatedAt)
                         </RadzenText>
                         <RadzenBadge BadgeStyle="@(feedback.Type == "Bug" ? BadgeStyle.Danger : BadgeStyle.Info)" Text="@feedback.Type" />
                     </RadzenStack>
@@ -43,9 +43,9 @@ else
     <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Feedback" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
         <Columns>
             <RadzenDataGridColumn TItem="Feedback" Property="Id" Title="ID" />
-            <RadzenDataGridColumn TItem="Feedback" Property="Timestamp" Title="Time">
+            <RadzenDataGridColumn TItem="Feedback" Property="CreatedAt" Title="Time">
                 <Template Context="feedback">
-                    @TimeZoneService.FormatLocal(feedback.Timestamp)
+                    @TimeZoneService.FormatLocal(feedback.CreatedAt)
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Feedback" Property="Type" Title="Type">

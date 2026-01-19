@@ -71,7 +71,7 @@ public class AdminService(
         var lockoutThreshold = DateTime.UtcNow.AddMinutes(-15);
         var failedAttempts = await context.AdminLoginAttempts
             .AsNoTracking()
-            .CountAsync(a => a.IpAddress == ipAddress && a.Timestamp >= lockoutThreshold && !a.IsSuccessful);
+            .CountAsync(a => a.IpAddress == ipAddress && a.CreatedAt >= lockoutThreshold && !a.IsSuccessful);
 
         if (failedAttempts >= 5)
         {
@@ -108,7 +108,7 @@ public class AdminService(
         await using var context = await contextFactory.CreateDbContextAsync();
         var attempt = new AdminLoginAttempt
         {
-            Timestamp = DateTime.UtcNow,
+            CreatedAt = DateTime.UtcNow,
             IpAddress = ipAddress,
             IsSuccessful = isSuccessful,
         };
@@ -123,7 +123,7 @@ public class AdminService(
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.AdminLoginAttempts
             .AsNoTracking()
-            .OrderByDescending(a => a.Timestamp)
+            .OrderByDescending(a => a.CreatedAt)
             .Take(count)
             .ToListAsync();
     }

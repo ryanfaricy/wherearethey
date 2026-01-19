@@ -31,7 +31,7 @@ public class ReportProcessingService(
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
 
             // Determine local time
-            var localTimeStr = locationService.GetFormattedLocalTime(report.Latitude, report.Longitude, report.Timestamp);
+            var localTimeStr = locationService.GetFormattedLocalTime(report.Latitude, report.Longitude, report.CreatedAt);
 
             // Map thumbnail
             var mapThumbnailHtml = "";

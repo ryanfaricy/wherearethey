@@ -30,7 +30,7 @@ public class ReportService(
             await using var context = await ContextFactory.CreateDbContextAsync();
 
             report.ExternalId = Guid.NewGuid();
-            report.Timestamp = DateTime.UtcNow;
+            report.CreatedAt = DateTime.UtcNow;
             context.LocationReports.Add(report);
             await context.SaveChangesAsync();
 
@@ -79,8 +79,8 @@ public class ReportService(
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         return await context.LocationReports
             .AsNoTracking()
-            .Where(r => r.DeletedAt == null && r.Timestamp >= cutoff)
-            .OrderByDescending(r => r.Timestamp)
+            .Where(r => r.DeletedAt == null && r.CreatedAt >= cutoff)
+            .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
     }
 

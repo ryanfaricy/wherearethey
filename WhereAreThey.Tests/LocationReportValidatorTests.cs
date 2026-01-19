@@ -80,7 +80,7 @@ public class LocationReportValidatorTests
         context.LocationReports.Add(new LocationReport 
         { 
             ReporterIdentifier = identifier, 
-            Timestamp = DateTime.UtcNow.AddMinutes(-1),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-1),
             Latitude = 0,
             Longitude = 0,
         });
@@ -247,7 +247,7 @@ public class LocationReportValidatorTests
         context.LocationReports.Add(new LocationReport 
         { 
             ReporterIdentifier = identifier, 
-            Timestamp = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(30),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(30),
             Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();
@@ -279,7 +279,7 @@ public class LocationReportValidatorTests
         context.LocationReports.Add(new LocationReport 
         { 
             ReporterIdentifier = identifier, 
-            Timestamp = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(-30),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-cooldown).AddSeconds(-30),
             Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();
@@ -331,7 +331,7 @@ public class LocationReportValidatorTests
         context.LocationReports.Add(new LocationReport 
         { 
             ReporterIdentifier = identifier, 
-            Timestamp = DateTime.UtcNow.AddMinutes(-1),
+            CreatedAt = DateTime.UtcNow.AddMinutes(-1),
             Latitude = 0, Longitude = 0,
         });
         await context.SaveChangesAsync();

@@ -48,8 +48,8 @@ public class DatabaseCleanupServiceTests
         var now = DateTime.UtcNow;
         
         // 1. Reports
-        context.LocationReports.Add(new LocationReport { Timestamp = now.AddDays(-31), Latitude = 0, Longitude = 0 }); // Old
-        context.LocationReports.Add(new LocationReport { Timestamp = now.AddDays(-29), Latitude = 0, Longitude = 0 }); // New
+        context.LocationReports.Add(new LocationReport { CreatedAt = now.AddDays(-31), Latitude = 0, Longitude = 0 }); // Old
+        context.LocationReports.Add(new LocationReport { CreatedAt = now.AddDays(-29), Latitude = 0, Longitude = 0 }); // New
         
         // 2. Verifications
         context.EmailVerifications.Add(new EmailVerification { CreatedAt = now.AddHours(-25), EmailHash = "old", Token = "t1" }); // Old
@@ -62,12 +62,12 @@ public class DatabaseCleanupServiceTests
         context.Alerts.Add(new Alert { DeletedAt = null, Latitude = 0, Longitude = 0, EncryptedEmail = "e" }); // Not deleted
         
         // 4. Login attempts
-        context.AdminLoginAttempts.Add(new AdminLoginAttempt { Timestamp = now.AddDays(-91), IpAddress = "1" }); // Old
-        context.AdminLoginAttempts.Add(new AdminLoginAttempt { Timestamp = now.AddDays(-89), IpAddress = "2" }); // New
+        context.AdminLoginAttempts.Add(new AdminLoginAttempt { CreatedAt = now.AddDays(-91), IpAddress = "1" }); // Old
+        context.AdminLoginAttempts.Add(new AdminLoginAttempt { CreatedAt = now.AddDays(-89), IpAddress = "2" }); // New
         
         // 5. Feedback
-        context.Feedbacks.Add(new Feedback { Timestamp = now.AddYears(-1).AddDays(-1), Message = "old" }); // Old
-        context.Feedbacks.Add(new Feedback { Timestamp = now.AddYears(-1).AddDays(1), Message = "new" }); // New
+        context.Feedbacks.Add(new Feedback { CreatedAt = now.AddYears(-1).AddDays(-1), Message = "old" }); // Old
+        context.Feedbacks.Add(new Feedback { CreatedAt = now.AddYears(-1).AddDays(1), Message = "new" }); // New
 
         await context.SaveChangesAsync();
 

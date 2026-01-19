@@ -29,7 +29,7 @@ public class LocationService(
 
             var reports = await context.LocationReports
                 .AsNoTracking()
-                .Where(r => r.Timestamp >= cutoff &&
+                .Where(r => r.CreatedAt >= cutoff &&
                            r.Latitude >= minLat && r.Latitude <= maxLat &&
                            r.Longitude >= minLon && r.Longitude <= maxLon)
                 .ToListAsync();
