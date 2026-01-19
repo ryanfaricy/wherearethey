@@ -24,7 +24,7 @@
         <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" Click="@OnMenuItemClicked" />
         <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
         <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
-        @if (_systemSettings.DonationsEnabled)
+        @if (_systemSettings?.DonationsEnabled == true)
         {
             <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
         }
