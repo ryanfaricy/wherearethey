@@ -30,7 +30,7 @@
 
             @if (IsAdmin)
             {
-                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="@AdminDetailsStyle">
+                <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
                     <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Report.ReporterIdentifier</RadzenText>
                     <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.LocationDisplay()</RadzenText>
                     @if (Report.HasReporterLocation())
@@ -120,34 +120,24 @@
         get
         {
             var attrs = new Dictionary<string, object>();
-            var classes = new List<string> { "rz-p-2", "rz-mb-1" };
-            var styles = new List<string>
-            {
-                Report.IsEmergency 
-                    ? "border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);"
-                    : "border-left: 4px solid var(--rz-info);",
-            };
+            var classes = new List<string> { "app-card" };
+            
+            classes.Add(Report.IsEmergency ? "app-card-danger" : "app-card-info");
 
             if (IsSelected)
             {
                 attrs["id"] = "selected-report-card";
-                classes.Add("rz-border-primary rz-shadow-4");
-                styles.Add("border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;");
+                classes.Add("app-card-selected");
             }
 
             if (OnClick.HasDelegate)
             {
-                styles.Add("cursor: pointer;");
+                classes.Add("app-card-selectable");
             }
 
             if (classes.Any())
             {
                 attrs["class"] = string.Join(" ", classes);
-            }
-
-            if (styles.Any())
-            {
-                attrs["style"] = string.Join(" ", styles);
             }
 
             return attrs;

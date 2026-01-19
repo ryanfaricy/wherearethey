@@ -10,7 +10,7 @@
 @inject ILogger<AdminSettingsTab> Logger
 
 <RadzenStack Gap="1.5rem">
-    <RadzenCard>
+    <RadzenCard Class="app-card">
         <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Global Anti-Spam Settings</RadzenText>
         <RadzenStack Gap="1.5rem" Style="max-width: 500px;">
             <RadzenFormField Text="Report Expiry (Hours)" Variant="Variant.Outlined">
@@ -47,7 +47,7 @@
         </RadzenStack>
     </RadzenCard>
 
-    <RadzenCard>
+    <RadzenCard Class="app-card">
         <RadzenText TextStyle="TextStyle.H6" Class="rz-mb-4">Admin Passkeys</RadzenText>
         <RadzenStack Gap="1rem">
             @if (_passkeys == null)
@@ -64,7 +64,7 @@
                 {
                     <RadzenDataList Data="@_passkeys" TItem="AdminPasskey">
                         <Template Context="key">
-                            <RadzenCard Class="rz-mb-2 rz-p-2">
+                            <RadzenCard Class="app-card app-card-info">
                                 <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                                     <RadzenStack Gap="0">
                                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">@key.Name</RadzenText>

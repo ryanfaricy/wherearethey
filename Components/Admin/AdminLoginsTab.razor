@@ -10,7 +10,7 @@
 {
     <RadzenDataList Data="@_loginAttempts" TItem="AdminLoginAttempt" AllowPaging="true" PageSize="10">
         <Template Context="attempt">
-            <RadzenCard Class="rz-mb-4">
+            <RadzenCard Class="@($"app-card {(attempt.IsSuccessful ? "app-card-success" : "app-card-danger")}")">
                 <RadzenStack Gap="0.5rem">
                     <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                         <RadzenText TextStyle="TextStyle.Subtitle2" Class="rz-m-0">

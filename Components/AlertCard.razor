@@ -99,29 +99,22 @@
         get
         {
             var attrs = new Dictionary<string, object>();
-            var classes = new List<string> { "rz-p-2", "rz-mb-1" };
-            var styles = new List<string>();
-
+            var classes = new List<string> { "app-card" };
+            
             if (ShowOrangeBorder)
             {
-                styles.Add("border-left: 4px solid #ff9800;");
+                classes.Add("app-card-warning");
             }
 
             if (IsSelected)
             {
                 attrs["id"] = "selected-alert-card";
-                classes.Add("rz-border-primary rz-shadow-5");
-                styles.Add("border-top-width: 2px; border-right-width: 2px; border-bottom-width: 2px;");
+                classes.Add("app-card-selected");
             }
 
             if (classes.Any())
             {
                 attrs["class"] = string.Join(" ", classes);
-            }
-
-            if (styles.Any())
-            {
-                attrs["style"] = string.Join(" ", styles);
             }
 
             return attrs;

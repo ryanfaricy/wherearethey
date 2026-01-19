@@ -86,22 +86,41 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
-.report-emergency {
-    border-left: 5px solid var(--rz-danger) !important;
+/* App Card Consistency */
+.app-card {
+    padding: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+    transition: all 0.2s ease-in-out;
+}
+
+.app-card-selectable {
+    cursor: pointer;
+}
+
+.app-card-selected {
+    border: 2px solid var(--rz-primary) !important;
+    box-shadow: var(--rz-shadow-6) !important;
+}
+
+.app-card-info {
+    border-left: 4px solid var(--rz-info) !important;
+}
+
+.app-card-danger {
+    border-left: 4px solid var(--rz-danger) !important;
     background-color: var(--rz-danger-lighter) !important;
 }
 
-[data-theme="dark"] .report-emergency {
+[data-theme="dark"] .app-card-danger {
     background-color: rgba(255, 69, 58, 0.2) !important;
 }
 
-.report-normal {
-    border-left: 5px solid var(--rz-info) !important;
-    background-color: var(--rz-info-lighter) !important;
+.app-card-warning {
+    border-left: 4px solid var(--rz-warning) !important;
 }
 
-[data-theme="dark"] .report-normal {
-    background-color: rgba(10, 132, 255, 0.2) !important;
+.app-card-success {
+    border-left: 4px solid var(--rz-success) !important;
 }
 
 @media (max-width: 768px) {
