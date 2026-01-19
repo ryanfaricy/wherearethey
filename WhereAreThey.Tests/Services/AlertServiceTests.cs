@@ -215,7 +215,7 @@ public class AlertServiceTests
     }
 
     [Fact]
-    public async Task DeactivateAlert_ShouldSetIsActiveToFalse()
+    public async Task DeleteAlert_ShouldSetIsActiveToFalse()
     {
         // Arrange
         var options = CreateOptions();
@@ -240,7 +240,7 @@ public class AlertServiceTests
         }
 
         // Act
-        var result = await service.DeactivateAlertAsync(alertId);
+        var result = await service.DeleteAlertAsync(alertId);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -580,35 +580,6 @@ public class AlertServiceTests
     }
 
     [Fact]
-    public async Task DeactivateAlert_ShouldNotifyEventService()
-    {
-        // Arrange
-        var options = CreateOptions();
-        var factory = CreateFactory(options);
-        var service = CreateService(factory);
-        var alert = new Alert { Latitude = 0, Longitude = 0, RadiusKm = 1 };
-        
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            context.Alerts.Add(alert);
-            await context.SaveChangesAsync();
-        }
-
-        // Act
-        var result = await service.DeactivateAlertAsync(alert.Id);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.Is<Alert>(a => a.Id == alert.Id), EntityChangeType.Updated), Times.Once);
-        
-        await using (var context = await factory.CreateDbContextAsync())
-        {
-            var updated = await context.Alerts.IgnoreQueryFilters().FirstOrDefaultAsync(a => a.Id == alert.Id);
-            Assert.NotNull(updated!.DeletedAt);
-        }
-    }
-
-    [Fact]
     public async Task DeleteAlert_ShouldNotifyEventService()
     {
         // Arrange
@@ -624,9 +595,10 @@ public class AlertServiceTests
         }
 
         // Act
-        await service.DeleteAlertAsync(alert.Id);
+        var result = await service.DeleteAlertAsync(alert.Id);
 
         // Assert
+        Assert.True(result.IsSuccess);
         _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.IsAny<Alert>(), EntityChangeType.Deleted), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())

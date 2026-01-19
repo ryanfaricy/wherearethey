@@ -45,7 +45,7 @@ public class MapStateService : IMapStateService
 
             // When the map initializes, ensure it has the latest data
             _ = _mapService.UpdateHeatMapAsync(Reports);
-            if (Alerts.Any())
+            if (Alerts?.Any() == true)
             {
                 _ = _mapService.UpdateAlertsAsync(Alerts);
             }
@@ -296,6 +296,7 @@ public class MapStateService : IMapStateService
             return;
         }
 
+        Alerts ??= [];
         Alerts.Insert(0, alert);
         if (MapInitialized)
         {

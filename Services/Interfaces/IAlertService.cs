@@ -53,12 +53,6 @@ public interface IAlertService
     /// <returns>A list of active alerts.</returns>
     Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true);
 
-    /// <summary>
-    /// Deactivates an alert.
-    /// </summary>
-    /// <param name="id">The internal ID of the alert.</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    Task<Result> DeactivateAlertAsync(int id);
 
     /// <summary>
     /// Updates an existing alert.

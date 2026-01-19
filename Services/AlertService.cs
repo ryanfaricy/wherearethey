@@ -207,23 +207,6 @@ public class AlertService(
         return await query.ToListAsync();
     }
 
-    /// <inheritdoc />
-    public virtual async Task<Result> DeactivateAlertAsync(int id)
-    {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        var alert = await context.Alerts
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(a => a.Id == id);
-        if (alert == null)
-        {
-            return Result.Failure("Alert not found.");
-        }
-
-        alert.DeletedAt = DateTime.UtcNow;
-        await context.SaveChangesAsync();
-        EventService.NotifyEntityChanged(alert, EntityChangeType.Updated);
-        return Result.Success();
-    }
 
     /// <inheritdoc />
     public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)

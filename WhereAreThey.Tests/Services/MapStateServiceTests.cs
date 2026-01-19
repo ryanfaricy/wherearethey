@@ -42,19 +42,17 @@ public class MapStateServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task InitializeAsync_AdminMode_DoesNotLoadAlerts()
+    public async Task InitializeAsync_AdminMode_LoadsAlerts()
     {
         // Arrange
-        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null } };
-        // Even if GetAllAlertsAdminAsync would return alerts
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync(alerts);
+        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null, UserIdentifier = "test-admin" } };
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync("test-admin", It.IsAny<bool>())).ReturnsAsync(alerts);
 
         // Act
         await _service.InitializeAsync("test-admin", isAdmin: true);
 
         // Assert
-        Assert.Empty(_service.Alerts);
-        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.Never);
+        Assert.Single(_service.Alerts);
     }
 
     [Fact]
@@ -123,11 +121,11 @@ public class MapStateServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task HandleAlertAdded_AdminMode_Ignored()
+    public async Task HandleAlertAdded_AdminMode_AddedToList()
     {
         // Arrange
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = null, UserIdentifier = "other-user" };
         await _service.InitializeAsync("test-admin", isAdmin: true);
-        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = null };
         _service.MapInitialized = true;
 
         // Act
@@ -135,8 +133,8 @@ public class MapStateServiceTests : IDisposable
         _eventServiceMock.Raise(e => e.OnEntityChanged += null, alert, EntityChangeType.Added);
 
         // Assert
-        Assert.Empty(_service.Alerts);
-        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.Never);
+        Assert.Single(_service.Alerts);
+        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.Once);
     }
 
     [Fact]

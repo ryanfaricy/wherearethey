@@ -501,7 +501,7 @@
 
         if (confirmed == true)
         {
-            await AlertService.DeactivateAlertAsync(alertId);
+            await AlertService.DeleteAlertAsync(alertId);
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
             await MapState.LoadAlertsAsync();
         }

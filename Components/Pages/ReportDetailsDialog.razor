@@ -160,7 +160,7 @@
 
         if (confirmed == true)
         {
-            await AlertService.DeactivateAlertAsync(alert.Id);
+            await AlertService.DeleteAlertAsync(alert.Id);
             Alerts.Remove(alert);
             _alertDeleted = true;
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");

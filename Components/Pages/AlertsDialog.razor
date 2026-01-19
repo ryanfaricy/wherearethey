@@ -232,24 +232,24 @@
     {
         try
         {
-            var result = await AlertService.DeactivateAlertAsync(id);
+            var result = await AlertService.DeleteAlertAsync(id);
             if (result.IsSuccess)
             {
                 await HapticFeedbackService.VibrateWarningAsync();
-                NotificationService.Notify(NotificationSeverity.Success, "Alert deactivated");
+                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
                 await LoadAlerts();
             }
             else
             {
                 await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", result.Error ?? "Unknown error");
+                NotificationService.Notify(NotificationSeverity.Error, "Failed to delete alert", result.Error ?? "Unknown error");
             }
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to deactivate alert {AlertId}", id);
+            Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
             await HapticFeedbackService.VibrateErrorAsync();
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to deactivate alert", ex.Message);
+            NotificationService.Notify(NotificationSeverity.Error, "Failed to delete alert", ex.Message);
         }
     }
 
