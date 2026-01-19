@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -8,6 +9,7 @@ using Radzen.Blazor;
 
 namespace WhereAreThey.Tests.Components;
 
+[SuppressMessage("Usage", "BL0005:Component parameter should not be set outside of its component.")]
 public class AlertsDialogTests : ComponentTestBase
 {
     private readonly Mock<IAlertService> _alertServiceMock;

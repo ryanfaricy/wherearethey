@@ -10,7 +10,7 @@ using Environment = Square.Environment;
 
 namespace WhereAreThey.Services;
 
-/// <inheritdoc />
+/// <inheritdoc cref="BaseService{T}" />
 public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,

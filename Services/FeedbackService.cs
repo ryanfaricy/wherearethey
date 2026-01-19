@@ -6,7 +6,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <inheritdoc />
+/// <inheritdoc cref="BaseService{T}" />
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService,

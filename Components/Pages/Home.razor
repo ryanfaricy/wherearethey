@@ -1,8 +1,6 @@
 @page "/"
-@inject IReportService ReportService
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
-@inject NavigationManager NavigationManager
 @inject ISettingsService SettingsService
 @inject DialogService DialogService
 @inject NotificationService NotificationService
@@ -122,7 +120,7 @@
     {
         InvokeAsync(async () =>
         {
-            await MapState.InitializeAsync(_userIdentifier, false);
+            await MapState.InitializeAsync(_userIdentifier);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -132,7 +130,7 @@
     {
         InvokeAsync(async () =>
         {
-            await MapState.InitializeAsync(_userIdentifier, false);
+            await MapState.InitializeAsync(_userIdentifier);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -211,7 +209,7 @@
                 return;
             }
             
-            await MapState.InitializeAsync(_userIdentifier, false);
+            await MapState.InitializeAsync(_userIdentifier);
             await MapState.LoadReportsAsync(_selectedHours);
             
             var isNew = await StorageService.IsNewUserAsync();

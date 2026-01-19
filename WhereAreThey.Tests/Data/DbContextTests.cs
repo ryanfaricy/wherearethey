@@ -24,7 +24,7 @@ public class DbContextTests
         {
             Latitude = 40.0,
             Longitude = -74.0,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Reports.Add(report);
         await context.SaveChangesAsync();
@@ -59,7 +59,7 @@ public class DbContextTests
         {
             Latitude = 40.0,
             Longitude = -74.0,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
         context.Reports.Add(report);
         await context.SaveChangesAsync();
@@ -91,7 +91,7 @@ public class DbContextTests
         var report = new Report
         {
             Latitude = 40.0,
-            Longitude = -74.0
+            Longitude = -74.0,
         };
 
         // Act

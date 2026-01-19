@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Bunit;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +10,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests.Components;
 
+[SuppressMessage("Usage", "BL0005:Component parameter should not be set outside of its component.")]
 public class FeedbackDialogTests : ComponentTestBase
 {
     private readonly Mock<IFeedbackService> _feedbackServiceMock;

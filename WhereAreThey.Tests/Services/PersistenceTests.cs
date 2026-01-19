@@ -14,8 +14,10 @@ namespace WhereAreThey.Tests.Services;
 
 public class PersistenceTests
 {
-    private async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
+    private static async Task<(ApplicationDbContext, IDbContextFactory<ApplicationDbContext>)> CreateContextAndFactoryAsync()
     {
+        await Task.CompletedTask;
+        
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
@@ -59,7 +61,7 @@ public class PersistenceTests
             Longitude = 1,
             RadiusKm = 1,
             CreatedAt = originalCreatedAt,
-            UserIdentifier = "test"
+            UserIdentifier = "test",
         };
         context.Alerts.Add(alert);
         await context.SaveChangesAsync();
@@ -92,7 +94,7 @@ public class PersistenceTests
 
         var service = new ReportService(
             factory,
-            new Mock<Hangfire.IBackgroundJobClient>().Object,
+            new Mock<IBackgroundJobClient>().Object,
             new Mock<ISettingsService>().Object,
             new Mock<IEventService>().Object,
             validatorMock.Object,
@@ -104,7 +106,7 @@ public class PersistenceTests
         {
             Latitude = 1,
             Longitude = 1,
-            CreatedAt = originalCreatedAt
+            CreatedAt = originalCreatedAt,
         };
         context.Reports.Add(report);
         await context.SaveChangesAsync();
@@ -146,7 +148,7 @@ public class PersistenceTests
         {
             Type = "Bug",
             Message = "Test",
-            CreatedAt = originalCreatedAt
+            CreatedAt = originalCreatedAt,
         };
         context.Feedbacks.Add(feedback);
         await context.SaveChangesAsync();

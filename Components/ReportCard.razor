@@ -9,7 +9,7 @@
         <RadzenStack Gap="0.5rem" Style="flex: 1;">
             <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.SpaceBetween" AlignItems="AlignItems.Center">
                 <RadzenText TextStyle="TextStyle.Caption" Style="font-weight: bold;">
-                    @TimeZoneService.FormatLocal(Report.CreatedAt, "g")
+                    @TimeZoneService.FormatLocal(Report.CreatedAt)
                 </RadzenText>
                 @if (Report.IsEmergency)
                 {
@@ -121,16 +121,12 @@
         {
             var attrs = new Dictionary<string, object>();
             var classes = new List<string> { "rz-p-2", "rz-mb-1" };
-            var styles = new List<string>();
-
-            if (Report.IsEmergency)
+            var styles = new List<string>
             {
-                styles.Add("border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);");
-            }
-            else
-            {
-                styles.Add("border-left: 4px solid var(--rz-info);");
-            }
+                Report.IsEmergency 
+                    ? "border-left: 4px solid var(--rz-danger); background-color: var(--rz-danger-lighter);"
+                    : "border-left: 4px solid var(--rz-info);",
+            };
 
             if (IsSelected)
             {

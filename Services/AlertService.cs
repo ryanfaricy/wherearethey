@@ -9,7 +9,7 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
-/// <inheritdoc />
+/// <inheritdoc cref="BaseService{T}" />
 public class AlertService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IDataProtectionProvider provider,
@@ -268,6 +268,7 @@ public class AlertService(
                 return Result.Failure(validationResult);
             }
 
+            // ReSharper disable once InvertIf
             if (!string.IsNullOrEmpty(email))
             {
                 alert.EncryptedEmail = _protector.Protect(email);
