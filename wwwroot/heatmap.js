@@ -291,14 +291,15 @@ window.updateAlerts = function (alerts) {
         const lat = alert.latitude || alert.Latitude;
         const lng = alert.longitude || alert.Longitude;
         const radiusKm = alert.radiusKm || alert.RadiusKm || 5.0;
+        const isDeleted = alert.deletedAt || alert.DeletedAt;
 
         if (lat === undefined || lng === undefined) return;
 
         // Create circle
         const circle = L.circle([lat, lng], {
             radius: radiusKm * 1000,
-            color: '#e65100', // Darker orange
-            fillColor: '#ff9800',
+            color: isDeleted ? '#757575' : '#e65100', // Grey if deleted
+            fillColor: isDeleted ? '#bdbdbd' : '#ff9800',
             fillOpacity: 0.05,
             weight: 1.5,
             interactive: false
@@ -307,7 +308,7 @@ window.updateAlerts = function (alerts) {
 
         // Create marker with icon
         const alertIcon = L.divIcon({
-            className: 'alert-pin-container',
+            className: `alert-pin-container ${isDeleted ? 'deleted' : ''}`,
             html: '<div class="alert-pin-inner"><i class="rzi">notifications</i></div>',
             iconSize: [44, 44],
             iconAnchor: [22, 22]
@@ -320,7 +321,12 @@ window.updateAlerts = function (alerts) {
         marker.alertData = alert;
         marker.on('click', onMarkerClick);
 
-        marker.bindTooltip(alert.message || alert.Message || translations.Alert_Zone || 'Alert Zone', {
+        let tooltipText = alert.message || alert.Message || translations.Alert_Zone || 'Alert Zone';
+        if (isDeleted) {
+            tooltipText = `[DELETED] ${tooltipText}`;
+        }
+        
+        marker.bindTooltip(tooltipText, {
             permanent: false,
             direction: 'top'
         });
@@ -420,10 +426,12 @@ window.removeSingleReport = function (reportId) {
 function createReportIcon(r, isSelected) {
     const type = r.isEmergency ? 'emergency' : 'normal';
     const selectedClass = isSelected ? 'selected' : '';
+    const isDeleted = r.deletedAt || r.DeletedAt;
+    const deletedClass = isDeleted ? 'deleted' : '';
     const iconName = r.isEmergency ? 'report_problem' : 'location_on';
     
     return L.divIcon({
-        className: `report-pin-container ${type} ${selectedClass}`,
+        className: `report-pin-container ${type} ${selectedClass} ${deletedClass}`,
         html: `<div class="report-pin-inner"><i class="rzi">${iconName}</i></div>`,
         iconSize: [44, 44],
         iconAnchor: [22, 22]
@@ -448,6 +456,10 @@ function addReportMarker(r) {
     let tooltipText = r.message ? 
         (r.isEmergency ? '🚨 ' + r.message : r.message) : 
         (r.isEmergency ? '🚨 ' + (translations.EMERGENCY_REPORT || 'EMERGENCY') : (translations.Report || 'Report'));
+
+    if (r.deletedAt || r.DeletedAt) {
+        tooltipText = `[DELETED] ${tooltipText}`;
+    }
 
     if (isAdminMode) {
         const id = r.reporterIdentifier ? r.reporterIdentifier.substring(0, 8) : '???';
@@ -520,7 +532,13 @@ function refreshHeatLayer() {
         }
 
         // Increased intensity for normal reports (0.5 -> 0.8) and emergency (1.0)
-        const heatData = allReports.map(r => [r.latitude, r.longitude, r.isEmergency ? 1.0 : 0.8]);
+        const heatData = allReports.map(r => {
+            let intensity = r.isEmergency ? 1.0 : 0.8;
+            if (r.deletedAt || r.DeletedAt) {
+                intensity *= 0.5; // Reduced intensity for deleted reports
+            }
+            return [r.latitude, r.longitude, intensity];
+        });
 
         // High-contrast configuration
         heatLayer = L.heatLayer(heatData, {

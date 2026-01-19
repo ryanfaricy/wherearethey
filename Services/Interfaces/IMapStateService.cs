@@ -24,6 +24,11 @@ public interface IMapStateService : IDisposable
     bool MapInitialized { get; set; }
 
     /// <summary>
+    /// Whether to show soft-deleted items (Admin only).
+    /// </summary>
+    bool ShowDeleted { get; set; }
+
+    /// <summary>
     /// Triggered when reports or alerts are updated.
     /// </summary>
     event Action OnStateChanged;

@@ -19,6 +19,9 @@ public class MapStateServiceTests : IDisposable
         _alertServiceMock = new Mock<IAlertService>();
         _eventServiceMock = new Mock<IEventService>();
         _mapServiceMock = new Mock<IMapService>();
+
+        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
         
         _service = new MapStateService(
             _reportServiceMock.Object,
@@ -46,13 +49,51 @@ public class MapStateServiceTests : IDisposable
     {
         // Arrange
         var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null, UserIdentifier = "test-admin" } };
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync("test-admin", It.IsAny<bool>())).ReturnsAsync(alerts);
+        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync(alerts);
 
         // Act
         await _service.InitializeAsync("test-admin", isAdmin: true);
 
         // Assert
         Assert.Single(_service.Alerts);
+    }
+
+    [Fact]
+    public async Task LoadReportsAsync_AdminMode_ShowDeleted_ReturnsAllReports()
+    {
+        // Arrange
+        var reports = new List<Report> 
+        { 
+            new() { Id = 1, DeletedAt = null },
+            new() { Id = 2, DeletedAt = DateTime.UtcNow },
+        };
+        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync(reports);
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        _service.ShowDeleted = true;
+
+        // Act
+        await _service.LoadReportsAsync();
+
+        // Assert
+        Assert.Equal(2, _service.Reports.Count);
+    }
+
+    [Fact]
+    public async Task HandleAlertAdded_AdminMode_ShowDeleted_AddedToList()
+    {
+        // Arrange
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = DateTime.UtcNow, UserIdentifier = "other-user" };
+        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        _service.ShowDeleted = true;
+        _service.MapInitialized = true;
+
+        // Act
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, alert, EntityChangeType.Added);
+
+        // Assert
+        Assert.Single(_service.Alerts);
+        _mapServiceMock.Verify(m => m.UpdateAlertsAsync(It.IsAny<List<Alert>>()), Times.AtLeastOnce);
     }
 
     [Fact]

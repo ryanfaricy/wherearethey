@@ -52,6 +52,28 @@ public class MapStateService : IMapStateService
         }
     }
 
+    private bool _showDeleted;
+    /// <inheritdoc />
+    public bool ShowDeleted 
+    { 
+        get => _showDeleted;
+        set
+        {
+            if (_showDeleted == value)
+            {
+                return;
+            }
+
+            _showDeleted = value;
+            if (_isAdmin)
+            {
+                _ = LoadReportsAsync(_lastLoadedHours);
+                _ = LoadAlertsAsync();
+            }
+            OnStateChanged?.Invoke();
+        }
+    }
+
     /// <inheritdoc />
     public event Action? OnStateChanged;
 
@@ -114,8 +136,7 @@ public class MapStateService : IMapStateService
             ? await _reportService.GetAllReportsAsync() 
             : await _reportService.GetRecentReportsAsync(hours);
         
-        // Even for admins, we only want to show non-deleted reports in the "real-time" state
-        Reports = allReports.Where(r => r.DeletedAt == null).ToList();
+        Reports = allReports.Where(r => VisibilityPolicy.ShouldShow(r, _isAdmin, ShowDeleted)).ToList();
         
         if (MapInitialized)
         {
@@ -127,7 +148,12 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAlertsAsync()
     {
-        if (!string.IsNullOrEmpty(_userIdentifier))
+        if (_isAdmin)
+        {
+            var allAlerts = await _alertService.GetAllAlertsAsync();
+            Alerts = allAlerts.Where(a => VisibilityPolicy.ShouldShow(a, _isAdmin, ShowDeleted)).ToList();
+        }
+        else if (!string.IsNullOrEmpty(_userIdentifier))
         {
             Alerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
         }
@@ -196,13 +222,13 @@ public class MapStateService : IMapStateService
 
     private void HandleReportAdded(Report report)
     {
-        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
         {
             return;
         }
 
         Reports.Insert(0, report);
-        if (MapInitialized && report.DeletedAt == null)
+        if (MapInitialized)
         {
             _ = _mapService.AddSingleReportAsync(report);
         }
@@ -213,7 +239,7 @@ public class MapStateService : IMapStateService
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
         
-        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
         {
             if (index == -1)
             {
@@ -246,7 +272,7 @@ public class MapStateService : IMapStateService
 
     private async Task UpdateReportOnMap(Report report)
     {
-        if (!VisibilityPolicy.ShouldShow(report, _isAdmin))
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
         {
             await _mapService.RemoveSingleReportAsync(report.Id);
         }
@@ -285,7 +311,7 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertAdded(Alert alert)
     {
-        if (alert.DeletedAt != null)
+        if (!VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
         {
             return;
         }
@@ -316,7 +342,7 @@ public class MapStateService : IMapStateService
         var index = Alerts.FindIndex(a => a.Id == alert.Id);
         if (index != -1)
         {
-            if (alert.DeletedAt == null)
+            if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
             {
                 Alerts[index] = alert;
             }
@@ -331,7 +357,7 @@ public class MapStateService : IMapStateService
             }
             OnStateChanged?.Invoke();
         }
-        else if (alert.DeletedAt == null)
+        else if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
         {
             HandleAlertAdded(alert);
         }

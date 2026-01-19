@@ -12,7 +12,8 @@ public static class VisibilityPolicy
     /// </summary>
     /// <param name="entity">The entity to check.</param>
     /// <param name="isAdmin">Whether the current user has administrative privileges.</param>
+    /// <param name="showDeleted">Whether to show soft-deleted items (Admin only).</param>
     /// <returns>True if the entity should be visible; otherwise, false.</returns>
-    public static bool ShouldShow(IAuditable entity, bool isAdmin) 
-        => entity.DeletedAt == null;
+    public static bool ShouldShow(IAuditable entity, bool isAdmin, bool showDeleted = false) 
+        => (isAdmin && showDeleted) || entity.DeletedAt == null;
 }

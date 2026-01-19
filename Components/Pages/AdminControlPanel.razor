@@ -1,5 +1,6 @@
 @page "/cp"
 @inject IAdminService AdminService
+@inject IMapStateService MapState
 @inject IAdminPasskeyService PasskeyService
 @inject ProtectedSessionStorage SessionStorage
 @inject ProtectedLocalStorage LocalStorage
@@ -41,7 +42,13 @@
     {
         <RadzenMediaQuery Query="(max-width: 768px)" Change=@(args => _isMobile = args) />
         <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" JustifyContent="JustifyContent.SpaceBetween" Class="rz-mb-4">
-            <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H4)">Control Panel</RadzenText>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem">
+                <RadzenText TextStyle="@(_isMobile ? TextStyle.H5 : TextStyle.H4)">Control Panel</RadzenText>
+                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Class="rz-ml-4">
+                    <RadzenLabel Text="Show Deleted" Component="ShowDeletedToggle" Class="rz-display-none rz-display-md-inline-block" Style="font-size: 0.9rem; opacity: 0.8;" />
+                    <RadzenSwitch @bind-Value="@ShowDeleted" Name="ShowDeletedToggle" />
+                </RadzenStack>
+            </RadzenStack>
             <RadzenButton Text="LOGOUT" Click="@Logout" ButtonStyle="ButtonStyle.Light" Size="ButtonSize.Small" />
         </RadzenStack>
 
@@ -89,6 +96,12 @@
     private string? _clientIp;
     private bool _disposed;
     private IJSObjectReference? _module;
+
+    private bool ShowDeleted
+    {
+        get => MapState.ShowDeleted;
+        set => MapState.ShowDeleted = value;
+    }
 
     protected override void OnInitialized()
     {

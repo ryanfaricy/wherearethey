@@ -42,6 +42,7 @@
                  ElementId="heatmap"
                  InitialLat="@_initialLat"
                  InitialLng="@_initialLng"
+                 IsAdmin="@_isAdmin"
                  AlertCreationMode="@_alertCreationMode"
                  OnMapClick="@OnHeatMapClick"
                  OnMapMoveEnd="@OnHeatMapMoveEnd"
@@ -57,6 +58,8 @@
                          @bind-FollowMe="@_followMe"
                          @bind-SelectedHours="@_selectedHours"
                          @bind-AlertCreationMode="@_alertCreationMode"
+                         IsAdmin="@_isAdmin"
+                         @bind-ShowDeleted="@MapState.ShowDeleted"
                          ReportExpiryHours="@_systemSettings.ReportExpiryHours"
                          OnAddressSelected="@OnAddressSelected"
                          OnFollowMeChange="@OnFollowMeChange"
@@ -73,6 +76,7 @@
     private bool _disposed;
     private SystemSettings _systemSettings = new();
     private string? _userIdentifier;
+    private bool _isAdmin;
     private int _locationWatchId = -1;
     private bool _followMe;
     private int _selectedHours = 24;
@@ -120,8 +124,8 @@
     {
         InvokeAsync(async () =>
         {
-            var isAdmin = await AdminService.IsAdminAsync();
-            await MapState.InitializeAsync(_userIdentifier, isAdmin);
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -131,8 +135,8 @@
     {
         InvokeAsync(async () =>
         {
-            var isAdmin = await AdminService.IsAdminAsync();
-            await MapState.InitializeAsync(_userIdentifier, isAdmin);
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             StateHasChanged();
         });
@@ -211,8 +215,8 @@
                 return;
             }
             
-            var isAdmin = await AdminService.IsAdminAsync();
-            await MapState.InitializeAsync(_userIdentifier, isAdmin);
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
             await MapState.LoadReportsAsync(_selectedHours);
             
             var isNew = await StorageService.IsNewUserAsync();

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Radzen.Blazor;
+using WhereAreThey.Helpers;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
@@ -14,6 +15,7 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     where TEntity : class, IAuditable
 {
     [Inject] protected IEventService EventService { get; set; } = null!;
+    [Inject] protected IMapStateService MapState { get; set; } = null!;
     [Inject] protected ILogger<AdminTabBase<TEntity>> Logger { get; set; } = null!;
 
     /// <summary>
@@ -30,7 +32,10 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     {
         await LoadData();
         EventService.OnEntityChanged += HandleEntityChanged;
+        MapState.OnStateChanged += HandleStateChanged;
     }
+
+    private void HandleStateChanged() => _ = InvokeAsync(LoadData);
 
     /// <summary>
     /// Fetches the entities to be displayed. Must be implemented by derived classes.
@@ -45,7 +50,14 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     {
         try
         {
-            Items = await GetEntitiesAsync();
+            var allItems = await GetEntitiesAsync();
+            Items = allItems.Where(i => VisibilityPolicy.ShouldShow(i, true, MapState.ShowDeleted)).ToList();
+            
+            if (Grid != null)
+            {
+                await Grid.Reload();
+            }
+            StateHasChanged();
         }
         catch (Exception ex)
         {
@@ -62,9 +74,23 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     {
         if (entity is TEntity typedEntity)
         {
-            InvokeAsync(async () =>
+            _ = InvokeAsync(async () =>
             {
                 var index = Items.FindIndex(i => i.Id == typedEntity.Id);
+                
+                if (!VisibilityPolicy.ShouldShow(typedEntity, true, MapState.ShowDeleted))
+                {
+                    if (index != -1)
+                    {
+                        Items.RemoveAt(index);
+                        if (Grid != null)
+                        {
+                            await Grid.Reload();
+                        }
+                        StateHasChanged();
+                    }
+                    return;
+                }
                 
                 switch (type)
                 {
@@ -86,8 +112,12 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
                         }
                         break;
                     case EntityChangeType.Deleted:
-                        // For admins, we usually keep it in the list but show it as deleted
+                        // If we are here, ShouldShow returned true (so ShowDeleted is true)
                         // The Updated event should have already set DeletedAt
+                        if (index != -1)
+                        {
+                            Items[index] = typedEntity;
+                        }
                         break;
                 }
 
@@ -109,5 +139,6 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
         GC.SuppressFinalize(this);
         
         EventService.OnEntityChanged -= HandleEntityChanged;
+        MapState.OnStateChanged -= HandleStateChanged;
     }
 }
