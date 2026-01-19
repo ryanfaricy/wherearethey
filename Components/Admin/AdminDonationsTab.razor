@@ -9,7 +9,7 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Donation" AllowPaging="true" PageSize="10">
+    <RadzenDataList Data="@Items" TItem="Donation" AllowPaging="true" PageSize="10" WrapItems="true">
         <Template Context="donation">
             <RadzenCard Class="app-card app-card-success">
                 <RadzenStack Gap="0.5rem">
@@ -113,7 +113,7 @@ else
         
         if (confirm == true)
         {
-            var result = await DonationService.DeleteDonationAsync(id);
+            var result = await DonationService.DeleteDonationAsync(id, MapState.ShowDeleted);
             if (result.IsSuccess)
             {
                 NotificationService.Notify(NotificationSeverity.Success, "Donation deleted");

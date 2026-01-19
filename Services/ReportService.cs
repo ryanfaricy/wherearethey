@@ -123,8 +123,25 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task<Result> DeleteReportAsync(int id)
+    public async Task<Result> DeleteReportAsync(int id, bool hardDelete = false)
     {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var report = await context.Reports
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id);
+
+        if (report == null)
+        {
+            return Result.Failure("Report not found.");
+        }
+
+        // If it's already deleted and we are an admin, we hard delete it.
+        // OR if hardDelete flag is explicitly set.
+        if (hardDelete || report.DeletedAt != null)
+        {
+            return await HardDeleteAsync(id);
+        }
         return await SoftDeleteAsync(id);
     }
 

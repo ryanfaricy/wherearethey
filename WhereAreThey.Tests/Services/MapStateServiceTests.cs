@@ -152,17 +152,60 @@ public class MapStateServiceTests : IDisposable
     }
 
     [Fact]
-    public void HandleReportDeleted_TriggeredByEvent_RemovesFromListAndNotifiesMap()
+    public async Task HandleReportDeleted_TriggeredByEvent_AlwaysRemovesFromList()
     {
         // Arrange
         var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
-        _service.Reports.Add(report);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+            .ReturnsAsync(new List<Report> { report });
+        
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        _service.ShowDeleted = true; // This will trigger LoadReportsAsync and populate Reports with our report
         _service.MapInitialized = true;
 
         // Act
         _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Deleted);
 
         // Assert
+        Assert.Empty(_service.Reports);
+        _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleReportUpdated_SoftDeleted_ShowDeletedOn_KeptInList()
+    {
+        // Arrange
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
+        _service.Reports.Add(report);
+        _service.MapInitialized = true;
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        _service.ShowDeleted = true;
+
+        // Act - Soft delete sets DeletedAt
+        report.DeletedAt = DateTime.UtcNow;
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Updated);
+
+        // Assert - Should be kept in list because ShowDeleted is ON
+        Assert.Single(_service.Reports);
+        Assert.NotNull(_service.Reports[0].DeletedAt);
+        _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleReportUpdated_SoftDeleted_ShowDeletedOff_RemovedFromList()
+    {
+        // Arrange
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
+        _service.Reports.Add(report);
+        _service.MapInitialized = true;
+        await _service.InitializeAsync("test-user", isAdmin: false);
+        _service.ShowDeleted = false;
+
+        // Act - Soft delete sets DeletedAt
+        report.DeletedAt = DateTime.UtcNow;
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Updated);
+
+        // Assert - Should be removed because ShowDeleted is OFF
         Assert.Empty(_service.Reports);
         _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Once);
     }

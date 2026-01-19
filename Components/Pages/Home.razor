@@ -59,8 +59,6 @@
                          @bind-FollowMe="@_followMe"
                          @bind-SelectedHours="@_selectedHours"
                          @bind-AlertCreationMode="@_alertCreationMode"
-                         IsAdmin="@_isAdmin"
-                         @bind-ShowDeleted="@MapState.ShowDeleted"
                          ReportExpiryHours="@_systemSettings.ReportExpiryHours"
                          OnAddressSelected="@OnAddressSelected"
                          OnFollowMeChange="@OnFollowMeChange"
@@ -113,6 +111,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        MapState.ShowDeleted = false;
         MapState.OnStateChanged += HandleStateChanged;
         ClientLocation.OnStateChanged += HandleStateChanged;
         EventService.OnSettingsChanged += HandleSettingsChanged;

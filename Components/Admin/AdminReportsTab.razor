@@ -133,7 +133,7 @@ else
         
         if (confirm == true)
         {
-            var result = await ReportService.DeleteReportAsync(id);
+            var result = await ReportService.DeleteReportAsync(id, MapState.ShowDeleted);
             if (result.IsSuccess)
             {
                 NotificationService.Notify(NotificationSeverity.Success, "Report deleted");

@@ -53,8 +53,9 @@ public interface IReportService
     /// Deletes a report.
     /// </summary>
     /// <param name="id">The internal ID of the report.</param>
+    /// <param name="hardDelete">Whether to permanently delete the report (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
-    Task<Result> DeleteReportAsync(int id);
+    Task<Result> DeleteReportAsync(int id, bool hardDelete = false);
 
     /// <summary>
     /// Updates an existing report.

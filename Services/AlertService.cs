@@ -237,8 +237,25 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public virtual async Task<Result> DeleteAlertAsync(int id)
+    public async Task<Result> DeleteAlertAsync(int id, bool hardDelete = false)
     {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var alert = await context.Alerts
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        if (alert == null)
+        {
+            return Result.Failure("Alert not found.");
+        }
+
+        // If it's already deleted and we are an admin, we hard delete it.
+        // OR if hardDelete flag is explicitly set.
+        if (hardDelete || alert.DeletedAt != null)
+        {
+            return await HardDeleteAsync(id);
+        }
         return await SoftDeleteAsync(id);
     }
 

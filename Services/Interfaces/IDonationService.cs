@@ -45,9 +45,10 @@ public interface IDonationService
     Task<Result> UpdateDonationAsync(Donation donation);
 
     /// <summary>
-    /// Soft deletes a donation.
+    /// Deletes a donation.
     /// </summary>
     /// <param name="id">The donation identifier.</param>
+    /// <param name="hardDelete">Whether to permanently delete the donation (Admin only).</param>
     /// <returns>The result of the delete operation.</returns>
-    Task<Result> DeleteDonationAsync(int id);
+    Task<Result> DeleteDonationAsync(int id, bool hardDelete = false);
 }

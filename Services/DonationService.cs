@@ -105,8 +105,23 @@ public class DonationService(
     }
 
     /// <inheritdoc />
-    public async Task<Result> DeleteDonationAsync(int id)
+    public async Task<Result> DeleteDonationAsync(int id, bool hardDelete = false)
     {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var donation = await context.Donations
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(d => d.Id == id);
+
+        if (donation == null)
+        {
+            return Result.Failure("Donation not found.");
+        }
+
+        if (hardDelete || donation.DeletedAt != null)
+        {
+            return await HardDeleteAsync(id);
+        }
         return await SoftDeleteAsync(id);
     }
 }

@@ -62,13 +62,47 @@ public abstract class BaseService<T>(
 
             // Notify generic change
             EventService.NotifyEntityChanged(entity, EntityChangeType.Updated);
-            EventService.NotifyEntityChanged(entity, EntityChangeType.Deleted);
             
             return Result.Success();
         }
         catch (Exception ex)
         {
             return Result.Failure($"An error occurred while deleting the entity: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Permanently deletes an entity using ExecuteDeleteAsync to bypass soft-delete logic in SaveChangesAsync.
+    /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
+    /// </summary>
+    /// <param name="id">The primary key of the entity to delete.</param>
+    /// <returns>A success result if deleted; otherwise, a failure result.</returns>
+    protected virtual async Task<Result> HardDeleteAsync(int id)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var entity = await context.Set<T>()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(e => e.Id == id);
+            
+            if (entity == null)
+            {
+                return Result.Failure("Not found");
+            }
+
+            await context.Set<T>()
+                .IgnoreQueryFilters()
+                .Where(e => e.Id == id)
+                .ExecuteDeleteAsync();
+
+            EventService.NotifyEntityChanged(entity, EntityChangeType.Deleted);
+            
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while hard-deleting the entity: {ex.Message}");
         }
     }
 

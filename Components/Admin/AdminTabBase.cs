@@ -112,11 +112,11 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
                         }
                         break;
                     case EntityChangeType.Deleted:
-                        // If we are here, ShouldShow returned true (so ShowDeleted is true)
-                        // The Updated event should have already set DeletedAt
+                        // A Deleted event now uniquely identifies a HARD delete.
+                        // It should always be removed from the list.
                         if (index != -1)
                         {
-                            Items[index] = typedEntity;
+                            Items.RemoveAt(index);
                         }
                         break;
                 }

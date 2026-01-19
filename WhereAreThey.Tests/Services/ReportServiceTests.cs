@@ -2,6 +2,7 @@ using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -17,18 +18,24 @@ using WhereAreThey.Validators;
 
 namespace WhereAreThey.Tests.Services;
 
-public class ReportServiceTests
+public class ReportServiceTests : IDisposable
 {
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly Mock<IEventService> _eventServiceMock = new();
     private readonly Mock<IBaseUrlProvider> _baseUrlProviderMock = new();
     private readonly Mock<IAdminService> _adminServiceMock = new();
+    private SqliteConnection? _connection;
 
     public ReportServiceTests()
     {
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
         _baseUrlProviderMock.Setup(x => x.GetBaseUrl()).Returns("https://test.com");
+    }
+
+    public void Dispose()
+    {
+        _connection?.Dispose();
     }
 
     private static IStringLocalizer<App> CreateLocalizer()
@@ -59,15 +66,25 @@ public class ReportServiceTests
         return mock.Object;
     }
 
-    private static DbContextOptions<ApplicationDbContext> CreateOptions()
+    private DbContextOptions<ApplicationDbContext> CreateOptions()
     {
+        if (_connection == null)
+        {
+            _connection = new SqliteConnection("DataSource=:memory:");
+            _connection.Open();
+        }
         return new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .UseSqlite(_connection)
             .Options;
     }
 
     private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
+        using (var context = new ApplicationDbContext(options))
+        {
+            context.Database.EnsureCreated();
+        }
+
         var mock = new Mock<IDbContextFactory<ApplicationDbContext>>();
         mock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .Returns(() => Task.FromResult(new ApplicationDbContext(options)));
@@ -426,7 +443,67 @@ public class ReportServiceTests
             Assert.NotNull(deletedReport.DeletedAt);
         }
         
+        // Verify only Updated event was sent, NOT Deleted
+        _eventServiceMock.Verify(e => e.NotifyEntityChanged(It.IsAny<Report>(), EntityChangeType.Updated), Times.AtLeastOnce);
+        _eventServiceMock.Verify(e => e.NotifyEntityChanged(It.IsAny<Report>(), EntityChangeType.Deleted), Times.Never);
+        
         var recent = await service.GetRecentReportsAsync();
         Assert.Empty(recent);
+    }
+
+    [Fact]
+    public async Task DeleteReport_ShouldHardDeleteReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.DeleteReportAsync(report.Id, hardDelete: true);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var deletedReport = await context.Reports.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == report.Id);
+            Assert.Null(deletedReport); // Should be gone
+        }
+    }
+
+    [Fact]
+    public async Task DeleteReport_WhenAlreadySoftDeleted_ShouldHardDelete()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow, DeletedAt = DateTime.UtcNow };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act - even without hardDelete: true, it should hard delete because it's already soft-deleted
+        var result = await service.DeleteReportAsync(report.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            var deletedReport = await context.Reports.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == report.Id);
+            Assert.Null(deletedReport); // Should be gone
+        }
     }
 }

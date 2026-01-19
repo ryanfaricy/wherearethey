@@ -10,6 +10,7 @@
 @inject NotificationService NotificationService
 @inject UserTimeZoneService TimeZoneService
 @inject IAdminService AdminService
+@inject IMapStateService MapState
 @inject IJSRuntime JsRuntime
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
@@ -137,7 +138,7 @@
 
         if (confirmed == true)
         {
-            var result = await ReportService.DeleteReportAsync(report.Id);
+            var result = await ReportService.DeleteReportAsync(report.Id, MapState.ShowDeleted);
             if (result.IsSuccess)
             {
                 Reports.Remove(report);
@@ -160,7 +161,7 @@
 
         if (confirmed == true)
         {
-            await AlertService.DeleteAlertAsync(alert.Id);
+            await AlertService.DeleteAlertAsync(alert.Id, MapState.ShowDeleted);
             Alerts.Remove(alert);
             _alertDeleted = true;
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");

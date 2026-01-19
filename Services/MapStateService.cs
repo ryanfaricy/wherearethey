@@ -351,27 +351,20 @@ public class MapStateService : IMapStateService
 
     private void HandleReportDeleted(int id)
     {
-        if (_isAdmin)
+        var index = Reports.FindIndex(r => r.Id == id);
+        if (index == -1)
         {
-            // For admins, we expect an Update event with DeletedAt set.
-            // If we only get a Deleted event, we don't know the DeletedAt value, 
-            // but we can at least mark it as deleted if we find it.
-            var report = Reports.FirstOrDefault(r => r.Id == id);
-            if (report is not { DeletedAt: null })
-            {
-                return;
-            }
-
-            report.DeletedAt = DateTime.UtcNow;
-            OnStateChanged?.Invoke();
             return;
         }
 
-        Reports.RemoveAll(r => r.Id == id);
+        // A Deleted event now uniquely identifies a HARD delete.
+        // It should always be removed from the state.
+        Reports.RemoveAt(index);
         if (MapInitialized)
         {
             _ = _mapService.RemoveSingleReportAsync(id);
         }
+        
         OnStateChanged?.Invoke();
     }
 
@@ -431,22 +424,20 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertDeleted(int id)
     {
-        if (_isAdmin)
+        var index = Alerts.FindIndex(a => a.Id == id);
+        if (index == -1)
         {
             return;
         }
 
-        var alert = Alerts.FirstOrDefault(a => a.Id == id);
-        if (alert == null)
-        {
-            return;
-        }
-
-        Alerts.Remove(alert);
+        // A Deleted event now uniquely identifies a HARD delete.
+        // It should always be removed from the state.
+        Alerts.RemoveAt(index);
         if (MapInitialized)
         {
             _ = _mapService.UpdateAlertsAsync(Alerts);
         }
+        
         OnStateChanged?.Invoke();
     }
 

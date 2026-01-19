@@ -43,8 +43,23 @@ public class FeedbackService(
     }
 
     /// <inheritdoc />
-    public async Task<Result> DeleteFeedbackAsync(int id)
+    public async Task<Result> DeleteFeedbackAsync(int id, bool hardDelete = false)
     {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var feedback = await context.Feedbacks
+            .IgnoreQueryFilters()
+            .AsNoTracking()
+            .FirstOrDefaultAsync(f => f.Id == id);
+
+        if (feedback == null)
+        {
+            return Result.Failure("Feedback not found.");
+        }
+
+        if (hardDelete || feedback.DeletedAt != null)
+        {
+            return await HardDeleteAsync(id);
+        }
         return await SoftDeleteAsync(id);
     }
 

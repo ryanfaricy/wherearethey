@@ -76,9 +76,10 @@ public interface IAlertService
     Task<List<Alert>> GetAllAlertsAsync();
 
     /// <summary>
-    /// Permanently deletes an alert.
+    /// Deletes an alert.
     /// </summary>
     /// <param name="id">The internal ID of the alert.</param>
+    /// <param name="hardDelete">Whether to permanently delete the alert (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
-    Task<Result> DeleteAlertAsync(int id);
+    Task<Result> DeleteAlertAsync(int id, bool hardDelete = false);
 }

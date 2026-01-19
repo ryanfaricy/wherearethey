@@ -8,7 +8,7 @@
 
 @if (IsMobile)
 {
-    <RadzenDataList Data="@Items" TItem="Alert" AllowPaging="true" PageSize="10">
+    <RadzenDataList Data="@Items" TItem="Alert" AllowPaging="true" PageSize="10" WrapItems="true">
         <Template Context="alert">
             <RadzenCard Class="app-card app-card-warning">
                 <RadzenStack Gap="0.5rem">
@@ -96,7 +96,7 @@ else
 
         if (confirm == true)
         {
-            var result = await AlertService.DeleteAlertAsync(id);
+            var result = await AlertService.DeleteAlertAsync(id, MapState.ShowDeleted);
             if (result.IsSuccess)
             {
                 NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
