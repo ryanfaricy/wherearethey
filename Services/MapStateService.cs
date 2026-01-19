@@ -14,10 +14,12 @@ public class MapStateService : IMapStateService
     private readonly IAlertService _alertService;
     private readonly IEventService _eventService;
     private readonly IMapService _mapService;
+    private readonly ISettingsService _settingsService;
     private readonly Timer? _pruneTimer;
     private string? _userIdentifier;
     private bool _isAdmin;
     private int? _lastLoadedHours;
+    private bool _isAllLoaded;
 
     /// <inheritdoc />
     public List<Report> Reports { get; private set; } = [];
@@ -67,12 +69,21 @@ public class MapStateService : IMapStateService
             _showDeleted = value;
             if (_isAdmin)
             {
-                _ = LoadReportsAsync(_lastLoadedHours);
+                if (_isAllLoaded)
+                {
+                    _ = LoadAllReportsAsync();
+                }
+                else
+                {
+                    _ = LoadReportsAsync(_lastLoadedHours);
+                }
                 _ = LoadAlertsAsync();
             }
             OnStateChanged?.Invoke();
         }
     }
+
+    private int _cachedExpiryHours = 24;
 
     /// <inheritdoc />
     public event Action? OnStateChanged;
@@ -81,26 +92,66 @@ public class MapStateService : IMapStateService
         IReportService reportService,
         IAlertService alertService,
         IEventService eventService,
-        IMapService mapService)
+        IMapService mapService,
+        ISettingsService settingsService)
     {
         _reportService = reportService;
         _alertService = alertService;
         _eventService = eventService;
         _mapService = mapService;
+        _settingsService = settingsService;
 
         _eventService.OnEntityChanged += HandleEntityChanged;
+        _eventService.OnSettingsChanged += settings => _cachedExpiryHours = settings.ReportExpiryHours;
 
-        _pruneTimer = new Timer(_ => PruneOldReports(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        _ = InitializeSettingsAsync();
+        _pruneTimer = new Timer(_ => _ = PruneOldReportsAsync(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
-    private void PruneOldReports()
+    private async Task InitializeSettingsAsync()
     {
-        if (_isAdmin || !_lastLoadedHours.HasValue)
+        try
+        {
+            var settings = await _settingsService.GetSettingsAsync();
+            _cachedExpiryHours = settings.ReportExpiryHours;
+        }
+        catch
+        {
+            // Fallback to default
+        }
+    }
+
+    private bool ShouldShowReport(Report report)
+    {
+        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
+        {
+            return false;
+        }
+
+        // Expiry check: only skip if we are in "All" mode as an admin
+        if (_isAdmin && _isAllLoaded)
+        {
+            return true;
+        }
+
+        var hours = _lastLoadedHours ?? _cachedExpiryHours;
+        var cutoff = DateTime.UtcNow.AddHours(-hours);
+        return report.CreatedAt >= cutoff;
+    }
+
+    private async Task PruneOldReportsAsync()
+    {
+        if (_isAdmin && _isAllLoaded)
         {
             return;
         }
 
-        var cutoff = DateTime.UtcNow.AddHours(-_lastLoadedHours.Value);
+        var settings = await _settingsService.GetSettingsAsync();
+        var hours = _lastLoadedHours ?? settings.ReportExpiryHours;
+        _cachedExpiryHours = settings.ReportExpiryHours; // Sync cache while we're at it
+        
+        var cutoff = DateTime.UtcNow.AddHours(-hours);
+        
         var toRemove = Reports.Where(r => r.CreatedAt < cutoff).ToList();
         
         if (toRemove.Count == 0)
@@ -132,11 +183,26 @@ public class MapStateService : IMapStateService
     public async Task LoadReportsAsync(int? hours = null)
     {
         _lastLoadedHours = hours;
-        var allReports = _isAdmin 
-            ? await _reportService.GetAllReportsAsync() 
-            : await _reportService.GetRecentReportsAsync(hours);
+        _isAllLoaded = false;
         
-        Reports = allReports.Where(r => VisibilityPolicy.ShouldShow(r, _isAdmin, ShowDeleted)).ToList();
+        var allReports = await _reportService.GetRecentReportsAsync(hours, _isAdmin && ShowDeleted);
+        Reports = allReports.Where(ShouldShowReport).ToList();
+        
+        if (MapInitialized)
+        {
+            await _mapService.UpdateHeatMapAsync(Reports);
+        }
+        OnStateChanged?.Invoke();
+    }
+
+    /// <inheritdoc />
+    public async Task LoadAllReportsAsync()
+    {
+        _lastLoadedHours = null;
+        _isAllLoaded = true;
+        
+        var allReports = await _reportService.GetAllReportsAsync();
+        Reports = allReports.Where(ShouldShowReport).ToList();
         
         if (MapInitialized)
         {
@@ -222,7 +288,7 @@ public class MapStateService : IMapStateService
 
     private void HandleReportAdded(Report report)
     {
-        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
+        if (!ShouldShowReport(report))
         {
             return;
         }
@@ -239,7 +305,7 @@ public class MapStateService : IMapStateService
     {
         var index = Reports.FindIndex(r => r.Id == report.Id);
         
-        if (!VisibilityPolicy.ShouldShow(report, _isAdmin, ShowDeleted))
+        if (!ShouldShowReport(report))
         {
             if (index == -1)
             {

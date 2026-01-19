@@ -11,6 +11,7 @@ public class MapStateServiceTests : IDisposable
     private readonly Mock<IAlertService> _alertServiceMock;
     private readonly Mock<IEventService> _eventServiceMock;
     private readonly Mock<IMapService> _mapServiceMock;
+    private readonly Mock<ISettingsService> _settingsServiceMock;
     private readonly MapStateService _service;
 
     public MapStateServiceTests()
@@ -19,15 +20,20 @@ public class MapStateServiceTests : IDisposable
         _alertServiceMock = new Mock<IAlertService>();
         _eventServiceMock = new Mock<IEventService>();
         _mapServiceMock = new Mock<IMapService>();
+        _settingsServiceMock = new Mock<ISettingsService>();
 
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
         
         _service = new MapStateService(
             _reportServiceMock.Object,
             _alertServiceMock.Object,
             _eventServiceMock.Object,
-            _mapServiceMock.Object);
+            _mapServiceMock.Object,
+            _settingsServiceMock.Object);
     }
 
     [Fact]
@@ -64,10 +70,10 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         var reports = new List<Report> 
         { 
-            new() { Id = 1, DeletedAt = null },
-            new() { Id = 2, DeletedAt = DateTime.UtcNow },
+            new() { Id = 1, DeletedAt = null, CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, DeletedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow },
         };
-        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync(reports);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), true)).ReturnsAsync(reports);
         await _service.InitializeAsync("test-admin", isAdmin: true);
         _service.ShowDeleted = true;
 
@@ -100,8 +106,8 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_LoadsReportsAndUpdatesMap()
     {
         // Arrange
-        var reports = new List<Report> { new() { Id = 1, Latitude = 10, Longitude = 10 } };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>())).ReturnsAsync(reports);
+        var reports = new List<Report> { new() { Id = 1, Latitude = 10, Longitude = 10, CreatedAt = DateTime.UtcNow } };
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync(reports);
         _service.MapInitialized = true;
 
         // Act
@@ -116,8 +122,8 @@ public class MapStateServiceTests : IDisposable
     public void FindNearbyReports_ReturnsFilteredList()
     {
         // Arrange
-        var report1 = new Report { Id = 1, Latitude = 0, Longitude = 0 };
-        var report2 = new Report { Id = 2, Latitude = 10, Longitude = 10 };
+        var report1 = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
+        var report2 = new Report { Id = 2, Latitude = 10, Longitude = 10, CreatedAt = DateTime.UtcNow };
         _service.Reports.Add(report1);
         _service.Reports.Add(report2);
 
@@ -134,7 +140,7 @@ public class MapStateServiceTests : IDisposable
     public void HandleReportAdded_TriggeredByEvent_AddsToListAndNotifiesMap()
     {
         // Arrange
-        var report = new Report { Id = 1, Latitude = 0, Longitude = 0 };
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
         _service.MapInitialized = true;
 
         // Act
@@ -149,7 +155,7 @@ public class MapStateServiceTests : IDisposable
     public void HandleReportDeleted_TriggeredByEvent_RemovesFromListAndNotifiesMap()
     {
         // Arrange
-        var report = new Report { Id = 1, Latitude = 0, Longitude = 0 };
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
         _service.Reports.Add(report);
         _service.MapInitialized = true;
 
@@ -187,17 +193,18 @@ public class MapStateServiceTests : IDisposable
         
         // Setup report mocks
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>())).ReturnsAsync([]);
-
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
+        
         // 1. Test Admin Mode
         await _service.InitializeAsync("test-admin", isAdmin: true);
-        await _service.LoadReportsAsync();
+        await _service.LoadAllReportsAsync();
+        // For admin using LoadAllReportsAsync, it calls GetAllReportsAsync
         _reportServiceMock.Verify(s => s.GetAllReportsAsync(), Times.Once);
 
         // 2. Switch to User Mode
         await _service.InitializeAsync("test-user", isAdmin: false);
         await _service.LoadReportsAsync(6);
-        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6), Times.Once);
+        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6, false), Times.Once);
     }
 
     [Fact]
@@ -206,10 +213,10 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         var reports = new List<Report> 
         { 
-            new() { Id = 1, DeletedAt = null },
-            new() { Id = 2, DeletedAt = DateTime.UtcNow },
+            new() { Id = 1, DeletedAt = null, CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, DeletedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow },
         };
-        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync(reports);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), false)).ReturnsAsync(reports);
         await _service.InitializeAsync("test-admin", isAdmin: true);
 
         // Act
@@ -218,6 +225,62 @@ public class MapStateServiceTests : IDisposable
         // Assert
         Assert.Single(_service.Reports);
         Assert.Equal(1, _service.Reports[0].Id);
+    }
+
+    [Fact]
+    public async Task HandleReportUpdated_ReportBecomesExpired_RemovedFromList()
+    {
+        // Arrange
+        // Current report is recent
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+            .ReturnsAsync(new List<Report> { report });
+            
+        await _service.LoadReportsAsync(24); // Set window to 24h
+        _service.MapInitialized = true;
+
+        // Act - update report to be 48h old
+        report.CreatedAt = DateTime.UtcNow.AddHours(-48);
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Updated);
+
+        // Assert
+        Assert.Empty(_service.Reports);
+        _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Once);
+    }
+
+    [Fact]
+    public async Task HandleReportAdded_ExpiredReport_Ignored()
+    {
+        // Arrange
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow.AddHours(-48) };
+        await _service.LoadReportsAsync(24); // Set window to 24h
+        _service.MapInitialized = true;
+
+        // Act
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Added);
+
+        // Assert
+        Assert.Empty(_service.Reports);
+        _mapServiceMock.Verify(m => m.AddSingleReportAsync(It.IsAny<Report>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task HandleReportUpdated_AdminMode_AllLoaded_DoesNotExpire()
+    {
+        // Arrange
+        var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
+        _service.Reports.Add(report);
+        await _service.InitializeAsync("test-admin", isAdmin: true);
+        await _service.LoadAllReportsAsync(); // Load ALL
+        _service.MapInitialized = true;
+
+        // Act - update report to be 48h old
+        report.CreatedAt = DateTime.UtcNow.AddHours(-48);
+        _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Updated);
+
+        // Assert - still there because admin is in "All" mode
+        Assert.Single(_service.Reports);
+        _mapServiceMock.Verify(m => m.RemoveSingleReportAsync(1), Times.Never);
     }
 
     public void Dispose()

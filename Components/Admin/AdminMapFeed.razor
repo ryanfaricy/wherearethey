@@ -60,7 +60,7 @@
     {
         MapState.OnStateChanged += HandleStateChanged;
         await MapState.InitializeAsync(null, isAdmin: true);
-        await MapState.LoadReportsAsync();
+        await MapState.LoadAllReportsAsync();
     }
 
     private void HandleStateChanged() => InvokeAsync(StateHasChanged);

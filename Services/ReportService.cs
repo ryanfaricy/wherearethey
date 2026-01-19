@@ -81,7 +81,7 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task<List<Report>> GetRecentReportsAsync(int? hours = null)
+    public async Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
@@ -89,9 +89,17 @@ public class ReportService(
         // Use the global expiry setting if no hours provided
         var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
-        return await context.Reports
+        
+        var query = context.Reports
             .AsNoTracking()
-            .Where(r => r.DeletedAt == null && r.CreatedAt >= cutoff)
+            .Where(r => r.CreatedAt >= cutoff);
+
+        if (!includeDeleted)
+        {
+            query = query.Where(r => r.DeletedAt == null);
+        }
+
+        return await query
             .OrderByDescending(r => r.CreatedAt)
             .ToListAsync();
     }

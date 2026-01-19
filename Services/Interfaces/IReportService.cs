@@ -32,8 +32,9 @@ public interface IReportService
     /// Gets recent reports within an optional time frame.
     /// </summary>
     /// <param name="hours">The number of hours back to look. If null, uses the system default.</param>
+    /// <param name="includeDeleted">Whether to include soft-deleted reports.</param>
     /// <returns>A list of recent reports.</returns>
-    Task<List<Report>> GetRecentReportsAsync(int? hours = null);
+    Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false);
 
     /// <summary>
     /// Gets the most recent reports regardless of time frame.

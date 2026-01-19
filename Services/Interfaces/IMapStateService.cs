@@ -44,6 +44,11 @@ public interface IMapStateService : IDisposable
     Task LoadReportsAsync(int? hours = null);
 
     /// <summary>
+    /// Loads all reports regardless of time window (Admin only).
+    /// </summary>
+    Task LoadAllReportsAsync();
+
+    /// <summary>
     /// Loads alerts (user-specific or all for admin).
     /// </summary>
     Task LoadAlertsAsync();

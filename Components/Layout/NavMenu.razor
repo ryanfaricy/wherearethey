@@ -9,6 +9,7 @@
 @inject IEventService EventService
 @inject ProtectedLocalStorage LocalStorage
 @inject IStringLocalizer<App> L
+@inject IMapStateService MapState
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Components.Pages
@@ -47,34 +48,35 @@
     private string? _userIdentifier;
     private SystemSettings _systemSettings = new();
     private bool _showAdminShortcut;
+    private bool _isAdmin;
     private List<Report> _recentReports = [];
 
     protected override async Task OnInitializedAsync()
     {
         _systemSettings = await SettingsService.GetSettingsAsync();
         AdminService.OnAdminLogin += HandleAdminLogin;
-        EventService.OnEntityChanged += HandleEntityChanged;
+        MapState.OnStateChanged += HandleMapStateChanged;
         ClientLocation.OnStateChanged += HandleLocationChanged;
-
-        await LoadRecentReportsAsync();
     }
 
     private void HandleAdminLogin()
     {
         _showAdminShortcut = true;
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(async () =>
+        {
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
+            await MapState.LoadReportsAsync();
+            StateHasChanged();
+        });
     }
 
-    private void HandleEntityChanged(object entity, EntityChangeType type)
+    private void HandleMapStateChanged()
     {
-        if (entity is Report && (type == EntityChangeType.Added || type == EntityChangeType.Deleted))
+        InvokeAsync(() =>
         {
-            InvokeAsync(async () =>
-            {
-                await LoadRecentReportsAsync();
-                StateHasChanged();
-            });
-        }
+            UpdateRecentReports();
+        });
     }
 
     private void HandleLocationChanged()
@@ -86,10 +88,11 @@
         });
     }
 
-    private async Task LoadRecentReportsAsync()
+    private void UpdateRecentReports()
     {
-        _recentReports = await ReportService.GetTopRecentReportsAsync(20);
+        _recentReports = MapState.Reports.Take(20).ToList();
         SortReports();
+        StateHasChanged();
     }
 
     private void SortReports()
@@ -112,7 +115,7 @@
     public void Dispose()
     {
         AdminService.OnAdminLogin -= HandleAdminLogin;
-        EventService.OnEntityChanged -= HandleEntityChanged;
+        MapState.OnStateChanged -= HandleMapStateChanged;
         ClientLocation.OnStateChanged -= HandleLocationChanged;
     }
 
@@ -121,6 +124,11 @@
         if (firstRender)
         {
             _userIdentifier = await StorageService.GetUserIdentifierAsync();
+
+            _isAdmin = await AdminService.IsAdminAsync();
+            await MapState.InitializeAsync(_userIdentifier, _isAdmin);
+            await MapState.LoadReportsAsync();
+            UpdateRecentReports();
 
             try
             {
