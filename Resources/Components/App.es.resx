@@ -559,4 +559,7 @@
   <data name="Unnamed_Alert_Zone" xml:space="preserve">
     <value>Zona de alerta sin nombre</value>
   </data>
+  <data name="RECENT_REPORTS" xml:space="preserve">
+    <value>Reportes Recientes</value>
+  </data>
 </root>

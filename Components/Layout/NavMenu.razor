@@ -4,45 +4,116 @@
 @inject IClientStorageService StorageService
 @inject ISettingsService SettingsService
 @inject IAdminService AdminService
+@inject IReportService ReportService
+@inject IClientLocationService ClientLocation
+@inject IEventService EventService
 @inject ProtectedLocalStorage LocalStorage
 @inject IStringLocalizer<App> L
 @using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Components.Pages
 @using WhereAreThey.Models
+@using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
+@using System.Linq
 @implements IDisposable
 
-<RadzenPanelMenu Style="height: 100%">
-    <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" Click="@OnMenuItemClicked" />
-    <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
-    <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
-    @if (_systemSettings.DonationsEnabled)
-    {
-        <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
-    }
-    @if (_showAdminShortcut)
-    {
-        <RadzenPanelMenuItem Text="@L["CONTROL_PANEL"]" Icon="admin_panel_settings" Path="/cp" Click="@OnMenuItemClicked" />
-    }
-</RadzenPanelMenu>
+<RadzenStack Orientation="Orientation.Vertical" Gap="0" Style="height: 100%">
+    <RadzenPanelMenu Style="flex: 0 0 auto;">
+        <RadzenPanelMenuItem Text="@L["ARE THEY HERE?"]" Icon="visibility" Path="/" Click="@OnMenuItemClicked" />
+        <RadzenPanelMenuItem Text="@L["THEY ARE HERE!"]" Icon="report_problem" Click="@OnReportClick" />
+        <RadzenPanelMenuItem Text="@L["Alerts"]" Icon="notifications" Click="@OnAlertsClick" />
+        @if (_systemSettings.DonationsEnabled)
+        {
+            <RadzenPanelMenuItem Text="@L["Donate"]" Icon="volunteer_activism" Click="@OnDonateClick" />
+        }
+        @if (_showAdminShortcut)
+        {
+            <RadzenPanelMenuItem Text="@L["CONTROL_PANEL"]" Icon="admin_panel_settings" Path="/cp" Click="@OnMenuItemClicked" />
+        }
+    </RadzenPanelMenu>
+
+    <RadzenStack Gap="0.5rem" Class="rz-p-4" Style="flex: 1 1 auto; overflow-y: auto;">
+        <RadzenText TextStyle="TextStyle.Subtitle2" Text="@L["RECENT_REPORTS"]" Style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7;" />
+        @foreach (var report in _recentReports)
+        {
+            <ReportCard Report="@report" OnClick="@(() => OnReportCardClick(report))" MaxMessageLength="100" />
+        }
+    </RadzenStack>
+</RadzenStack>
 
 @code {
     [Parameter] public EventCallback OnMenuItemClick { get; set; }
     private string? _userIdentifier;
     private SystemSettings _systemSettings = new();
     private bool _showAdminShortcut;
+    private List<Report> _recentReports = [];
 
     protected override async Task OnInitializedAsync()
     {
         _systemSettings = await SettingsService.GetSettingsAsync();
         AdminService.OnAdminLogin += HandleAdminLogin;
+        EventService.OnEntityChanged += HandleEntityChanged;
+        ClientLocation.OnStateChanged += HandleLocationChanged;
+
+        await LoadRecentReportsAsync();
     }
 
     private void HandleAdminLogin()
     {
         _showAdminShortcut = true;
         InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleEntityChanged(object entity, EntityChangeType type)
+    {
+        if (entity is Report && (type == EntityChangeType.Added || type == EntityChangeType.Deleted))
+        {
+            InvokeAsync(async () =>
+            {
+                await LoadRecentReportsAsync();
+                StateHasChanged();
+            });
+        }
+    }
+
+    private void HandleLocationChanged()
+    {
+        InvokeAsync(() =>
+        {
+            SortReports();
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadRecentReportsAsync()
+    {
+        _recentReports = await ReportService.GetTopRecentReportsAsync(20);
+        SortReports();
+    }
+
+    private void SortReports()
+    {
+        var location = ClientLocation.LastKnownPosition;
+        if (location != null)
+        {
+            _recentReports = _recentReports
+                .OrderBy(r => GeoUtils.CalculateDistance(location.Coords.Latitude, location.Coords.Longitude, r.Latitude, r.Longitude))
+                .ToList();
+        }
+    }
+
+    private async Task OnReportCardClick(Report report)
+    {
+        await OnMenuItemClicked();
+        NavigationManager.NavigateTo($"/?reportId={report.Id}");
+    }
+
+    public void Dispose()
+    {
+        AdminService.OnAdminLogin -= HandleAdminLogin;
+        EventService.OnEntityChanged -= HandleEntityChanged;
+        ClientLocation.OnStateChanged -= HandleLocationChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -156,10 +227,5 @@
         await OnMenuItemClicked();
         await DialogService.OpenAsync<DonateDialog>(L["DONATE"], null, 
             DialogConfigs.Default);
-    }
-
-    public void Dispose()
-    {
-        AdminService.OnAdminLogin -= HandleAdminLogin;
     }
 }

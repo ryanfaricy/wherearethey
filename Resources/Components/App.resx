@@ -583,4 +583,7 @@
   <data name="Unnamed_Alert_Zone" xml:space="preserve">
     <value>Unnamed Alert Zone</value>
   </data>
+  <data name="RECENT_REPORTS" xml:space="preserve">
+    <value>Recent Reports</value>
+  </data>
 </root>

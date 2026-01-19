@@ -63,9 +63,19 @@ public class ReportService(
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var report = await context.Reports
-            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
+
+        return report != null ? Result<Report>.Success(report) : Result<Report>.Failure("Report not found.");
+    }
+
+    /// <inheritdoc />
+    public async Task<Result<Report>> GetReportByIdAsync(int id)
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        var report = await context.Reports
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id);
 
         return report != null ? Result<Report>.Success(report) : Result<Report>.Failure("Report not found.");
     }
@@ -83,6 +93,18 @@ public class ReportService(
             .AsNoTracking()
             .Where(r => r.DeletedAt == null && r.CreatedAt >= cutoff)
             .OrderByDescending(r => r.CreatedAt)
+            .ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public async Task<List<Report>> GetTopRecentReportsAsync(int count)
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        return await context.Reports
+            .AsNoTracking()
+            .Where(r => r.DeletedAt == null)
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(count)
             .ToListAsync();
     }
 

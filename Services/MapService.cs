@@ -31,9 +31,9 @@ public class MapService(IJSRuntime jsRuntime) : IMapService
         await jsRuntime.InvokeVoidAsync("removeSingleReport", reportId);
     }
 
-    public async Task FocusReportAsync(int reportId)
+    public async Task FocusReportAsync(int reportId, bool triggerClick = true)
     {
-        await jsRuntime.InvokeVoidAsync("focusReport", reportId);
+        await jsRuntime.InvokeVoidAsync("focusReport", reportId, triggerClick);
     }
 
     public async Task SelectReportAsync(int reportId)

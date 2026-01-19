@@ -585,7 +585,7 @@ window.selectReport = function(reportId) {
     });
 };
 
-window.focusReport = function(reportId) {
+window.focusReport = function(reportId, triggerClick = true) {
     selectedReportId = reportId;
     const marker = reportMarkers.find(m => m.reportId === reportId);
     if (marker) {
@@ -598,7 +598,9 @@ window.focusReport = function(reportId) {
         
         // If the marker is in a cluster, we might need to spiderfy it or just zoom more
         // For now, just trigger the click
-        onMarkerClick({ target: marker, latlng: marker.getLatLng() });
+        if (triggerClick) {
+            onMarkerClick({ target: marker, latlng: marker.getLatLng() });
+        }
         window.selectReport(reportId);
     }
 };

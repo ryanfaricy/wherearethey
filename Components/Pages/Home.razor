@@ -1,5 +1,6 @@
 @page "/"
 @inject IAlertService AlertService
+@inject IReportService ReportService
 @inject IGeocodingService GeocodingService
 @inject ISettingsService SettingsService
 @inject DialogService DialogService
@@ -71,6 +72,8 @@
 </RadzenStack>
 
 @code {
+    [Parameter] [SupplyParameterFromQuery(Name = "reportId")] public string? ReportIdQuery { get; set; }
+
     private MapContainer? _mapContainer;
     private bool _isMobile;
     private bool _disposed;
@@ -84,6 +87,7 @@
     private double _initialLat;
     private double _initialLng;
     private bool _alertCreationMode;
+    private int? _lastHandledFocusReportId;
 
     private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
     {
@@ -197,7 +201,7 @@
                     Summary = L["New_Report"],
                     Detail = $"{string.Format(L["New_Report_Notification"], Math.Round(distance, 1))} ({L["VIEW"]})",
                     Duration = 10000,
-                    Click = _ => MapService.FocusReportAsync(report.Id),
+                    Click = _ => InvokeAsync(async () => await HandleFocusReportAsync(report.Id)),
                 });
             }
         });
@@ -260,9 +264,10 @@
                 }
             }
 
-            if (focusReportId.HasValue)
+            if (focusReportId.HasValue && focusReportId != _lastHandledFocusReportId)
             {
-                await MapService.FocusReportAsync(focusReportId.Value);
+                _lastHandledFocusReportId = focusReportId;
+                await HandleFocusReportAsync(focusReportId.Value);
             }
             else if (initialRadius.HasValue)
             {
@@ -287,6 +292,45 @@
 
             // Check for report draft
             await CheckForReportDraft();
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (MapState.MapInitialized)
+        {
+            var navState = await MapNavigationManager.GetNavigationStateAsync();
+            if (navState.FocusReportId.HasValue)
+            {
+                if (navState.FocusReportId != _lastHandledFocusReportId)
+                {
+                    _lastHandledFocusReportId = navState.FocusReportId;
+                    await HandleFocusReportAsync(navState.FocusReportId.Value);
+                }
+            }
+            else
+            {
+                _lastHandledFocusReportId = null;
+            }
+        }
+    }
+
+    private async Task HandleFocusReportAsync(int reportId)
+    {
+        var report = MapState.Reports.FirstOrDefault(r => r.Id == reportId);
+        if (report == null)
+        {
+            var result = await ReportService.GetReportByIdAsync(reportId);
+            if (result.IsSuccess)
+            {
+                report = result.Value;
+            }
+        }
+
+        if (report != null)
+        {
+            await MapService.FocusReportAsync(report.Id, triggerClick: false);
+            await MapInteraction.HandleMapClickAsync(report.Latitude, report.Longitude, isMarkerClick: true, reportId: report.Id);
         }
     }
 

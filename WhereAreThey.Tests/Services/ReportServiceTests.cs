@@ -326,6 +326,55 @@ public class ReportServiceTests
     }
 
     [Fact]
+    public async Task GetTopRecentReports_ShouldReturnRequestedNumber()
+    {
+        // Arrange
+        var factory = CreateFactory(CreateOptions());
+        var service = CreateService(factory);
+        await using var context = await factory.CreateDbContextAsync();
+
+        for (int i = 1; i <= 30; i++)
+        {
+            context.Reports.Add(new Report
+            {
+                Latitude = 10, Longitude = 10, CreatedAt = DateTime.UtcNow.AddMinutes(-i),
+                ReporterIdentifier = "user", ExternalId = Guid.NewGuid()
+            });
+        }
+        await context.SaveChangesAsync();
+
+        // Act
+        var result = await service.GetTopRecentReportsAsync(20);
+
+        // Assert
+        Assert.Equal(20, result.Count);
+        Assert.Equal(result.OrderByDescending(r => r.CreatedAt), result);
+    }
+
+    [Fact]
+    public async Task GetReportById_ShouldReturnCorrectReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, CreatedAt = DateTime.UtcNow, ExternalId = Guid.NewGuid() };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetReportByIdAsync(report.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.Equal(report.Id, result.Value!.Id);
+    }
+
+    [Fact]
     public async Task GetReportByExternalId_ShouldReturnCorrectReport()
     {
         // Arrange

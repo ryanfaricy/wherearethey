@@ -22,11 +22,25 @@ public interface IReportService
     Task<Result<Report>> GetReportByExternalIdAsync(Guid externalId);
 
     /// <summary>
+    /// Gets a report by its internal identifier.
+    /// </summary>
+    /// <param name="id">The internal ID of the report.</param>
+    /// <returns>A Result containing the report if found; otherwise, a failure result.</returns>
+    Task<Result<Report>> GetReportByIdAsync(int id);
+
+    /// <summary>
     /// Gets recent reports within an optional time frame.
     /// </summary>
     /// <param name="hours">The number of hours back to look. If null, uses the system default.</param>
     /// <returns>A list of recent reports.</returns>
     Task<List<Report>> GetRecentReportsAsync(int? hours = null);
+
+    /// <summary>
+    /// Gets the most recent reports regardless of time frame.
+    /// </summary>
+    /// <param name="count">The maximum number of reports to retrieve.</param>
+    /// <returns>A list of the most recent reports.</returns>
+    Task<List<Report>> GetTopRecentReportsAsync(int count);
 
     /// <summary>
     /// Gets all reports for administrative purposes.

@@ -9,7 +9,7 @@ public interface IMapService
     Task UpdateAlertsAsync(List<Alert> alerts);
     Task AddSingleReportAsync(Report report);
     Task RemoveSingleReportAsync(int reportId);
-    Task FocusReportAsync(int reportId);
+    Task FocusReportAsync(int reportId, bool triggerClick = true);
     Task SelectReportAsync(int reportId);
     Task<MapState?> GetMapStateAsync();
     Task SetMapViewAsync(double lat, double lng, double? radiusKm = null);
