@@ -21,6 +21,12 @@ public class NavMenuTests : ComponentTestBase
         var storageServiceMock = new Mock<IClientStorageService>();
         _settingsServiceMock = new Mock<ISettingsService>();
         _adminServiceMock = new Mock<IAdminService>();
+        var mapStateServiceMock = new Mock<IMapStateService>();
+        var reportServiceMock = new Mock<IReportService>();
+        var clientLocationServiceMock = new Mock<IClientLocationService>();
+        var eventServiceMock = new Mock<IEventService>();
+        
+        mapStateServiceMock.Setup(m => m.Reports).Returns(new List<Report>());
         
         // Use real ProtectedLocalStorage with mocked dependencies
         var localStorage = new ProtectedLocalStorage(
@@ -31,6 +37,10 @@ public class NavMenuTests : ComponentTestBase
         Services.AddSingleton(storageServiceMock.Object);
         Services.AddSingleton(_settingsServiceMock.Object);
         Services.AddSingleton(_adminServiceMock.Object);
+        Services.AddSingleton(mapStateServiceMock.Object);
+        Services.AddSingleton(reportServiceMock.Object);
+        Services.AddSingleton(clientLocationServiceMock.Object);
+        Services.AddSingleton(eventServiceMock.Object);
         Services.AddSingleton(localStorage);
         
         _settingsServiceMock.Setup(s => s.GetSettingsAsync())

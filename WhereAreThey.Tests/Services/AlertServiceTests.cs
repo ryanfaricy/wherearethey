@@ -599,7 +599,7 @@ public class AlertServiceTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.IsAny<Alert>(), EntityChangeType.Deleted), Times.Once);
+        _eventServiceMock.Verify(x => x.NotifyEntityChanged(It.IsAny<Alert>(), EntityChangeType.Updated), Times.Once);
         
         await using (var context = await factory.CreateDbContextAsync())
         {
