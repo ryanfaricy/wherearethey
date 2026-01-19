@@ -90,4 +90,9 @@ public class MapService(IJSRuntime jsRuntime) : IMapService
     {
         await jsRuntime.InvokeVoidAsync("setAlertCreationMode", enabled);
     }
+
+    public async Task DestroyMapAsync()
+    {
+        await jsRuntime.InvokeVoidAsync("destroyHeatMap");
+    }
 }

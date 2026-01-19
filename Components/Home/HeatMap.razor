@@ -4,7 +4,7 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
-@implements IDisposable
+@implements IAsyncDisposable
 
 <div id="@ElementId" style="height: 100%; width: 100%;" @attributes="AdditionalAttributes"></div>
 
@@ -155,10 +155,28 @@
 
     public DotNetObjectReference<HeatMap>? GetDotNetObjectReference() => _objRef;
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        _objRef?.Dispose();
-        MapState.MapInitialized = false;
+        try
+        {
+            if (_initialized)
+            {
+                await MapService.DestroyMapAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Best effort cleanup - avoid logging if it's just a JS interop failure during disposal
+            if (ex is not InvalidOperationException && ex is not JSDisconnectedException)
+            {
+                Console.WriteLine($"[DEBUG_LOG] Error in HeatMap.DisposeAsync: {ex.Message}");
+            }
+        }
+        finally
+        {
+            _objRef?.Dispose();
+            MapState.MapInitialized = false;
+        }
     }
 
     public class MapClickEventArgs

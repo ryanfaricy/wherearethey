@@ -125,20 +125,24 @@ const onDragEnd = function (e) {
 window.initHeatMap = function (elementId, initialLat, initialLng, reports, helper, alerts, t, isAdmin) {
     if (t) translations = t;
     isAdminMode = isAdmin || false;
-    if (map) {
-        if (resizeObserver) {
-            resizeObserver.disconnect();
-            resizeObserver = null;
-        }
-        map.remove();
-        alertLayers = [];
-        reportMarkers = [];
-        userLocationMarker = null;
-        userLocationCircle = null;
-        ghostMarker = null;
-        selectionCircle = null;
-        selectionCenterMarker = null;
+
+    // Monkey-patch L.HeatLayer to prevent IndexSizeError when the map container is hidden (size 0).
+    // Leaflet-heat tries to getImageData from a canvas with the map's size, which fails if width/height is 0.
+    if (typeof L !== 'undefined' && L.HeatLayer && !L.HeatLayer.prototype._originalRedraw) {
+        L.HeatLayer.prototype._originalRedraw = L.HeatLayer.prototype._redraw;
+        L.HeatLayer.prototype._redraw = function () {
+            if (this._map) {
+                const size = this._map.getSize();
+                if (size.x <= 0 || size.y <= 0) {
+                    return this;
+                }
+                return this._originalRedraw.apply(this, arguments);
+            }
+            return this;
+        };
     }
+    
+    window.destroyHeatMap();
 
     dotNetHelper = helper;
     const container = document.getElementById(elementId);
@@ -719,4 +723,27 @@ window.hideGhostPin = function () {
         map.removeLayer(ghostMarker);
         ghostMarker = null;
     }
+};
+
+window.destroyHeatMap = function () {
+    if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+    }
+    if (map) {
+        try {
+            map.remove();
+        } catch (e) {
+            console.error('Error removing map:', e);
+        }
+        map = null;
+    }
+    alertLayers = [];
+    reportMarkers = [];
+    userLocationMarker = null;
+    userLocationCircle = null;
+    ghostMarker = null;
+    selectionCircle = null;
+    selectionCenterMarker = null;
+    dotNetHelper = null;
 };

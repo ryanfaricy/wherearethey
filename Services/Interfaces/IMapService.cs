@@ -21,4 +21,5 @@ public interface IMapService
     Task StopWatchingAsync(int watchId);
     Task<double> GetZoomLevelAsync();
     Task SetAlertCreationModeAsync(bool enabled);
+    Task DestroyMapAsync();
 }
