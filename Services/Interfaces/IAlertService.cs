@@ -46,12 +46,13 @@ public interface IAlertService
     Task<Result<Alert>> GetAlertByExternalIdAsync(Guid externalId);
 
     /// <summary>
-    /// Gets active alerts, optionally filtered by user and verification status.
+    /// Gets alerts, optionally filtered by user, verification status and deletion status.
     /// </summary>
     /// <param name="userIdentifier">The unique identifier for the user.</param>
     /// <param name="onlyVerified">Whether to only return verified alerts.</param>
-    /// <returns>A list of active alerts.</returns>
-    Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true);
+    /// <param name="includeDeleted">Whether to include deleted alerts.</param>
+    /// <returns>A list of alerts.</returns>
+    Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true, bool includeDeleted = false);
 
     /// <summary>
     /// Updates an existing alert.

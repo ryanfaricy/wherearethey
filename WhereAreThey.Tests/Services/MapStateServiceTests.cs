@@ -23,7 +23,7 @@ public class MapStateServiceTests : IDisposable
         var settingsServiceMock = new Mock<ISettingsService>();
 
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
         settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
@@ -40,8 +40,8 @@ public class MapStateServiceTests : IDisposable
     public async Task InitializeAsync_LoadsInitialAlerts()
     {
         // Arrange
-        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null } };
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync(alerts);
+        var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null, UserIdentifier = "test-user" } };
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync(alerts);
 
         // Act
         await _service.InitializeAsync("test-user");
@@ -55,7 +55,7 @@ public class MapStateServiceTests : IDisposable
     {
         // Arrange
         var alerts = new List<Alert> { new() { Id = 1, Latitude = 10, Longitude = 10, DeletedAt = null, UserIdentifier = "test-admin" } };
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync(alerts);
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync("test-admin", It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync(alerts);
 
         // Act
         await _service.InitializeAsync("test-admin", isAdmin: true);
@@ -88,8 +88,8 @@ public class MapStateServiceTests : IDisposable
     public async Task HandleAlertAdded_AdminMode_ShowDeleted_AddedToList()
     {
         // Arrange
-        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = DateTime.UtcNow, UserIdentifier = "other-user" };
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = DateTime.UtcNow, UserIdentifier = "test-admin" };
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync("test-admin", It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
         await _service.InitializeAsync("test-admin", isAdmin: true);
         _service.ShowDeleted = true;
         _service.MapInitialized = true;
@@ -214,7 +214,7 @@ public class MapStateServiceTests : IDisposable
     public async Task HandleAlertAdded_AdminMode_AddedToList()
     {
         // Arrange
-        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = null, UserIdentifier = "other-user" };
+        var alert = new Alert { Id = 1, Latitude = 0, Longitude = 0, DeletedAt = null, UserIdentifier = "test-admin" };
         await _service.InitializeAsync("test-admin", isAdmin: true);
         _service.MapInitialized = true;
 
@@ -232,7 +232,7 @@ public class MapStateServiceTests : IDisposable
     {
         // Setup mocks for alerts which are called during InitializeAsync
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
         
         // Setup report mocks
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);

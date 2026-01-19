@@ -140,6 +140,18 @@ public class MapStateService : IMapStateService
         return report.CreatedAt >= cutoff;
     }
 
+    private bool ShouldShowAlert(Alert alert)
+    {
+        // Alert zones from other profiles should NEVER appear on ANY heatmap.
+        // Also ensures the admin heatmap (where _userIdentifier is null) displays no alerts.
+        if (string.IsNullOrEmpty(_userIdentifier) || alert.UserIdentifier != _userIdentifier)
+        {
+            return false;
+        }
+
+        return VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted);
+    }
+
     private async Task PruneOldReportsAsync()
     {
         if (_isAdmin && _isAllLoaded)
@@ -233,24 +245,22 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAlertsAsync()
     {
-        List<Alert> loadedAlerts;
-        if (_isAdmin)
+        List<Alert> loadedAlerts = [];
+        
+        // Only load alerts if we have a user identifier (User heatmap).
+        // Admin heatmap calls InitializeAsync with null identifier, correctly resulting in zero alerts.
+        if (!string.IsNullOrEmpty(_userIdentifier))
         {
-            var allAlerts = await _alertService.GetAllAlertsAsync();
-            loadedAlerts = allAlerts.Where(a => VisibilityPolicy.ShouldShow(a, _isAdmin, ShowDeleted)).ToList();
-        }
-        else if (!string.IsNullOrEmpty(_userIdentifier))
-        {
-            loadedAlerts = await _alertService.GetActiveAlertsAsync(_userIdentifier, false);
-        }
-        else
-        {
-            loadedAlerts = [];
+            // Fetch alerts for current user. Admins see their own deleted/unverified alerts if ShowDeleted is true.
+            loadedAlerts = await _alertService.GetActiveAlertsAsync(
+                _userIdentifier, 
+                onlyVerified: !(_isAdmin && ShowDeleted),
+                includeDeleted: _isAdmin && ShowDeleted) ?? [];
         }
 
         lock (_lock)
         {
-            Alerts = loadedAlerts;
+            Alerts = loadedAlerts.Where(ShouldShowAlert).ToList();
         }
 
         if (MapInitialized)
@@ -295,107 +305,54 @@ public class MapStateService : IMapStateService
     {
         if (entity is Report report)
         {
-            switch (type)
-            {
-                case EntityChangeType.Added:
-                    HandleReportAdded(report);
-                    break;
-                case EntityChangeType.Updated:
-                    HandleReportUpdated(report);
-                    break;
-                case EntityChangeType.Deleted:
-                    HandleReportDeleted(report.Id);
-                    break;
-            }
+            HandleReportChange(report, type);
         }
         else if (entity is Alert alert)
         {
-            switch (type)
-            {
-                case EntityChangeType.Added:
-                    HandleAlertAdded(alert);
-                    break;
-                case EntityChangeType.Updated:
-                    HandleAlertUpdated(alert);
-                    break;
-                case EntityChangeType.Deleted:
-                    HandleAlertDeleted(alert.Id);
-                    break;
-            }
+            HandleAlertChange(alert, type);
         }
     }
 
-    private void HandleReportAdded(Report report)
-    {
-        if (!ShouldShowReport(report))
-        {
-            return;
-        }
-
-        lock (_lock)
-        {
-            Reports.Insert(0, report);
-        }
-        
-        if (MapInitialized)
-        {
-            _ = _mapService.AddSingleReportAsync(report);
-        }
-        OnStateChanged?.Invoke();
-    }
-
-    private void HandleReportUpdated(Report report)
+    private void HandleReportChange(Report report, EntityChangeType type)
     {
         bool changed = false;
-        bool shouldShow = ShouldShowReport(report);
-        bool callUpdateOnMap = false;
+        bool shouldShow = type != EntityChangeType.Deleted && ShouldShowReport(report);
         bool callRemoveOnMap = false;
-        bool callHandleAdded = false;
+        bool callAddOnMap = false;
+        bool callUpdateOnMap = false;
 
         lock (_lock)
         {
             var index = Reports.FindIndex(r => r.Id == report.Id);
-            
-            if (!shouldShow)
+            if (shouldShow)
             {
                 if (index != -1)
                 {
-                    Reports.RemoveAt(index);
-                    changed = true;
-                    callRemoveOnMap = true;
+                    Reports[index] = report;
+                    callUpdateOnMap = true;
                 }
-            }
-            else if (index == -1)
-            {
-                // Might have been previously deleted or new
-                callHandleAdded = true;
-            }
-            else
-            {
-                Reports[index] = report;
+                else
+                {
+                    Reports.Insert(0, report);
+                    callAddOnMap = true;
+                }
                 changed = true;
-                callUpdateOnMap = true;
             }
-        }
-
-        if (callHandleAdded)
-        {
-            HandleReportAdded(report);
-            return;
+            else if (index != -1)
+            {
+                Reports.RemoveAt(index);
+                callRemoveOnMap = true;
+                changed = true;
+            }
         }
 
         if (changed)
         {
             if (MapInitialized)
             {
-                if (callRemoveOnMap)
-                {
-                    _ = _mapService.RemoveSingleReportAsync(report.Id);
-                }
-                else if (callUpdateOnMap)
-                {
-                    _ = UpdateReportOnMap(report);
-                }
+                if (callRemoveOnMap) _ = _mapService.RemoveSingleReportAsync(report.Id);
+                else if (callAddOnMap) _ = _mapService.AddSingleReportAsync(report);
+                else if (callUpdateOnMap) _ = UpdateReportOnMap(report);
             }
             OnStateChanged?.Invoke();
         }
@@ -414,108 +371,21 @@ public class MapStateService : IMapStateService
         }
     }
 
-    private void HandleReportDeleted(int id)
+    private void HandleAlertChange(Alert alert, EntityChangeType type)
     {
         bool changed = false;
-        lock (_lock)
-        {
-            var index = Reports.FindIndex(r => r.Id == id);
-            if (index != -1)
-            {
-                Reports.RemoveAt(index);
-                changed = true;
-            }
-        }
-
-        if (changed)
-        {
-            if (MapInitialized)
-            {
-                _ = _mapService.RemoveSingleReportAsync(id);
-            }
-            OnStateChanged?.Invoke();
-        }
-    }
-
-    private void HandleAlertAdded(Alert alert)
-    {
-        if (!VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
-        {
-            return;
-        }
-
-        // Don't show other users' alerts unless we are an admin
-        if (alert.UserIdentifier != _userIdentifier && !_isAdmin)
-        {
-            return;
-        }
-
-        lock (_lock)
-        {
-            Alerts ??= [];
-            Alerts.Insert(0, alert);
-        }
-        
-        if (MapInitialized)
-        {
-            _ = _mapService.UpdateAlertsAsync(Alerts);
-        }
-        OnStateChanged?.Invoke();
-    }
-
-    private void HandleAlertUpdated(Alert alert)
-    {
-        // Don't show other users' alerts unless we are an admin
-        if (alert.UserIdentifier != _userIdentifier && !_isAdmin)
-        {
-            return;
-        }
-
-        bool changed = false;
-        bool callHandleAdded = false;
+        bool shouldShow = type != EntityChangeType.Deleted && ShouldShowAlert(alert);
 
         lock (_lock)
         {
             var index = Alerts.FindIndex(a => a.Id == alert.Id);
-            if (index != -1)
+            if (shouldShow)
             {
-                if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
-                {
-                    Alerts[index] = alert;
-                }
-                else
-                {
-                    Alerts.RemoveAt(index);
-                }
+                if (index != -1) Alerts[index] = alert;
+                else Alerts.Insert(0, alert);
                 changed = true;
             }
-            else if (VisibilityPolicy.ShouldShow(alert, _isAdmin, ShowDeleted))
-            {
-                callHandleAdded = true;
-            }
-        }
-
-        if (callHandleAdded)
-        {
-            HandleAlertAdded(alert);
-        }
-        else if (changed)
-        {
-            if (MapInitialized)
-            {
-                _ = _mapService.UpdateAlertsAsync(Alerts);
-            }
-            OnStateChanged?.Invoke();
-        }
-    }
-
-    private void HandleAlertDeleted(int id)
-    {
-        bool changed = false;
-        lock (_lock)
-        {
-            var index = Alerts.FindIndex(a => a.Id == id);
-            if (index != -1)
+            else if (index != -1)
             {
                 Alerts.RemoveAt(index);
                 changed = true;

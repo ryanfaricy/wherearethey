@@ -187,12 +187,19 @@ public class AlertService(
     }
 
     /// <inheritdoc />
-    public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true)
+    public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true, bool includeDeleted = false)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
-        var query = context.Alerts
-            .AsNoTracking()
-            .Where(a => a.DeletedAt == null);
+        var query = context.Alerts.AsNoTracking();
+
+        if (includeDeleted)
+        {
+            query = query.IgnoreQueryFilters();
+        }
+        else
+        {
+            query = query.Where(a => a.DeletedAt == null);
+        }
 
         if (onlyVerified)
         {
