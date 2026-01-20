@@ -92,11 +92,21 @@ public class GeocodingServiceTests
     }
 
     [Fact]
-    public async Task ReverseGeocodeAsync_ShouldReturnNull_WhenNoToken()
+    public async Task ReverseGeocodeAsync_ShouldReturnNull_WhenBothProvidersFail()
     {
         // Arrange
         _settingsServiceMock.Setup(s => s.GetSettingsAsync())
             .ReturnsAsync(new SystemSettings { MapboxToken = "" });
+
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.InternalServerError
+            });
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
         var service = new GeocodingService(httpClient, _settingsServiceMock.Object, _loggerMock.Object);
@@ -106,5 +116,84 @@ public class GeocodingServiceTests
 
         // Assert
         Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task ReverseGeocodeAsync_ShouldFallbackToNominatim_WhenMapboxFails()
+    {
+        // Arrange
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.Host.Contains("mapbox.com")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.TooManyRequests
+            });
+
+        var nominatimResponse = new { display_name = "Nominatim Address" };
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.Host.Contains("openstreetmap.org")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(nominatimResponse)),
+            });
+
+        var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        var service = new GeocodingService(httpClient, _settingsServiceMock.Object, _loggerMock.Object);
+
+        // Act
+        var result = await service.ReverseGeocodeAsync(40.7128, -74.0060);
+
+        // Assert
+        Assert.Equal("Nominatim Address", result);
+    }
+
+    [Fact]
+    public async Task SearchAsync_ShouldFallbackToNominatim_WhenMapboxReturnsEmpty()
+    {
+        // Arrange
+        // Mapbox returns empty features
+        var mapboxResponse = new { features = Array.Empty<object>() };
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.Host.Contains("mapbox.com")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(mapboxResponse)),
+            });
+
+        var nominatimResponse = new[]
+        {
+            new { display_name = "Nominatim 1", lat = "40.0", lon = "-74.0" }
+        };
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>(
+                "SendAsync",
+                ItExpr.Is<HttpRequestMessage>(r => r.RequestUri!.Host.Contains("openstreetmap.org")),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage
+            {
+                StatusCode = HttpStatusCode.OK,
+                Content = new StringContent(JsonSerializer.Serialize(nominatimResponse)),
+            });
+
+        var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        var service = new GeocodingService(httpClient, _settingsServiceMock.Object, _loggerMock.Object);
+
+        // Act
+        var results = await service.SearchAsync("test query");
+
+        // Assert
+        Assert.Single(results);
+        Assert.Equal("Nominatim 1", results[0].Address);
     }
 }

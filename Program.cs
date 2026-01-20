@@ -106,7 +106,8 @@ builder.Services.AddOptions<EmailOptions>()
 builder.Services.AddHttpClient<MicrosoftGraphEmailService>();
 builder.Services.AddHttpClient<IGeocodingService, GeocodingService>(client => {
     client.Timeout = TimeSpan.FromSeconds(10);
-});
+})
+.AddStandardResilienceHandler();
 builder.Services.AddTransient<SmtpEmailService>();
 builder.Services.AddScoped<IEmailService>(sp => 
     new FallbackEmailService([
