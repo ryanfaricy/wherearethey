@@ -105,6 +105,7 @@ public class MapStateService : IMapStateService
         _settingsService = settingsService;
 
         _eventService.OnEntityChanged += HandleEntityChanged;
+        _eventService.OnEntityBatchChanged += HandleEntityBatchChanged;
         _eventService.OnSettingsChanged += HandleSettingsChanged;
 
         _ = InitializeSettingsAsync();
@@ -322,6 +323,18 @@ public class MapStateService : IMapStateService
         }
     }
 
+    private void HandleEntityBatchChanged(Type entityType)
+    {
+        if (entityType == typeof(Report))
+        {
+            _ = LoadReportsAsync();
+        }
+        else if (entityType == typeof(Alert))
+        {
+            _ = LoadAlertsAsync();
+        }
+    }
+
     private void HandleReportChange(Report report, EntityChangeType type)
     {
         var changed = false;
@@ -433,9 +446,9 @@ public class MapStateService : IMapStateService
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        
         _pruneTimer?.Dispose();
         _eventService.OnEntityChanged -= HandleEntityChanged;
+        _eventService.OnEntityBatchChanged -= HandleEntityBatchChanged;
         _eventService.OnSettingsChanged -= HandleSettingsChanged;
     }
 }

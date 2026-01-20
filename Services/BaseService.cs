@@ -99,10 +99,7 @@ public abstract class BaseService<T>(
             }
             await context.SaveChangesAsync();
 
-            foreach (var entity in entities)
-            {
-                EventService.NotifyEntityChanged(entity, EntityChangeType.Updated);
-            }
+            EventService.NotifyEntityBatchChanged(typeof(T));
 
             return Result.Success();
         }
@@ -173,10 +170,7 @@ public abstract class BaseService<T>(
                 .Where(e => ids.Contains(e.Id))
                 .ExecuteDeleteAsync();
 
-            foreach (var entity in entities)
-            {
-                EventService.NotifyEntityChanged(entity, EntityChangeType.Deleted);
-            }
+            EventService.NotifyEntityBatchChanged(typeof(T));
 
             return Result.Success();
         }

@@ -9,6 +9,8 @@ public class EventService : IEventService
     /// <inheritdoc />
     public event Action<object, EntityChangeType>? OnEntityChanged;
     /// <inheritdoc />
+    public event Action<Type>? OnEntityBatchChanged;
+    /// <inheritdoc />
     public event Action<SystemSettings>? OnSettingsChanged;
     /// <inheritdoc />
     public event Action<AdminLoginAttempt>? OnAdminLoginAttempt;
@@ -23,6 +25,12 @@ public class EventService : IEventService
     public void NotifyEntityChanged<T>(T entity, EntityChangeType type) where T : IAuditable
     {
         OnEntityChanged?.Invoke(entity, type);
+    }
+
+    /// <inheritdoc />
+    public void NotifyEntityBatchChanged(Type entityType)
+    {
+        OnEntityBatchChanged?.Invoke(entityType);
     }
 
     /// <inheritdoc />

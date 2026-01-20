@@ -9,6 +9,8 @@ public interface IEventService
 {
     /// <summary>Raised when an entity is changed.</summary>
     event Action<object, EntityChangeType> OnEntityChanged;
+    /// <summary>Raised when a batch of entities of a certain type has changed (e.g. mass delete).</summary>
+    event Action<Type> OnEntityBatchChanged;
 
     /// <summary>Raised when system settings are changed.</summary>
     event Action<SystemSettings> OnSettingsChanged;
@@ -23,6 +25,8 @@ public interface IEventService
 
     /// <summary>Notifies subscribers that an entity has changed.</summary>
     void NotifyEntityChanged<T>(T entity, EntityChangeType type) where T : IAuditable;
+    /// <summary>Notifies subscribers that a batch of entities of a certain type has changed.</summary>
+    void NotifyEntityBatchChanged(Type entityType);
     /// <summary>Notifies subscribers that settings have changed.</summary>
     void NotifySettingsChanged(SystemSettings settings);
     /// <summary>Notifies subscribers of an admin login attempt.</summary>

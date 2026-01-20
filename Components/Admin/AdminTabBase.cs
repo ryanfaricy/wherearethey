@@ -39,7 +39,16 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     {
         await LoadData();
         EventService.OnEntityChanged += HandleEntityChanged;
+        EventService.OnEntityBatchChanged += HandleEntityBatchChanged;
         MapState.OnStateChanged += HandleStateChanged;
+    }
+
+    private void HandleEntityBatchChanged(Type type)
+    {
+        if (type == typeof(TEntity))
+        {
+            _ = InvokeAsync(LoadData);
+        }
     }
 
     private void HandleStateChanged() => _ = InvokeAsync(LoadData);
@@ -146,6 +155,7 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
         GC.SuppressFinalize(this);
         
         EventService.OnEntityChanged -= HandleEntityChanged;
+        EventService.OnEntityBatchChanged -= HandleEntityBatchChanged;
         MapState.OnStateChanged -= HandleStateChanged;
     }
 }
