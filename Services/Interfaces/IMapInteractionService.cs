@@ -20,5 +20,5 @@ public interface IMapInteractionService
     /// <summary>
     /// Calculates an appropriate search radius based on zoom level and interaction type.
     /// </summary>
-    double CalculateSearchRadius(double zoom, bool isMarkerClick);
+    double CalculateSearchRadius(double zoom, bool isMarkerClick, double? viewportRadiusKm = null);
 }

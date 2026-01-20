@@ -22,7 +22,8 @@ public class MapInteractionService(
         }
 
         var zoom = await mapService.GetZoomLevelAsync();
-        var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick);
+        var mapState = await mapService.GetMapStateAsync();
+        var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick, mapState?.RadiusKm);
 
         var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm);
         
@@ -156,19 +157,25 @@ public class MapInteractionService(
     }
 
     /// <inheritdoc />
-    public double CalculateSearchRadius(double zoom, bool isMarkerClick)
+    public double CalculateSearchRadius(double zoom, bool isMarkerClick, double? viewportRadiusKm = null)
     {
-        // - Marker clicks (isMarkerClick): 50m
-        // - High zoom map clicks: 500m tap tolerance for near-misses on mobile
+        // - Marker clicks (isMarkerClick): 100m
+        // - Otherwise use the viewport radius if available (capped at 160km)
+        // - High zoom map clicks: 1kM tap tolerance for near-misses on mobile
         // - Low zoom map clicks: 10km area search for heatmap blobs
         if (isMarkerClick)
         {
-            return 0.05;
+            return 0.1;
+        }
+
+        if (viewportRadiusKm.HasValue)
+        {
+            return Math.Min(viewportRadiusKm.Value, 160.0);
         }
         
         if (zoom >= 15)
         {
-            return 0.5;
+            return 1;
         }
         
         return 10.0;

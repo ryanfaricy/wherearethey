@@ -22,6 +22,7 @@ public class MapInteractionServiceTests : BunitContext
     public MapInteractionServiceTests()
     {
         _mapServiceMock = new Mock<IMapService>();
+        _mapServiceMock.Setup(m => m.GetMapStateAsync()).ReturnsAsync((MapState?)null);
         _stateServiceMock = new Mock<IMapStateService>();
         _adminServiceMock = new Mock<IAdminService>();
         var localizerMock = new Mock<IStringLocalizer<App>>();
@@ -39,14 +40,18 @@ public class MapInteractionServiceTests : BunitContext
     }
 
     [Theory]
-    [InlineData(10, false, 10.0)]
-    [InlineData(15, false, 0.5)]
-    [InlineData(16, false, 0.5)]
-    [InlineData(10, true, 0.05)]
-    public void CalculateSearchRadius_ReturnsCorrectValues(double zoom, bool isMarkerClick, double expected)
+    [InlineData(10, false, null, 10.0)]
+    [InlineData(15, false, null, 1.0)]
+    [InlineData(16, false, null, 1.0)]
+    [InlineData(10, true, null, 0.1)]
+    [InlineData(10, false, 50.0, 50.0)]
+    [InlineData(10, false, 200.0, 160.0)]
+    [InlineData(15, false, 2.0, 2.0)]
+    [InlineData(15, true, 2.0, 0.1)] // Marker click should always be 0.1
+    public void CalculateSearchRadius_ReturnsCorrectValues(double zoom, bool isMarkerClick, double? viewportRadius, double expected)
     {
         // Act
-        var result = _service.CalculateSearchRadius(zoom, isMarkerClick);
+        var result = _service.CalculateSearchRadius(zoom, isMarkerClick, viewportRadius);
 
         // Assert
         Assert.Equal(expected, result);
