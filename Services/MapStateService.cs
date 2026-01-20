@@ -103,10 +103,15 @@ public class MapStateService : IMapStateService
         _settingsService = settingsService;
 
         _eventService.OnEntityChanged += HandleEntityChanged;
-        _eventService.OnSettingsChanged += settings => _cachedExpiryHours = settings.ReportExpiryHours;
+        _eventService.OnSettingsChanged += HandleSettingsChanged;
 
         _ = InitializeSettingsAsync();
         _pruneTimer = new Timer(_ => _ = PruneOldReportsAsync(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+    }
+
+    private void HandleSettingsChanged(SystemSettings settings)
+    {
+        _cachedExpiryHours = settings.ReportExpiryHours;
     }
 
     private async Task InitializeSettingsAsync()
@@ -409,5 +414,6 @@ public class MapStateService : IMapStateService
         
         _pruneTimer?.Dispose();
         _eventService.OnEntityChanged -= HandleEntityChanged;
+        _eventService.OnSettingsChanged -= HandleSettingsChanged;
     }
 }
