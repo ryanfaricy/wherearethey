@@ -10,14 +10,14 @@ namespace WhereAreThey.Services;
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService,
-    IValidator<Feedback> validator) : BaseService<Feedback>(contextFactory, eventService), IFeedbackService
+    IValidator<Feedback> validator) : BaseService<Feedback>(contextFactory, eventService, validator), IFeedbackService
 {
     /// <inheritdoc />
     public async Task<Result<Feedback>> CreateFeedbackAsync(Feedback feedback)
     {
         try
         {
-            var validationResult = await validator.ValidateAsync(feedback);
+            var validationResult = await Validator!.ValidateAsync(feedback);
             if (!validationResult.IsValid)
             {
                 return Result<Feedback>.Failure(validationResult);
@@ -34,18 +34,5 @@ public class FeedbackService(
         {
             return Result<Feedback>.Failure($"An error occurred while creating feedback: {ex.Message}");
         }
-    }
-
-
-    /// <inheritdoc />
-    public async Task<Result> UpdateFeedbackAsync(Feedback feedback)
-    {
-        var validationResult = await validator.ValidateAsync(feedback);
-        if (!validationResult.IsValid)
-        {
-            return Result.Failure(validationResult);
-        }
-
-        return await UpdateAsync(feedback);
     }
 }

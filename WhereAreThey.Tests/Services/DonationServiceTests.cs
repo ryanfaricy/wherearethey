@@ -145,7 +145,7 @@ public class DonationServiceTests
         initial.Amount = 50;
         initial.DonorName = "Updated Name";
         initial.Status = "completed";
-        var result = await service.UpdateDonationAsync(initial);
+        var result = await service.UpdateAsync(initial);
 
         // Assert
         Assert.True(result.IsSuccess);

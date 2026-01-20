@@ -137,7 +137,7 @@
         _isSubmitting = true;
 
         await ValidationService.ExecuteAsync(
-            async () => await ReportService.UpdateReportAsync(_report),
+            async () => await ReportService.UpdateAsync(_report),
             successMessage: "Report updated successfully",
             errorTitle: "Update failed",
             onSuccess: async () => DialogService.Close(true),

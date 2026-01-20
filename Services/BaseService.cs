@@ -1,3 +1,4 @@
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -12,11 +13,13 @@ namespace WhereAreThey.Services;
 /// <typeparam name="T">The type of entity managed by the service.</typeparam>
 public abstract class BaseService<T>(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IEventService eventService) : IAdminDataService<T>
+    IEventService eventService,
+    IValidator<T>? validator = null) : IAdminDataService<T>
     where T : class, IAuditable
 {
     protected readonly IDbContextFactory<ApplicationDbContext> ContextFactory = contextFactory;
     protected readonly IEventService EventService = eventService;
+    protected readonly IValidator<T>? Validator = validator;
 
     /// <inheritdoc />
     public virtual async Task<List<T>> GetAllAsync(bool isAdmin = false)
@@ -216,13 +219,27 @@ public abstract class BaseService<T>(
         }
     }
 
+    /// <inheritdoc />
+    public virtual async Task<Result> UpdateAsync(T entity)
+    {
+        if (Validator != null)
+        {
+            var validationResult = await Validator.ValidateAsync(entity);
+            if (!validationResult.IsValid)
+            {
+                return Result.Failure(validationResult);
+            }
+        }
+        return await UpdateInternalAsync(entity);
+    }
+
     /// <summary>
-    /// Updates an existing entity.
+    /// Updates an existing entity in the database.
     /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
     /// </summary>
     /// <param name="entity">The entity with updated values.</param>
     /// <returns>A success result if updated; otherwise, a failure result.</returns>
-    protected virtual async Task<Result> UpdateAsync(T entity)
+    protected virtual async Task<Result> UpdateInternalAsync(T entity)
     {
         try
         {

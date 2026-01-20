@@ -82,7 +82,7 @@
         _isSubmitting = true;
 
         await ValidationService.ExecuteAsync(
-            async () => await DonationService.UpdateDonationAsync(_donation),
+            async () => await DonationService.UpdateAsync(_donation),
             successMessage: "Donation updated successfully",
             errorTitle: "Update failed",
             onSuccess: async () => DialogService.Close(true),

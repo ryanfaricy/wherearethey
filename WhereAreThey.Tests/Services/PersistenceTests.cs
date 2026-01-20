@@ -30,7 +30,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public async Task UpdateAlertAsync_ShouldPersistCreatedAtAndDeletedAt()
+    public async Task UpdateAlert_ShouldPersistCreatedAtAndDeletedAt()
     {
         // Arrange
         var (context, factory) = await CreateContextAndFactoryAsync();
@@ -73,7 +73,7 @@ public class PersistenceTests
         alertToUpdate.CreatedAt = newCreatedAt;
         alertToUpdate.DeletedAt = newDeletedAt;
 
-        await service.UpdateAlertAsync(alertToUpdate);
+        await service.UpdateAsync(alertToUpdate);
 
         // Assert
         var updatedAlert = await context.Alerts.IgnoreQueryFilters().AsNoTracking().FirstAsync(a => a.Id == alert.Id);
@@ -82,7 +82,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public async Task UpdateReportAsync_ShouldPersistCreatedAtAndDeletedAt()
+    public async Task UpdateReport_ShouldPersistCreatedAtAndDeletedAt()
     {
         // Arrange
         var (context, factory) = await CreateContextAndFactoryAsync();
@@ -119,7 +119,7 @@ public class PersistenceTests
         reportToUpdate.CreatedAt = newCreatedAt;
         reportToUpdate.DeletedAt = newDeletedAt;
 
-        await service.UpdateReportAsync(reportToUpdate);
+        await service.UpdateAsync(reportToUpdate);
 
         // Assert
         var updatedReport = await context.Reports.IgnoreQueryFilters().AsNoTracking().FirstAsync(r => r.Id == report.Id);
@@ -128,7 +128,7 @@ public class PersistenceTests
     }
 
     [Fact]
-    public async Task UpdateFeedbackAsync_ShouldPersistCreatedAtAndDeletedAt()
+    public async Task UpdateFeedback_ShouldPersistCreatedAtAndDeletedAt()
     {
         // Arrange
         var (context, factory) = await CreateContextAndFactoryAsync();
@@ -161,7 +161,7 @@ public class PersistenceTests
         feedbackToUpdate.CreatedAt = newCreatedAt;
         feedbackToUpdate.DeletedAt = newDeletedAt;
 
-        await service.UpdateFeedbackAsync(feedbackToUpdate);
+        await service.UpdateAsync(feedbackToUpdate);
 
         // Assert
         var updatedFeedback = await context.Feedbacks.IgnoreQueryFilters().AsNoTracking().FirstAsync(f => f.Id == feedback.Id);

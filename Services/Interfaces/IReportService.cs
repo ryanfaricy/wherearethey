@@ -43,12 +43,4 @@ public interface IReportService : IAdminDataService<Report>
     /// <param name="count">The maximum number of reports to retrieve.</param>
     /// <returns>A list of the most recent reports.</returns>
     Task<List<Report>> GetTopRecentReportsAsync(int count);
-
-
-    /// <summary>
-    /// Updates an existing report.
-    /// </summary>
-    /// <param name="report">The report with updated values.</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    Task<Result> UpdateReportAsync(Report report);
 }

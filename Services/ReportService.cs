@@ -15,14 +15,14 @@ public class ReportService(
     IEventService eventService,
     IBaseUrlProvider baseUrlProvider,
     IValidator<Report> validator,
-    ILogger<ReportService> logger) : BaseService<Report>(contextFactory, eventService), IReportService
+    ILogger<ReportService> logger) : BaseService<Report>(contextFactory, eventService, validator), IReportService
 {
     /// <inheritdoc />
     public async Task<Result<Report>> CreateReportAsync(Report report)
     {
         try
         {
-            var validationResult = await validator.ValidateAsync(report);
+            var validationResult = await Validator!.ValidateAsync(report);
             if (!validationResult.IsValid)
             {
                 return Result<Report>.Failure(validationResult);
@@ -125,18 +125,5 @@ public class ReportService(
             .OrderByDescending(r => r.CreatedAt)
             .Take(count)
             .ToListAsync();
-    }
-
-
-    /// <inheritdoc />
-    public async Task<Result> UpdateReportAsync(Report report)
-    {
-        var validationResult = await validator.ValidateAsync(report);
-        if (!validationResult.IsValid)
-        {
-            return Result.Failure(validationResult);
-        }
-
-        return await UpdateAsync(report);
     }
 }

@@ -18,7 +18,7 @@ public class AlertService(
     IBaseUrlProvider baseUrlProvider,
     IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
-    IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService), IAlertService
+    IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService, validator), IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
@@ -27,7 +27,7 @@ public class AlertService(
     {
         try
         {
-            var validationResult = await validator.ValidateAsync(alert);
+            var validationResult = await Validator!.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
                 return Result<Alert>.Failure(validationResult);
@@ -301,7 +301,7 @@ public class AlertService(
     {
         try
         {
-            var validationResult = await validator.ValidateAsync(alert);
+            var validationResult = await Validator!.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
                 return Result.Failure(validationResult);
@@ -336,7 +336,7 @@ public class AlertService(
                 alert.IsVerified = true;
             }
 
-            return await UpdateAsync(alert);
+            return await UpdateInternalAsync(alert);
         }
         catch (Exception ex)
         {

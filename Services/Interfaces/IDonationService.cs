@@ -30,11 +30,4 @@ public interface IDonationService : IAdminDataService<Donation>
     /// <param name="status">The new status.</param>
     /// <returns>True if the update was successful; otherwise, false.</returns>
     Task<bool> UpdateDonationStatusAsync(string paymentId, string status);
-
-    /// <summary>
-    /// Updates a donation's details.
-    /// </summary>
-    /// <param name="donation">The updated donation.</param>
-    /// <returns>The result of the update operation.</returns>
-    Task<Result> UpdateDonationAsync(Donation donation);
 }

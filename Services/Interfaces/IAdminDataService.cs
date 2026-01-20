@@ -30,4 +30,11 @@ public interface IAdminDataService<TEntity> where TEntity : class
     /// <param name="hardDelete">Whether to permanently delete the entities.</param>
     /// <returns>A Result indicating success or failure.</returns>
     Task<Result> DeleteRangeAsync(IEnumerable<int> ids, bool hardDelete = false);
+
+    /// <summary>
+    /// Updates an existing entity.
+    /// </summary>
+    /// <param name="entity">The entity with updated values.</param>
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> UpdateAsync(TEntity entity);
 }

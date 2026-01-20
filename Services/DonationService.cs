@@ -15,7 +15,7 @@ public class DonationService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
     IOptions<SquareOptions> squareOptions,
-    IValidator<Donation> validator) : BaseService<Donation>(contextFactory, eventService), IDonationService
+    IValidator<Donation> validator) : BaseService<Donation>(contextFactory, eventService, validator), IDonationService
 {
     private readonly SquareOptions _options = squareOptions.Value;
     private readonly ISquareClient _squareClient = new SquareClient.Builder()
@@ -47,7 +47,7 @@ public class DonationService(
     {
         try
         {
-            var validationResult = await validator.ValidateAsync(donation);
+            var validationResult = await Validator!.ValidateAsync(donation);
             if (!validationResult.IsValid)
             {
                 return Result<Donation>.Failure(validationResult);
@@ -83,17 +83,5 @@ public class DonationService(
         await context.SaveChangesAsync();
         EventService.NotifyEntityChanged(donation, EntityChangeType.Updated);
         return true;
-    }
-
-    /// <inheritdoc />
-    public async Task<Result> UpdateDonationAsync(Donation donation)
-    {
-        var validationResult = await validator.ValidateAsync(donation);
-        if (!validationResult.IsValid)
-        {
-            return Result.Failure(validationResult);
-        }
-
-        return await UpdateAsync(donation);
     }
 }
