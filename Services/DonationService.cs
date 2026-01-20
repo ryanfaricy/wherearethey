@@ -124,4 +124,14 @@ public class DonationService(
         }
         return await SoftDeleteAsync(id);
     }
+
+    /// <inheritdoc />
+    public async Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false)
+    {
+        if (hardDelete)
+        {
+            return await HardDeleteRangeAsync(ids);
+        }
+        return await SoftDeleteRangeAsync(ids);
+    }
 }

@@ -284,6 +284,16 @@ public class AlertService(
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false)
+    {
+        if (hardDelete)
+        {
+            return await HardDeleteRangeAsync(ids);
+        }
+        return await SoftDeleteRangeAsync(ids);
+    }
+
+    /// <inheritdoc />
     public async Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription)
     {
         try

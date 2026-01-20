@@ -29,6 +29,14 @@ public interface IFeedbackService
     Task<Result> DeleteFeedbackAsync(int id, bool hardDelete = false);
 
     /// <summary>
+    /// Deletes multiple feedback entries.
+    /// </summary>
+    /// <param name="ids">The internal IDs of the feedback entries.</param>
+    /// <param name="hardDelete">Whether to permanently delete the feedback (Admin only).</param>
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> DeleteFeedbacksAsync(IEnumerable<int> ids, bool hardDelete = false);
+
+    /// <summary>
     /// Updates a feedback entry.
     /// </summary>
     /// <param name="feedback">The updated feedback details.</param>

@@ -72,6 +72,47 @@ public abstract class BaseService<T>(
     }
 
     /// <summary>
+    /// Soft-deletes multiple entities.
+    /// Logic for setting DeletedAt is handled by ApplicationDbContext.
+    /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
+    /// </summary>
+    /// <param name="ids">The primary keys of the entities to delete.</param>
+    /// <returns>A success result if deleted; otherwise, a failure result.</returns>
+    protected virtual async Task<Result> SoftDeleteRangeAsync(IEnumerable<int> ids)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var entities = await context.Set<T>()
+                .IgnoreQueryFilters()
+                .Where(e => ids.Contains(e.Id))
+                .ToListAsync();
+
+            if (!entities.Any())
+            {
+                return Result.Success();
+            }
+
+            foreach (var entity in entities)
+            {
+                context.Set<T>().Remove(entity);
+            }
+            await context.SaveChangesAsync();
+
+            foreach (var entity in entities)
+            {
+                EventService.NotifyEntityChanged(entity, EntityChangeType.Updated);
+            }
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while deleting the entities: {ex.Message}");
+        }
+    }
+
+    /// <summary>
     /// Permanently deletes an entity using ExecuteDeleteAsync to bypass soft-delete logic in SaveChangesAsync.
     /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
     /// </summary>
@@ -103,6 +144,45 @@ public abstract class BaseService<T>(
         catch (Exception ex)
         {
             return Result.Failure($"An error occurred while hard-deleting the entity: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Permanently deletes multiple entities using ExecuteDeleteAsync to bypass soft-delete logic in SaveChangesAsync.
+    /// Notifies subscribers via <see cref="IEventService.OnEntityChanged"/>.
+    /// </summary>
+    /// <param name="ids">The primary keys of the entities to delete.</param>
+    /// <returns>A success result if deleted; otherwise, a failure result.</returns>
+    protected virtual async Task<Result> HardDeleteRangeAsync(IEnumerable<int> ids)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var entities = await context.Set<T>()
+                .IgnoreQueryFilters()
+                .Where(e => ids.Contains(e.Id))
+                .ToListAsync();
+
+            if (!entities.Any())
+            {
+                return Result.Success();
+            }
+
+            await context.Set<T>()
+                .IgnoreQueryFilters()
+                .Where(e => ids.Contains(e.Id))
+                .ExecuteDeleteAsync();
+
+            foreach (var entity in entities)
+            {
+                EventService.NotifyEntityChanged(entity, EntityChangeType.Deleted);
+            }
+
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while hard-deleting the entities: {ex.Message}");
         }
     }
 

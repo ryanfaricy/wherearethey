@@ -157,6 +157,16 @@ public class ReportService(
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false)
+    {
+        if (hardDelete)
+        {
+            return await HardDeleteRangeAsync(ids);
+        }
+        return await SoftDeleteRangeAsync(ids);
+    }
+
+    /// <inheritdoc />
     public async Task<Result> UpdateReportAsync(Report report)
     {
         var validationResult = await validator.ValidateAsync(report);

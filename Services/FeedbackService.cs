@@ -64,6 +64,16 @@ public class FeedbackService(
     }
 
     /// <inheritdoc />
+    public async Task<Result> DeleteFeedbacksAsync(IEnumerable<int> ids, bool hardDelete = false)
+    {
+        if (hardDelete)
+        {
+            return await HardDeleteRangeAsync(ids);
+        }
+        return await SoftDeleteRangeAsync(ids);
+    }
+
+    /// <inheritdoc />
     public async Task<Result> UpdateFeedbackAsync(Feedback feedback)
     {
         var validationResult = await validator.ValidateAsync(feedback);

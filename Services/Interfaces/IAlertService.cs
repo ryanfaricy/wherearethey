@@ -85,6 +85,14 @@ public interface IAlertService
     Task<Result> DeleteAlertAsync(int id, bool hardDelete = false);
 
     /// <summary>
+    /// Deletes multiple alerts.
+    /// </summary>
+    /// <param name="ids">The internal IDs of the alerts.</param>
+    /// <param name="hardDelete">Whether to permanently delete the alerts (Admin only).</param>
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false);
+
+    /// <summary>
     /// Adds or updates a web push subscription for a user.
     /// </summary>
     Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription);

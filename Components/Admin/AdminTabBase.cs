@@ -30,6 +30,11 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     /// </summary>
     protected RadzenDataGrid<TEntity>? Grid;
 
+    /// <summary>
+    /// The currently selected items in the grid.
+    /// </summary>
+    protected IList<TEntity>? SelectedItems;
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();

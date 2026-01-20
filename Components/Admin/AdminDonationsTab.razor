@@ -51,11 +51,30 @@
 }
 else
 {
-    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true">
+    <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-4">
+        <RadzenButton Icon="delete_sweep" ButtonStyle="ButtonStyle.Danger" 
+                      Text="@($"Delete Selected ({(SelectedItems?.Count ?? 0)})")" 
+                      Disabled="@(SelectedItems == null || !SelectedItems.Any())" 
+                      Click="@DeleteSelected" />
+    </RadzenStack>
+
+    <RadzenDataGrid @ref="Grid" Data="@Items" TItem="Donation" AllowFiltering="true" AllowPaging="true" PageSize="10" AllowSorting="true"
+                    SelectionMode="DataGridSelectionMode.Multiple" @bind-Value="@SelectedItems">
         <EmptyTemplate>
             <RadzenText TextStyle="TextStyle.Body2" Class="rz-p-4 text-center opacity-75">@L["No_donations_found"]</RadzenText>
         </EmptyTemplate>
         <Columns>
+            <RadzenDataGridColumn TItem="Donation" Width="60px" Sortable="false" Filterable="false">
+                <HeaderTemplate>
+                    <RadzenCheckBox TabIndex="-1" TriState="false" TValue="bool" 
+                                    Value="@(Items.Any() && SelectedItems != null && SelectedItems.Count == Items.Count)"
+                                    Change="@(args => SelectedItems = args ? Items.Cast<Donation>().ToList() : new List<Donation>())" />
+                </HeaderTemplate>
+                <Template Context="donation">
+                    <RadzenCheckBox TabIndex="-1" TriState="false" Value="@(SelectedItems != null && SelectedItems.Contains(donation))" 
+                                    TValue="bool" Change=@(args => Grid!.SelectRow(donation)) />
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Donation" Property="CreatedAt" Title="Date">
                 <Template Context="donation">
                     @TimeZoneService.FormatLocal(donation.CreatedAt)
@@ -134,6 +153,41 @@ else
                 errorTitle: "Delete failed",
                 showHapticFeedback: false,
                 logContext: $"AdminDonationsTab.DeleteDonation {id}"
+            );
+        }
+    }
+
+    private async Task DeleteSelected()
+    {
+        if (SelectedItems == null || !SelectedItems.Any()) return;
+
+        var count = SelectedItems.Count;
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? $"Are you sure you want to PERMANENTLY delete {count} selected donations? This cannot be undone." 
+            : $"Are you sure you want to delete {count} selected donations?";
+        var title = isHardDelete ? "Hard Delete Donations" : "Delete Donations";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE ALL" : "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            var ids = SelectedItems.Select(i => i.Id).ToList();
+            await ValidationService.ExecuteAsync(
+                async () =>
+                {
+                    var result = await DonationService.DeleteDonationsAsync(ids, MapState.ShowDeleted);
+                    if (result.IsSuccess)
+                    {
+                        SelectedItems = null;
+                    }
+                    return result;
+                },
+                successMessage: $"{count} donations deleted",
+                errorTitle: "Mass delete failed",
+                showHapticFeedback: false,
+                logContext: $"AdminDonationsTab.DeleteSelected {count} items"
             );
         }
     }

@@ -59,6 +59,14 @@ public interface IReportService
     Task<Result> DeleteReportAsync(int id, bool hardDelete = false);
 
     /// <summary>
+    /// Deletes multiple reports.
+    /// </summary>
+    /// <param name="ids">The internal IDs of the reports.</param>
+    /// <param name="hardDelete">Whether to permanently delete the reports (Admin only).</param>
+    /// <returns>A Result indicating success or failure.</returns>
+    Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false);
+
+    /// <summary>
     /// Updates an existing report.
     /// </summary>
     /// <param name="report">The report with updated values.</param>

@@ -51,4 +51,12 @@ public interface IDonationService
     /// <param name="hardDelete">Whether to permanently delete the donation (Admin only).</param>
     /// <returns>The result of the delete operation.</returns>
     Task<Result> DeleteDonationAsync(int id, bool hardDelete = false);
+
+    /// <summary>
+    /// Deletes multiple donations.
+    /// </summary>
+    /// <param name="ids">The donation identifiers.</param>
+    /// <param name="hardDelete">Whether to permanently delete the donations (Admin only).</param>
+    /// <returns>The result of the delete operation.</returns>
+    Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false);
 }
