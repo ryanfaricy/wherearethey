@@ -12,6 +12,7 @@ public class ReportProcessingServiceTests
     private readonly Mock<ILogger<ReportProcessingService>> _loggerMock = new();
     private readonly Mock<IAlertService> _alertServiceMock = new();
     private readonly Mock<IEmailService> _emailServiceMock = new();
+    private readonly Mock<IWebPushService> _webPushServiceMock = new();
     private readonly Mock<IGeocodingService> _geocodingServiceMock = new();
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<ILocationService> _locationServiceMock = new();
@@ -22,6 +23,7 @@ public class ReportProcessingServiceTests
         return new ReportProcessingService(
             _alertServiceMock.Object,
             _emailServiceMock.Object,
+            _webPushServiceMock.Object,
             _geocodingServiceMock.Object,
             Options.Create(new AppOptions()),
             _settingsServiceMock.Object,
@@ -113,5 +115,32 @@ public class ReportProcessingServiceTests
 
         // Assert
         _emailTemplateServiceMock.Verify(t => t.RenderTemplateAsync("AlertEmail", It.IsAny<AlertEmailViewModel>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessReport_ShouldSendPushNotifications()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid(), Message = "Test Message" };
+        var alert = new Alert { Id = 1, UserIdentifier = "user-123", UsePush = true };
+        var subscription = new WebPushSubscription { Id = 1, UserIdentifier = "user-123", Endpoint = "https://fcm.googleapis.com/..." };
+
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+        _alertServiceMock.Setup(a => a.GetPushSubscriptionsAsync("user-123"))
+            .ReturnsAsync([subscription]);
+
+        // Act
+        await service.ProcessReportAsync(report);
+
+        // Assert
+        _webPushServiceMock.Verify(w => w.SendNotificationsAsync(
+            It.Is<IEnumerable<WebPushSubscription>>(subs => subs.Count() == 1 && subs.First().UserIdentifier == "user-123"),
+            It.Is<string>(t => t.Contains("New Report")),
+            It.Is<string>(m => m == "Test Message"),
+            It.IsAny<string>()),
+            Times.Once);
     }
 }

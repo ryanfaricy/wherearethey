@@ -75,6 +75,10 @@
                 <RadzenCheckBox @bind-Value="@_alert.IsVerified" TValue="bool" Name="IsVerified" />
                 <RadzenLabel Text="Verified" Component="IsVerified" />
             </RadzenStack>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="@_alert.UsePush" TValue="bool" Name="UsePush" />
+                <RadzenLabel Text="Use Web Push" Component="UsePush" />
+            </RadzenStack>
         </RadzenStack>
 
         <RadzenRow Gap="1rem">
@@ -121,6 +125,7 @@
             EncryptedEmail = Alert.EncryptedEmail,
             EmailHash = Alert.EmailHash,
             IsVerified = Alert.IsVerified,
+            UsePush = Alert.UsePush,
             DeletedAt = Alert.DeletedAt,
             CreatedAt = Alert.CreatedAt,
             UserIdentifier = Alert.UserIdentifier,

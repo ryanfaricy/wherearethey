@@ -604,4 +604,22 @@
   <data name="No_recent_reports" xml:space="preserve">
     <value>No recent reports.</value>
   </data>
+  <data name="Browser_Push_Unsupported" xml:space="preserve">
+    <value>Browser does not support push notifications.</value>
+  </data>
+  <data name="Enable_Browser_Push" xml:space="preserve">
+    <value>ENABLE BROWSER NOTIFICATIONS</value>
+  </data>
+  <data name="Send_Push_Notification" xml:space="preserve">
+    <value>Send Push Notification</value>
+  </data>
+  <data name="Push_Permission_Denied" xml:space="preserve">
+    <value>Push notification permission was denied.</value>
+  </data>
+  <data name="Push_Subscribed_Success" xml:space="preserve">
+    <value>Browser notifications enabled successfully!</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
 </root>

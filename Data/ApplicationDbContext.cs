@@ -13,6 +13,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Feedback> Feedbacks { get; set; }
     public DbSet<AdminLoginAttempt> AdminLoginAttempts { get; set; }
     public DbSet<AdminPasskey> AdminPasskeys { get; set; }
+    public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
     public DbSet<SystemSettings> Settings { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
@@ -61,6 +62,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<Alert>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Donation>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Feedback>().HasQueryFilter(e => e.DeletedAt == null);
+        modelBuilder.Entity<WebPushSubscription>().HasQueryFilter(e => e.DeletedAt == null);
 
         modelBuilder.Entity<Report>(entity =>
         {
@@ -123,6 +125,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.CredentialId).IsUnique();
+        });
+
+        modelBuilder.Entity<WebPushSubscription>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.UserIdentifier);
+            entity.HasIndex(e => e.Endpoint).IsUnique();
         });
 
         modelBuilder.Entity<SystemSettings>().HasData(new SystemSettings

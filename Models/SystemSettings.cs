@@ -10,4 +10,6 @@ public class SystemSettings
     public string? MapboxToken { get; set; }
     public bool DonationsEnabled { get; set; } = true;
     public int DataRetentionDays { get; set; } = 30;
+    public string? VapidPublicKey { get; set; }
+    public string? VapidPrivateKey { get; set; }
 }

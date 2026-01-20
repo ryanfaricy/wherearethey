@@ -9,6 +9,7 @@ namespace WhereAreThey.Services;
 public class ReportProcessingService(
     IAlertService alertService,
     IEmailService emailService,
+    IWebPushService webPushService,
     IGeocodingService geocodingService,
     IOptions<AppOptions> appOptions,
     ISettingsService settingsService,
@@ -77,6 +78,30 @@ public class ReportProcessingService(
             if (emails.Count > 0)
             {
                 await emailService.SendEmailsAsync(emails);
+            }
+
+            // Web Push Notifications
+            var pushRecipients = matchingAlerts
+                .Where(a => a.UsePush && !string.IsNullOrEmpty(a.UserIdentifier))
+                .Select(a => a.UserIdentifier!)
+                .Distinct()
+                .ToList();
+
+            if (pushRecipients.Count > 0)
+            {
+                var pushTitle = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report in Your Area";
+                var pushMessage = string.IsNullOrEmpty(report.Message) 
+                    ? $"New report at {address ?? report.LocationDisplay()}" 
+                    : report.Message;
+                
+                foreach (var userId in pushRecipients)
+                {
+                    var subscriptions = await alertService.GetPushSubscriptionsAsync(userId);
+                    if (subscriptions.Count > 0)
+                    {
+                        await webPushService.SendNotificationsAsync(subscriptions, pushTitle, pushMessage, heatMapUrl);
+                    }
+                }
             }
         }
         catch (Exception ex)

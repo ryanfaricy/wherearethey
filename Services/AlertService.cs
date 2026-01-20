@@ -42,13 +42,31 @@ public class AlertService(
                 alert.RadiusKm = 160.9;
             }
             
-            var emailHash = HashUtils.ComputeHash(email);
-            var isVerified = await context.EmailVerifications
-                .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
+            var emailProvided = !string.IsNullOrWhiteSpace(email);
+            var isVerified = false;
+
+            if (emailProvided)
+            {
+                var emailHash = HashUtils.ComputeHash(email);
+                isVerified = await context.EmailVerifications
+                    .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
+
+                alert.EncryptedEmail = _protector.Protect(email);
+                alert.EmailHash = emailHash;
+            }
+            else
+            {
+                alert.EncryptedEmail = null;
+                alert.EmailHash = null;
+            }
+
+            // Push-based alerts are automatically verified
+            if (alert.UsePush)
+            {
+                isVerified = true;
+            }
 
             alert.ExternalId = Guid.NewGuid();
-            alert.EncryptedEmail = _protector.Protect(email);
-            alert.EmailHash = emailHash;
             alert.IsVerified = isVerified;
             alert.CreatedAt = DateTime.UtcNow;
             alert.DeletedAt = null;
@@ -58,9 +76,10 @@ public class AlertService(
 
             EventService.NotifyEntityChanged(alert, EntityChangeType.Added);
             
-            if (!alert.IsVerified)
+            if (emailProvided && !isVerified)
             {
                 var baseUrl = baseUrlProvider.GetBaseUrl();
+                var emailHash = alert.EmailHash!;
                 backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
 
@@ -68,7 +87,7 @@ public class AlertService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error creating alert for email hash {EmailHash}", HashUtils.ComputeHash(email));
+            logger.LogError(ex, "Error creating alert");
             return Result<Alert>.Failure("An error occurred while creating the alert.");
         }
     }
@@ -264,6 +283,48 @@ public class AlertService(
             return await HardDeleteAsync(id);
         }
         return await SoftDeleteAsync(id);
+    }
+
+    /// <inheritdoc />
+    public async Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var existing = await context.WebPushSubscriptions
+                .FirstOrDefaultAsync(s => s.Endpoint == subscription.Endpoint);
+
+            if (existing != null)
+            {
+                existing.P256DH = subscription.P256DH;
+                existing.Auth = subscription.Auth;
+                existing.UserIdentifier = subscription.UserIdentifier;
+                existing.DeletedAt = null;
+            }
+            else
+            {
+                subscription.CreatedAt = DateTime.UtcNow;
+                context.WebPushSubscriptions.Add(subscription);
+            }
+
+            await context.SaveChangesAsync();
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error adding push subscription for endpoint {Endpoint}", subscription.Endpoint);
+            return Result.Failure("An error occurred while saving the push subscription.");
+        }
+    }
+
+    /// <inheritdoc />
+    public async Task<List<WebPushSubscription>> GetPushSubscriptionsAsync(string userIdentifier)
+    {
+        await using var context = await ContextFactory.CreateDbContextAsync();
+        return await context.WebPushSubscriptions
+            .AsNoTracking()
+            .Where(s => s.UserIdentifier == userIdentifier && s.DeletedAt == null)
+            .ToListAsync();
     }
 
     /// <inheritdoc />

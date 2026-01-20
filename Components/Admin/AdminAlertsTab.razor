@@ -73,6 +73,12 @@ else
                                  Text="@(alert.IsVerified ? "YES" : "NO")" />
                 </Template>
             </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Alert" Property="UsePush" Title="Push">
+                <Template Context="alert">
+                    <RadzenBadge BadgeStyle="@(alert.UsePush ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                 Text="@(alert.UsePush ? "YES" : "NO")" />
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Alert" Property="DeletedAt" Title="Status">
                 <Template Context="alert">
                     <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 

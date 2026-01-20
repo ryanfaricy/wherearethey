@@ -113,6 +113,7 @@ builder.Services.AddScoped<IEmailService>(sp =>
         sp.GetRequiredService<MicrosoftGraphEmailService>(),
         sp.GetRequiredService<SmtpEmailService>(),
     ], sp.GetRequiredService<ILogger<FallbackEmailService>>()));
+builder.Services.AddScoped<IWebPushService, WebPushService>();
 
 // Add DbContextFactory with PostgreSQL
 var connectionString = ConfigurationHelper.GetConnectionString(builder.Configuration) 
@@ -156,6 +157,7 @@ builder.Services.AddScoped<IMapService, MapService>();
 builder.Services.AddScoped<IClientStorageService, ClientStorageService>();
 builder.Services.AddScoped<IMapStateService, MapStateService>();
 builder.Services.AddScoped<IMapInteractionService, MapInteractionService>();
+builder.Services.AddScoped<IPwaService, PwaService>();
 builder.Services.AddScoped<IClientLocationService, ClientLocationService>();
 builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IMapNavigationManager, MapNavigationManager>();

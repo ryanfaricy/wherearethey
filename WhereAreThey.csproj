@@ -31,6 +31,7 @@
     <PackageReference Include="Stripe.net" Version="47.4.0" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.7.1" />
     <PackageReference Include="TimeZoneConverter" Version="7.2.0" />
+    <PackageReference Include="WebPush" Version="1.0.12" />
   </ItemGroup>
 
   <ItemGroup>

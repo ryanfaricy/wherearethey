@@ -48,6 +48,11 @@ public class Alert : IAuditable
     /// </summary>
     public bool IsVerified { get; set; }
 
+    /// <summary>
+    /// Whether to send web push notifications for this alert.
+    /// </summary>
+    public bool UsePush { get; set; } = true;
+
     /// <inheritdoc />
     public DateTime CreatedAt { get; set; }
 

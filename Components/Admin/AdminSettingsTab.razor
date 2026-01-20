@@ -44,6 +44,17 @@
                 <RadzenLabel Text="Enable Public Donations" />
             </RadzenStack>
 
+            <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-mt-4">Web Push Notifications (VAPID)</RadzenText>
+            <RadzenFormField Text="VAPID Public Key" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@_systemSettings.VapidPublicKey" ReadOnly="true" />
+            </RadzenFormField>
+            <RadzenFormField Text="VAPID Private Key" Variant="Variant.Outlined">
+                <RadzenTextBox @bind-Value="@_systemSettings.VapidPrivateKey" ReadOnly="true" />
+            </RadzenFormField>
+            <RadzenButton Text="REGENERATE VAPID KEYS" Click="@RegenerateVapidKeys" 
+                          ButtonStyle="ButtonStyle.Warning" Size="ButtonSize.Small" Icon="refresh" 
+                          Style="width: fit-content;" />
+
             <RadzenButton Text="SAVE SETTINGS" Click="@SaveSettings" ButtonStyle="ButtonStyle.Primary" Icon="save" />
         </RadzenStack>
     </RadzenCard>
@@ -152,6 +163,14 @@
             showHapticFeedback: false,
             logContext: "AdminSettingsTab.SaveSettings"
         );
+    }
+
+    private void RegenerateVapidKeys()
+    {
+        var keys = WebPush.VapidHelper.GenerateVapidKeys();
+        _systemSettings.VapidPublicKey = keys.PublicKey;
+        _systemSettings.VapidPrivateKey = keys.PrivateKey;
+        StateHasChanged();
     }
 
     private async Task RegisterPasskey()

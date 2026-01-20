@@ -580,4 +580,22 @@
   <data name="No_recent_reports" xml:space="preserve">
     <value>No hay reportes recientes.</value>
   </data>
+  <data name="Browser_Push_Unsupported" xml:space="preserve">
+    <value>El navegador no admite notificaciones push.</value>
+  </data>
+  <data name="Enable_Browser_Push" xml:space="preserve">
+    <value>ACTIVAR NOTIFICACIONES DEL NAVEGADOR</value>
+  </data>
+  <data name="Send_Push_Notification" xml:space="preserve">
+    <value>Enviar notificación push</value>
+  </data>
+  <data name="Push_Permission_Denied" xml:space="preserve">
+    <value>Se denegó el permiso para notificaciones push.</value>
+  </data>
+  <data name="Push_Subscribed_Success" xml:space="preserve">
+    <value>¡Notificaciones del navegador activadas con éxito!</value>
+  </data>
+  <data name="Notifications" xml:space="preserve">
+    <value>Notificaciones</value>
+  </data>
 </root>

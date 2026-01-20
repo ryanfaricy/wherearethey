@@ -35,6 +35,24 @@ public class SettingsService(
             _cachedSettings = await context.Settings
                 .AsNoTracking()
                 .FirstOrDefaultAsync() ?? new SystemSettings();
+            
+            // Auto-generate VAPID keys if missing
+            if (string.IsNullOrEmpty(_cachedSettings.VapidPublicKey) || string.IsNullOrEmpty(_cachedSettings.VapidPrivateKey))
+            {
+                var keys = WebPush.VapidHelper.GenerateVapidKeys();
+                _cachedSettings.VapidPublicKey = keys.PublicKey;
+                _cachedSettings.VapidPrivateKey = keys.PrivateKey;
+                
+                // Save them back to DB
+                var dbSettings = await context.Settings.FirstOrDefaultAsync();
+                if (dbSettings != null)
+                {
+                    dbSettings.VapidPublicKey = _cachedSettings.VapidPublicKey;
+                    dbSettings.VapidPrivateKey = _cachedSettings.VapidPrivateKey;
+                    await context.SaveChangesAsync();
+                }
+            }
+
             _lastUpdate = DateTime.UtcNow;
 
             return _cachedSettings;

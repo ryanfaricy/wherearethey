@@ -83,4 +83,14 @@ public interface IAlertService
     /// <param name="hardDelete">Whether to permanently delete the alert (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
     Task<Result> DeleteAlertAsync(int id, bool hardDelete = false);
+
+    /// <summary>
+    /// Adds or updates a web push subscription for a user.
+    /// </summary>
+    Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription);
+
+    /// <summary>
+    /// Gets all active push subscriptions for a user.
+    /// </summary>
+    Task<List<WebPushSubscription>> GetPushSubscriptionsAsync(string userIdentifier);
 }

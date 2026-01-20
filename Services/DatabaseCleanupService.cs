@@ -93,6 +93,18 @@ public class DatabaseCleanupService(
             logger.LogInformation("Cleaned up {Count} old feedback entries.", oldFeedback);
         }
 
+        // 6. Delete soft-deleted push subscriptions older than DataRetentionDays
+        var pushCleanupCutoff = DateTime.UtcNow.AddDays(-settings.DataRetentionDays);
+        var oldPushSubs = await context.WebPushSubscriptions
+            .IgnoreQueryFilters()
+            .Where(s => s.DeletedAt != null && s.DeletedAt < pushCleanupCutoff)
+            .ExecuteDeleteAsync();
+
+        if (oldPushSubs > 0)
+        {
+            logger.LogInformation("Cleaned up {Count} old push subscriptions.", oldPushSubs);
+        }
+
         logger.LogInformation("Database cleanup task completed.");
     }
 }
