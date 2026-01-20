@@ -14,18 +14,21 @@ public class ReportProcessingServiceTests
     private readonly Mock<IEmailService> _emailServiceMock = new();
     private readonly Mock<IWebPushService> _webPushServiceMock = new();
     private readonly Mock<IGeocodingService> _geocodingServiceMock = new();
+    private readonly Mock<IBaseUrlProvider> _baseUrlProviderMock = new();
     private readonly Mock<ISettingsService> _settingsServiceMock = new();
     private readonly Mock<ILocationService> _locationServiceMock = new();
     private readonly Mock<IEmailTemplateService> _emailTemplateServiceMock = new();
 
     private IReportProcessingService CreateService()
     {
+        _baseUrlProviderMock.Setup(x => x.GetBaseUrl()).Returns("https://test.com");
+
         return new ReportProcessingService(
             _alertServiceMock.Object,
             _emailServiceMock.Object,
             _webPushServiceMock.Object,
             _geocodingServiceMock.Object,
-            Options.Create(new AppOptions()),
+            _baseUrlProviderMock.Object,
             _settingsServiceMock.Object,
             _locationServiceMock.Object,
             _emailTemplateServiceMock.Object,
@@ -62,6 +65,26 @@ public class ReportProcessingServiceTests
                 emails.First().Body.Contains("123 Test St") &&
                 emails.First().Body.Contains("Alert msg"))),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessReport_ShouldNotSendEmailIfUseEmailIsFalse()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
+        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", UseEmail = false };
+
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+        _alertServiceMock.Setup(a => a.DecryptEmail(alert.EncryptedEmail)).Returns("test@example.com");
+
+        // Act
+        await service.ProcessReportAsync(report);
+
+        // Assert
+        _emailServiceMock.Verify(e => e.SendEmailsAsync(It.IsAny<IEnumerable<Email>>()), Times.Never);
     }
 
     [Fact]
@@ -142,5 +165,65 @@ public class ReportProcessingServiceTests
             It.Is<string>(m => m == "Test Message"),
             It.IsAny<string>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessReport_ShouldNotSendPushIfUsePushIsFalse()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid(), Message = "Test Message" };
+        var alert = new Alert { Id = 1, UserIdentifier = "user-123", UsePush = false };
+
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+
+        // Act
+        await service.ProcessReportAsync(report);
+
+        // Assert
+        _webPushServiceMock.Verify(w => w.SendNotificationsAsync(It.IsAny<IEnumerable<WebPushSubscription>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessReport_ShouldNotSendEmails_WhenGlobalToggleIsOff()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
+        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", UseEmail = true };
+        
+        var settings = new SystemSettings { EmailNotificationsEnabled = false };
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(settings);
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+        _alertServiceMock.Setup(a => a.DecryptEmail(alert.EncryptedEmail)).Returns("test@example.com");
+
+        // Act
+        await service.ProcessReportAsync(report);
+
+        // Assert
+        _emailServiceMock.Verify(e => e.SendEmailsAsync(It.IsAny<IEnumerable<Email>>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessReport_ShouldNotSendPush_WhenGlobalToggleIsOff()
+    {
+        // Arrange
+        var service = CreateService();
+        var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
+        var alert = new Alert { Id = 1, UserIdentifier = "user-123", UsePush = true };
+        
+        var settings = new SystemSettings { PushNotificationsEnabled = false };
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(settings);
+        _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
+            .ReturnsAsync([alert]);
+
+        // Act
+        await service.ProcessReportAsync(report);
+
+        // Assert
+        _webPushServiceMock.Verify(w => w.SendNotificationsAsync(It.IsAny<IEnumerable<WebPushSubscription>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()), Times.Never);
     }
 }

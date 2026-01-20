@@ -62,7 +62,7 @@ public class AlertServiceTests
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new AlertValidator(factory, settingsService, _localizerMock.Object);
-        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _backgroundJobClientMock.Object, _eventServiceMock.Object, _baseUrlProviderMock.Object, Options.Create(new AppOptions()), _emailTemplateServiceMock.Object, _loggerMock.Object, validator);
+        return new AlertService(factory, _dataProtectionProvider, _emailServiceMock.Object, _backgroundJobClientMock.Object, _eventServiceMock.Object, _baseUrlProviderMock.Object, _emailTemplateServiceMock.Object, _loggerMock.Object, validator);
     }
 
     [Fact]
@@ -80,6 +80,7 @@ public class AlertServiceTests
             RadiusKm = 5.0,
             Message = "Test alert",
             UserIdentifier = "test-user",
+            UsePush = false, // Set to false to test email verification logic
         };
 
         // Act
@@ -101,6 +102,30 @@ public class AlertServiceTests
         _backgroundJobClientMock.Verify(x => x.Create(
             It.Is<Job>(job => job.Method.Name == nameof(IAlertService.SendVerificationEmailAsync) && (string)job.Args[0] == email),
             It.IsAny<EnqueuedState>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAlert_ShouldHaveDefaultNotificationSettings()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var alert = new Alert
+        {
+            Latitude = 40.0,
+            Longitude = -70.0,
+            RadiusKm = 5.0,
+            UserIdentifier = "test-user",
+        };
+
+        // Act
+        var result = await service.CreateAlertAsync(alert, "test@example.com");
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.True(result.Value!.UseEmail);
+        Assert.True(result.Value!.UsePush);
     }
 
     [Fact]
@@ -183,7 +208,7 @@ public class AlertServiceTests
         var service = CreateService(factory);
         var email = "verify@example.com";
         
-        var createResult = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user" }, email);
+        var createResult = await service.CreateAlertAsync(new Alert { Latitude = 40, Longitude = -74, RadiusKm = 5, UserIdentifier = "test-user", UsePush = false }, email);
         var alert = createResult.Value!;
         Assert.False(alert.IsVerified);
 

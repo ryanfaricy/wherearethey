@@ -2,18 +2,21 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WhereAreThey.Data;
 
 #nullable disable
 
-namespace WhereAreThey.Migrations
+namespace WhereAreThey.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260120014835_AddUseEmailToAlert")]
+    partial class AddUseEmailToAlert
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -148,14 +151,10 @@ namespace WhereAreThey.Migrations
                         .HasColumnType("double precision");
 
                     b.Property<bool>("UseEmail")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("UsePush")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                        .HasColumnType("boolean");
 
                     b.Property<string>("UserIdentifier")
                         .HasColumnType("text");
@@ -362,17 +361,11 @@ namespace WhereAreThey.Migrations
                     b.Property<bool>("DonationsEnabled")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("EmailNotificationsEnabled")
-                        .HasColumnType("boolean");
-
                     b.Property<string>("MapboxToken")
                         .HasColumnType("text");
 
                     b.Property<decimal>("MaxReportDistanceMiles")
                         .HasColumnType("numeric");
-
-                    b.Property<bool>("PushNotificationsEnabled")
-                        .HasColumnType("boolean");
 
                     b.Property<int>("ReportCooldownMinutes")
                         .HasColumnType("integer");
@@ -397,9 +390,7 @@ namespace WhereAreThey.Migrations
                             AlertLimitCount = 3,
                             DataRetentionDays = 30,
                             DonationsEnabled = true,
-                            EmailNotificationsEnabled = true,
                             MaxReportDistanceMiles = 5.0m,
-                            PushNotificationsEnabled = true,
                             ReportCooldownMinutes = 5,
                             ReportExpiryHours = 6
                         });

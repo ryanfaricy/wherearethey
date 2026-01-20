@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebPush;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -10,6 +11,7 @@ namespace WhereAreThey.Services;
 public class WebPushService(
     ISettingsService settingsService,
     IDbContextFactory<ApplicationDbContext> contextFactory,
+    IBaseUrlProvider baseUrlProvider,
     ILogger<WebPushService> logger) : IWebPushService
 {
     public async Task SendNotificationAsync(WebPushSubscription subscription, string title, string message, string? url = null)
@@ -26,14 +28,15 @@ public class WebPushService(
             return;
         }
 
-        var vapidDetails = new VapidDetails("https://www.aretheyhere.com", settings.VapidPublicKey, settings.VapidPrivateKey);
+        var baseUrl = baseUrlProvider.GetBaseUrl();
+        var vapidDetails = new VapidDetails(baseUrl, settings.VapidPublicKey, settings.VapidPrivateKey);
         var webPushClient = new WebPushClient();
 
         var payload = JsonSerializer.Serialize(new
         {
             title,
             message,
-            url
+            url,
         });
 
         foreach (var sub in subscriptions)

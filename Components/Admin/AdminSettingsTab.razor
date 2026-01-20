@@ -44,6 +44,16 @@
                 <RadzenLabel Text="Enable Public Donations" />
             </RadzenStack>
 
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenSwitch @bind-Value="@_systemSettings.EmailNotificationsEnabled" />
+                <RadzenLabel Text="Enable Global Email Notifications" />
+            </RadzenStack>
+
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenSwitch @bind-Value="@_systemSettings.PushNotificationsEnabled" />
+                <RadzenLabel Text="Enable Global Web Push Notifications" />
+            </RadzenStack>
+
             <RadzenText TextStyle="TextStyle.Subtitle1" Class="rz-mt-4">Web Push Notifications (VAPID)</RadzenText>
             <RadzenFormField Text="VAPID Public Key" Variant="Variant.Outlined">
                 <RadzenTextBox @bind-Value="@_systemSettings.VapidPublicKey" ReadOnly="true" />

@@ -85,7 +85,7 @@ public class AdminServiceTests
     public void NotifyAdminLogin_SetsCachedStatusAndTriggersEvent()
     {
         // Arrange
-        bool eventTriggered = false;
+        var eventTriggered = false;
         _service.OnAdminLogin += () => eventTriggered = true;
 
         // Act
@@ -99,7 +99,7 @@ public class AdminServiceTests
     public void NotifyAdminLogout_ResetsCachedStatusAndTriggersEvent()
     {
         // Arrange
-        bool eventTriggered = false;
+        var eventTriggered = false;
         _service.OnAdminLogout += () => eventTriggered = true;
         _service.NotifyAdminLogin(); // Set it to true first
 

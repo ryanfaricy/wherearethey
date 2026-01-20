@@ -17,7 +17,6 @@ public class AlertService(
     IBackgroundJobClient backgroundJobClient,
     IEventService eventService,
     IBaseUrlProvider baseUrlProvider,
-    IOptions<AppOptions> appOptions,
     IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
     IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService), IAlertService
@@ -118,7 +117,7 @@ public class AlertService(
                 return Result.Success(); // Already verified
             }
 
-            var actualBaseUrl = baseUrl ?? appOptions.Value.BaseUrl;
+            var actualBaseUrl = baseUrl ?? baseUrlProvider.GetBaseUrl();
             var verificationLink = $"{actualBaseUrl.TrimEnd('/')}/verify-email?token={verification.Token}";
 
             var subject = "Verify your email for alerts";

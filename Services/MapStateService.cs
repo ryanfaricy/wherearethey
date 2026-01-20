@@ -315,11 +315,11 @@ public class MapStateService : IMapStateService
 
     private void HandleReportChange(Report report, EntityChangeType type)
     {
-        bool changed = false;
-        bool shouldShow = type != EntityChangeType.Deleted && ShouldShowReport(report);
-        bool callRemoveOnMap = false;
-        bool callAddOnMap = false;
-        bool callUpdateOnMap = false;
+        var changed = false;
+        var shouldShow = type != EntityChangeType.Deleted && ShouldShowReport(report);
+        var callRemoveOnMap = false;
+        var callAddOnMap = false;
+        var callUpdateOnMap = false;
 
         lock (_lock)
         {
@@ -373,8 +373,8 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertChange(Alert alert, EntityChangeType type)
     {
-        bool changed = false;
-        bool shouldShow = type != EntityChangeType.Deleted && ShouldShowAlert(alert);
+        var changed = false;
+        var shouldShow = type != EntityChangeType.Deleted && ShouldShowAlert(alert);
 
         lock (_lock)
         {

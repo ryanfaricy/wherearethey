@@ -27,10 +27,13 @@
                         <RadzenStack Gap="0.25rem">
                             <RadzenText TextStyle="TextStyle.Caption"><b>User ID:</b> @alert.UserIdentifier</RadzenText>
                             <RadzenText TextStyle="TextStyle.Caption"><b>Radius:</b> @alert.RadiusKm km</RadzenText>
-                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                 <RadzenText TextStyle="TextStyle.Caption"><b>Status:</b></RadzenText>
-                                 <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                                              Text="@(alert.DeletedAt == null ? "ACTIVE" : "DELETED")" />
+                            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem" Wrap="FlexWrap.Wrap">
+                                <RadzenText TextStyle="TextStyle.Caption"><b>Notify:</b></RadzenText>
+                                @if (alert.UseEmail) { <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="EMAIL" /> }
+                                @if (alert.UsePush) { <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="PUSH" /> }
+                                <RadzenText TextStyle="TextStyle.Caption" Class="rz-ml-2"><b>Status:</b></RadzenText>
+                                <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                             Text="@(alert.DeletedAt == null ? "ACTIVE" : "DELETED")" />
                             </RadzenStack>
                         </RadzenStack>
 
@@ -71,6 +74,12 @@ else
                 <Template Context="alert">
                     <RadzenBadge BadgeStyle="@(alert.IsVerified ? BadgeStyle.Success : BadgeStyle.Warning)" 
                                  Text="@(alert.IsVerified ? "YES" : "NO")" />
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Alert" Property="UseEmail" Title="Email Notifications">
+                <Template Context="alert">
+                    <RadzenBadge BadgeStyle="@(alert.UseEmail ? BadgeStyle.Info : BadgeStyle.Secondary)" 
+                                 Text="@(alert.UseEmail ? "YES" : "NO")" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Alert" Property="UsePush" Title="Push">

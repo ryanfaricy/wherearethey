@@ -41,7 +41,7 @@ public class AdminFeedbackTabTests : ComponentTestBase
         var feedback = new List<Feedback>
         {
             new Feedback { Id = 1, Message = "Test 1", Type = "Bug", CreatedAt = DateTime.UtcNow },
-            new Feedback { Id = 2, Message = "Test 2", Type = "Suggestion", CreatedAt = DateTime.UtcNow }
+            new Feedback { Id = 2, Message = "Test 2", Type = "Suggestion", CreatedAt = DateTime.UtcNow },
         };
         _feedbackServiceMock.Setup(s => s.GetAllFeedbackAsync()).ReturnsAsync(feedback);
 

@@ -49,6 +49,11 @@ public class Alert : IAuditable
     public bool IsVerified { get; set; }
 
     /// <summary>
+    /// Whether to send email notifications for this alert.
+    /// </summary>
+    public bool UseEmail { get; set; } = true;
+
+    /// <summary>
     /// Whether to send web push notifications for this alert.
     /// </summary>
     public bool UsePush { get; set; } = true;

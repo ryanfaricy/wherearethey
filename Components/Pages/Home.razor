@@ -318,7 +318,7 @@
     private async Task HandleFocusReportAsync(int reportId)
     {
         var report = MapState.Reports.FirstOrDefault(r => r.Id == reportId);
-        bool fetchedFromService = false;
+        var fetchedFromService = false;
         if (report == null)
         {
             var result = await ReportService.GetReportByIdAsync(reportId);

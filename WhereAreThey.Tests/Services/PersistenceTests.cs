@@ -49,7 +49,6 @@ public class PersistenceTests
             new Mock<IBackgroundJobClient>().Object,
             new Mock<IEventService>().Object,
             new Mock<IBaseUrlProvider>().Object,
-            Options.Create(new AppOptions()),
             new Mock<IEmailTemplateService>().Object,
             new Mock<ILogger<AlertService>>().Object,
             validatorMock.Object

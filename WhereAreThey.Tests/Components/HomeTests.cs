@@ -83,7 +83,7 @@ public class HomeTests : ComponentTestBase
         // Arrange
         var reports = new List<Report> 
         { 
-            new() { Id = 1, Latitude = 40.0, Longitude = -70.0, CreatedAt = DateTime.UtcNow } 
+            new() { Id = 1, Latitude = 40.0, Longitude = -70.0, CreatedAt = DateTime.UtcNow },
         };
         
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
@@ -124,7 +124,7 @@ public class HomeTests : ComponentTestBase
         var reports = new List<Report> 
         { 
             new() { Id = 1, Latitude = 40.0, Longitude = -70.0, CreatedAt = DateTime.UtcNow },
-            new() { Id = 2, Latitude = 41.0, Longitude = -71.0, CreatedAt = DateTime.UtcNow, DeletedAt = DateTime.UtcNow } 
+            new() { Id = 2, Latitude = 41.0, Longitude = -71.0, CreatedAt = DateTime.UtcNow, DeletedAt = DateTime.UtcNow },
         };
         
         // When admin and showDeleted is true, MapStateService calls GetRecentReportsAsync(..., true)
@@ -187,7 +187,7 @@ public class HomeTests : ComponentTestBase
             InitialLat = 34.0,
             InitialLng = -118.0,
             InitialRadius = 5.0,
-            SelectedHours = 12
+            SelectedHours = 12,
         };
         _mapNavigationManagerMock.Setup(m => m.GetNavigationStateAsync())
             .ReturnsAsync(navState);
@@ -217,7 +217,7 @@ public class HomeTests : ComponentTestBase
         // Arrange
         var userLocation = new GeolocationPosition 
         { 
-            Coords = new GeolocationCoordinates { Latitude = 40.0, Longitude = -70.0 } 
+            Coords = new GeolocationCoordinates { Latitude = 40.0, Longitude = -70.0 },
         };
         _clientLocationServiceMock.SetupGet(l => l.LastKnownPosition).Returns(userLocation);
         _storageServiceMock.Setup(s => s.GetUserIdentifierAsync()).ReturnsAsync("user1");
@@ -232,7 +232,7 @@ public class HomeTests : ComponentTestBase
             Latitude = 40.01, 
             Longitude = -70.01, 
             CreatedAt = DateTime.UtcNow,
-            ReporterIdentifier = "user2" // Different user
+            ReporterIdentifier = "user2", // Different user
         };
 
         // Act

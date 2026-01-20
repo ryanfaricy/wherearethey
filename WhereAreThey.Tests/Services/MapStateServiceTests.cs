@@ -368,11 +368,11 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         await _service.InitializeAsync("test-user", false);
 
-        int numberOfReports = 100; // Reduced for performance in regular suite
+        var numberOfReports = 100; // Reduced for performance in regular suite
         var tasks = new List<Task>();
 
         // Act
-        for (int i = 0; i < numberOfReports; i++)
+        for (var i = 0; i < numberOfReports; i++)
         {
             var report = new Report { Id = i, CreatedAt = DateTime.UtcNow, Latitude = 0, Longitude = 0 };
             tasks.Add(Task.Run(() => _eventServiceMock.Raise(e => e.OnEntityChanged += null, report, EntityChangeType.Added)));

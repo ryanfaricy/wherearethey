@@ -11,7 +11,7 @@ public class ReportProcessingService(
     IEmailService emailService,
     IWebPushService webPushService,
     IGeocodingService geocodingService,
-    IOptions<AppOptions> appOptions,
+    IBaseUrlProvider baseUrlProvider,
     ISettingsService settingsService,
     ILocationService locationService,
     IEmailTemplateService emailTemplateService,
@@ -26,7 +26,7 @@ public class ReportProcessingService(
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
             
-            var actualBaseUrl = (baseUrl ?? appOptions.Value.BaseUrl).TrimEnd('/');
+            var actualBaseUrl = (baseUrl ?? baseUrlProvider.GetBaseUrl()).TrimEnd('/');
 
             // Approximate address
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
@@ -45,61 +45,69 @@ public class ReportProcessingService(
             }
 
             var emails = new List<Email>();
-            foreach (var alert in matchingAlerts)
+            if (settings.EmailNotificationsEnabled)
             {
-                var emailAddress = alertService.DecryptEmail(alert.EncryptedEmail);
-                if (!string.IsNullOrEmpty(emailAddress))
+                foreach (var alert in matchingAlerts)
                 {
-                    var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
+                    if (!alert.UseEmail) continue;
 
-                    var viewModel = new AlertEmailViewModel
+                    var emailAddress = alertService.DecryptEmail(alert.EncryptedEmail);
+                    if (!string.IsNullOrEmpty(emailAddress))
                     {
-                        AlertMessage = alert.Message,
-                        Address = address,
-                        LocalTimeStr = localTimeStr,
-                        IsEmergency = report.IsEmergency,
-                        ReportMessage = report.Message,
-                        MapThumbnailHtml = mapThumbnailHtml,
-                        Latitude = report.Latitude.ToString("F4", CultureInfo.InvariantCulture),
-                        Longitude = report.Longitude.ToString("F4", CultureInfo.InvariantCulture),
-                        HeatMapUrl = heatMapUrl,
-                    };
+                        var subject = report.IsEmergency ? "EMERGENCY: Report in your area!" : "Alert: New report in your area";
 
-                    var body = await emailTemplateService.RenderTemplateAsync("AlertEmail", viewModel);
+                        var viewModel = new AlertEmailViewModel
+                        {
+                            AlertMessage = alert.Message,
+                            Address = address,
+                            LocalTimeStr = localTimeStr,
+                            IsEmergency = report.IsEmergency,
+                            ReportMessage = report.Message,
+                            MapThumbnailHtml = mapThumbnailHtml,
+                            Latitude = report.Latitude.ToString("F4", CultureInfo.InvariantCulture),
+                            Longitude = report.Longitude.ToString("F4", CultureInfo.InvariantCulture),
+                            HeatMapUrl = heatMapUrl,
+                        };
 
-                    emails.Add(new Email { To = emailAddress, Subject = subject, Body = body });
+                        var body = await emailTemplateService.RenderTemplateAsync("AlertEmail", viewModel);
+
+                        emails.Add(new Email { To = emailAddress, Subject = subject, Body = body });
+                    }
+                    else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
+                    {
+                        logger.LogWarning("Failed to decrypt email for alert {AlertId}. The encryption keys may have changed.", alert.Id);
+                    }
                 }
-                else if (!string.IsNullOrEmpty(alert.EncryptedEmail))
+
+                if (emails.Count > 0)
                 {
-                    logger.LogWarning("Failed to decrypt email for alert {AlertId}. The encryption keys may have changed.", alert.Id);
+                    await emailService.SendEmailsAsync(emails);
                 }
-            }
-
-            if (emails.Count > 0)
-            {
-                await emailService.SendEmailsAsync(emails);
             }
 
             // Web Push Notifications
-            var pushRecipients = matchingAlerts
-                .Where(a => a.UsePush && !string.IsNullOrEmpty(a.UserIdentifier))
-                .Select(a => a.UserIdentifier!)
-                .Distinct()
-                .ToList();
-
-            if (pushRecipients.Count > 0)
+            if (settings.PushNotificationsEnabled)
             {
-                var pushTitle = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report in Your Area";
-                var pushMessage = string.IsNullOrEmpty(report.Message) 
-                    ? $"New report at {address ?? report.LocationDisplay()}" 
-                    : report.Message;
-                
-                foreach (var userId in pushRecipients)
+                var pushRecipients = matchingAlerts
+                    .Where(a => a.UsePush && !string.IsNullOrEmpty(a.UserIdentifier))
+                    .Select(a => a.UserIdentifier!)
+                    .Distinct()
+                    .ToList();
+
+                if (pushRecipients.Count > 0)
                 {
-                    var subscriptions = await alertService.GetPushSubscriptionsAsync(userId);
-                    if (subscriptions.Count > 0)
+                    var pushTitle = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report in Your Area";
+                    var pushMessage = string.IsNullOrEmpty(report.Message) 
+                        ? $"New report at {address ?? report.LocationDisplay()}" 
+                        : report.Message;
+                    
+                    foreach (var userId in pushRecipients)
                     {
-                        await webPushService.SendNotificationsAsync(subscriptions, pushTitle, pushMessage, heatMapUrl);
+                        var subscriptions = await alertService.GetPushSubscriptionsAsync(userId);
+                        if (subscriptions.Count > 0)
+                        {
+                            await webPushService.SendNotificationsAsync(subscriptions, pushTitle, pushMessage, heatMapUrl);
+                        }
                     }
                 }
             }

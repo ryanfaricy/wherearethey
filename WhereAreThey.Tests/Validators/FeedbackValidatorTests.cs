@@ -73,7 +73,7 @@ public class FeedbackValidatorTests
                 UserIdentifier = userIdentifier, 
                 Message = "Prev message", 
                 Type = "Bug",
-                CreatedAt = DateTime.UtcNow.AddMinutes(-2) 
+                CreatedAt = DateTime.UtcNow.AddMinutes(-2),
             });
             await db.SaveChangesAsync();
         }

@@ -1,4 +1,5 @@
 using Microsoft.JSInterop;
+using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
@@ -10,13 +11,13 @@ public class PwaService(IJSRuntime jsRuntime) : IPwaService
         return await jsRuntime.InvokeAsync<string>("pwaFunctions.requestPushPermission");
     }
 
-    public async Task<object?> GetPushSubscriptionAsync()
+    public async Task<PushSubscriptionModel?> GetPushSubscriptionAsync()
     {
-        return await jsRuntime.InvokeAsync<object?>("pwaFunctions.getPushSubscription");
+        return await jsRuntime.InvokeAsync<PushSubscriptionModel?>("pwaFunctions.getPushSubscription");
     }
 
-    public async Task<object?> SubscribeUserAsync(string vapidPublicKey)
+    public async Task<PushSubscriptionModel?> SubscribeUserAsync(string vapidPublicKey)
     {
-        return await jsRuntime.InvokeAsync<object?>("pwaFunctions.subscribeUser", vapidPublicKey);
+        return await jsRuntime.InvokeAsync<PushSubscriptionModel?>("pwaFunctions.subscribeUser", vapidPublicKey);
     }
 }

@@ -53,21 +53,39 @@ self.addEventListener('fetch', event => {
 });
 
 self.addEventListener('push', event => {
-    const data = event.data.json();
-    console.log('Push received:', data);
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+        console.log('Push received:', data);
+    } catch (e) {
+        console.error('Push data is not JSON or is invalid:', e);
+        try {
+            const text = event.data.text();
+            data = { message: text };
+        } catch (e2) {
+            data = { message: 'New alert received' };
+        }
+    }
 
+    const title = data.title || 'AreTheyHere Alert';
     const options = {
-        body: data.message,
+        body: data.message || 'New incident reported in your watched area.',
         icon: 'favicon.png',
         badge: 'favicon.png',
+        tag: data.url || 'general-alert', // Use URL as tag to group notifications for same incident
+        renotify: true,
         data: {
-            url: data.url
+            url: data.url || '/'
         },
-        vibrate: [200, 100, 200]
+        vibrate: [200, 100, 200],
+        actions: [
+            { action: 'open', title: 'View Map', icon: 'favicon.png' }
+        ]
     };
 
     event.waitUntil(
-        self.registration.showNotification(data.title, options)
+        self.registration.showNotification(title, options)
+            .catch(err => console.error('Error showing notification:', err))
     );
 });
 

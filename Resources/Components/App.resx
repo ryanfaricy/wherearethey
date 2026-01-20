@@ -622,4 +622,10 @@
   <data name="Notifications" xml:space="preserve">
     <value>Notifications</value>
   </data>
+  <data name="Send_Email_Notification" xml:space="preserve">
+    <value>Send Email Notification</value>
+  </data>
+  <data name="Select_At_Least_One_Notification" xml:space="preserve">
+    <value>Please select at least one notification method (Email or Push).</value>
+  </data>
 </root>

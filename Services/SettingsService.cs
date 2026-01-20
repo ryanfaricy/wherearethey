@@ -84,6 +84,8 @@ public class SettingsService(
                 existing.MaxReportDistanceMiles = settings.MaxReportDistanceMiles;
                 existing.MapboxToken = settings.MapboxToken;
                 existing.DonationsEnabled = settings.DonationsEnabled;
+                existing.EmailNotificationsEnabled = settings.EmailNotificationsEnabled;
+                existing.PushNotificationsEnabled = settings.PushNotificationsEnabled;
                 existing.DataRetentionDays = settings.DataRetentionDays;
             }
 

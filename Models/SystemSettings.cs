@@ -9,6 +9,8 @@ public class SystemSettings
     public decimal MaxReportDistanceMiles { get; set; } = 5.0m;
     public string? MapboxToken { get; set; }
     public bool DonationsEnabled { get; set; } = true;
+    public bool EmailNotificationsEnabled { get; set; } = true;
+    public bool PushNotificationsEnabled { get; set; } = true;
     public int DataRetentionDays { get; set; } = 30;
     public string? VapidPublicKey { get; set; }
     public string? VapidPrivateKey { get; set; }

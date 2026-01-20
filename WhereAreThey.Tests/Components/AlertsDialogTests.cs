@@ -21,15 +21,28 @@ public class AlertsDialogTests : ComponentTestBase
         var geocodingServiceMock = new Mock<IGeocodingService>();
         _storageServiceMock = new Mock<IClientStorageService>();
         var hapticServiceMock = new Mock<IHapticFeedbackService>();
+        var settingsServiceMock = new Mock<ISettingsService>();
+        var pwaServiceMock = new Mock<IPwaService>();
 
         Services.AddSingleton(_alertServiceMock.Object);
         Services.AddSingleton(geocodingServiceMock.Object);
         Services.AddSingleton(_storageServiceMock.Object);
         Services.AddSingleton(hapticServiceMock.Object);
+        Services.AddSingleton(settingsServiceMock.Object);
+        Services.AddSingleton(pwaServiceMock.Object);
+        Services.AddSingleton(new HttpClient());
 
+        settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
         _storageServiceMock.Setup(s => s.GetUserIdentifierAsync()).ReturnsAsync("test-user");
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>()))
+        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync([]);
+
+        ValidationServiceMock.Setup(v => v.ExecuteAsync<Alert>(It.IsAny<Func<Task<Result<Alert>>>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Alert, Task>>(), It.IsAny<Func<string, Task>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<string>()))
+            .Returns<Func<Task<Result<Alert>>>, string, string, Func<Alert, Task>, Func<string, Task>, bool, bool, bool, string>(async (op, _, _, success, _, _, _, _, _) => {
+                var result = await op();
+                if (result.IsSuccess && success != null) await success(result.Value!);
+                return result.Value;
+            });
     }
 
     [Fact]

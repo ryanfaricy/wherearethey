@@ -50,8 +50,9 @@ window.pwaFunctions = {
         return await Notification.requestPermission();
     },
     getPushSubscription: async function() {
-        const registration = await navigator.serviceWorker.getRegistration();
-        if (!registration) return null;
+        if (!('serviceWorker' in navigator)) return null;
+        const registration = await navigator.serviceWorker.ready;
+        if (!registration.pushManager) return null;
         
         const subscription = await registration.pushManager.getSubscription();
         if (!subscription) return null;
@@ -60,8 +61,9 @@ window.pwaFunctions = {
     },
     subscribeUser: async function(vapidPublicKey) {
         try {
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (!registration) return null;
+            if (!('serviceWorker' in navigator)) return null;
+            const registration = await navigator.serviceWorker.ready;
+            if (!registration.pushManager) return null;
 
             const subscribeOptions = {
                 userVisibleOnly: true,

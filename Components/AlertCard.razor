@@ -20,6 +20,14 @@
                 {
                     <RadzenBadge Text="DELETED" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
                 }
+                @if (Alert.UseEmail)
+                {
+                    <RadzenBadge Text="EMAIL" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                }
+                @if (Alert.UsePush)
+                {
+                    <RadzenBadge Text="PUSH" BadgeStyle="BadgeStyle.Info" IsPill="true" />
+                }
             </RadzenStack>
             <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.LocationDisplay()</RadzenText>
             @if (IsAdmin)

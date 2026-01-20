@@ -16,7 +16,7 @@ public class CultureControllerTests
         var httpContext = new DefaultHttpContext();
         controller.ControllerContext = new ControllerContext
         {
-            HttpContext = httpContext
+            HttpContext = httpContext,
         };
 
         var culture = "es-ES";
@@ -42,7 +42,7 @@ public class CultureControllerTests
         var httpContext = new DefaultHttpContext();
         controller.ControllerContext = new ControllerContext
         {
-            HttpContext = httpContext
+            HttpContext = httpContext,
         };
 
         var redirectUri = "/home";

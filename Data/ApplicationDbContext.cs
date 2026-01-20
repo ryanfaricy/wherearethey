@@ -87,6 +87,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasIndex(e => e.UserIdentifier);
             entity.HasIndex(e => e.EmailHash);
             entity.HasIndex(e => e.IsVerified);
+            entity.Property(e => e.UseEmail).HasDefaultValue(true);
+            entity.Property(e => e.UsePush).HasDefaultValue(true);
             entity.Property(e => e.Latitude).IsRequired();
             entity.Property(e => e.Longitude).IsRequired();
         });
@@ -143,6 +145,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             MaxReportDistanceMiles = 5.0m,
             MapboxToken = null,
             DonationsEnabled = true,
+            EmailNotificationsEnabled = true,
+            PushNotificationsEnabled = true,
             DataRetentionDays = 30,
         });
     }

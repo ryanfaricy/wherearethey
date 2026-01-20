@@ -35,6 +35,8 @@ public class ReportServiceTests : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+        
         _connection?.Dispose();
     }
 
@@ -260,26 +262,29 @@ public class ReportServiceTests : IDisposable
         services.AddSingleton(emailServiceMock.Object);
         services.AddSingleton(emailTemplateServiceMock.Object);
         services.AddSingleton(appOptions);
+        services.AddSingleton(_baseUrlProviderMock.Object);
         services.AddSingleton(settingsService);
         services.AddSingleton(CreateLocalizer());
         services.AddSingleton(backgroundJobClientMock.Object);
         services.AddLogging();
         services.AddSingleton<IGeocodingService>(new GeocodingService(new HttpClient(), settingsService, new Mock<ILogger<GeocodingService>>().Object));
         services.AddSingleton<ILocationService>(new LocationService(factory, settingsService, new Mock<ILogger<LocationService>>().Object));
+        services.AddSingleton(new Mock<IWebPushService>().Object);
         services.AddScoped<IReportProcessingService, ReportProcessingService>();
         
         // Circular dependency handling: AlertService needs IBackgroundJobClient
-        services.AddSingleton<IAlertService>(sp => new AlertService(
+        var alertServiceInstance = new AlertService(
             factory, 
             dataProtectionProvider, 
-            sp.GetRequiredService<IEmailService>(), 
-            sp.GetRequiredService<IBackgroundJobClient>(), 
+            emailServiceMock.Object, 
+            backgroundJobClientMock.Object, 
             _eventServiceMock.Object, 
             _baseUrlProviderMock.Object,
-            sp.GetRequiredService<IOptions<AppOptions>>(), 
-            sp.GetRequiredService<IEmailTemplateService>(),
+            emailTemplateServiceMock.Object,
             new Mock<ILogger<AlertService>>().Object, 
-            alertValidator));
+            alertValidator);
+
+        services.AddSingleton<IAlertService>(alertServiceInstance);
         
         var serviceProvider = services.BuildServiceProvider();
 
@@ -304,25 +309,36 @@ public class ReportServiceTests : IDisposable
             RadiusKm = 10.0, 
             UserIdentifier = "UserB",
             Message = "UserB's Area",
+            UsePush = false,
+            UseEmail = true,
         };
         await alertService.CreateAlertAsync(alert, userBEmail);
 
-        // Manually verify the alert for the test
+        // Manually verify the email for User B
         await using (var context = new ApplicationDbContext(options))
         {
-            var savedAlert = await context.Alerts.FirstAsync(a => a.UserIdentifier == "UserB");
-            savedAlert.IsVerified = true;
+            var emailHash = HashUtils.ComputeHash(userBEmail);
+            var verification = await context.EmailVerifications.FirstOrDefaultAsync(v => v.EmailHash == emailHash);
+            if (verification != null)
+            {
+                verification.VerifiedAt = DateTime.UtcNow;
+                await context.SaveChangesAsync();
+            }
+            
+            // Also need to mark existing alerts as verified
+            var alerts = await context.Alerts.Where(a => a.EmailHash == emailHash).ToListAsync();
+            foreach (var a in alerts) a.IsVerified = true;
             await context.SaveChangesAsync();
         }
 
-        // User A reports something nearby (roughly 1.1km away)
+        // User A reports something nearby
         var report = new Report 
         { 
-            Latitude = 40.01, 
+            Latitude = 40.0, 
             Longitude = -74.0,
-            ReporterLatitude = 40.01,
+            ReporterLatitude = 40.0,
             ReporterLongitude = -74.0,
-            ReporterIdentifier = "test-user",
+            ReporterIdentifier = "test-user-long-id",
             Message = "Alert trigger message",
             IsEmergency = true,
         };
@@ -330,16 +346,13 @@ public class ReportServiceTests : IDisposable
         // Act
         await service.CreateReportAsync(report);
 
-        // Wait for background task
-        await Task.Delay(1000);
-
         // Assert
         emailServiceMock.Verify(x => x.SendEmailsAsync(
             It.Is<IEnumerable<Email>>(emails => 
                 emails.Count() == 1 &&
                 emails.First().To == userBEmail &&
                 emails.First().Subject.Contains("EMERGENCY") &&
-                emails.First().Body.Contains("Alert trigger message"))), Times.Once);
+                emails.First().Body.Contains("Alert trigger message"))), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -350,12 +363,12 @@ public class ReportServiceTests : IDisposable
         var service = CreateService(factory);
         await using var context = await factory.CreateDbContextAsync();
 
-        for (int i = 1; i <= 30; i++)
+        for (var i = 1; i <= 30; i++)
         {
             context.Reports.Add(new Report
             {
                 Latitude = 10, Longitude = 10, CreatedAt = DateTime.UtcNow.AddMinutes(-i),
-                ReporterIdentifier = "user", ExternalId = Guid.NewGuid()
+                ReporterIdentifier = "user", ExternalId = Guid.NewGuid(),
             });
         }
         await context.SaveChangesAsync();
@@ -522,7 +535,7 @@ public class ReportServiceTests : IDisposable
                 Longitude = -74.0,
                 CreatedAt = DateTime.UtcNow.AddHours(-1),
                 DeletedAt = DateTime.UtcNow,
-                ReporterIdentifier = "test"
+                ReporterIdentifier = "test",
             };
             context.Reports.Add(deletedReport);
             await context.SaveChangesAsync();

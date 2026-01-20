@@ -598,4 +598,10 @@
   <data name="Notifications" xml:space="preserve">
     <value>Notificaciones</value>
   </data>
+  <data name="Send_Email_Notification" xml:space="preserve">
+    <value>Enviar notificación por correo electrónico</value>
+  </data>
+  <data name="Select_At_Least_One_Notification" xml:space="preserve">
+    <value>Seleccione al menos un método de notificación (correo electrónico o push).</value>
+  </data>
 </root>

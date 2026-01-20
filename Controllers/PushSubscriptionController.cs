@@ -21,7 +21,7 @@ public class PushSubscriptionController(IAlertService alertService, ILogger<Push
             UserIdentifier = request.UserIdentifier,
             Endpoint = request.Endpoint,
             P256DH = request.P256dh,
-            Auth = request.Auth
+            Auth = request.Auth,
         };
 
         var result = await alertService.AddPushSubscriptionAsync(subscription);
