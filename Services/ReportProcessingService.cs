@@ -110,7 +110,7 @@ public class ReportProcessingService(
                     logger.LogInformation("Processing web push notifications for {Count} unique recipients", pushRecipients.Count);
                     var pushTitle = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report in Your Area";
                     var pushMessage = string.IsNullOrEmpty(report.Message) 
-                        ? $"New report at {address ?? report.LocationDisplay()}" 
+                        ? $"New report at {address ?? report.ToLocationString(4)}" 
                         : report.Message;
                     
                     foreach (var userId in pushRecipients)

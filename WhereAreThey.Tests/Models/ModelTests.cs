@@ -1,15 +1,16 @@
 using WhereAreThey.Models;
+using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests.Models;
 
 public class ModelTests
 {
     [Fact]
-    public void Report_LocationDisplay_ReturnsFormattedString()
+    public void Report_ToLocationString_ReturnsFormattedString()
     {
         var report = new Report { Latitude = 10.123456, Longitude = -20.654321 };
-        Assert.Equal("10.1235, -20.6543", report.LocationDisplay());
-        Assert.Equal("10.12, -20.65", report.LocationDisplay(2));
+        Assert.Equal("10.1235, -20.6543", report.ToLocationString(4));
+        Assert.Equal("10.12, -20.65", report.ToLocationString(2));
     }
 
     [Fact]

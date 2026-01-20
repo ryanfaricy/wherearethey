@@ -32,7 +32,7 @@
             {
                 <RadzenStack Gap="0" Class="rz-mt-2 rz-pt-2" Style="border-top: 1px dashed rgba(0,0,0,0.1); opacity: 0.8;">
                     <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Report.ReporterIdentifier</RadzenText>
-                    <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.LocationDisplay()</RadzenText>
+                    <RadzenText TextStyle="TextStyle.Caption">Loc: @Report.ToLocationString(4)</RadzenText>
                     @if (Report.HasReporterLocation())
                     {
                         <RadzenText TextStyle="TextStyle.Caption">Rep: @Report.ReporterLocationDisplay()</RadzenText>

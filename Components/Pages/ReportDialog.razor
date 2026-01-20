@@ -1,6 +1,7 @@
 @using System.Text.Json
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
+@using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @inject IReportService ReportService
 @inject IGeocodingService GeocodingService
@@ -31,7 +32,7 @@
         }
         else
         {
-            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.LocationDisplay(6)}</b>"))</RadzenText>
+            <RadzenText TextStyle="TextStyle.Subtitle2">@((MarkupString)string.Format(L["Report_Coordinates"], $"<b>{Report.ToLocationString(6)}</b>"))</RadzenText>
         }
         
         <RadzenFormField Text="@L["Message_Optional"]" Variant="Variant.Outlined" Component="Message" Style="width: 100%;">

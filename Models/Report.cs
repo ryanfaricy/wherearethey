@@ -3,7 +3,7 @@ namespace WhereAreThey.Models;
 /// <summary>
 /// Represents a location report submitted by a user.
 /// </summary>
-public class Report : IAuditable
+public class Report : IAuditable, ILocatable
 {
     /// <inheritdoc />
     public int Id { get; set; }
@@ -53,11 +53,6 @@ public class Report : IAuditable
 
     /// <inheritdoc />
     public DateTime? DeletedAt { get; set; }
-    
-    /// <summary>
-    /// Returns a string representation of the incident location.
-    /// </summary>
-    public string LocationDisplay(int digits = 4) => $"{Latitude.ToString($"F{digits}")}, {Longitude.ToString($"F{digits}")}";
     
     /// <summary>
     /// Checks if the reporter's location is available.

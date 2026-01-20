@@ -28,7 +28,7 @@
                         
                         <RadzenStack Gap="0.25rem">
                             <RadzenText TextStyle="TextStyle.Caption"><b>Reporter Location:</b> @report.ReporterLocationDisplay()</RadzenText>
-                            <RadzenText TextStyle="TextStyle.Caption"><b>Incident Location:</b> @report.LocationDisplay()</RadzenText>
+                            <RadzenText TextStyle="TextStyle.Caption"><b>Incident Location:</b> @report.ToLocationString(4)</RadzenText>
                         </RadzenStack>
 
                         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" JustifyContent="JustifyContent.End" Class="rz-mt-2">
@@ -108,7 +108,7 @@ else
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Report" Title="Location">
                 <Template Context="report">
-                    @report.LocationDisplay()
+                    @report.ToLocationString(4)
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Report" Title="Actions" Filterable="false" Sortable="false">

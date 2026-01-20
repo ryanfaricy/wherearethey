@@ -1,5 +1,6 @@
 @using Microsoft.Extensions.Localization
 @using WhereAreThey.Models
+@using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @inject IAlertService AlertService
 @inject IStringLocalizer<App> L
@@ -29,7 +30,7 @@
                     <RadzenBadge Text="PUSH" BadgeStyle="BadgeStyle.Info" IsPill="true" />
                 }
             </RadzenStack>
-            <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.LocationDisplay()</RadzenText>
+            <RadzenText TextStyle="TextStyle.Caption">@Alert.RadiusKm km around @Alert.ToLocationString()</RadzenText>
             @if (IsAdmin)
             {
                 <RadzenText TextStyle="TextStyle.Caption" Style="font-family: monospace; font-weight: bold;">ID: @Alert.UserIdentifier</RadzenText>

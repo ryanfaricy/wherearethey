@@ -3,7 +3,7 @@ namespace WhereAreThey.Models;
 /// <summary>
 /// Represents an alert zone configured by a user to receive notifications.
 /// </summary>
-public class Alert : IAuditable
+public class Alert : IAuditable, ILocatable
 {
     /// <inheritdoc />
     public int Id { get; set; }
@@ -68,9 +68,4 @@ public class Alert : IAuditable
     /// Unique identifier for the user who created the alert.
     /// </summary>
     public string? UserIdentifier { get; set; }
-    
-    /// <summary>
-    /// Returns a string representation of the alert location.
-    /// </summary>
-    public string LocationDisplay(int digits = 2) => $"{Latitude.ToString($"F{digits}")}, {Longitude.ToString($"F{digits}")}";
 }

@@ -1,9 +1,27 @@
+using WhereAreThey.Models;
 using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests.Services;
 
 public class GeoUtilsTests
 {
+    private class TestLocatable : ILocatable
+    {
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+    }
+
+    [Fact]
+    public void ToLocationString_ShouldFormatCoordinates()
+    {
+        // Arrange
+        var loc = new TestLocatable { Latitude = 40.7128, Longitude = -74.0060 };
+
+        // Act & Assert
+        Assert.Equal("40.71, -74.01", loc.ToLocationString());
+        Assert.Equal("40.7128, -74.0060", loc.ToLocationString(4));
+    }
+
     [Theory]
     [InlineData(40.7128, -74.0060, 40.7128, -74.0060, 0)] // Same point
     [InlineData(40.7128, -74.0060, 40.7580, -73.9855, 5.33)] // NYC to Times Square approx

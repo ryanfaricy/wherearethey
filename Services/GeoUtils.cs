@@ -1,3 +1,5 @@
+using WhereAreThey.Models;
+
 namespace WhereAreThey.Services;
 
 /// <summary>
@@ -5,6 +7,15 @@ namespace WhereAreThey.Services;
 /// </summary>
 public static class GeoUtils
 {
+    /// <summary>
+    /// Formats coordinates as a string.
+    /// </summary>
+    /// <param name="loc">The locatable object.</param>
+    /// <param name="digits">Number of decimal digits.</param>
+    /// <returns>A formatted string.</returns>
+    public static string ToLocationString(this ILocatable loc, int digits = 2) 
+        => $"{loc.Latitude.ToString($"F{digits}")}, {loc.Longitude.ToString($"F{digits}")}";
+
     /// <summary>
     /// Calculates the distance between two points on Earth using the Haversine formula.
     /// </summary>
