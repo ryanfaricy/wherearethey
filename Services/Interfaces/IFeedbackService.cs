@@ -14,30 +14,6 @@ public interface IFeedbackService : IAdminDataService<Feedback>
     /// <returns>A Result containing the created feedback or an error message.</returns>
     Task<Result<Feedback>> CreateFeedbackAsync(Feedback feedback);
 
-    /// <summary>
-    /// Gets all feedback entries for administrative review.
-    /// </summary>
-    /// <returns>A list of all feedback.</returns>
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    Task<List<Feedback>> GetAllFeedbackAsync();
-
-    /// <summary>
-    /// Deletes a feedback entry.
-    /// </summary>
-    /// <param name="id">The internal ID of the feedback entry.</param>
-    /// <param name="hardDelete">Whether to permanently delete the feedback (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    Task<Result> DeleteFeedbackAsync(int id, bool hardDelete = false);
-
-    /// <summary>
-    /// Deletes multiple feedback entries.
-    /// </summary>
-    /// <param name="ids">The internal IDs of the feedback entries.</param>
-    /// <param name="hardDelete">Whether to permanently delete the feedback (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    Task<Result> DeleteFeedbacksAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>
     /// Updates a feedback entry.

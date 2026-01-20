@@ -72,7 +72,7 @@ public class BulkDeleteOptimizationTests : IDisposable
         var idsToDelete = new List<int> { 1, 2, 3 };
 
         // Act
-        await service.DeleteReportsAsync(idsToDelete, hardDelete: false);
+        await service.DeleteRangeAsync(idsToDelete, hardDelete: false);
 
         // Assert
         _eventServiceMock.Verify(e => e.NotifyEntityBatchChanged(typeof(Report)), Times.Once);
@@ -103,7 +103,7 @@ public class BulkDeleteOptimizationTests : IDisposable
         var idsToDelete = new List<int> { 4, 5 };
 
         // Act
-        var result = await service.DeleteReportsAsync(idsToDelete, hardDelete: true);
+        var result = await service.DeleteRangeAsync(idsToDelete, hardDelete: true);
 
         // Assert
         Assert.True(result.IsSuccess, result.Error);

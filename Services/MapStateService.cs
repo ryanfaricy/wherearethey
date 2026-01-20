@@ -239,7 +239,7 @@ public class MapStateService : IMapStateService
         _lastLoadedHours = null;
         _isAllLoaded = true;
         
-        var allReports = await _reportService.GetAllReportsAsync();
+        var allReports = await _reportService.GetAllAsync(isAdmin: true);
         lock (_lock)
         {
             Reports = allReports.Where(ShouldShowReport).ToList();

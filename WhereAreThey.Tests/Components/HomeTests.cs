@@ -48,11 +48,9 @@ public class HomeTests : ComponentTestBase
         // Default setups to avoid NullReferenceException
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync(new List<Report>());
-        _reportServiceMock.Setup(s => s.GetAllReportsAsync())
+        _reportServiceMock.Setup(s => s.GetAllAsync(true))
             .ReturnsAsync(new List<Report>());
-        _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>()))
-            .ReturnsAsync(new List<Alert>());
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync())
+        _alertServiceMock.Setup(s => s.GetAllAsync(true))
             .ReturnsAsync(new List<Alert>());
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync())

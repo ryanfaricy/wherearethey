@@ -84,7 +84,7 @@ public class FeedbackTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        var all = await service.GetAllFeedbackAsync();
+        var all = await service.GetAllAsync(isAdmin: true);
         Assert.Single(all);
         Assert.Equal("Test message", all[0].Message);
     }
@@ -140,13 +140,13 @@ public class FeedbackTests
         var feedback = new Feedback { Type = "Bug", Message = "To delete", UserIdentifier = "UserA" };
         
         await service.CreateFeedbackAsync(feedback);
-        var added = (await service.GetAllFeedbackAsync())[0];
-
+        var added = (await service.GetAllAsync(isAdmin: true))[0];
+        
         // Act
-        await service.DeleteFeedbackAsync(added.Id);
-
+        await service.DeleteAsync(added.Id);
+        
         // Assert
-        var all = await service.GetAllFeedbackAsync();
+        var all = await service.GetAllAsync(isAdmin: true);
         Assert.Single(all);
         Assert.NotNull(all[0].DeletedAt);
     }
@@ -170,7 +170,7 @@ public class FeedbackTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        var all = await service.GetAllFeedbackAsync();
+        var all = await service.GetAllAsync(isAdmin: true);
         Assert.Single(all);
     }
 
@@ -189,7 +189,7 @@ public class FeedbackTests
         await service.CreateFeedbackAsync(feedback2);
 
         // Assert
-        var all = await service.GetAllFeedbackAsync();
+        var all = await service.GetAllAsync(isAdmin: true);
         Assert.Equal(2, all.Count);
     }
 }

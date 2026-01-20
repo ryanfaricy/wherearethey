@@ -22,9 +22,9 @@ public class MapStateServiceTests : IDisposable
         _mapServiceMock = new Mock<IMapService>();
         var settingsServiceMock = new Mock<ISettingsService>();
 
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
-        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>())).ReturnsAsync([]);
         settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
         
@@ -231,18 +231,18 @@ public class MapStateServiceTests : IDisposable
     public async Task LoadReportsAsync_RespectsIsAdminFlag()
     {
         // Setup mocks for alerts which are called during InitializeAsync
-        _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
+        _alertServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
         
         // Setup report mocks
-        _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>())).ReturnsAsync([]);
         
         // 1. Test Admin Mode
         await _service.InitializeAsync("test-admin", isAdmin: true);
         await _service.LoadAllReportsAsync();
-        // For admin using LoadAllReportsAsync, it calls GetAllReportsAsync
-        _reportServiceMock.Verify(s => s.GetAllReportsAsync(), Times.Once);
+        // For admin using LoadAllReportsAsync, it calls GetAllAsync(true)
+        _reportServiceMock.Verify(s => s.GetAllAsync(true), Times.Once);
 
         // 2. Switch to User Mode
         await _service.InitializeAsync("test-user", isAdmin: false);

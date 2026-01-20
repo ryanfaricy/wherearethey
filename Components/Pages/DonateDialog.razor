@@ -117,7 +117,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var donations = await DonationService.GetAllDonationsAsync();
+        var donations = await DonationService.GetAllAsync(isAdmin: true);
         _recentDonations = donations
             .Where(d => d.Status == "completed")
             .Take(10)

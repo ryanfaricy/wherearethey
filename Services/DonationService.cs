@@ -85,14 +85,6 @@ public class DonationService(
         return true;
     }
 
-    // Admin methods
-    /// <inheritdoc />
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    public async Task<List<Donation>> GetAllDonationsAsync()
-    {
-        return await GetAllAsync(isAdmin: true);
-    }
-
     /// <inheritdoc />
     public async Task<Result> UpdateDonationAsync(Donation donation)
     {
@@ -103,19 +95,5 @@ public class DonationService(
         }
 
         return await UpdateAsync(donation);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    public async Task<Result> DeleteDonationAsync(int id, bool hardDelete = false)
-    {
-        return await DeleteAsync(id, hardDelete);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    public async Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false)
-    {
-        return await DeleteRangeAsync(ids, hardDelete);
     }
 }

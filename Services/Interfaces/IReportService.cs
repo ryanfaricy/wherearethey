@@ -44,30 +44,6 @@ public interface IReportService : IAdminDataService<Report>
     /// <returns>A list of the most recent reports.</returns>
     Task<List<Report>> GetTopRecentReportsAsync(int count);
 
-    /// <summary>
-    /// Gets all reports for administrative purposes.
-    /// </summary>
-    /// <returns>A list of all reports.</returns>
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    Task<List<Report>> GetAllReportsAsync();
-
-    /// <summary>
-    /// Deletes a report.
-    /// </summary>
-    /// <param name="id">The internal ID of the report.</param>
-    /// <param name="hardDelete">Whether to permanently delete the report (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    Task<Result> DeleteReportAsync(int id, bool hardDelete = false);
-
-    /// <summary>
-    /// Deletes multiple reports.
-    /// </summary>
-    /// <param name="ids">The internal IDs of the reports.</param>
-    /// <param name="hardDelete">Whether to permanently delete the reports (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>
     /// Updates an existing report.

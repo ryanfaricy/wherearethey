@@ -70,30 +70,6 @@ public interface IAlertService : IAdminDataService<Alert>
     /// <returns>A list of matching alerts.</returns>
     Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude);
 
-    /// <summary>
-    /// Gets all alerts for administrative purposes.
-    /// </summary>
-    /// <returns>A list of all alerts.</returns>
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    Task<List<Alert>> GetAllAlertsAsync();
-
-    /// <summary>
-    /// Deletes an alert.
-    /// </summary>
-    /// <param name="id">The internal ID of the alert.</param>
-    /// <param name="hardDelete">Whether to permanently delete the alert (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    Task<Result> DeleteAlertAsync(int id, bool hardDelete = false);
-
-    /// <summary>
-    /// Deletes multiple alerts.
-    /// </summary>
-    /// <param name="ids">The internal IDs of the alerts.</param>
-    /// <param name="hardDelete">Whether to permanently delete the alerts (Admin only).</param>
-    /// <returns>A Result indicating success or failure.</returns>
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>
     /// Adds or updates a web push subscription for a user.

@@ -253,27 +253,6 @@ public class AlertService(
             .ToList();
     }
 
-    // Admin methods
-    /// <inheritdoc />
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    public virtual async Task<List<Alert>> GetAllAlertsAsync()
-    {
-        return await GetAllAsync(isAdmin: true);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    public async Task<Result> DeleteAlertAsync(int id, bool hardDelete = false)
-    {
-        return await DeleteAsync(id, hardDelete);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    public async Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false)
-    {
-        return await DeleteRangeAsync(ids, hardDelete);
-    }
 
     /// <inheritdoc />
     public async Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription)

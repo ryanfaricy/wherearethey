@@ -366,7 +366,7 @@
     private async Task DeactivateAlert(int id)
     {
         await ValidationService.ExecuteAsync(
-            () => AlertService.DeleteAlertAsync(id),
+            () => AlertService.DeleteAsync(id),
             successMessage: "Alert deleted",
             errorTitle: "Failed to delete alert",
             onSuccess: async () => await LoadAlerts(),

@@ -36,26 +36,6 @@ public class FeedbackService(
         }
     }
 
-    /// <inheritdoc />
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    public async Task<List<Feedback>> GetAllFeedbackAsync()
-    {
-        return await GetAllAsync(isAdmin: true);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    public async Task<Result> DeleteFeedbackAsync(int id, bool hardDelete = false)
-    {
-        return await DeleteAsync(id, hardDelete);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    public async Task<Result> DeleteFeedbacksAsync(IEnumerable<int> ids, bool hardDelete = false)
-    {
-        return await DeleteRangeAsync(ids, hardDelete);
-    }
 
     /// <inheritdoc />
     public async Task<Result> UpdateFeedbackAsync(Feedback feedback)

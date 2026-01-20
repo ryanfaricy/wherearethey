@@ -32,34 +32,9 @@ public interface IDonationService : IAdminDataService<Donation>
     Task<bool> UpdateDonationStatusAsync(string paymentId, string status);
 
     /// <summary>
-    /// Gets a list of all donations.
-    /// </summary>
-    /// <returns>A list of donations.</returns>
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    Task<List<Donation>> GetAllDonationsAsync();
-
-    /// <summary>
     /// Updates a donation's details.
     /// </summary>
     /// <param name="donation">The updated donation.</param>
     /// <returns>The result of the update operation.</returns>
     Task<Result> UpdateDonationAsync(Donation donation);
-
-    /// <summary>
-    /// Deletes a donation.
-    /// </summary>
-    /// <param name="id">The donation identifier.</param>
-    /// <param name="hardDelete">Whether to permanently delete the donation (Admin only).</param>
-    /// <returns>The result of the delete operation.</returns>
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    Task<Result> DeleteDonationAsync(int id, bool hardDelete = false);
-
-    /// <summary>
-    /// Deletes multiple donations.
-    /// </summary>
-    /// <param name="ids">The donation identifiers.</param>
-    /// <param name="hardDelete">Whether to permanently delete the donations (Admin only).</param>
-    /// <returns>The result of the delete operation.</returns>
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false);
 }

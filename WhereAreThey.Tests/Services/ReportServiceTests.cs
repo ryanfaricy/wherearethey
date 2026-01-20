@@ -444,7 +444,7 @@ public class ReportServiceTests : IDisposable
         }
 
         // Act
-        var result = await service.DeleteReportAsync(report.Id);
+        var result = await service.DeleteAsync(report.Id);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -480,7 +480,7 @@ public class ReportServiceTests : IDisposable
         }
 
         // Act
-        var result = await service.DeleteReportAsync(report.Id, hardDelete: true);
+        var result = await service.DeleteAsync(report.Id, hardDelete: true);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -508,7 +508,7 @@ public class ReportServiceTests : IDisposable
         }
 
         // Act - even without hardDelete: true, it should hard delete because it's already soft-deleted
-        var result = await service.DeleteReportAsync(report.Id);
+        var result = await service.DeleteAsync(report.Id);
 
         // Assert
         Assert.True(result.IsSuccess);

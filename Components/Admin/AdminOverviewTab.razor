@@ -141,16 +141,16 @@ else
         {
             var showDeleted = MapState.ShowDeleted;
 
-            var reports = await ReportService.GetAllReportsAsync();
+            var reports = await ReportService.GetAllAsync(isAdmin: true);
             _reportCount = reports.Count(r => showDeleted || r.DeletedAt == null);
             
-            var alerts = await AlertService.GetAllAlertsAsync();
+            var alerts = await AlertService.GetAllAsync(isAdmin: true);
             _activeAlertCount = alerts.Count(a => showDeleted || a.DeletedAt == null);
             
-            var donations = await DonationService.GetAllDonationsAsync();
+            var donations = await DonationService.GetAllAsync(isAdmin: true);
             _donationCount = donations.Count(d => d.IsSuccess() && (showDeleted || d.DeletedAt == null));
             
-            var feedbacks = await FeedbackService.GetAllFeedbackAsync();
+            var feedbacks = await FeedbackService.GetAllAsync(isAdmin: true);
             _feedbackCount = feedbacks.Count(f => showDeleted || f.DeletedAt == null);
             
             var logins = await AdminService.GetRecentLoginAttemptsAsync();

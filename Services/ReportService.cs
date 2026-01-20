@@ -127,26 +127,6 @@ public class ReportService(
             .ToListAsync();
     }
 
-    /// <inheritdoc />
-    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
-    public async Task<List<Report>> GetAllReportsAsync()
-    {
-        return await GetAllAsync(isAdmin: true);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
-    public async Task<Result> DeleteReportAsync(int id, bool hardDelete = false)
-    {
-        return await DeleteAsync(id, hardDelete);
-    }
-
-    /// <inheritdoc />
-    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
-    public async Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false)
-    {
-        return await DeleteRangeAsync(ids, hardDelete);
-    }
 
     /// <inheritdoc />
     public async Task<Result> UpdateReportAsync(Report report)

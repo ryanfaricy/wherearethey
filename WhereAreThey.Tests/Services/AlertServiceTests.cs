@@ -264,7 +264,7 @@ public class AlertServiceTests
         }
 
         // Act
-        var result = await service.DeleteAlertAsync(alertId);
+        var result = await service.DeleteAsync(alertId);
 
         // Assert
         Assert.True(result.IsSuccess);
@@ -619,7 +619,7 @@ public class AlertServiceTests
         }
 
         // Act
-        var result = await service.DeleteAlertAsync(alert.Id);
+        var result = await service.DeleteAsync(alert.Id);
 
         // Assert
         Assert.True(result.IsSuccess);
