@@ -19,6 +19,8 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     [Inject] protected IValidationService ValidationService { get; set; } = null!;
     [Inject] protected ILogger<AdminTabBase<TEntity>> Logger { get; set; } = null!;
     [Inject] protected Microsoft.Extensions.Localization.IStringLocalizer<App> L { get; set; } = null!;
+    [Inject] protected IAdminDataService<TEntity> DataService { get; set; } = null!;
+    [Inject] protected Radzen.DialogService DialogService { get; set; } = null!;
 
     /// <summary>
     /// The list of items currently displayed in the tab.
@@ -144,6 +146,73 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
 
                 StateHasChanged();
             });
+        }
+    }
+
+    /// <summary>
+    /// Deletes a single entity with a confirmation dialog.
+    /// </summary>
+    /// <param name="id">The identifier of the entity to delete.</param>
+    protected virtual async Task DeleteEntity(int id)
+    {
+        var entityName = typeof(TEntity).Name;
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? $"Are you sure you want to PERMANENTLY delete this {entityName.ToLower()}? This cannot be undone." 
+            : $"Are you sure you want to delete this {entityName.ToLower()}?";
+        var title = isHardDelete ? $"Hard Delete {entityName}" : $"Delete {entityName}";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new Radzen.ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            await ValidationService.ExecuteAsync(
+                () => DataService.DeleteAsync(id, MapState.ShowDeleted),
+                successMessage: $"{entityName} deleted",
+                errorTitle: "Delete failed",
+                showHapticFeedback: false,
+                logContext: $"Admin{entityName}Tab.DeleteEntity {id}"
+            );
+        }
+    }
+
+    /// <summary>
+    /// Deletes the currently selected entities with a confirmation dialog.
+    /// </summary>
+    protected virtual async Task DeleteSelected()
+    {
+        if (SelectedItems == null || !SelectedItems.Any()) return;
+
+        var entityName = typeof(TEntity).Name;
+        var count = SelectedItems.Count;
+        var isHardDelete = MapState.ShowDeleted;
+        var message = isHardDelete 
+            ? $"Are you sure you want to PERMANENTLY delete {count} selected {entityName.ToLower()}s? This cannot be undone." 
+            : $"Are you sure you want to delete {count} selected {entityName.ToLower()}s?";
+        var title = isHardDelete ? $"Hard Delete {entityName}s" : $"Delete {entityName}s";
+
+        var confirm = await DialogService.Confirm(message, title, 
+            new Radzen.ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE ALL" : "Yes", CancelButtonText = "No" });
+        
+        if (confirm == true)
+        {
+            var ids = SelectedItems.Select(i => i.Id).ToList();
+            await ValidationService.ExecuteAsync(
+                async () =>
+                {
+                    var result = await DataService.DeleteRangeAsync(ids, MapState.ShowDeleted);
+                    if (result.IsSuccess)
+                    {
+                        SelectedItems = null;
+                    }
+                    return result;
+                },
+                successMessage: $"{count} {entityName.ToLower()}s deleted",
+                errorTitle: "Mass delete failed",
+                showHapticFeedback: false,
+                logContext: $"Admin{entityName}Tab.DeleteSelected {count} items"
+            );
         }
     }
 

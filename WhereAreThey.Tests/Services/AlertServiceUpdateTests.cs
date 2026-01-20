@@ -67,7 +67,7 @@ public class AlertServiceUpdateTests
     private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
         var factoryMock = new Mock<IDbContextFactory<ApplicationDbContext>>();
-        factoryMock.Setup(f => f.CreateDbContextAsync(default)).ReturnsAsync(() => new ApplicationDbContext(options));
+        factoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None)).ReturnsAsync(() => new ApplicationDbContext(options));
         return factoryMock.Object;
     }
 

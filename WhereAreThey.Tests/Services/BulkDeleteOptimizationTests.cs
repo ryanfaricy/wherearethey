@@ -37,7 +37,7 @@ public class BulkDeleteOptimizationTests : IDisposable
             context.Database.EnsureCreated();
         }
 
-        _contextFactoryMock.Setup(f => f.CreateDbContextAsync(default))
+        _contextFactoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(_options));
     }
 

@@ -5,7 +5,7 @@ namespace WhereAreThey.Services.Interfaces;
 /// <summary>
 /// Service for managing user alerts and notifications.
 /// </summary>
-public interface IAlertService
+public interface IAlertService : IAdminDataService<Alert>
 {
     /// <summary>
     /// Creates a new alert for a specific location.
@@ -74,6 +74,7 @@ public interface IAlertService
     /// Gets all alerts for administrative purposes.
     /// </summary>
     /// <returns>A list of all alerts.</returns>
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     Task<List<Alert>> GetAllAlertsAsync();
 
     /// <summary>
@@ -82,6 +83,7 @@ public interface IAlertService
     /// <param name="id">The internal ID of the alert.</param>
     /// <param name="hardDelete">Whether to permanently delete the alert (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     Task<Result> DeleteAlertAsync(int id, bool hardDelete = false);
 
     /// <summary>
@@ -90,6 +92,7 @@ public interface IAlertService
     /// <param name="ids">The internal IDs of the alerts.</param>
     /// <param name="hardDelete">Whether to permanently delete the alerts (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>

@@ -589,6 +589,12 @@
   <data name="DELETED" xml:space="preserve">
     <value>DELETED</value>
   </data>
+  <data name="YES" xml:space="preserve">
+    <value>YES</value>
+  </data>
+  <data name="NO" xml:space="preserve">
+    <value>NO</value>
+  </data>
   <data name="Unnamed_Alert_Zone" xml:space="preserve">
     <value>Unnamed Alert Zone</value>
   </data>

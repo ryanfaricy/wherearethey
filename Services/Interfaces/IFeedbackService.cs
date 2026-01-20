@@ -5,7 +5,7 @@ namespace WhereAreThey.Services.Interfaces;
 /// <summary>
 /// Service for managing user feedback and bug reports.
 /// </summary>
-public interface IFeedbackService
+public interface IFeedbackService : IAdminDataService<Feedback>
 {
     /// <summary>
     /// Creates a new feedback entry.
@@ -18,6 +18,7 @@ public interface IFeedbackService
     /// Gets all feedback entries for administrative review.
     /// </summary>
     /// <returns>A list of all feedback.</returns>
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     Task<List<Feedback>> GetAllFeedbackAsync();
 
     /// <summary>
@@ -26,6 +27,7 @@ public interface IFeedbackService
     /// <param name="id">The internal ID of the feedback entry.</param>
     /// <param name="hardDelete">Whether to permanently delete the feedback (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     Task<Result> DeleteFeedbackAsync(int id, bool hardDelete = false);
 
     /// <summary>
@@ -34,6 +36,7 @@ public interface IFeedbackService
     /// <param name="ids">The internal IDs of the feedback entries.</param>
     /// <param name="hardDelete">Whether to permanently delete the feedback (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     Task<Result> DeleteFeedbacksAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>

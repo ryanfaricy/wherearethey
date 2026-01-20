@@ -1,6 +1,4 @@
 @inherits AdminTabBase<Report>
-@inject IReportService ReportService
-@inject DialogService DialogService
 @inject UserTimeZoneService TimeZoneService
 @inject IJSRuntime JsRuntime
 @using WhereAreThey.Models
@@ -40,7 +38,7 @@
                             <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
                                           Click="@(() => EditReport(report))" Text="EDIT" />
                             <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                          Click="@(() => DeleteReport(report.Id))" Text="DELETE" />
+                                          Click="@(() => DeleteEntity(report.Id))" Text="DELETE" />
                         </RadzenStack>
                     </RadzenStack>
                 </RadzenCard>
@@ -56,7 +54,7 @@ else
 {
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-4">
         <RadzenButton Icon="delete_sweep" ButtonStyle="ButtonStyle.Danger" 
-                      Text="@($"Delete Selected ({(SelectedItems?.Count ?? 0)})")" 
+                      Text="@($"{L["DELETE"]} {L["Selected"]} ({(SelectedItems?.Count ?? 0)})")" 
                       Disabled="@(SelectedItems == null || !SelectedItems.Any())" 
                       Click="@DeleteSelected" />
     </RadzenStack>
@@ -94,7 +92,7 @@ else
             <RadzenDataGridColumn TItem="Report" Property="IsEmergency" Title="Emergency">
                 <Template Context="report">
                     <RadzenBadge BadgeStyle="@(report.IsEmergency ? BadgeStyle.Danger : BadgeStyle.Secondary)" 
-                                 Text="@(report.IsEmergency ? "YES" : "NO")" />
+                                 Text="@(report.IsEmergency ? L["YES"] : L["NO"])" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Report" Property="DeletedAt" Title="Status">
@@ -122,7 +120,7 @@ else
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" 
                                       Click="@(() => EditReport(report))" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                      Click="@(() => DeleteReport(report.Id))" />
+                                      Click="@(() => DeleteEntity(report.Id))" />
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
@@ -138,7 +136,7 @@ else
         await MapState.LoadReportsAsync();
     }
 
-    protected override Task<List<Report>> GetEntitiesAsync() => ReportService.GetAllReportsAsync();
+    protected override Task<List<Report>> GetEntitiesAsync() => DataService.GetAllAsync(isAdmin: true);
 
     private async Task EditReport(IEntity report)
     {
@@ -150,64 +148,6 @@ else
         {
             Grid?.Reload();
             StateHasChanged();
-        }
-    }
-
-    private async Task DeleteReport(int id)
-    {
-        var isHardDelete = MapState.ShowDeleted;
-        var message = isHardDelete 
-            ? "Are you sure you want to PERMANENTLY delete this report? This cannot be undone." 
-            : "Are you sure you want to delete this report?";
-        var title = isHardDelete ? "Hard Delete Report" : "Delete Report";
-
-        var confirm = await DialogService.Confirm(message, title, 
-            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            await ValidationService.ExecuteAsync(
-                () => ReportService.DeleteReportAsync(id, MapState.ShowDeleted),
-                successMessage: "Report deleted",
-                errorTitle: "Delete failed",
-                showHapticFeedback: false,
-                logContext: $"AdminReportsTab.DeleteReport {id}"
-            );
-        }
-    }
-
-    private async Task DeleteSelected()
-    {
-        if (SelectedItems == null || !SelectedItems.Any()) return;
-
-        var count = SelectedItems.Count;
-        var isHardDelete = MapState.ShowDeleted;
-        var message = isHardDelete 
-            ? $"Are you sure you want to PERMANENTLY delete {count} selected reports? This cannot be undone." 
-            : $"Are you sure you want to delete {count} selected reports?";
-        var title = isHardDelete ? "Hard Delete Reports" : "Delete Reports";
-
-        var confirm = await DialogService.Confirm(message, title, 
-            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE ALL" : "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            var ids = SelectedItems.Select(i => i.Id).ToList();
-            await ValidationService.ExecuteAsync(
-                async () =>
-                {
-                    var result = await ReportService.DeleteReportsAsync(ids, MapState.ShowDeleted);
-                    if (result.IsSuccess)
-                    {
-                        SelectedItems = null;
-                    }
-                    return result;
-                },
-                successMessage: $"{count} reports deleted",
-                errorTitle: "Mass delete failed",
-                showHapticFeedback: false,
-                logContext: $"AdminReportsTab.DeleteSelected {count} items"
-            );
         }
     }
 

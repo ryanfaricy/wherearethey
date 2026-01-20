@@ -128,42 +128,24 @@ public class ReportService(
     }
 
     /// <inheritdoc />
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     public async Task<List<Report>> GetAllReportsAsync()
     {
         return await GetAllAsync(isAdmin: true);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     public async Task<Result> DeleteReportAsync(int id, bool hardDelete = false)
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        var report = await context.Reports
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(r => r.Id == id);
-
-        if (report == null)
-        {
-            return Result.Failure("Report not found.");
-        }
-
-        // If it's already deleted and we are an admin, we hard delete it.
-        // OR if hardDelete flag is explicitly set.
-        if (hardDelete || report.DeletedAt != null)
-        {
-            return await HardDeleteAsync(id);
-        }
-        return await SoftDeleteAsync(id);
+        return await DeleteAsync(id, hardDelete);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     public async Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false)
     {
-        if (hardDelete)
-        {
-            return await HardDeleteRangeAsync(ids);
-        }
-        return await SoftDeleteRangeAsync(ids);
+        return await DeleteRangeAsync(ids, hardDelete);
     }
 
     /// <inheritdoc />

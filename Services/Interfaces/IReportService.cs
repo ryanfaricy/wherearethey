@@ -5,7 +5,7 @@ namespace WhereAreThey.Services.Interfaces;
 /// <summary>
 /// Service for managing location reports.
 /// </summary>
-public interface IReportService
+public interface IReportService : IAdminDataService<Report>
 {
     /// <summary>
     /// Creates a new report.
@@ -48,6 +48,7 @@ public interface IReportService
     /// Gets all reports for administrative purposes.
     /// </summary>
     /// <returns>A list of all reports.</returns>
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     Task<List<Report>> GetAllReportsAsync();
 
     /// <summary>
@@ -56,6 +57,7 @@ public interface IReportService
     /// <param name="id">The internal ID of the report.</param>
     /// <param name="hardDelete">Whether to permanently delete the report (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     Task<Result> DeleteReportAsync(int id, bool hardDelete = false);
 
     /// <summary>
@@ -64,6 +66,7 @@ public interface IReportService
     /// <param name="ids">The internal IDs of the reports.</param>
     /// <param name="hardDelete">Whether to permanently delete the reports (Admin only).</param>
     /// <returns>A Result indicating success or failure.</returns>
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     Task<Result> DeleteReportsAsync(IEnumerable<int> ids, bool hardDelete = false);
 
     /// <summary>

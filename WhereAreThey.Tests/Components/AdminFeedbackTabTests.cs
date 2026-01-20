@@ -22,6 +22,7 @@ public class AdminFeedbackTabTests : ComponentTestBase
         var timeZoneService = new UserTimeZoneService(); 
         
         Services.AddSingleton(_feedbackServiceMock.Object);
+        Services.AddSingleton<IAdminDataService<Feedback>>(_feedbackServiceMock.Object);
         Services.AddSingleton(_eventServiceMock.Object);
         Services.AddSingleton(_mapStateServiceMock.Object);
         Services.AddSingleton(_loggerMock.Object);
@@ -41,13 +42,13 @@ public class AdminFeedbackTabTests : ComponentTestBase
             new() { Id = 1, Message = "Test 1", Type = "Bug", CreatedAt = DateTime.UtcNow },
             new() { Id = 2, Message = "Test 2", Type = "Suggestion", CreatedAt = DateTime.UtcNow },
         };
-        _feedbackServiceMock.Setup(s => s.GetAllFeedbackAsync()).ReturnsAsync(feedback);
+        _feedbackServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync(feedback);
 
         // Act
         var cut = Render<AdminFeedbackTab>();
 
         // Assert
-        _feedbackServiceMock.Verify(s => s.GetAllFeedbackAsync(), Times.Once);
+        _feedbackServiceMock.Verify(s => s.GetAllAsync(true), Times.Once);
         Assert.Contains("Test 1", cut.Markup);
         Assert.Contains("Test 2", cut.Markup);
     }
@@ -56,7 +57,7 @@ public class AdminFeedbackTabTests : ComponentTestBase
     public async Task AdminFeedbackTab_ShouldUpdateWhenEntityAdded()
     {
         // Arrange
-        _feedbackServiceMock.Setup(s => s.GetAllFeedbackAsync()).ReturnsAsync(new List<Feedback>());
+        _feedbackServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync(new List<Feedback>());
         var cut = Render<AdminFeedbackTab>();
 
         var newFeedback = new Feedback { Id = 3, Message = "New Feedback", Type = "Bug", CreatedAt = DateTime.UtcNow };

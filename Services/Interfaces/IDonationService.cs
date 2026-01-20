@@ -6,7 +6,7 @@ namespace WhereAreThey.Services.Interfaces;
 /// <summary>
 /// Service for processing and recording donations.
 /// </summary>
-public interface IDonationService
+public interface IDonationService : IAdminDataService<Donation>
 {
     /// <summary>
     /// Processes a payment through Square.
@@ -35,6 +35,7 @@ public interface IDonationService
     /// Gets a list of all donations.
     /// </summary>
     /// <returns>A list of donations.</returns>
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     Task<List<Donation>> GetAllDonationsAsync();
 
     /// <summary>
@@ -50,6 +51,7 @@ public interface IDonationService
     /// <param name="id">The donation identifier.</param>
     /// <param name="hardDelete">Whether to permanently delete the donation (Admin only).</param>
     /// <returns>The result of the delete operation.</returns>
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     Task<Result> DeleteDonationAsync(int id, bool hardDelete = false);
 
     /// <summary>
@@ -58,5 +60,6 @@ public interface IDonationService
     /// <param name="ids">The donation identifiers.</param>
     /// <param name="hardDelete">Whether to permanently delete the donations (Admin only).</param>
     /// <returns>The result of the delete operation.</returns>
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false);
 }

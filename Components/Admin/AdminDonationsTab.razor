@@ -1,7 +1,5 @@
 @inherits AdminTabBase<Donation>
-@inject IDonationService DonationService
 @inject UserTimeZoneService TimeZoneService
-@inject DialogService DialogService
 @using WhereAreThey.Models
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
@@ -22,7 +20,7 @@
                                          Text="@donation.Status" />
                             @if (donation.DeletedAt != null)
                             {
-                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@L["DELETED"]" />
                             }
                         </RadzenStack>
                         
@@ -34,7 +32,7 @@
                                 <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Small" 
                                               Click="@(() => EditDonation(donation))" Text="EDIT" />
                                 <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Size="ButtonSize.Small" 
-                                              Click="@(() => DeleteDonation(donation.Id))" Text="DELETE" />
+                                              Click="@(() => DeleteEntity(donation.Id))" Text="DELETE" />
                             </RadzenStack>
                         </RadzenStack>
                         
@@ -53,7 +51,7 @@ else
 {
     <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Class="rz-mb-4">
         <RadzenButton Icon="delete_sweep" ButtonStyle="ButtonStyle.Danger" 
-                      Text="@($"Delete Selected ({(SelectedItems?.Count ?? 0)})")" 
+                      Text="@($"{L["DELETE"]} {L["Selected"]} ({(SelectedItems?.Count ?? 0)})")" 
                       Disabled="@(SelectedItems == null || !SelectedItems.Any())" 
                       Click="@DeleteSelected" />
     </RadzenStack>
@@ -96,11 +94,11 @@ else
                 <Template Context="donation">
                     @if (donation.DeletedAt != null)
                     {
-                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="YES" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@L["YES"]" />
                     }
                     else
                     {
-                        <RadzenText TextStyle="TextStyle.Caption">NO</RadzenText>
+                        <RadzenText TextStyle="TextStyle.Caption">@L["NO"]</RadzenText>
                     }
                 </Template>
             </RadzenDataGridColumn>
@@ -110,7 +108,7 @@ else
                         <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
                                       Click="@(() => EditDonation(donation))" @onclick:stopPropagation="true" />
                         <RadzenButton Icon="delete" ButtonStyle="ButtonStyle.Danger" Variant="Variant.Flat" Size="ButtonSize.ExtraSmall" 
-                                      Click="@(() => DeleteDonation(donation.Id))" @onclick:stopPropagation="true" />
+                                      Click="@(() => DeleteEntity(donation.Id))" @onclick:stopPropagation="true" />
                     </RadzenStack>
                 </Template>
             </RadzenDataGridColumn>
@@ -119,7 +117,7 @@ else
 }
 
 @code {
-    protected override Task<List<Donation>> GetEntitiesAsync() => DonationService.GetAllDonationsAsync();
+    protected override Task<List<Donation>> GetEntitiesAsync() => DataService.GetAllAsync(isAdmin: true);
 
     private async Task EditDonation(Donation donation)
     {
@@ -131,64 +129,6 @@ else
         {
             // Event listener will update the list automatically, but we can force a reload if needed.
             StateHasChanged();
-        }
-    }
-
-    private async Task DeleteDonation(int id)
-    {
-        var isHardDelete = MapState.ShowDeleted;
-        var message = isHardDelete 
-            ? "Are you sure you want to PERMANENTLY delete this donation? This cannot be undone." 
-            : "Are you sure you want to delete this donation?";
-        var title = isHardDelete ? "Hard Delete Donation" : "Delete Donation";
-
-        var confirm = await DialogService.Confirm(message, title, 
-            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE" : "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            await ValidationService.ExecuteAsync(
-                () => DonationService.DeleteDonationAsync(id, MapState.ShowDeleted),
-                successMessage: "Donation deleted",
-                errorTitle: "Delete failed",
-                showHapticFeedback: false,
-                logContext: $"AdminDonationsTab.DeleteDonation {id}"
-            );
-        }
-    }
-
-    private async Task DeleteSelected()
-    {
-        if (SelectedItems == null || !SelectedItems.Any()) return;
-
-        var count = SelectedItems.Count;
-        var isHardDelete = MapState.ShowDeleted;
-        var message = isHardDelete 
-            ? $"Are you sure you want to PERMANENTLY delete {count} selected donations? This cannot be undone." 
-            : $"Are you sure you want to delete {count} selected donations?";
-        var title = isHardDelete ? "Hard Delete Donations" : "Delete Donations";
-
-        var confirm = await DialogService.Confirm(message, title, 
-            new ConfirmOptions { OkButtonText = isHardDelete ? "PERMANENTLY DELETE ALL" : "Yes", CancelButtonText = "No" });
-        
-        if (confirm == true)
-        {
-            var ids = SelectedItems.Select(i => i.Id).ToList();
-            await ValidationService.ExecuteAsync(
-                async () =>
-                {
-                    var result = await DonationService.DeleteDonationsAsync(ids, MapState.ShowDeleted);
-                    if (result.IsSuccess)
-                    {
-                        SelectedItems = null;
-                    }
-                    return result;
-                },
-                successMessage: $"{count} donations deleted",
-                errorTitle: "Mass delete failed",
-                showHapticFeedback: false,
-                logContext: $"AdminDonationsTab.DeleteSelected {count} items"
-            );
         }
     }
 }

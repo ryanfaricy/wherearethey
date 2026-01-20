@@ -144,7 +144,7 @@
 
         if (confirmed == true)
         {
-            var result = await ReportService.DeleteReportAsync(report.Id, MapState.ShowDeleted);
+            var result = await ReportService.DeleteAsync(report.Id, MapState.ShowDeleted);
             if (result.IsSuccess)
             {
                 Reports.Remove(report);
@@ -167,7 +167,7 @@
 
         if (confirmed == true)
         {
-            await AlertService.DeleteAlertAsync(alert.Id, MapState.ShowDeleted);
+            await AlertService.DeleteAsync(alert.Id, MapState.ShowDeleted);
             Alerts.Remove(alert);
             _alertDeleted = true;
             NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");

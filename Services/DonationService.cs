@@ -87,6 +87,7 @@ public class DonationService(
 
     // Admin methods
     /// <inheritdoc />
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     public async Task<List<Donation>> GetAllDonationsAsync()
     {
         return await GetAllAsync(isAdmin: true);
@@ -105,33 +106,16 @@ public class DonationService(
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     public async Task<Result> DeleteDonationAsync(int id, bool hardDelete = false)
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        var donation = await context.Donations
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(d => d.Id == id);
-
-        if (donation == null)
-        {
-            return Result.Failure("Donation not found.");
-        }
-
-        if (hardDelete || donation.DeletedAt != null)
-        {
-            return await HardDeleteAsync(id);
-        }
-        return await SoftDeleteAsync(id);
+        return await DeleteAsync(id, hardDelete);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     public async Task<Result> DeleteDonationsAsync(IEnumerable<int> ids, bool hardDelete = false)
     {
-        if (hardDelete)
-        {
-            return await HardDeleteRangeAsync(ids);
-        }
-        return await SoftDeleteRangeAsync(ids);
+        return await DeleteRangeAsync(ids, hardDelete);
     }
 }

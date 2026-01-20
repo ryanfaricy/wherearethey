@@ -255,42 +255,24 @@ public class AlertService(
 
     // Admin methods
     /// <inheritdoc />
+    [Obsolete("Use GetAllAsync(isAdmin: true) instead")]
     public virtual async Task<List<Alert>> GetAllAlertsAsync()
     {
         return await GetAllAsync(isAdmin: true);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteAsync(id, hardDelete) instead")]
     public async Task<Result> DeleteAlertAsync(int id, bool hardDelete = false)
     {
-        await using var context = await ContextFactory.CreateDbContextAsync();
-        var alert = await context.Alerts
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id == id);
-
-        if (alert == null)
-        {
-            return Result.Failure("Alert not found.");
-        }
-
-        // If it's already deleted and we are an admin, we hard delete it.
-        // OR if hardDelete flag is explicitly set.
-        if (hardDelete || alert.DeletedAt != null)
-        {
-            return await HardDeleteAsync(id);
-        }
-        return await SoftDeleteAsync(id);
+        return await DeleteAsync(id, hardDelete);
     }
 
     /// <inheritdoc />
+    [Obsolete("Use DeleteRangeAsync(ids, hardDelete) instead")]
     public async Task<Result> DeleteAlertsAsync(IEnumerable<int> ids, bool hardDelete = false)
     {
-        if (hardDelete)
-        {
-            return await HardDeleteRangeAsync(ids);
-        }
-        return await SoftDeleteRangeAsync(ids);
+        return await DeleteRangeAsync(ids, hardDelete);
     }
 
     /// <inheritdoc />

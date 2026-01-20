@@ -12,18 +12,14 @@ namespace WhereAreThey.Services;
 /// <typeparam name="T">The type of entity managed by the service.</typeparam>
 public abstract class BaseService<T>(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IEventService eventService) 
+    IEventService eventService) : IAdminDataService<T>
     where T : class, IAuditable
 {
     protected readonly IDbContextFactory<ApplicationDbContext> ContextFactory = contextFactory;
     protected readonly IEventService EventService = eventService;
 
-    /// <summary>
-    /// Gets all entities of type <typeparamref name="T"/>.
-    /// </summary>
-    /// <param name="isAdmin">If true, ignores global query filters to include deleted items.</param>
-    /// <returns>A list of entities ordered by creation date descending.</returns>
-    protected virtual async Task<List<T>> GetAllAsync(bool isAdmin = false)
+    /// <inheritdoc />
+    public virtual async Task<List<T>> GetAllAsync(bool isAdmin = false)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var query = context.Set<T>().AsTracking();
@@ -34,6 +30,46 @@ public abstract class BaseService<T>(
         }
 
         return await query.OrderByDescending(e => e.CreatedAt).ToListAsync();
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result> DeleteAsync(int id, bool hardDelete = false)
+    {
+        try
+        {
+            await using var context = await ContextFactory.CreateDbContextAsync();
+            var entity = await context.Set<T>()
+                .IgnoreQueryFilters()
+                .AsNoTracking()
+                .FirstOrDefaultAsync(e => e.Id == id);
+
+            if (entity == null)
+            {
+                return Result.Failure($"{typeof(T).Name} not found.");
+            }
+
+            // If it's already deleted and we are an admin, we hard delete it.
+            // OR if hardDelete flag is explicitly set.
+            if (hardDelete || entity.DeletedAt != null)
+            {
+                return await HardDeleteAsync(id);
+            }
+            return await SoftDeleteAsync(id);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure($"An error occurred while deleting the {typeof(T).Name.ToLower()}: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc />
+    public virtual async Task<Result> DeleteRangeAsync(IEnumerable<int> ids, bool hardDelete = false)
+    {
+        if (hardDelete)
+        {
+            return await HardDeleteRangeAsync(ids);
+        }
+        return await SoftDeleteRangeAsync(ids);
     }
 
     /// <summary>
