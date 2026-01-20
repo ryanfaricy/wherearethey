@@ -42,6 +42,14 @@
             {
                 <ReportCard Report="@report" OnClick="@(() => OnReportCardClick(report))" MaxMessageLength="100" />
             }
+
+            @if (MapState.Reports.Count > _recentLimit)
+            {
+                <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Class="rz-p-2">
+                    <RadzenButton Text="@L["LIST_MORE"]" Click="@(() => { _recentLimit += 20; UpdateRecentReports(); })" 
+                                  ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" Style="width: 100%" />
+                </RadzenStack>
+            }
         }
         else
         {
@@ -57,6 +65,7 @@
     private bool _showAdminShortcut;
     private bool _isAdmin;
     private List<Report> _recentReports = [];
+    private int _recentLimit = 20;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,27 +112,22 @@
     {
         InvokeAsync(() =>
         {
-            SortReports();
-            StateHasChanged();
+            UpdateRecentReports();
         });
     }
 
     private void UpdateRecentReports()
     {
-        _recentReports = MapState.Reports.Take(20).ToList();
-        SortReports();
-        StateHasChanged();
-    }
-
-    private void SortReports()
-    {
         var location = ClientLocation.LastKnownPosition;
+        IEnumerable<Report> query = MapState.Reports;
+        
         if (location != null)
         {
-            _recentReports = _recentReports
-                .OrderBy(r => GeoUtils.CalculateDistance(location.Coords.Latitude, location.Coords.Longitude, r.Latitude, r.Longitude))
-                .ToList();
+            query = query.OrderBy(r => GeoUtils.CalculateDistance(location.Coords.Latitude, location.Coords.Longitude, r.Latitude, r.Longitude));
         }
+        
+        _recentReports = query.Take(_recentLimit).ToList();
+        StateHasChanged();
     }
 
     private async Task OnReportCardClick(Report report)

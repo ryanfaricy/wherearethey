@@ -622,4 +622,7 @@
   <data name="Push_Save_Failed" xml:space="preserve">
     <value>Error al guardar la suscripción push: {0}</value>
   </data>
+  <data name="LIST_MORE" xml:space="preserve">
+    <value>VER MÁS</value>
+  </data>
 </root>

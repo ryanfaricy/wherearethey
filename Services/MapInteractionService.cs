@@ -25,14 +25,21 @@ public class MapInteractionService(
         var mapState = await mapService.GetMapStateAsync();
         var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick, mapState?.RadiusKm);
 
-        var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm);
+        var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm)
+            .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
+            .ToList();
         
-        // Ensure the explicitly requested report is included, even if coordinates are slightly off
-        if (reportId.HasValue && !nearbyReports.Any(r => r.Id == reportId.Value))
+        // Ensure the explicitly requested report is included and at the top
+        if (reportId.HasValue)
         {
-            var report = stateService.Reports.FirstOrDefault(r => r.Id == reportId.Value);
+            var report = nearbyReports.FirstOrDefault(r => r.Id == reportId.Value) 
+                         ?? stateService.Reports.FirstOrDefault(r => r.Id == reportId.Value);
             if (report != null)
             {
+                if (nearbyReports.Any(r => r.Id == report.Id))
+                {
+                    nearbyReports.RemoveAll(r => r.Id == report.Id);
+                }
                 nearbyReports.Insert(0, report);
             }
         }
@@ -53,12 +60,22 @@ public class MapInteractionService(
                 .ToList();
         }
 
-        // Ensure the explicitly requested alert is included
-        if (alertId.HasValue && !nearbyAlerts.Any(a => a.Id == alertId.Value))
+        // Sort alerts by distance
+        nearbyAlerts = nearbyAlerts
+            .OrderBy(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude))
+            .ToList();
+
+        // Ensure the explicitly requested alert is included and at the top
+        if (alertId.HasValue)
         {
-            var alert = stateService.Alerts.FirstOrDefault(a => a.Id == alertId.Value);
+            var alert = nearbyAlerts.FirstOrDefault(a => a.Id == alertId.Value)
+                        ?? stateService.Alerts.FirstOrDefault(a => a.Id == alertId.Value);
             if (alert != null)
             {
+                if (nearbyAlerts.Any(a => a.Id == alert.Id))
+                {
+                    nearbyAlerts.RemoveAll(a => a.Id == alert.Id);
+                }
                 nearbyAlerts.Insert(0, alert);
             }
         }
@@ -74,21 +91,17 @@ public class MapInteractionService(
         var selectedReportId = reportId;
         var selectedAlertId = alertId;
 
-        // If no explicit ID but we have nearby items, pick the closest
+        // If no explicit ID but we have nearby items, pick the closest (which are now at index 0)
         if (!selectedReportId.HasValue && !selectedAlertId.HasValue)
         {
             if (nearbyReports.Any())
             {
-                selectedReportId = nearbyReports
-                    .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
-                    .First().Id;
+                selectedReportId = nearbyReports.First().Id;
             }
             
             if (nearbyAlerts.Any())
             {
-                selectedAlertId = nearbyAlerts
-                    .OrderBy(a => GeoUtils.CalculateDistance(lat, lng, a.Latitude, a.Longitude))
-                    .First().Id;
+                selectedAlertId = nearbyAlerts.First().Id;
             }
         }
 

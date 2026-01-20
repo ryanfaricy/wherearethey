@@ -646,4 +646,7 @@
   <data name="Push_Save_Failed" xml:space="preserve">
     <value>Failed to save push subscription: {0}</value>
   </data>
+  <data name="LIST_MORE" xml:space="preserve">
+    <value>LIST MORE</value>
+  </data>
 </root>

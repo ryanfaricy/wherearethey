@@ -3,6 +3,7 @@
 @using WhereAreThey.Services
 @using WhereAreThey.Services.Interfaces
 @using WhereAreThey.Helpers
+@using Microsoft.Extensions.Localization
 @inject DialogService DialogService
 @inject IAlertService AlertService
 @inject IReportService ReportService
@@ -12,6 +13,7 @@
 @inject IAdminService AdminService
 @inject IMapStateService MapState
 @inject IJSRuntime JsRuntime
+@inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1rem" Class="rz-p-4">
     <RadzenText TextStyle="TextStyle.H6" Style="color: var(--rz-primary-darker); font-weight: bold;">Area Details</RadzenText>
@@ -40,7 +42,7 @@
                         </RadzenText>
 
                         <div style="max-height: 400px; overflow-y: auto;">
-                            <RadzenDataList Data="@(_isAdmin ? Reports : Reports.Take(15))" TItem="Report" AllowPaging="true" PageSize="10">
+                            <RadzenDataList Data="@Reports.Take(_reportLimit)" TItem="Report">
                                 <Template Context="r">
                                     <ReportCard Report="@r" 
                                                 IsSelected="@(r.Id == SelectedReportId)"
@@ -52,9 +54,12 @@
                             </RadzenDataList>
                         </div>
 
-                        @if (!_isAdmin && Reports.Count > 15)
+                        @if (Reports.Count > _reportLimit)
                         {
-                            <RadzenText TextStyle="TextStyle.Caption" Class="rz-text-align-center opacity-75">+ @(Reports.Count - 15) more reports</RadzenText>
+                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.Center" Class="rz-mt-2">
+                                <RadzenButton Text="@L["LIST_MORE"]" Click="@(() => _reportLimit += 20)" 
+                                              ButtonStyle="ButtonStyle.Light" Size="ButtonSize.ExtraSmall" Variant="Variant.Flat" />
+                            </RadzenStack>
                         }
                     }
                     else
@@ -68,7 +73,7 @@
                     @if (Alerts.Any())
                     {
                         <div style="max-height: 300px; overflow-y: auto;">
-                            <RadzenDataList Data="@Alerts" TItem="Alert" AllowPaging="true" PageSize="10">
+                            <RadzenDataList Data="@Alerts" TItem="Alert">
                                 <Template Context="a">
                                     <AlertCard Alert="@a" 
                                                IsSelected="@(a.Id == SelectedAlertId)"
@@ -103,6 +108,7 @@
     private bool _isAdmin;
     private string? _userIdentifier;
     private int _selectedTabIndex;
+    private int _reportLimit = 20;
 
     private int EmergencyCount => Reports.Count(r => r.IsEmergency);
     private DateTime MostRecentCreatedAt => Reports.Any() ? Reports.Max(r => r.CreatedAt) : DateTime.MinValue;
