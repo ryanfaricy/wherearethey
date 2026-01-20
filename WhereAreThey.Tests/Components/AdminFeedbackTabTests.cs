@@ -7,7 +7,6 @@ using WhereAreThey.Components.Admin;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
-using Xunit;
 
 namespace WhereAreThey.Tests.Components;
 

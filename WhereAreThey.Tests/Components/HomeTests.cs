@@ -1,9 +1,7 @@
 using Bunit;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Radzen;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;

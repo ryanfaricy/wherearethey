@@ -6,7 +6,6 @@ using WhereAreThey.Models;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Options;
 using FluentValidation;
 using Hangfire;
 

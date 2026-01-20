@@ -2,7 +2,6 @@ using FluentValidation;
 using Hangfire;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;

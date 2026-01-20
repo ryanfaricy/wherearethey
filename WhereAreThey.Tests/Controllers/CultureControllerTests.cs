@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Mvc;
 using WhereAreThey.Controllers;
-using Xunit;
 
 namespace WhereAreThey.Tests.Controllers;
 

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using WebPush;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -48,7 +47,7 @@ public class WebPushService(
             }
             catch (WebPushException ex)
             {
-                if (ex.StatusCode == System.Net.HttpStatusCode.Gone || ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+                if (ex.StatusCode is System.Net.HttpStatusCode.Gone or System.Net.HttpStatusCode.NotFound)
                 {
                     logger.LogInformation("Push subscription {Id} is no longer valid. Deleting.", sub.Id);
                     await DeleteSubscriptionAsync(sub.Id);
