@@ -336,11 +336,33 @@ public class AlertService(
                 return Result.Failure(validationResult);
             }
 
-            // ReSharper disable once InvertIf
+            await using var context = await ContextFactory.CreateDbContextAsync();
+
             if (!string.IsNullOrEmpty(email))
             {
+                var emailHash = HashUtils.ComputeHash(email);
                 alert.EncryptedEmail = _protector.Protect(email);
-                alert.EmailHash = HashUtils.ComputeHash(email);
+                alert.EmailHash = emailHash;
+
+                var isVerified = await context.EmailVerifications
+                    .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
+
+                if (alert.UsePush)
+                {
+                    isVerified = true;
+                }
+
+                alert.IsVerified = isVerified;
+
+                if (!isVerified)
+                {
+                    var baseUrl = baseUrlProvider.GetBaseUrl();
+                    backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
+                }
+            }
+            else if (alert.UsePush)
+            {
+                alert.IsVerified = true;
             }
 
             return await UpdateAsync(alert);

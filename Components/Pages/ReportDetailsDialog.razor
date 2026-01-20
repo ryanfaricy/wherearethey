@@ -169,16 +169,31 @@
         }
     }
 
-    private async Task EditAlert(IEntity alert)
+    private async Task EditAlert(Alert alert)
     {
-        var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
-            new Dictionary<string, object> { { "Alert", alert } },
-            DialogConfigs.Admin);
-
-        if (result == true)
+        if (_isAdmin)
         {
-            _alertDeleted = true; // Trigger refresh on close
-            DialogService.Close(true); // Close details and refresh map
+            var result = await DialogService.OpenAsync<AdminEditAlertDialog>($"Edit Alert {alert.Id}", 
+                new Dictionary<string, object> { { "Alert", alert } },
+                DialogConfigs.Admin);
+
+            if (result == true)
+            {
+                _alertDeleted = true; // Trigger refresh on close
+                DialogService.Close(true); // Close details and refresh map
+            }
+        }
+        else
+        {
+            var result = await DialogService.OpenAsync<UserEditAlertDialog>("Edit Alert", 
+                new Dictionary<string, object> { { "Alert", alert } },
+                DialogConfigs.UserEdit);
+
+            if (result == true)
+            {
+                _alertDeleted = true; // Trigger refresh on close
+                DialogService.Close(true); // Close details and refresh map
+            }
         }
     }
 

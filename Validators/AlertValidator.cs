@@ -27,6 +27,10 @@ public class AlertValidator : AbstractValidator<Alert>
             .WithMessage(l["Links_Error"]);
 
         RuleFor(x => x)
+            .Must(x => x.UseEmail || x.UsePush)
+            .WithMessage(l["Select_At_Least_One_Notification"]);
+
+        RuleFor(x => x)
             .CustomAsync(async (alert, context, cancellation) =>
             {
                 var settings = await settingsService.GetSettingsAsync();

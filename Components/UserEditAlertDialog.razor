@@ -1,0 +1,134 @@
+@using WhereAreThey.Models
+@using WhereAreThey.Services.Interfaces
+@inject IAlertService AlertService
+@inject IGeocodingService GeocodingService
+@inject IValidationService ValidationService
+@inject DialogService DialogService
+
+<RadzenTemplateForm Data="@_alert" Submit="@((Alert _) => Save())">
+    <RadzenStack Gap="1rem" Class="rz-p-4">
+        <RadzenFormField Text="Address" Variant="Variant.Outlined" Style="width: 100%;">
+            <AddressSearch @bind-SearchValue="@_approxAddress" 
+                           OnResultSelected="@OnAddressResultSelected"
+                           Placeholder="Search for a location..." 
+                           CustomStyle="width: 100%;"
+                           InputType="search" />
+        </RadzenFormField>
+
+        <RadzenFormField Text="Radius (km)" Variant="Variant.Outlined" Component="RadiusKm" Style="width: 100%;">
+            <ChildContent>
+                <RadzenNumeric Name="RadiusKm" @bind-Value="@_alert.RadiusKm" TValue="double" 
+                               Min="0.1m" Max="160.9m" ShowUpDown="true" 
+                               Step="0.5m" Style="width: 100%;" />
+            </ChildContent>
+            <Helper>
+                <RadzenNumericRangeValidator Component="RadiusKm" Min="0.1" Max="160.9" Text="Radius must be between 0.1 and 160.9 km" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Alert Name (optional)" Variant="Variant.Outlined" Component="AlertMessage" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="AlertMessage" @bind-Value="@_alert.Message" Style="width: 100%;" 
+                               Placeholder="e.g. Near My House" MaxLength="100" />
+            </ChildContent>
+            <Helper>
+                <RadzenLengthValidator Component="AlertMessage" Max="100" Text="Message too long" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenFormField Text="Email Address" Variant="Variant.Outlined" Component="Email" Style="width: 100%;">
+            <ChildContent>
+                <RadzenTextBox Name="Email" @bind-Value="@_email" Style="width: 100%;" 
+                               Placeholder="user@example.com" />
+            </ChildContent>
+            <Helper>
+                <RadzenRequiredValidator Component="Email" Text="Email is required" />
+                <RadzenEmailValidator Component="Email" Text="Invalid email" />
+            </Helper>
+        </RadzenFormField>
+
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="1rem" Wrap="FlexWrap.Wrap">
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="@_alert.UseEmail" TValue="bool" Name="UseEmail" />
+                <RadzenLabel Text="Use Email" Component="UseEmail" />
+            </RadzenStack>
+            <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
+                <RadzenCheckBox @bind-Value="@_alert.UsePush" TValue="bool" Name="UsePush" />
+                <RadzenLabel Text="Use Web Push" Component="UsePush" />
+            </RadzenStack>
+        </RadzenStack>
+
+        <RadzenStack Orientation="Orientation.Horizontal" Gap="1rem" Class="rz-mt-4" JustifyContent="JustifyContent.End">
+            <RadzenButton Text="CANCEL" Click="@(() => DialogService.Close(false))" ButtonStyle="ButtonStyle.Light" />
+            <RadzenButton ButtonType="ButtonType.Submit" Text="SAVE CHANGES" 
+                          Icon="save" ButtonStyle="ButtonStyle.Primary" 
+                          IsBusy="@_isSubmitting" />
+        </RadzenStack>
+    </RadzenStack>
+</RadzenTemplateForm>
+
+@code {
+    [Parameter] public Alert Alert { get; set; } = new();
+
+    private Alert _alert = new();
+    private string _email = "";
+    private bool _isSubmitting;
+    private string? _approxAddress;
+
+    protected override void OnInitialized()
+    {
+        // Create a copy to edit
+        _alert = new Alert
+        {
+            Id = Alert.Id,
+            ExternalId = Alert.ExternalId,
+            Latitude = Alert.Latitude,
+            Longitude = Alert.Longitude,
+            RadiusKm = Alert.RadiusKm,
+            Message = Alert.Message,
+            EncryptedEmail = Alert.EncryptedEmail,
+            EmailHash = Alert.EmailHash,
+            IsVerified = Alert.IsVerified,
+            UseEmail = Alert.UseEmail,
+            UsePush = Alert.UsePush,
+            DeletedAt = Alert.DeletedAt,
+            CreatedAt = Alert.CreatedAt,
+            UserIdentifier = Alert.UserIdentifier,
+        };
+
+        _email = AlertService.DecryptEmail(Alert.EncryptedEmail) ?? "";
+        
+        _ = LoadAddress();
+    }
+
+    private async Task LoadAddress()
+    {
+        _approxAddress = await GeocodingService.ReverseGeocodeAsync(_alert.Latitude, _alert.Longitude);
+        StateHasChanged();
+    }
+
+    private void OnAddressResultSelected(GeocodingResult result)
+    {
+        _alert.Latitude = result.Latitude;
+        _alert.Longitude = result.Longitude;
+    }
+
+    private async Task Save()
+    {
+        _isSubmitting = true;
+
+        var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
+        var newEmail = _email != originalEmail ? _email : null;
+
+        await ValidationService.ExecuteAsync(
+            async () => await AlertService.UpdateAlertAsync(_alert, newEmail),
+            successMessage: "Alert updated successfully",
+            errorTitle: "Update failed",
+            onSuccess: async () => DialogService.Close(true),
+            showHapticFeedback: false,
+            logContext: "UserEditAlertDialog.Save"
+        );
+
+        _isSubmitting = false;
+    }
+}

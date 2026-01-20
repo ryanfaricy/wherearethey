@@ -385,6 +385,9 @@
   <data name="Delete_Alert_Confirm" xml:space="preserve">
     <value>¿Está seguro de que desea eliminar esta zona de alerta?</value>
   </data>
+  <data name="Edit_Alert" xml:space="preserve">
+    <value>Editar Alerta</value>
+  </data>
   <data name="Delete_Alert" xml:space="preserve">
     <value>Eliminar Alerta</value>
   </data>

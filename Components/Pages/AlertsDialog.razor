@@ -119,6 +119,7 @@
                                        IsSelected="@(alert.Id == SelectedAlertId)"
                                        IsMobile="@_isMobile"
                                        OnShowOnMap="@(() => ShowOnMap(alert))"
+                                       OnEdit="@(() => EditAlert(alert))"
                                        OnDeactivate="@(() => DeactivateAlert(alert.Id))" />
                         </Template>
                     </RadzenDataList>
@@ -348,6 +349,18 @@
         );
 
         _isSubmitting = false;
+    }
+
+    private async Task EditAlert(Alert alert)
+    {
+        var result = await DialogService.OpenAsync<UserEditAlertDialog>(L["Edit_Alert"], 
+            new Dictionary<string, object> { { "Alert", alert } },
+            DialogConfigs.UserEdit);
+
+        if (result == true)
+        {
+            await LoadAlerts();
+        }
     }
 
     private async Task DeactivateAlert(int id)

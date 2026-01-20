@@ -48,4 +48,19 @@ public static class DialogConfigs
             return options;
         }
     }
+
+    /// <summary>
+    /// User edit dialog configuration with draggable and resizable.
+    /// </summary>
+    public static DialogOptions UserEdit
+    {
+        get
+        {
+            var options = Default;
+            options.Resizable = true;
+            options.Draggable = true;
+                
+            return options;
+        }
+    }
 }

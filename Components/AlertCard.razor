@@ -42,7 +42,7 @@
         <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem" 
                      JustifyContent="@(IsMobile ? JustifyContent.End : JustifyContent.Start)" 
                      Class="@(IsMobile ? "rz-w-100" : "")">
-            @if (IsAdmin && OnEdit.HasDelegate)
+            @if (OnEdit.HasDelegate)
             {
                 <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Primary" Size="ButtonSize.Small" Variant="Variant.Flat"
                               Click="@OnEdit" ToolTip="@L["EDIT"]" />
