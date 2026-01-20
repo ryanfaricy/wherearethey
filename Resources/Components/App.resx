@@ -631,4 +631,16 @@
   <data name="Select_At_Least_One_Notification" xml:space="preserve">
     <value>Please select at least one notification method (Email or Push).</value>
   </data>
+  <data name="Push_Permission_Dismissed" xml:space="preserve">
+    <value>Push notification permission was dismissed. Please allow notifications to receive alerts.</value>
+  </data>
+  <data name="Push_Server_Not_Configured" xml:space="preserve">
+    <value>Push notification server is not configured.</value>
+  </data>
+  <data name="Push_Subscription_Failed" xml:space="preserve">
+    <value>Failed to subscribe to push notifications. Please try again later.</value>
+  </data>
+  <data name="Push_Save_Failed" xml:space="preserve">
+    <value>Failed to save push subscription: {0}</value>
+  </data>
 </root>

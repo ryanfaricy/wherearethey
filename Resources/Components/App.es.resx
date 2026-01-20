@@ -607,4 +607,16 @@
   <data name="Select_At_Least_One_Notification" xml:space="preserve">
     <value>Seleccione al menos un método de notificación (correo electrónico o push).</value>
   </data>
+  <data name="Push_Permission_Dismissed" xml:space="preserve">
+    <value>Se descartó el permiso de notificaciones push. Por favor, permite las notificaciones para recibir alertas.</value>
+  </data>
+  <data name="Push_Server_Not_Configured" xml:space="preserve">
+    <value>El servidor de notificaciones push no está configurado.</value>
+  </data>
+  <data name="Push_Subscription_Failed" xml:space="preserve">
+    <value>Error al suscribirse a las notificaciones push. Por favor, inténtalo de nuevo más tarde.</value>
+  </data>
+  <data name="Push_Save_Failed" xml:space="preserve">
+    <value>Error al guardar la suscripción push: {0}</value>
+  </data>
 </root>

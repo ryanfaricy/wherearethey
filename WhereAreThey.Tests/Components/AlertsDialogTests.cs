@@ -5,6 +5,7 @@ using Moq;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
+using Radzen;
 using Radzen.Blazor;
 
 namespace WhereAreThey.Tests.Components;
@@ -15,6 +16,7 @@ public class AlertsDialogTests : ComponentTestBase
     private readonly Mock<IAlertService> _alertServiceMock;
     private readonly Mock<IClientStorageService> _storageServiceMock;
     private readonly Mock<IPwaService> _pwaServiceMock;
+    private readonly Mock<ISettingsService> _settingsServiceMock;
 
     public AlertsDialogTests()
     {
@@ -22,18 +24,18 @@ public class AlertsDialogTests : ComponentTestBase
         var geocodingServiceMock = new Mock<IGeocodingService>();
         _storageServiceMock = new Mock<IClientStorageService>();
         var hapticServiceMock = new Mock<IHapticFeedbackService>();
-        var settingsServiceMock = new Mock<ISettingsService>();
+        _settingsServiceMock = new Mock<ISettingsService>();
         _pwaServiceMock = new Mock<IPwaService>();
 
         Services.AddSingleton(_alertServiceMock.Object);
         Services.AddSingleton(geocodingServiceMock.Object);
         Services.AddSingleton(_storageServiceMock.Object);
         Services.AddSingleton(hapticServiceMock.Object);
-        Services.AddSingleton(settingsServiceMock.Object);
+        Services.AddSingleton(_settingsServiceMock.Object);
         Services.AddSingleton(_pwaServiceMock.Object);
         Services.AddSingleton(new HttpClient());
 
-        settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
         _storageServiceMock.Setup(s => s.GetUserIdentifierAsync()).ReturnsAsync("test-user");
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync([]);
@@ -64,7 +66,6 @@ public class AlertsDialogTests : ComponentTestBase
         var cut = Render<AlertsDialog>();
 
         // Assert
-        // Better way to find it is by name if possible, or just check all textboxes
         var textboxes = cut.FindComponents<RadzenTextBox>();
         var emailTextBox = textboxes.FirstOrDefault(t => t.Instance.Name == "Email");
         
@@ -114,5 +115,65 @@ public class AlertsDialogTests : ComponentTestBase
         
         Assert.NotNull(usePushSwitch);
         Assert.True(usePushSwitch.Instance.Disabled);
+    }
+
+    [Fact]
+    public async Task AlertsDialog_ShowsNotification_WhenPushPermissionDismissed()
+    {
+        // Arrange
+        _pwaServiceMock.Setup(s => s.RequestPushPermissionAsync()).ReturnsAsync("default");
+        
+        var notificationService = Services.GetRequiredService<NotificationService>();
+
+        var cut = Render<AlertsDialog>();
+        var enableButton = cut.FindComponents<RadzenButton>().FirstOrDefault(b => b.Instance.Text == "Enable_Browser_Push");
+        Assert.NotNull(enableButton);
+
+        // Act
+        await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
+
+        // Assert
+        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Permission_Dismissed" && m.Severity == NotificationSeverity.Info);
+    }
+
+    [Fact]
+    public async Task AlertsDialog_ShowsNotification_WhenVapidKeyMissing()
+    {
+        // Arrange
+        _pwaServiceMock.Setup(s => s.RequestPushPermissionAsync()).ReturnsAsync("granted");
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { VapidPublicKey = "" });
+        
+        var notificationService = Services.GetRequiredService<NotificationService>();
+
+        var cut = Render<AlertsDialog>();
+        var enableButton = cut.FindComponents<RadzenButton>().FirstOrDefault(b => b.Instance.Text == "Enable_Browser_Push");
+        Assert.NotNull(enableButton);
+
+        // Act
+        await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
+
+        // Assert
+        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Server_Not_Configured" && m.Severity == NotificationSeverity.Warning);
+    }
+
+    [Fact]
+    public async Task AlertsDialog_ShowsNotification_WhenSubscriptionFails()
+    {
+        // Arrange
+        _pwaServiceMock.Setup(s => s.RequestPushPermissionAsync()).ReturnsAsync("granted");
+        _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { VapidPublicKey = "valid-key" });
+        _pwaServiceMock.Setup(s => s.SubscribeUserAsync(It.IsAny<string>())).ReturnsAsync((PushSubscriptionModel)null!);
+        
+        var notificationService = Services.GetRequiredService<NotificationService>();
+
+        var cut = Render<AlertsDialog>();
+        var enableButton = cut.FindComponents<RadzenButton>().FirstOrDefault(b => b.Instance.Text == "Enable_Browser_Push");
+        Assert.NotNull(enableButton);
+
+        // Act
+        await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
+
+        // Assert
+        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Subscription_Failed" && m.Severity == NotificationSeverity.Error);
     }
 }

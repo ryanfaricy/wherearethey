@@ -257,7 +257,7 @@
                 var settings = await SettingsService.GetSettingsAsync();
                 if (string.IsNullOrEmpty(settings.VapidPublicKey))
                 {
-                    NotificationService.Notify(NotificationSeverity.Warning, L["Notifications"], "Push server not configured.");
+                    NotificationService.Notify(NotificationSeverity.Warning, L["Notifications"], L["Push_Server_Not_Configured"]);
                     return;
                 }
 
@@ -282,13 +282,25 @@
                     }
                     else
                     {
-                        NotificationService.Notify(NotificationSeverity.Error, L["Notifications"], "Failed to save subscription: " + result.Error);
+                        NotificationService.Notify(NotificationSeverity.Error, L["Notifications"], string.Format(L["Push_Save_Failed"], result.Error));
                     }
+                }
+                else
+                {
+                    NotificationService.Notify(NotificationSeverity.Error, L["Notifications"], L["Push_Subscription_Failed"]);
                 }
             }
             else if (permission == "denied")
             {
                 NotificationService.Notify(NotificationSeverity.Error, L["Notifications"], L["Push_Permission_Denied"]);
+            }
+            else if (permission == "default")
+            {
+                NotificationService.Notify(NotificationSeverity.Info, L["Notifications"], L["Push_Permission_Dismissed"]);
+            }
+            else
+            {
+                NotificationService.Notify(NotificationSeverity.Warning, L["Notifications"], L["Browser_Push_Unsupported"]);
             }
         }
         catch (Exception ex)
