@@ -366,7 +366,7 @@ public class MapStateServiceTests : IDisposable
     public async Task MapStateService_ShouldBeThreadSafe_WhenHandlingManyEvents()
     {
         // Arrange
-        await _service.InitializeAsync("test-user", false);
+        await _service.InitializeAsync("test-user");
 
         var numberOfReports = 100; // Reduced for performance in regular suite
         var tasks = new List<Task>();

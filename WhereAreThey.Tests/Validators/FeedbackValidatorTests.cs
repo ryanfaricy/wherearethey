@@ -24,7 +24,7 @@ public class FeedbackValidatorTests
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
 
-        _contextFactoryMock.Setup(f => f.CreateDbContextAsync(default))
+        _contextFactoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
             .ReturnsAsync(() => new ApplicationDbContext(_options));
 
         _localizerMock.Setup(l => l[It.IsAny<string>()]).Returns((string name) => new LocalizedString(name, name));

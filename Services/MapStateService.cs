@@ -16,7 +16,7 @@ public class MapStateService : IMapStateService
     private readonly IMapService _mapService;
     private readonly ISettingsService _settingsService;
     private readonly Timer? _pruneTimer;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private string? _userIdentifier;
     private bool _isAdmin;
     private int? _lastLoadedHours;
@@ -106,7 +106,7 @@ public class MapStateService : IMapStateService
         _eventService.OnSettingsChanged += HandleSettingsChanged;
 
         _ = InitializeSettingsAsync();
-        _pruneTimer = new Timer(_ => _ = PruneOldReportsAsync(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+        _pruneTimer = new Timer(x => _ = PruneOldReportsAsync(), null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
 
     private void HandleSettingsChanged(SystemSettings settings)
@@ -351,16 +351,27 @@ public class MapStateService : IMapStateService
             }
         }
 
-        if (changed)
+        if (!changed)
         {
-            if (MapInitialized)
-            {
-                if (callRemoveOnMap) _ = _mapService.RemoveSingleReportAsync(report.Id);
-                else if (callAddOnMap) _ = _mapService.AddSingleReportAsync(report);
-                else if (callUpdateOnMap) _ = UpdateReportOnMap(report);
-            }
-            OnStateChanged?.Invoke();
+            return;
         }
+
+        if (MapInitialized)
+        {
+            if (callRemoveOnMap)
+            {
+                _ = _mapService.RemoveSingleReportAsync(report.Id);
+            }
+            else if (callAddOnMap)
+            {
+                _ = _mapService.AddSingleReportAsync(report);
+            }
+            else if (callUpdateOnMap)
+            {
+                _ = UpdateReportOnMap(report);
+            }
+        }
+        OnStateChanged?.Invoke();
     }
 
     private async Task UpdateReportOnMap(Report report)
@@ -386,8 +397,15 @@ public class MapStateService : IMapStateService
             var index = Alerts.FindIndex(a => a.Id == alert.Id);
             if (shouldShow)
             {
-                if (index != -1) Alerts[index] = alert;
-                else Alerts.Insert(0, alert);
+                if (index != -1)
+                {
+                    Alerts[index] = alert;
+                }
+                else
+                {
+                    Alerts.Insert(0, alert);
+                }
+
                 changed = true;
             }
             else if (index != -1)

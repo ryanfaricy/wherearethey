@@ -374,12 +374,12 @@ public class MapInteractionServiceTests : BunitContext
 
         _mapServiceMock.Setup(m => m.GetZoomLevelAsync()).ReturnsAsync(15.0);
         _stateServiceMock.Setup(s => s.FindNearbyReports(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
-            .Returns(new List<Report>()); // None nearby
+            .Returns([]); // None nearby
         _stateServiceMock.Setup(s => s.FindNearbyAlerts(It.IsAny<double>(), It.IsAny<double>(), It.IsAny<double>()))
-            .Returns(new List<Alert>()); // None nearby
+            .Returns([]); // None nearby
         _stateServiceMock.Setup(s => s.Alerts).Returns([]);
         _stateServiceMock.Setup(s => s.Reports)
-            .Returns(new List<Report> { explicitReport });
+            .Returns([explicitReport]);
         
         _adminServiceMock.Setup(a => a.IsAdminAsync()).ReturnsAsync(false);
 

@@ -4,7 +4,6 @@
 @using WhereAreThey.Services.Interfaces
 @inject IReportService ReportService
 @inject IGeocodingService GeocodingService
-@inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IMapService MapService
 @inject IValidationService ValidationService
@@ -155,7 +154,10 @@
 
     private async Task SubmitReport()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
 
         _isSubmitting = true;
 
@@ -166,7 +168,11 @@
             onSuccess: async () =>
             {
                 await ClearDraft();
-                if (Report.IsEmergency) await HapticFeedbackService.VibrateEmergencyAsync();
+                if (Report.IsEmergency)
+                {
+                    await HapticFeedbackService.VibrateEmergencyAsync();
+                }
+
                 DialogService.Close(true);
             },
             logContext: $"SubmitReport at {Report.Latitude}, {Report.Longitude}"

@@ -48,7 +48,10 @@ public class ReportProcessingService(
             {
                 foreach (var alert in matchingAlerts)
                 {
-                    if (!alert.UseEmail) continue;
+                    if (!alert.UseEmail)
+                    {
+                        continue;
+                    }
 
                     var emailAddress = alertService.DecryptEmail(alert.EncryptedEmail);
                     if (!string.IsNullOrEmpty(emailAddress))

@@ -6,7 +6,6 @@
 @inject ISettingsService SettingsService
 @inject IAdminPasskeyService PasskeyService
 @inject IValidationService ValidationService
-@inject NotificationService NotificationService
 @inject IJSRuntime JsRuntime
 @inject ILogger<AdminSettingsTab> Logger
 
@@ -185,7 +184,10 @@
 
     private async Task RegisterPasskey()
     {
-        if (_module == null) return;
+        if (_module == null)
+        {
+            return;
+        }
 
         await ValidationService.ExecuteAsync(
             async () =>

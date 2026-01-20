@@ -29,16 +29,36 @@ public abstract class ComponentTestBase : BunitContext
             .Returns<Func<Task<Result>>, string, string, Func<Task>, Func<string, Task>, bool, bool, bool, string>(async (op, _, _, success, failure, _, _, haptic, _) => {
                 var result = await op();
                 if (result.IsSuccess) {
-                    if (success != null) await success();
-                    if (haptic) {
-                        var hapticService = Services.GetService<IHapticFeedbackService>();
-                        if (hapticService != null) await hapticService.VibrateSuccessAsync();
+                    if (success != null)
+                    {
+                        await success();
+                    }
+
+                    if (!haptic)
+                    {
+                        return result.IsSuccess;
+                    }
+
+                    var hapticService = Services.GetService<IHapticFeedbackService>();
+                    if (hapticService != null)
+                    {
+                        await hapticService.VibrateSuccessAsync();
                     }
                 } else {
-                    if (failure != null) await failure(result.Error ?? "Error");
-                    if (haptic) {
-                        var hapticService = Services.GetService<IHapticFeedbackService>();
-                        if (hapticService != null) await hapticService.VibrateErrorAsync();
+                    if (failure != null)
+                    {
+                        await failure(result.Error ?? "Error");
+                    }
+
+                    if (!haptic)
+                    {
+                        return result.IsSuccess;
+                    }
+
+                    var hapticService = Services.GetService<IHapticFeedbackService>();
+                    if (hapticService != null)
+                    {
+                        await hapticService.VibrateErrorAsync();
                     }
                 }
                 return result.IsSuccess;

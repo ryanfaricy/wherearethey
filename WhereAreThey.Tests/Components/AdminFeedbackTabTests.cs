@@ -16,17 +16,16 @@ public class AdminFeedbackTabTests : ComponentTestBase
     private readonly Mock<IEventService> _eventServiceMock = new();
     private readonly Mock<IMapStateService> _mapStateServiceMock = new();
     private readonly Mock<ILogger<AdminFeedbackTab>> _loggerMock = new();
-    private readonly UserTimeZoneService _timeZoneService;
 
     public AdminFeedbackTabTests()
     {
-        _timeZoneService = new UserTimeZoneService(); 
+        var timeZoneService = new UserTimeZoneService(); 
         
         Services.AddSingleton(_feedbackServiceMock.Object);
         Services.AddSingleton(_eventServiceMock.Object);
         Services.AddSingleton(_mapStateServiceMock.Object);
         Services.AddSingleton(_loggerMock.Object);
-        Services.AddSingleton(_timeZoneService);
+        Services.AddSingleton(timeZoneService);
         Services.AddScoped<DialogService>();
         Services.AddScoped<NotificationService>();
         Services.AddScoped<TooltipService>();
@@ -39,8 +38,8 @@ public class AdminFeedbackTabTests : ComponentTestBase
         // Arrange
         var feedback = new List<Feedback>
         {
-            new Feedback { Id = 1, Message = "Test 1", Type = "Bug", CreatedAt = DateTime.UtcNow },
-            new Feedback { Id = 2, Message = "Test 2", Type = "Suggestion", CreatedAt = DateTime.UtcNow },
+            new() { Id = 1, Message = "Test 1", Type = "Bug", CreatedAt = DateTime.UtcNow },
+            new() { Id = 2, Message = "Test 2", Type = "Suggestion", CreatedAt = DateTime.UtcNow },
         };
         _feedbackServiceMock.Setup(s => s.GetAllFeedbackAsync()).ReturnsAsync(feedback);
 

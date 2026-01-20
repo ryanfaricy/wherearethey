@@ -299,9 +299,12 @@
 
     private async Task CreateAlert()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
 
-        if (!_newAlert.UseEmail && !_newAlert.UsePush)
+        if (_newAlert is { UseEmail: false, UsePush: false })
         {
             NotificationService.Notify(NotificationSeverity.Warning, L["Notifications"], L["Select_At_Least_One_Notification"]);
             return;

@@ -2,7 +2,6 @@
 @using WhereAreThey.Services.Interfaces
 @inject IFeedbackService FeedbackService
 @inject IValidationService ValidationService
-@inject NotificationService NotificationService
 @inject DialogService DialogService
 
 <RadzenTemplateForm Data="@_feedback" Submit="@((Feedback _) => Save())">

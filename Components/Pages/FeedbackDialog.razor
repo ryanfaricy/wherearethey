@@ -2,13 +2,10 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
 @inject IFeedbackService FeedbackService
-@inject NotificationService NotificationService
 @inject DialogService DialogService
-@inject IHapticFeedbackService HapticFeedbackService
 @inject IValidationService ValidationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
-@inject ILogger<FeedbackDialog> Logger
 @inject IStringLocalizer<App> L
 
 <RadzenStack Gap="1.5rem" Class="rz-p-4">
@@ -69,7 +66,10 @@
 
     private async Task SubmitFeedback()
     {
-        if (_isSubmitting) return;
+        if (_isSubmitting)
+        {
+            return;
+        }
 
         // Easter egg to get to admin login screen
         if (_feedback.Type == L["Feature"] && _feedback.Message?.Trim().Equals("let me into cp", StringComparison.OrdinalIgnoreCase) == true)

@@ -170,7 +170,10 @@
 
     private async Task LoginWithPasskey()
     {
-        if (_module == null) return;
+        if (_module == null)
+        {
+            return;
+        }
 
         await ValidationService.ExecuteAsync(
             async () =>

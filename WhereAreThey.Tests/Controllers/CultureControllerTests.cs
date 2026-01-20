@@ -25,7 +25,7 @@ public class CultureControllerTests
         var result = controller.Set(culture, redirectUri);
 
         // Assert
-        var cookieHeader = httpContext.Response.Headers["Set-Cookie"].ToString();
+        var cookieHeader = httpContext.Response.Headers.SetCookie.ToString();
         Assert.Contains(CookieRequestCultureProvider.DefaultCookieName, cookieHeader);
         Assert.Contains(culture, cookieHeader);
 
