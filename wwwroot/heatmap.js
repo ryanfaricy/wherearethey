@@ -585,7 +585,7 @@ window.selectReport = function(reportId) {
     });
 };
 
-window.focusReport = function(reportId, triggerClick = true, retryCount = 0) {
+window.focusReport = async function(reportId, triggerClick = true, retryCount = 0) {
     selectedReportId = reportId;
     const marker = reportMarkers.find(m => m.reportId === reportId);
     if (marker) {
@@ -602,9 +602,10 @@ window.focusReport = function(reportId, triggerClick = true, retryCount = 0) {
             onMarkerClick({ target: marker, latlng: marker.getLatLng() });
         }
         window.selectReport(reportId);
-    } else if (retryCount < 10) {
+    } else if (retryCount < 20) {
         // Intermittent issue: marker might not be ready yet during initial load
-        setTimeout(() => window.focusReport(reportId, triggerClick, retryCount + 1), 100);
+        await new Promise(resolve => setTimeout(resolve, 100));
+        return await window.focusReport(reportId, triggerClick, retryCount + 1);
     }
 };
 

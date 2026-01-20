@@ -341,6 +341,20 @@ public class MapStateServiceTests : IDisposable
         Assert.False(_service.ShowDeleted);
     }
 
+    [Fact]
+    public void MapInitialized_Setter_UpdatesMap_WithoutFittingBounds()
+    {
+        // Arrange
+        var reports = new List<Report> { new() { Id = 1, CreatedAt = DateTime.UtcNow, Latitude = 0, Longitude = 0 } };
+        _service.Reports.AddRange(reports);
+
+        // Act
+        _service.MapInitialized = true;
+
+        // Assert
+        _mapServiceMock.Verify(m => m.UpdateHeatMapAsync(reports, false), Times.Once);
+    }
+
     public void Dispose()
     {
         GC.SuppressFinalize(this);

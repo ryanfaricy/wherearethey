@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Components.Pages;
+using WhereAreThey.Components.Home;
 using WhereAreThey.Models;
 using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Services;
@@ -241,5 +242,41 @@ public class HomeTests : ComponentTestBase
 
         // Assert
         _hapticFeedbackServiceMock.Verify(h => h.VibrateUpdateAsync(), Times.Once);
+    }
+
+    [Fact]
+    public async Task Home_DoesNotCenterOnUser_WhenDeepLinkedToReport()
+    {
+        // Arrange
+        var report = new Report { Id = 123, Latitude = 51.5074, Longitude = -0.1278 }; // London
+        _reportServiceMock.Setup(s => s.GetReportByIdAsync(123)).ReturnsAsync(Result<Report>.Success(report));
+        
+        var navState = new MapNavigationState
+        {
+            FocusReportId = 123,
+            InitialLat = 51.5074,
+            InitialLng = -0.1278
+        };
+        _mapNavigationManagerMock.Setup(m => m.GetNavigationStateAsync()).ReturnsAsync(navState);
+        
+        // Start with no location
+        _clientLocationServiceMock.SetupGet(l => l.LastKnownPosition).Returns((GeolocationPosition)null!);
+
+        var cut = Render<Home>();
+        await cut.InvokeAsync(() => Task.Delay(100));
+
+        // Act: Simulate location update (New York)
+        var nyLocation = new GeolocationPosition 
+        { 
+            Coords = new GeolocationCoordinates { Latitude = 40.7128, Longitude = -74.0060 } 
+        };
+        
+        // Trigger OnLocationUpdated via HeatMap's JSInvokable method
+        var heatMap = cut.FindComponent<HeatMap>();
+        await cut.InvokeAsync(() => heatMap.Instance.OnLocationUpdatedInternal(nyLocation));
+
+        // Assert: SetMapViewAsync should NOT have been called for NY location 
+        // because we are focusing a report.
+        _mapServiceMock.Verify(m => m.SetMapViewAsync(40.7128, -74.0060, It.IsAny<double?>()), Times.Never);
     }
 }

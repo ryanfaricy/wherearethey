@@ -78,7 +78,12 @@
             DELETE = L["DELETE"].Value,
         };
 
-        await MapService.InitMapAsync(ElementId, InitialLat, InitialLng, Reports, _objRef, Alerts!, jsTranslations, IsAdmin);
+        // Ensure we use the latest reports and alerts from state, as the Parameters might be stale
+        // during the first render after LoadReportsAsync/LoadAlertsAsync.
+        var initialReports = (Reports == null || Reports.Count == 0) ? MapState.Reports : Reports;
+        var initialAlerts = (Alerts == null || Alerts.Count == 0) ? MapState.Alerts : Alerts;
+
+        await MapService.InitMapAsync(ElementId, InitialLat, InitialLng, initialReports, _objRef, initialAlerts, jsTranslations, IsAdmin);
         _initialized = true;
         MapState.MapInitialized = true;
     }

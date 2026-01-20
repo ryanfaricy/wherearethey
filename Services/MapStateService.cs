@@ -46,8 +46,10 @@ public class MapStateService : IMapStateService
                 return;
             }
 
-            // When the map initializes, ensure it has the latest data
-            _ = _mapService.UpdateHeatMapAsync(Reports);
+            // When the map initializes, ensure it has the latest data.
+            // We set shouldFitBounds to false because the map was just initialized 
+            // with either a specific view or it already called fitBounds in InitMapAsync.
+            _ = _mapService.UpdateHeatMapAsync(Reports, shouldFitBounds: false);
             if (Alerts?.Any() == true)
             {
                 _ = _mapService.UpdateAlertsAsync(Alerts);

@@ -87,6 +87,7 @@
     private double _initialLng;
     private bool _alertCreationMode;
     private int? _lastHandledFocusReportId;
+    private bool _hasExplicitInitialView;
 
     private async Task OnHeatMapClick(HeatMap.MapClickEventArgs args)
     {
@@ -227,6 +228,8 @@
 
             // Check query parameters
             var navState = await MapNavigationManager.GetNavigationStateAsync();
+            _hasExplicitInitialView = navState.FocusReportId.HasValue || navState.InitialLat.HasValue || navState.InitialLng.HasValue;
+
             if (navState.SelectedHours.HasValue)
             {
                 _selectedHours = navState.SelectedHours.Value;
@@ -300,6 +303,11 @@
         if (MapState.MapInitialized)
         {
             var navState = await MapNavigationManager.GetNavigationStateAsync();
+            if (navState.FocusReportId.HasValue || navState.InitialLat.HasValue || navState.InitialLng.HasValue)
+            {
+                _hasExplicitInitialView = true;
+            }
+
             if (navState.FocusReportId.HasValue)
             {
                 if (navState.FocusReportId != _lastHandledFocusReportId)
@@ -526,7 +534,7 @@
                 position.Coords.Longitude, 
                 position.Coords.Accuracy);
 
-            if (_followMe || isFirstLocation)
+            if (_followMe || (isFirstLocation && !_hasExplicitInitialView))
             {
                 await MapService.SetMapViewAsync(position.Coords.Latitude, position.Coords.Longitude);
                 
