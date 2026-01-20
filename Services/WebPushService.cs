@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using WebPush;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -11,6 +12,8 @@ public class WebPushService(
     ISettingsService settingsService,
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IBaseUrlProvider baseUrlProvider,
+    IOptions<EmailOptions> emailOptions,
+    IHttpClientFactory httpClientFactory,
     ILogger<WebPushService> logger) : IWebPushService
 {
     public async Task SendNotificationAsync(WebPushSubscription subscription, string title, string message, string? url = null)
@@ -27,9 +30,12 @@ public class WebPushService(
             return;
         }
 
-        var baseUrl = baseUrlProvider.GetBaseUrl();
-        var vapidDetails = new VapidDetails(baseUrl, settings.VapidPublicKey, settings.VapidPrivateKey);
-        var webPushClient = new WebPushClient();
+        var contactEmail = emailOptions.Value.FromEmail;
+        var subject = !string.IsNullOrEmpty(contactEmail) ? $"mailto:{contactEmail}" : baseUrlProvider.GetBaseUrl();
+        var vapidDetails = new VapidDetails(subject, settings.VapidPublicKey, settings.VapidPrivateKey);
+        
+        using var httpClient = httpClientFactory.CreateClient();
+        var webPushClient = new WebPushClient(httpClient);
 
         var payload = JsonSerializer.Serialize(new
         {
@@ -54,12 +60,12 @@ public class WebPushService(
                 }
                 else
                 {
-                    logger.LogError(ex, "Error sending push notification to subscription {Id}", sub.Id);
+                    logger.LogError(ex, "Error sending push notification to subscription {Id}. Subject: {Subject}", sub.Id, subject);
                 }
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Unexpected error sending push notification to subscription {Id}", sub.Id);
+                logger.LogError(ex, "Unexpected error sending push notification to subscription {Id}. Subject: {Subject}", sub.Id, subject);
             }
         }
     }
