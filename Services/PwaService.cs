@@ -20,4 +20,19 @@ public class PwaService(IJSRuntime jsRuntime) : IPwaService
     {
         return await jsRuntime.InvokeAsync<PushSubscriptionModel?>("pwaFunctions.subscribeUser", vapidPublicKey);
     }
+    
+    public async Task<bool> IsPwaAsync()
+    {
+        return await jsRuntime.InvokeAsync<bool>("pwaFunctions.isPwa");
+    }
+
+    public async Task<bool> IsIOSAsync()
+    {
+        return await jsRuntime.InvokeAsync<bool>("pwaFunctions.isIOS");
+    }
+
+    public async Task<bool> IsPushSupportedAsync()
+    {
+        return await jsRuntime.InvokeAsync<bool>("pwaFunctions.isPushSupported");
+    }
 }

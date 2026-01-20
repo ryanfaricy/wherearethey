@@ -87,18 +87,19 @@
                             </RadzenFormField>
 
                             <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0.5rem">
-                                <RadzenSwitch @bind-Value="@_newAlert.UsePush" Name="UsePush" Disabled="@(!_isSubscribedToPush)" />
+                                <RadzenSwitch @bind-Value="@_newAlert.UsePush" Name="UsePush" Disabled="@(!_isSubscribedToPush || (_isIOS && !_isPwa))" />
                                 <RadzenLabel Text="@L["Send_Push_Notification"]" Component="UsePush" />
-                                @if (!_isSubscribedToPush && _isPushSupported)
+                                @if (!_isSubscribedToPush && _isPushSupported && !(_isIOS && !_isPwa))
                                 {
                                     <RadzenButton Text="@L["Enable_Browser_Push"]" Size="ButtonSize.ExtraSmall" Click="@SubscribeToPush" 
                                                   ButtonStyle="ButtonStyle.Secondary" Variant="Variant.Flat" />
                                 }
                             </RadzenStack>
-                            @if (!_isPushSupported)
+                            @if (!_isPushSupported || (_isIOS && !_isPwa))
                             {
                                 <RadzenText TextStyle="TextStyle.Caption" Style="color: var(--rz-text-secondary-color);">
-                                    <RadzenIcon Icon="info" Size="12px" Style="vertical-align: middle;" /> @L["Browser_Push_Unsupported"]
+                                    <RadzenIcon Icon="info" Size="12px" Style="vertical-align: middle;" /> 
+                                    @((_isIOS && !_isPwa) ? L["Push_Requires_PWA"] : L["Browser_Push_Unsupported"])
                                 </RadzenText>
                             }
                         </RadzenStack>
@@ -152,6 +153,8 @@
     private string? _approxAddress;
     private bool _isPushSupported = true;
     private bool _isSubscribedToPush;
+    private bool _isIOS;
+    private bool _isPwa;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -216,6 +219,10 @@
     {
         try
         {
+            _isIOS = await PwaService.IsIOSAsync();
+            _isPwa = await PwaService.IsPwaAsync();
+            _isPushSupported = await PwaService.IsPushSupportedAsync();
+
             var subscription = await PwaService.GetPushSubscriptionAsync();
             _isSubscribedToPush = subscription != null;
             if (_isSubscribedToPush && subscription != null)

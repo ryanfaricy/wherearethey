@@ -607,6 +607,9 @@
   <data name="Browser_Push_Unsupported" xml:space="preserve">
     <value>Browser does not support push notifications.</value>
   </data>
+  <data name="Push_Requires_PWA" xml:space="preserve">
+    <value>Push notifications on iOS require the app to be added to your Home Screen (Share -> Add to Home Screen).</value>
+  </data>
   <data name="Enable_Browser_Push" xml:space="preserve">
     <value>ENABLE BROWSER NOTIFICATIONS</value>
   </data>

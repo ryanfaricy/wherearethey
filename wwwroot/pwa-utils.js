@@ -43,6 +43,9 @@ window.pwaFunctions = {
     isIOS: function() {
         return (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) && !window.MSStream;
     },
+    isPushSupported: function() {
+        return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+    },
     requestPushPermission: async function() {
         if (!('Notification' in window)) {
             return 'unsupported';

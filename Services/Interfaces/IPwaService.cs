@@ -7,4 +7,7 @@ public interface IPwaService
     Task<string> RequestPushPermissionAsync();
     Task<PushSubscriptionModel?> GetPushSubscriptionAsync();
     Task<PushSubscriptionModel?> SubscribeUserAsync(string vapidPublicKey);
+    Task<bool> IsPwaAsync();
+    Task<bool> IsIOSAsync();
+    Task<bool> IsPushSupportedAsync();
 }

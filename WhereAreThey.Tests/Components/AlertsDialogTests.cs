@@ -14,6 +14,7 @@ public class AlertsDialogTests : ComponentTestBase
 {
     private readonly Mock<IAlertService> _alertServiceMock;
     private readonly Mock<IClientStorageService> _storageServiceMock;
+    private readonly Mock<IPwaService> _pwaServiceMock;
 
     public AlertsDialogTests()
     {
@@ -22,20 +23,24 @@ public class AlertsDialogTests : ComponentTestBase
         _storageServiceMock = new Mock<IClientStorageService>();
         var hapticServiceMock = new Mock<IHapticFeedbackService>();
         var settingsServiceMock = new Mock<ISettingsService>();
-        var pwaServiceMock = new Mock<IPwaService>();
+        _pwaServiceMock = new Mock<IPwaService>();
 
         Services.AddSingleton(_alertServiceMock.Object);
         Services.AddSingleton(geocodingServiceMock.Object);
         Services.AddSingleton(_storageServiceMock.Object);
         Services.AddSingleton(hapticServiceMock.Object);
         Services.AddSingleton(settingsServiceMock.Object);
-        Services.AddSingleton(pwaServiceMock.Object);
+        Services.AddSingleton(_pwaServiceMock.Object);
         Services.AddSingleton(new HttpClient());
 
         settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
         _storageServiceMock.Setup(s => s.GetUserIdentifierAsync()).ReturnsAsync("test-user");
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>()))
             .ReturnsAsync([]);
+            
+        _pwaServiceMock.Setup(s => s.IsPushSupportedAsync()).ReturnsAsync(true);
+        _pwaServiceMock.Setup(s => s.IsIOSAsync()).ReturnsAsync(false);
+        _pwaServiceMock.Setup(s => s.IsPwaAsync()).ReturnsAsync(false);
 
         ValidationServiceMock.Setup(v => v.ExecuteAsync(It.IsAny<Func<Task<Result<Alert>>>>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<Func<Alert, Task>>(), It.IsAny<Func<string, Task>>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<string>()))
             .Returns<Func<Task<Result<Alert>>>, string, string, Func<Alert, Task>, Func<string, Task>, bool, bool, bool, string>(async (op, _, _, success, _, _, _, _, _) => {
@@ -90,5 +95,24 @@ public class AlertsDialogTests : ComponentTestBase
 
         // Assert
         _storageServiceMock.Verify(s => s.SetItemAsync("last-alert-email", "new@example.com"), Times.Once);
+    }
+
+    [Fact]
+    public void AlertsDialog_DisablesPushToggle_OnIOS_WhenNotPWA()
+    {
+        // Arrange
+        _pwaServiceMock.Setup(s => s.IsIOSAsync()).ReturnsAsync(true);
+        _pwaServiceMock.Setup(s => s.IsPwaAsync()).ReturnsAsync(false);
+        _pwaServiceMock.Setup(s => s.IsPushSupportedAsync()).ReturnsAsync(true);
+
+        // Act
+        var cut = Render<AlertsDialog>();
+
+        // Assert
+        var switches = cut.FindComponents<RadzenSwitch>();
+        var usePushSwitch = switches.FirstOrDefault(s => s.Instance.Name == "UsePush");
+        
+        Assert.NotNull(usePushSwitch);
+        Assert.True(usePushSwitch.Instance.Disabled);
     }
 }

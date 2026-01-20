@@ -583,6 +583,9 @@
   <data name="Browser_Push_Unsupported" xml:space="preserve">
     <value>El navegador no admite notificaciones push.</value>
   </data>
+  <data name="Push_Requires_PWA" xml:space="preserve">
+    <value>Las notificaciones push en iOS requieren que la aplicación se agregue a su pantalla de inicio (Compartir -> Agregar a la pantalla de inicio).</value>
+  </data>
   <data name="Enable_Browser_Push" xml:space="preserve">
     <value>ACTIVAR NOTIFICACIONES DEL NAVEGADOR</value>
   </data>
