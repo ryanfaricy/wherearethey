@@ -19,15 +19,18 @@ public class ReportProcessingService(
     /// <inheritdoc />
     public async Task ProcessReportAsync(Report report, string? baseUrl = null)
     {
+        logger.LogInformation("Processing report {ReportId} for alerts. (Emergency: {IsEmergency})", report.Id, report.IsEmergency);
         try
         {
             var settings = await settingsService.GetSettingsAsync();
 
             var matchingAlerts = await alertService.GetMatchingAlertsAsync(report.Latitude, report.Longitude);
+            logger.LogDebug("Found {Count} matching alerts for report {ReportId}", matchingAlerts.Count, report.Id);
             
             var actualBaseUrl = (baseUrl ?? baseUrlProvider.GetBaseUrl()).TrimEnd('/');
 
             // Approximate address
+            logger.LogTrace("Attempting to geocode location for report {ReportId}", report.Id);
             var address = await geocodingService.ReverseGeocodeAsync(report.Latitude, report.Longitude);
 
             // Determine local time
@@ -46,6 +49,7 @@ public class ReportProcessingService(
             var emails = new List<Email>();
             if (settings.EmailNotificationsEnabled)
             {
+                logger.LogDebug("Processing email notifications for {Count} alerts", matchingAlerts.Count);
                 foreach (var alert in matchingAlerts)
                 {
                     if (!alert.UseEmail)
@@ -83,8 +87,13 @@ public class ReportProcessingService(
 
                 if (emails.Count > 0)
                 {
+                    logger.LogInformation("Sending {Count} alert emails for report {ReportId}", emails.Count, report.Id);
                     await emailService.SendEmailsAsync(emails);
                 }
+            }
+            else
+            {
+                logger.LogInformation("Email notifications are disabled in settings. Skipping for report {ReportId}", report.Id);
             }
 
             // Web Push Notifications
@@ -98,6 +107,7 @@ public class ReportProcessingService(
 
                 if (pushRecipients.Count > 0)
                 {
+                    logger.LogInformation("Processing web push notifications for {Count} unique recipients", pushRecipients.Count);
                     var pushTitle = report.IsEmergency ? "🚨 EMERGENCY REPORT" : "New Report in Your Area";
                     var pushMessage = string.IsNullOrEmpty(report.Message) 
                         ? $"New report at {address ?? report.LocationDisplay()}" 
@@ -108,10 +118,15 @@ public class ReportProcessingService(
                         var subscriptions = await alertService.GetPushSubscriptionsAsync(userId);
                         if (subscriptions.Count > 0)
                         {
+                            logger.LogDebug("Sending push notification to user {UserIdentifier} ({Count} subscriptions)", userId, subscriptions.Count);
                             await webPushService.SendNotificationsAsync(subscriptions, pushTitle, pushMessage, heatMapUrl);
                         }
                     }
                 }
+            }
+            else
+            {
+                logger.LogInformation("Push notifications are disabled in settings. Skipping for report {ReportId}", report.Id);
             }
         }
         catch (Exception ex)

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -25,7 +26,7 @@ public class EmailTemplateServiceTests
         var templatePath = Path.Combine(_tempPath, "Resources", "EmailTemplates", "TestTemplate.liquid");
         await File.WriteAllTextAsync(templatePath, templateContent);
 
-        var service = new EmailTemplateService(_envMock.Object);
+        var service = new EmailTemplateService(_envMock.Object, NullLogger<EmailTemplateService>.Instance);
         var model = new { Name = "John", Place = "Earth" };
 
         // Act
@@ -43,7 +44,7 @@ public class EmailTemplateServiceTests
         var templatePath = Path.Combine(_tempPath, "Resources", "EmailTemplates", "AlertEmailTest.liquid");
         await File.WriteAllTextAsync(templatePath, templateContent);
 
-        var service = new EmailTemplateService(_envMock.Object);
+        var service = new EmailTemplateService(_envMock.Object, NullLogger<EmailTemplateService>.Instance);
         var model = new AlertEmailViewModel
         {
             AlertMessage = "Test Alert",
@@ -69,7 +70,7 @@ public class EmailTemplateServiceTests
     public async Task RenderTemplateAsync_ShouldThrowIfTemplateNotFound()
     {
         // Arrange
-        var service = new EmailTemplateService(_envMock.Object);
+        var service = new EmailTemplateService(_envMock.Object, NullLogger<EmailTemplateService>.Instance);
 
         // Act & Assert
         await Assert.ThrowsAsync<FileNotFoundException>(() => service.RenderTemplateAsync("NonExistent", new { }));

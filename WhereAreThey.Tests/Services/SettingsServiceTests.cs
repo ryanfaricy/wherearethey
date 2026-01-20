@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Data;
 using WhereAreThey.Models;
@@ -23,7 +24,7 @@ public class SettingsServiceTests
             
         var eventServiceMock = new Mock<IEventService>();
 
-        _service = new SettingsService(mockFactory.Object, eventServiceMock.Object);
+        _service = new SettingsService(mockFactory.Object, eventServiceMock.Object, NullLogger<SettingsService>.Instance);
     }
 
     [Fact]

@@ -18,18 +18,21 @@ public class AlertService(
     IBaseUrlProvider baseUrlProvider,
     IEmailTemplateService emailTemplateService,
     ILogger<AlertService> logger,
-    IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService, validator), IAlertService
+    IValidator<Alert> validator) : BaseService<Alert>(contextFactory, eventService, logger, validator), IAlertService
 {
     private readonly IDataProtector _protector = provider.CreateProtector("WhereAreThey.Alerts.Email");
 
     /// <inheritdoc />
     public virtual async Task<Result<Alert>> CreateAlertAsync(Alert alert, string email)
     {
+        using var scope = logger.BeginScope(new Dictionary<string, object> { ["UserIdentifier"] = alert.UserIdentifier });
+        logger.LogInformation("Creating new alert at {Latitude}, {Longitude}", alert.Latitude, alert.Longitude);
         try
         {
             var validationResult = await Validator!.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
+                logger.LogWarning("Alert validation failed: {Errors}", string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return Result<Alert>.Failure(validationResult);
             }
 
@@ -37,6 +40,7 @@ public class AlertService(
 
             if (alert.RadiusKm > 160.9)
             {
+                logger.LogInformation("Capping alert radius to 160.9km (was {RadiusKm})", alert.RadiusKm);
                 alert.RadiusKm = 160.9;
             }
             
@@ -51,6 +55,7 @@ public class AlertService(
 
                 alert.EncryptedEmail = _protector.Protect(email);
                 alert.EmailHash = emailHash;
+                logger.LogDebug("Email provided for alert, verified: {IsVerified}", isVerified);
             }
             else
             {
@@ -61,6 +66,7 @@ public class AlertService(
             // Push-based alerts are automatically verified
             if (alert.UsePush)
             {
+                logger.LogDebug("Alert uses push notifications, auto-verifying");
                 isVerified = true;
             }
 
@@ -72,12 +78,14 @@ public class AlertService(
             context.Alerts.Add(alert);
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Created alert {AlertId} with ExternalId {ExternalId}", alert.Id, alert.ExternalId);
             EventService.NotifyEntityChanged(alert, EntityChangeType.Added);
             
             if (emailProvided && !isVerified)
             {
                 var baseUrl = baseUrlProvider.GetBaseUrl();
                 var emailHash = alert.EmailHash!;
+                logger.LogInformation("Enqueuing verification email for {EmailHash}", emailHash);
                 backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
 
@@ -94,6 +102,7 @@ public class AlertService(
     /// <inheritdoc />
     public async Task<Result> SendVerificationEmailAsync(string email, string emailHash, string? baseUrl = null)
     {
+        logger.LogInformation("Sending verification email to {EmailHash}", emailHash);
         try
         {
             await using var context = await ContextFactory.CreateDbContextAsync();
@@ -102,6 +111,7 @@ public class AlertService(
 
             if (verification == null)
             {
+                logger.LogDebug("No existing verification found for {EmailHash}, creating new one", emailHash);
                 verification = new EmailVerification
                 {
                     EmailHash = emailHash,
@@ -113,6 +123,7 @@ public class AlertService(
             }
             else if (verification.VerifiedAt != null)
             {
+                logger.LogInformation("Email {EmailHash} is already verified", emailHash);
                 return Result.Success(); // Already verified
             }
 
@@ -123,6 +134,7 @@ public class AlertService(
             var viewModel = new VerificationEmailViewModel { VerificationLink = verificationLink };
             var body = await emailTemplateService.RenderTemplateAsync("VerificationEmail", viewModel);
 
+            logger.LogDebug("Dispatching email to {EmailHash} with token {Token}", emailHash, verification.Token);
             await emailService.SendEmailAsync(email, subject, body);
             return Result.Success();
         }
@@ -136,17 +148,20 @@ public class AlertService(
     /// <inheritdoc />
     public virtual async Task<Result> VerifyEmailAsync(string token)
     {
+        logger.LogInformation("Verifying email with token {Token}", token);
         await using var context = await ContextFactory.CreateDbContextAsync();
         var verification = await context.EmailVerifications
             .FirstOrDefaultAsync(v => v.Token == token);
 
         if (verification == null)
         {
+            logger.LogWarning("Verification failed: invalid token {Token}", token);
             return Result.Failure("Invalid verification token.");
         }
 
         if (verification.VerifiedAt != null)
         {
+            logger.LogInformation("Token {Token} was already verified at {VerifiedAt}", token, verification.VerifiedAt);
             return Result.Success();
         }
 
@@ -157,6 +172,7 @@ public class AlertService(
             .Where(a => a.EmailHash == verification.EmailHash)
             .ToListAsync();
 
+        logger.LogInformation("Verified email hash {EmailHash}. Marking {AlertCount} alerts as verified.", verification.EmailHash, alerts.Count);
         foreach (var alert in alerts)
         {
             alert.IsVerified = true;
@@ -194,18 +210,26 @@ public class AlertService(
     /// <inheritdoc />
     public async Task<Result<Alert>> GetAlertByExternalIdAsync(Guid externalId)
     {
+        logger.LogDebug("Retrieving alert by ExternalId {ExternalId}", externalId);
         await using var context = await ContextFactory.CreateDbContextAsync();
         var alert = await context.Alerts
             .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(a => a.ExternalId == externalId);
 
-        return alert != null ? Result<Alert>.Success(alert) : Result<Alert>.Failure("Alert not found.");
+        if (alert == null)
+        {
+            logger.LogWarning("Alert with ExternalId {ExternalId} not found", externalId);
+            return Result<Alert>.Failure("Alert not found.");
+        }
+
+        return Result<Alert>.Success(alert);
     }
 
     /// <inheritdoc />
     public virtual async Task<List<Alert>> GetActiveAlertsAsync(string? userIdentifier = null, bool onlyVerified = true, bool includeDeleted = false)
     {
+        logger.LogDebug("Retrieving active alerts for User {UserIdentifier} (onlyVerified: {OnlyVerified}, includeDeleted: {IncludeDeleted})", userIdentifier, onlyVerified, includeDeleted);
         await using var context = await ContextFactory.CreateDbContextAsync();
         var query = context.Alerts.AsNoTracking();
 
@@ -228,13 +252,16 @@ public class AlertService(
             query = query.Where(a => a.UserIdentifier == userIdentifier);
         }
 
-        return await query.ToListAsync();
+        var results = await query.ToListAsync();
+        logger.LogDebug("Found {Count} active alerts", results.Count);
+        return results;
     }
 
 
     /// <inheritdoc />
     public virtual async Task<List<Alert>> GetMatchingAlertsAsync(double latitude, double longitude)
     {
+        logger.LogDebug("Searching for alerts matching coordinates {Latitude}, {Longitude}", latitude, longitude);
         // For performance, we use a bounding box first.
         // The maximum radius for any alert is 160.9 km (100 miles).
         const double maxRadiusKm = 160.9;
@@ -248,15 +275,19 @@ public class AlertService(
                        a.Longitude >= minLon && a.Longitude <= maxLon)
             .ToListAsync();
             
-        return candidateAlerts
+        var matchingAlerts = candidateAlerts
             .Where(a => GeoUtils.CalculateDistance(latitude, longitude, a.Latitude, a.Longitude) <= a.RadiusKm)
             .ToList();
+
+        logger.LogDebug("Found {Count} matching alerts among {CandidateCount} candidates in bounding box", matchingAlerts.Count, candidateAlerts.Count);
+        return matchingAlerts;
     }
 
 
     /// <inheritdoc />
     public async Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription)
     {
+        logger.LogInformation("Adding/updating push subscription for User {UserIdentifier} (Endpoint: {Endpoint})", subscription.UserIdentifier, subscription.Endpoint);
         try
         {
             await using var context = await ContextFactory.CreateDbContextAsync();
@@ -265,6 +296,7 @@ public class AlertService(
 
             if (existing != null)
             {
+                logger.LogDebug("Updating existing subscription {SubscriptionId}", existing.Id);
                 existing.P256DH = subscription.P256DH;
                 existing.Auth = subscription.Auth;
                 existing.UserIdentifier = subscription.UserIdentifier;
@@ -272,6 +304,7 @@ public class AlertService(
             }
             else
             {
+                logger.LogDebug("Creating new push subscription");
                 subscription.CreatedAt = DateTime.UtcNow;
                 context.WebPushSubscriptions.Add(subscription);
             }
@@ -289,6 +322,7 @@ public class AlertService(
     /// <inheritdoc />
     public async Task<List<WebPushSubscription>> GetPushSubscriptionsAsync(string userIdentifier)
     {
+        logger.LogDebug("Retrieving push subscriptions for User {UserIdentifier}", userIdentifier);
         await using var context = await ContextFactory.CreateDbContextAsync();
         return await context.WebPushSubscriptions
             .AsNoTracking()
@@ -299,11 +333,13 @@ public class AlertService(
     /// <inheritdoc />
     public virtual async Task<Result> UpdateAlertAsync(Alert alert, string? email = null)
     {
+        logger.LogInformation("Updating alert {AlertId}", alert.Id);
         try
         {
             var validationResult = await Validator!.ValidateAsync(alert);
             if (!validationResult.IsValid)
             {
+                logger.LogWarning("Alert validation failed for update: {Errors}", string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return Result.Failure(validationResult);
             }
 
@@ -320,6 +356,7 @@ public class AlertService(
 
                 if (alert.UsePush)
                 {
+                    logger.LogDebug("Alert updated to use push, auto-verifying");
                     isVerified = true;
                 }
 
@@ -327,14 +364,17 @@ public class AlertService(
 
                 if (isVerified)
                 {
+                    logger.LogDebug("Email for alert is already verified");
                     return await UpdateInternalAsync(alert);
                 }
 
+                logger.LogInformation("Email changed or not verified for alert {AlertId}. Sending verification email.", alert.Id);
                 var baseUrl = baseUrlProvider.GetBaseUrl();
                 backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
             else if (alert.UsePush)
             {
+                logger.LogDebug("Alert update: UsePush enabled, auto-verifying");
                 alert.IsVerified = true;
             }
 

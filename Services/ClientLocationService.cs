@@ -29,6 +29,7 @@ public class ClientLocationService(
     /// <inheritdoc />
     public async Task<GeolocationPosition?> GetLocationWithFallbackAsync(bool allowManual = true, bool showUi = true)
     {
+        logger.LogInformation("Getting location with fallback (allowManual: {AllowManual}, showUi: {ShowUi})", allowManual, showUi);
         if (showUi)
         {
             IsLocating = true;
@@ -46,6 +47,7 @@ public class ClientLocationService(
             var firstTask = await Task.WhenAny(locationTask, timerTask);
             if (firstTask == timerTask && !locationTask.IsCompleted)
             {
+                logger.LogInformation("Location acquisition timed out after 7s. Showing manual pick option.");
                 if (showUi)
                 {
                     ShowManualPick = allowManual;
@@ -54,6 +56,7 @@ public class ClientLocationService(
                     var secondTask = await Task.WhenAny(locationTask, _manualPickTcs!.Task);
                     if (secondTask == _manualPickTcs.Task)
                     {
+                        logger.LogInformation("User chose a manual location.");
                         await cts.CancelAsync();
                         var manualResult = await _manualPickTcs.Task;
                         if (manualResult != null)
@@ -69,13 +72,18 @@ public class ClientLocationService(
             var position = await locationTask;
             if (position != null)
             {
+                logger.LogInformation("Successfully acquired location: {Lat}, {Lng}", position.Coords.Latitude, position.Coords.Longitude);
                 UpdateLastKnownPosition(position);
+            }
+            else
+            {
+                logger.LogWarning("Location acquisition returned null");
             }
             return position;
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to get location");
+            logger.LogError(ex, "Failed to get location");
             return null;
         }
         finally
@@ -92,12 +100,14 @@ public class ClientLocationService(
     /// <inheritdoc />
     public void ConfirmManualPick(GeolocationPosition? position)
     {
+        logger.LogDebug("Manual pick confirmed: {Position}", position != null ? $"{position.Coords.Latitude}, {position.Coords.Longitude}" : "null");
         _manualPickTcs?.TrySetResult(position);
     }
 
     /// <inheritdoc />
     public void UpdateLastKnownPosition(GeolocationPosition position)
     {
+        logger.LogDebug("Updating last known position to {Lat}, {Lng}", position.Coords.Latitude, position.Coords.Longitude);
         LastKnownPosition = position;
         LastLocationUpdate = DateTime.UtcNow;
         OnStateChanged?.Invoke();

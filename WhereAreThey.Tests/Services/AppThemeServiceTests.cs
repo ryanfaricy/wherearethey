@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -12,7 +13,7 @@ public class AppThemeServiceTests
     public void SetTheme_ShouldUpdateCurrentTheme()
     {
         // Arrange
-        var service = new AppThemeService(_mockEventService.Object);
+        var service = new AppThemeService(_mockEventService.Object, NullLogger<AppThemeService>.Instance);
 
         // Act
         service.SetTheme(AppTheme.Dark);
@@ -25,7 +26,7 @@ public class AppThemeServiceTests
     public void SetTheme_ShouldTriggerEventWhenThemeChanges()
     {
         // Arrange
-        var service = new AppThemeService(_mockEventService.Object);
+        var service = new AppThemeService(_mockEventService.Object, NullLogger<AppThemeService>.Instance);
 
         // Act
         service.SetTheme(AppTheme.Dark);
@@ -38,7 +39,7 @@ public class AppThemeServiceTests
     public void SetTheme_ShouldNotTriggerEventWhenThemeIsSame()
     {
         // Arrange
-        var service = new AppThemeService(_mockEventService.Object);
+        var service = new AppThemeService(_mockEventService.Object, NullLogger<AppThemeService>.Instance);
         service.SetTheme(AppTheme.Light);
         _mockEventService.Invocations.Clear();
 

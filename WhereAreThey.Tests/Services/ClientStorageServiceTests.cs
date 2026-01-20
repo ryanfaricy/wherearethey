@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 using Moq;
 using WhereAreThey.Models;
@@ -13,7 +14,7 @@ public class ClientStorageServiceTests
     public ClientStorageServiceTests()
     {
         _jsRuntimeMock = new Mock<IJSRuntime>();
-        _service = new ClientStorageService(_jsRuntimeMock.Object);
+        _service = new ClientStorageService(_jsRuntimeMock.Object, NullLogger<ClientStorageService>.Instance);
     }
 
     [Fact]

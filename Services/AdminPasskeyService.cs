@@ -7,14 +7,17 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class AdminPasskeyService(
     IFido2 fido2,
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService,
     ILogger<AdminPasskeyService> logger) : IAdminPasskeyService
 {
+    /// <inheritdoc />
     public async Task<CredentialCreateOptions> GetRegistrationOptionsAsync(string adminEmail)
     {
+        logger.LogInformation("Requesting passkey registration options for {AdminEmail}", adminEmail);
         await Task.CompletedTask;
         
         var user = new Fido2User
@@ -36,8 +39,10 @@ public class AdminPasskeyService(
         });
     }
 
+    /// <inheritdoc />
     public async Task<Result<AdminPasskey>> CompleteRegistrationAsync(AuthenticatorAttestationRawResponse attestationRawResponse, CredentialCreateOptions options, string keyName)
     {
+        logger.LogInformation("Completing passkey registration for key: {KeyName}", keyName);
         try
         {
             var result = await fido2.MakeNewCredentialAsync(new MakeNewCredentialParams
@@ -62,22 +67,25 @@ public class AdminPasskeyService(
             context.AdminPasskeys.Add(newKey);
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Passkey {KeyName} registered successfully", keyName);
             return Result<AdminPasskey>.Success(newKey);
         }
         catch (Fido2VerificationException ex)
         {
-            logger.LogError(ex, "Passkey registration verification failed");
+            logger.LogError(ex, "Passkey registration verification failed for key: {KeyName}", keyName);
             return Result<AdminPasskey>.Failure($"Registration failed: {ex.Message}");
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error during passkey registration");
+            logger.LogError(ex, "Unexpected error during passkey registration for key: {KeyName}", keyName);
             return Result<AdminPasskey>.Failure("An unexpected error occurred during registration.");
         }
     }
 
+    /// <inheritdoc />
     public async Task<AssertionOptions> GetAssertionOptionsAsync()
     {
+        logger.LogInformation("Requesting passkey assertion options");
         var existingKeys = await GetPasskeysAsync();
         var allowedCredentials = existingKeys
             .Select(k => new PublicKeyCredentialDescriptor(k.CredentialId))
@@ -90,8 +98,10 @@ public class AdminPasskeyService(
         });
     }
 
+    /// <inheritdoc />
     public async Task<Result> CompleteAssertionAsync(AuthenticatorAssertionRawResponse assertionRawResponse, AssertionOptions options, string? ipAddress)
     {
+        logger.LogInformation("Completing passkey assertion for IP {IpAddress}", ipAddress);
         try
         {
             await using var context = await contextFactory.CreateDbContextAsync();
@@ -102,6 +112,7 @@ public class AdminPasskeyService(
 
             if (key == null)
             {
+                logger.LogWarning("Passkey assertion failed: unknown credential ID {CredentialId} from IP {IpAddress}", credId, ipAddress);
                 return Result.Failure("Unknown credential");
             }
 
@@ -118,6 +129,7 @@ public class AdminPasskeyService(
             key.Counter = result.SignCount;
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Passkey assertion successful for key {KeyName} from IP {IpAddress}", key.Name, ipAddress);
             await RecordAttempt(ipAddress, true);
             return Result.Success();
         }
@@ -134,28 +146,35 @@ public class AdminPasskeyService(
         }
     }
 
+    /// <inheritdoc />
     public async Task<List<AdminPasskey>> GetPasskeysAsync()
     {
+        logger.LogDebug("Retrieving all registered passkeys");
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.AdminPasskeys.ToListAsync();
     }
 
+    /// <inheritdoc />
     public async Task<Result> DeletePasskeyAsync(int id)
     {
+        logger.LogInformation("Deleting passkey with ID {Id}", id);
         await using var context = await contextFactory.CreateDbContextAsync();
         var key = await context.AdminPasskeys.FindAsync(id);
         if (key == null)
         {
+            logger.LogWarning("Passkey with ID {Id} not found for deletion", id);
             return Result.Failure("Passkey not found.");
         }
 
         context.AdminPasskeys.Remove(key);
         await context.SaveChangesAsync();
+        logger.LogInformation("Passkey {KeyName} (ID {Id}) deleted successfully", key.Name, id);
         return Result.Success();
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)
     {
+        logger.LogInformation("Recording admin login attempt from IP {IpAddress}, Successful: {IsSuccessful}", ipAddress, isSuccessful);
         await using var context = await contextFactory.CreateDbContextAsync();
         var attempt = new AdminLoginAttempt
         {

@@ -129,7 +129,8 @@ public class BulkDeleteOptimizationTests : IDisposable
             alertServiceMock.Object,
             eventService,
             mapServiceMock.Object,
-            settingsServiceMock.Object);
+            settingsServiceMock.Object,
+            new Mock<ILogger<MapStateService>>().Object);
 
         await mapStateService.InitializeAsync("test-user");
 

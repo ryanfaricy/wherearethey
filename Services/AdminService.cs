@@ -14,7 +14,8 @@ public class AdminService(
     IDbContextFactory<ApplicationDbContext> contextFactory, 
     IEventService eventService,
     ProtectedLocalStorage localStorage,
-    IOptions<AppOptions> appOptions) : IAdminService
+    IOptions<AppOptions> appOptions,
+    ILogger<AdminService> logger) : IAdminService
 {
     /// <inheritdoc />
     public event Action? OnAdminLogin;
@@ -25,6 +26,7 @@ public class AdminService(
     /// <inheritdoc />
     public void NotifyAdminLogin()
     {
+        logger.LogInformation("Admin login notified");
         _isAdminCached = true;
         OnAdminLogin?.Invoke();
     }
@@ -32,6 +34,7 @@ public class AdminService(
     /// <inheritdoc />
     public void NotifyAdminLogout()
     {
+        logger.LogInformation("Admin logout notified");
         _isAdminCached = false;
         OnAdminLogout?.Invoke();
     }
@@ -52,11 +55,13 @@ public class AdminService(
             if (result.Success)
             {
                 _isAdminCached = (DateTime.UtcNow - result.Value).TotalDays <= 7;
+                logger.LogDebug("Admin status checked from storage: {IsAdmin}", _isAdminCached);
                 return _isAdminCached.Value;
             }
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            logger.LogTrace(ex, "Could not retrieve admin status from storage");
             // Storage may not be available or entry may be invalid
         }
         return false;
@@ -65,6 +70,7 @@ public class AdminService(
     /// <inheritdoc />
     public async Task<Result> LoginAsync(string password, string? ipAddress)
     {
+        logger.LogInformation("Admin login attempt from IP {IpAddress}", ipAddress);
         await using var context = await contextFactory.CreateDbContextAsync();
 
         // Check for brute force: more than 5 failed attempts from this IP in the last 15 minutes
@@ -75,6 +81,7 @@ public class AdminService(
 
         if (failedAttempts >= 5)
         {
+            logger.LogWarning("Admin login lockout for IP {IpAddress} (failed attempts: {Count})", ipAddress, failedAttempts);
             await RecordAttempt(ipAddress, false);
             return Result.Failure("Too many failed login attempts from this IP. Please try again in 15 minutes.");
         }
@@ -100,11 +107,19 @@ public class AdminService(
 
         await RecordAttempt(ipAddress, isSuccessful);
 
-        return isSuccessful ? Result.Success() : Result.Failure("Invalid password.");
+        if (isSuccessful)
+        {
+            logger.LogInformation("Successful admin login from IP {IpAddress}", ipAddress);
+            return Result.Success();
+        }
+        
+        logger.LogWarning("Failed admin login from IP {IpAddress}: Invalid password", ipAddress);
+        return Result.Failure("Invalid password.");
     }
 
     private async Task RecordAttempt(string? ipAddress, bool isSuccessful)
     {
+        logger.LogDebug("Recording admin login attempt from IP {IpAddress}, Successful: {IsSuccessful}", ipAddress, isSuccessful);
         await using var context = await contextFactory.CreateDbContextAsync();
         var attempt = new AdminLoginAttempt
         {
@@ -120,6 +135,7 @@ public class AdminService(
     /// <inheritdoc />
     public async Task<List<AdminLoginAttempt>> GetRecentLoginAttemptsAsync(int count = 50)
     {
+        logger.LogDebug("Retrieving {Count} recent login attempts", count);
         await using var context = await contextFactory.CreateDbContextAsync();
         return await context.AdminLoginAttempts
             .AsNoTracking()

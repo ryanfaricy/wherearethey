@@ -10,7 +10,7 @@ public enum AppTheme
 }
 
 /// <inheritdoc />
-public class AppThemeService(IEventService eventService) : IAppThemeService
+public class AppThemeService(IEventService eventService, ILogger<AppThemeService> logger) : IAppThemeService
 {
     /// <inheritdoc />
     public AppTheme CurrentTheme { get; private set; } = AppTheme.System;
@@ -23,6 +23,7 @@ public class AppThemeService(IEventService eventService) : IAppThemeService
             return;
         }
         
+        logger.LogInformation("Changing application theme to {Theme}", theme);
         CurrentTheme = theme;
         eventService.NotifyThemeChanged();
     }

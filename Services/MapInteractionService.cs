@@ -10,12 +10,16 @@ public class MapInteractionService(
     IMapService mapService,
     IMapStateService stateService,
     DialogService dialogService,
-    IAdminService adminService)
+    IAdminService adminService,
+    ILogger<MapInteractionService> logger)
     : IMapInteractionService
 {
     /// <inheritdoc />
     public async Task<bool> HandleMapClickAsync(double lat, double lng, bool isMarkerClick, int? reportId = null, int? alertId = null, bool alertCreationMode = false)
     {
+        logger.LogDebug("Handling map click at {Lat}, {Lng} (isMarkerClick: {IsMarkerClick}, reportId: {ReportId}, alertId: {AlertId}, alertCreationMode: {AlertCreationMode})",
+            lat, lng, isMarkerClick, reportId, alertId, alertCreationMode);
+
         if (alertCreationMode)
         {
             return true; // Don't handle clicks in alert creation mode
@@ -24,6 +28,8 @@ public class MapInteractionService(
         var zoom = await mapService.GetZoomLevelAsync();
         var mapState = await mapService.GetMapStateAsync();
         var searchRadiusKm = CalculateSearchRadius(zoom, isMarkerClick, mapState?.RadiusKm);
+        
+        logger.LogTrace("Calculated search radius: {Radius}km for zoom {Zoom}", searchRadiusKm, zoom);
 
         var nearbyReports = stateService.FindNearbyReports(lat, lng, searchRadiusKm)
             .OrderBy(r => GeoUtils.CalculateDistance(lat, lng, r.Latitude, r.Longitude))
@@ -80,10 +86,13 @@ public class MapInteractionService(
             }
         }
 
+        logger.LogDebug("Found {ReportCount} nearby reports and {AlertCount} nearby alerts", nearbyReports.Count, nearbyAlerts.Count);
+
         // If we didn't hit anything (no alerts, no reports, and not a specific marker),
         // we fallback to the Create Alert dialog (by returning false)
         if (!nearbyAlerts.Any() && !nearbyReports.Any() && !isMarkerClick && !reportId.HasValue && !alertId.HasValue)
         {
+            logger.LogDebug("Nothing found at click location, returning false to trigger alert creation");
             return false;
         }
 
@@ -113,6 +122,8 @@ public class MapInteractionService(
 
         var isAdmin = await adminService.IsAdminAsync();
 
+        logger.LogInformation("Opening details dialog for {ReportCount} reports and {AlertCount} alerts", nearbyReports.Count, nearbyAlerts.Count);
+
         // Open ReportDetailsDialog for everything that hit the map (blobs or alert zones)
         var result = await dialogService.OpenAsync<ReportDetailsDialog>(isAdmin ? "ADMIN AREA DETAILS" : "AREA DETAILS",
             new Dictionary<string, object> 
@@ -126,6 +137,7 @@ public class MapInteractionService(
 
         if (result == true) // If an alert was deleted/updated
         {
+            logger.LogInformation("Alert changed in details dialog, reloading alerts");
             await stateService.LoadAlertsAsync();
         }
             
@@ -135,6 +147,7 @@ public class MapInteractionService(
     /// <inheritdoc />
     public async Task HandleMapContextMenuAsync(double lat, double lng, string? userIdentifier = null, bool isAdmin = false, bool alertCreationMode = false)
     {
+        logger.LogInformation("Handling map context menu at {Lat}, {Lng} (alertCreationMode: {AlertCreationMode})", lat, lng, alertCreationMode);
         if (alertCreationMode)
         {
             return;
@@ -155,6 +168,7 @@ public class MapInteractionService(
         await mapService.ShowGhostPinAsync(lat, lng);
         try
         {
+            logger.LogDebug("Opening report dialog for manual report");
             await dialogService.OpenAsync<ReportDialog>(effectiveIsAdmin ? "ADMIN REPORT" : "REPORT HERE",
                 new Dictionary<string, object> 
                 { 

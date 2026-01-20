@@ -16,6 +16,7 @@ public class LocationService(
     /// <inheritdoc />
     public async Task<List<Report>> GetReportsInRadiusAsync(double latitude, double longitude, double radiusKm)
     {
+        logger.LogDebug("Searching for reports within {Radius}km of {Lat}, {Lng}", radiusKm, latitude, longitude);
         try
         {
             await using var context = await contextFactory.CreateDbContextAsync();
@@ -35,8 +36,11 @@ public class LocationService(
                 .ToListAsync();
 
             // Step 2: Filter by actual distance using Haversine formula in memory
-            return reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
+            var filteredReports = reports.Where(r => GeoUtils.CalculateDistance(latitude, longitude, r.Latitude, r.Longitude) <= radiusKm)
                 .ToList();
+
+            logger.LogDebug("Found {Count} reports in radius (from {CandidateCount} candidates in bounding box)", filteredReports.Count, reports.Count);
+            return filteredReports;
         }
         catch (Exception ex)
         {

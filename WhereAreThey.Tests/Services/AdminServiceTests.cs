@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.JSInterop;
 using Moq;
 using WhereAreThey.Data;
@@ -33,7 +34,7 @@ public class AdminServiceTests
         var dataProtectionProviderMock = new Mock<IDataProtectionProvider>();
         var localStorage = new ProtectedLocalStorage(jsRuntimeMock.Object, dataProtectionProviderMock.Object);
 
-        _service = new AdminService(mockFactory.Object, eventServiceMock.Object, localStorage, Options.Create(_appOptions));
+        _service = new AdminService(mockFactory.Object, eventServiceMock.Object, localStorage, Options.Create(_appOptions), NullLogger<AdminService>.Instance);
     }
 
     [Fact]

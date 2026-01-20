@@ -5,11 +5,14 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class BaseUrlProvider(
     NavigationManager? navigationManager = null,
     IHttpContextAccessor? httpContextAccessor = null,
-    IOptions<AppOptions>? options = null) : IBaseUrlProvider
+    IOptions<AppOptions>? options = null,
+    ILogger<BaseUrlProvider>? logger = null) : IBaseUrlProvider
 {
+    /// <inheritdoc />
     public string GetBaseUrl()
     {
         // 1. Try NavigationManager (Blazor)
@@ -17,11 +20,14 @@ public class BaseUrlProvider(
         {
             try
             {
-                return navigationManager.BaseUri.TrimEnd('/');
+                var url = navigationManager.BaseUri.TrimEnd('/');
+                logger?.LogDebug("Resolved base URL from NavigationManager: {Url}", url);
+                return url;
             }
-            catch
+            catch (Exception ex)
             {
                 // NavigationManager might throw if not in a circuit
+                logger?.LogTrace(ex, "NavigationManager not available for base URL resolution");
             }
         }
 
@@ -29,10 +35,14 @@ public class BaseUrlProvider(
         var request = httpContextAccessor?.HttpContext?.Request;
         if (request != null)
         {
-            return $"{request.Scheme}://{request.Host}".TrimEnd('/');
+            var url = $"{request.Scheme}://{request.Host}".TrimEnd('/');
+            logger?.LogDebug("Resolved base URL from HttpContext: {Url}", url);
+            return url;
         }
 
         // 3. Fallback to configuration
-        return options?.Value.BaseUrl.TrimEnd('/') ?? "https://www.aretheyhere.com";
+        var fallbackUrl = options?.Value.BaseUrl.TrimEnd('/') ?? "https://www.aretheyhere.com";
+        logger?.LogDebug("Resolved base URL from configuration fallback: {Url}", fallbackUrl);
+        return fallbackUrl;
     }
 }

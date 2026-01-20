@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Radzen;
 using WhereAreThey.Components;
@@ -36,7 +37,8 @@ public class MapInteractionServiceTests : BunitContext
             _mapServiceMock.Object,
             _stateServiceMock.Object,
             _dialogService,
-            _adminServiceMock.Object);
+            _adminServiceMock.Object,
+            NullLogger<MapInteractionService>.Instance);
     }
 
     [Theory]

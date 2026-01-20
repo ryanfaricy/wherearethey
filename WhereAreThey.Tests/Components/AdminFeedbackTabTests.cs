@@ -19,7 +19,7 @@ public class AdminFeedbackTabTests : ComponentTestBase
 
     public AdminFeedbackTabTests()
     {
-        var timeZoneService = new UserTimeZoneService(); 
+        var timeZoneService = new UserTimeZoneService(new Mock<ILogger<UserTimeZoneService>>().Object); 
         
         Services.AddSingleton(_feedbackServiceMock.Object);
         Services.AddSingleton<IAdminDataService<Feedback>>(_feedbackServiceMock.Object);

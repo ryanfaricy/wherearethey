@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Data;
@@ -55,14 +56,14 @@ public class FeedbackTests
 
     private static ISettingsService CreateSettingsService(IDbContextFactory<ApplicationDbContext> factory)
     {
-        return new SettingsService(factory, new Mock<IEventService>().Object);
+        return new SettingsService(factory, new Mock<IEventService>().Object, new Mock<ILogger<SettingsService>>().Object);
     }
 
     private static IFeedbackService CreateService(IDbContextFactory<ApplicationDbContext> factory)
     {
         var settingsService = CreateSettingsService(factory);
         var validator = new FeedbackValidator(factory, settingsService, CreateLocalizer());
-        return new FeedbackService(factory, new Mock<IEventService>().Object, validator);
+        return new FeedbackService(factory, new Mock<IEventService>().Object, new Mock<ILogger<FeedbackService>>().Object, validator);
     }
 
     [Fact]

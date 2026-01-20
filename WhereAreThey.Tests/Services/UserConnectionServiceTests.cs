@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -12,7 +13,7 @@ public class UserConnectionServiceTests
     public UserConnectionServiceTests()
     {
         _eventServiceMock = new Mock<IEventService>();
-        _service = new UserConnectionService(_eventServiceMock.Object);
+        _service = new UserConnectionService(_eventServiceMock.Object, NullLogger<UserConnectionService>.Instance);
     }
 
     [Fact]

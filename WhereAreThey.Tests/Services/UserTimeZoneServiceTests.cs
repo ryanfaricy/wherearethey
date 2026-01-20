@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using WhereAreThey.Services;
 
 namespace WhereAreThey.Tests.Services;
@@ -7,7 +8,7 @@ public class UserTimeZoneServiceTests
     [Fact]
     public void SetTimeZone_WithValidIanaId_ShouldInitialize()
     {
-        var service = new UserTimeZoneService();
+        var service = new UserTimeZoneService(NullLogger<UserTimeZoneService>.Instance);
         service.SetTimeZone("America/New_York");
         Assert.True(service.IsInitialized);
     }
@@ -15,7 +16,7 @@ public class UserTimeZoneServiceTests
     [Fact]
     public void ToLocal_ShouldConvertCorrectly()
     {
-        var service = new UserTimeZoneService();
+        var service = new UserTimeZoneService(NullLogger<UserTimeZoneService>.Instance);
         service.SetTimeZone("America/New_York"); // UTC-5 (or UTC-4 in summer)
         
         // 2026-01-13 22:00 UTC is 2026-01-13 17:00 EST
@@ -28,7 +29,7 @@ public class UserTimeZoneServiceTests
     [Fact]
     public void FormatLocal_ShouldReturnFormattedString()
     {
-        var service = new UserTimeZoneService();
+        var service = new UserTimeZoneService(NullLogger<UserTimeZoneService>.Instance);
         service.SetTimeZone("Europe/London");
         
         var utc = new DateTime(2026, 1, 13, 12, 0, 0, DateTimeKind.Utc);
@@ -40,7 +41,7 @@ public class UserTimeZoneServiceTests
     [Fact]
     public void SetTimeZone_WithWindowsId_ShouldInitialize()
     {
-        var service = new UserTimeZoneService();
+        var service = new UserTimeZoneService(NullLogger<UserTimeZoneService>.Instance);
         service.SetTimeZone("Eastern Standard Time");
         Assert.True(service.IsInitialized);
         

@@ -4,27 +4,19 @@ using WhereAreThey.Services.Interfaces;
 namespace WhereAreThey.Services;
 
 /// <inheritdoc />
-public class EmailTemplateService : IEmailTemplateService
+public class EmailTemplateService(IWebHostEnvironment environment, ILogger<EmailTemplateService> logger) : IEmailTemplateService
 {
     private static readonly FluidParser Parser = new();
-    private readonly IWebHostEnvironment _environment;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EmailTemplateService"/> class.
-    /// </summary>
-    /// <param name="environment">The web host environment.</param>
-    public EmailTemplateService(IWebHostEnvironment environment)
-    {
-        _environment = environment;
-    }
 
     /// <inheritdoc />
     public async Task<string> RenderTemplateAsync<T>(string templateName, T model)
     {
-        var templatePath = Path.Combine(_environment.ContentRootPath, "Resources", "EmailTemplates", $"{templateName}.liquid");
+        logger.LogDebug("Rendering email template {TemplateName}", templateName);
+        var templatePath = Path.Combine(environment.ContentRootPath, "Resources", "EmailTemplates", $"{templateName}.liquid");
         
         if (!File.Exists(templatePath))
         {
+            logger.LogError("Email template file not found: {TemplatePath}", templatePath);
             throw new FileNotFoundException($"Template file not found: {templatePath}");
         }
 
@@ -32,6 +24,7 @@ public class EmailTemplateService : IEmailTemplateService
 
         if (!Parser.TryParse(source, out var template, out var error))
         {
+            logger.LogError("Failed to parse email template {TemplateName}: {Error}", templateName, error);
             throw new InvalidOperationException($"Failed to parse template '{templateName}': {error}");
         }
 
@@ -50,7 +43,8 @@ public class EmailTemplateService : IEmailTemplateService
             context.SetValue(prop.Name, prop.GetValue(model));
         }
 
-        return await template.RenderAsync(context);
-
+        var result = await template.RenderAsync(context);
+        logger.LogTrace("Successfully rendered template {TemplateName}", templateName);
+        return result;
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -18,7 +19,7 @@ public class MapNavigationManagerTests
         _reportServiceMock = new Mock<IReportService>();
         _alertServiceMock = new Mock<IAlertService>();
         _navManager = new MockNavigationManager();
-        _service = new MapNavigationManager(_navManager, _reportServiceMock.Object, _alertServiceMock.Object);
+        _service = new MapNavigationManager(_navManager, _reportServiceMock.Object, _alertServiceMock.Object, NullLogger<MapNavigationManager>.Instance);
     }
 
     private class MockNavigationManager : NavigationManager

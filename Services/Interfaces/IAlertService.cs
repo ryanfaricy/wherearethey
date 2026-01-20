@@ -74,10 +74,14 @@ public interface IAlertService : IAdminDataService<Alert>
     /// <summary>
     /// Adds or updates a web push subscription for a user.
     /// </summary>
+    /// <param name="subscription">The push subscription details.</param>
+    /// <returns>A Result indicating success or failure.</returns>
     Task<Result> AddPushSubscriptionAsync(WebPushSubscription subscription);
 
     /// <summary>
     /// Gets all active push subscriptions for a user.
     /// </summary>
+    /// <param name="userIdentifier">The unique identifier for the user.</param>
+    /// <returns>A list of push subscriptions.</returns>
     Task<List<WebPushSubscription>> GetPushSubscriptionsAsync(string userIdentifier);
 }

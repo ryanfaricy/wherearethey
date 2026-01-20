@@ -6,13 +6,17 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class MapNavigationManager(
     NavigationManager navigationManager,
     IReportService reportService,
-    IAlertService alertService) : IMapNavigationManager
+    IAlertService alertService,
+    ILogger<MapNavigationManager> logger) : IMapNavigationManager
 {
+    /// <inheritdoc />
     public async Task<MapNavigationState> GetNavigationStateAsync()
     {
+        logger.LogDebug("Parsing navigation state from URI: {Uri}", navigationManager.Uri);
         var uri = navigationManager.ToAbsoluteUri(navigationManager.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
 
@@ -26,10 +30,12 @@ public class MapNavigationManager(
         if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
         {
             selectedHours = h;
+            logger.LogTrace("Navigation state: hours={Hours}", selectedHours);
         }
 
         if (query.TryGetValue("reportId", out var reportIdStr))
         {
+            logger.LogDebug("Navigation state: reportId={ReportIdStr} found in query", reportIdStr);
             if (Guid.TryParse(reportIdStr, out var rGuid))
             {
                 var result = await reportService.GetReportByExternalIdAsync(rGuid);
@@ -39,9 +45,11 @@ public class MapNavigationManager(
                     focusReportId = report.Id;
                     initialLat = report.Latitude;
                     initialLng = report.Longitude;
+                    logger.LogTrace("Resolved reportId {ReportIdStr} to report ID {ReportId}", reportIdStr, focusReportId);
                 }
                 else
                 {
+                    logger.LogWarning("Navigation state: reportId {ReportIdStr} not found", reportIdStr);
                     reportNotFound = true;
                 }
             }
@@ -53,6 +61,7 @@ public class MapNavigationManager(
 
         if (query.TryGetValue("alertId", out var alertIdStr) && Guid.TryParse(alertIdStr, out var aGuid))
         {
+            logger.LogDebug("Navigation state: alertId={AlertIdStr} found in query", alertIdStr);
             var result = await alertService.GetAlertByExternalIdAsync(aGuid);
             if (result.IsSuccess)
             {
@@ -60,6 +69,11 @@ public class MapNavigationManager(
                 initialLat = alert.Latitude;
                 initialLng = alert.Longitude;
                 initialRadius = alert.RadiusKm;
+                logger.LogTrace("Resolved alertId {AlertIdStr} to alert ID {AlertId}", alertIdStr, alert.Id);
+            }
+            else
+            {
+                logger.LogWarning("Navigation state: alertId {AlertIdStr} not found", alertIdStr);
             }
         }
 

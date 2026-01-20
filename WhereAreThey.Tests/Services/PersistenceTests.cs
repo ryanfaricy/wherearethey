@@ -140,6 +140,7 @@ public class PersistenceTests
         var service = new FeedbackService(
             factory,
             new Mock<IEventService>().Object,
+            new Mock<ILogger<FeedbackService>>().Object,
             validatorMock.Object
         );
 

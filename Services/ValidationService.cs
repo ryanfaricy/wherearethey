@@ -4,11 +4,13 @@ using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Services;
 
+/// <inheritdoc />
 public class ValidationService(
     NotificationService notificationService,
     IHapticFeedbackService hapticFeedbackService,
     ILogger<ValidationService> logger) : IValidationService
 {
+    /// <inheritdoc />
     public async Task<bool> ExecuteAsync(
         Func<Task<Result>> operation,
         string? successMessage = null,
@@ -20,11 +22,13 @@ public class ValidationService(
         bool showHapticFeedback = true,
         string? logContext = null)
     {
+        logger.LogDebug("Executing operation: {Context}", logContext ?? "N/A");
         try
         {
             var result = await operation();
             if (result.IsSuccess)
             {
+                logger.LogDebug("Operation successful: {Context}", logContext ?? "N/A");
                 if (showHapticFeedback)
                 {
                     await hapticFeedbackService.VibrateSuccessAsync();
@@ -43,6 +47,7 @@ public class ValidationService(
                 return true;
             }
 
+            logger.LogWarning("Operation failed: {Context}. Error: {Error}", logContext ?? "N/A", result.Error);
             if (showHapticFeedback)
             {
                 await hapticFeedbackService.VibrateErrorAsync();
@@ -64,7 +69,7 @@ public class ValidationService(
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error executing operation: {Context}", logContext ?? "N/A");
+            logger.LogError(ex, "Exception while executing operation: {Context}", logContext ?? "N/A");
 
             if (showHapticFeedback)
             {
@@ -85,6 +90,7 @@ public class ValidationService(
         }
     }
 
+    /// <inheritdoc />
     public async Task<T?> ExecuteAsync<T>(
         Func<Task<Result<T>>> operation,
         string? successMessage = null,

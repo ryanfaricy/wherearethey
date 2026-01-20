@@ -1,7 +1,15 @@
 namespace WhereAreThey.Helpers;
 
+/// <summary>
+/// Helper for handling application configuration, especially environment-specific database strings.
+/// </summary>
 public static class ConfigurationHelper
 {
+    /// <summary>
+    /// Gets the database connection string, with support for DATABASE_URL environment variable (Heroku/Render format).
+    /// </summary>
+    /// <param name="configuration">The application configuration.</param>
+    /// <returns>A formatted connection string.</returns>
     public static string? GetConnectionString(IConfiguration configuration)
     {
         var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");

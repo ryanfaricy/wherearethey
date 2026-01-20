@@ -4,6 +4,10 @@ using WhereAreThey.Models;
 
 namespace WhereAreThey.Data;
 
+/// <summary>
+/// The application database context.
+/// Implements soft-delete logic via <see cref="IAuditable"/> and global query filters.
+/// </summary>
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options), IDataProtectionKeyContext
 {
     public DbSet<Report> Reports { get; set; }
@@ -17,12 +21,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<SystemSettings> Settings { get; set; }
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
+    /// <inheritdoc />
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         foreach (var entry in ChangeTracker.Entries<IAuditable>())
         {
             if (entry.State == EntityState.Deleted)
             {
+                // Convert hard delete to soft delete
                 entry.State = EntityState.Modified;
                 entry.Entity.DeletedAt = DateTime.UtcNow;
             }
@@ -40,7 +46,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 continue;
             }
 
-            // Ensure Kind is UTC for PostgreSQL
+            // Ensure Kind is UTC for PostgreSQL compatibility
             if (entry.Entity.CreatedAt.Kind != DateTimeKind.Utc)
             {
                 entry.Entity.CreatedAt = DateTime.SpecifyKind(entry.Entity.CreatedAt, DateTimeKind.Utc);
@@ -54,10 +60,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         return base.SaveChangesAsync(cancellationToken);
     }
 
+    /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
+        // Global filters for soft delete
         modelBuilder.Entity<Report>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Alert>().HasQueryFilter(e => e.DeletedAt == null);
         modelBuilder.Entity<Donation>().HasQueryFilter(e => e.DeletedAt == null);

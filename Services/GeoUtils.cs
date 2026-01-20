@@ -1,7 +1,18 @@
 namespace WhereAreThey.Services;
 
+/// <summary>
+/// Utility class for geographical calculations.
+/// </summary>
 public static class GeoUtils
 {
+    /// <summary>
+    /// Calculates the distance between two points on Earth using the Haversine formula.
+    /// </summary>
+    /// <param name="lat1">Latitude of the first point.</param>
+    /// <param name="lon1">Longitude of the first point.</param>
+    /// <param name="lat2">Latitude of the second point.</param>
+    /// <param name="lon2">Longitude of the second point.</param>
+    /// <returns>The distance in kilometers.</returns>
     public static double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
     {
         const double r = 6371; // Earth's radius in kilometers
@@ -16,6 +27,13 @@ public static class GeoUtils
         return r * c;
     }
 
+    /// <summary>
+    /// Calculates a bounding box around a point given a radius.
+    /// </summary>
+    /// <param name="latitude">The center latitude.</param>
+    /// <param name="longitude">The center longitude.</param>
+    /// <param name="radiusKm">The radius in kilometers.</param>
+    /// <returns>A tuple containing min/max latitude and longitude.</returns>
     public static (double minLat, double maxLat, double minLon, double maxLon) GetBoundingBox(double latitude, double longitude, double radiusKm)
     {
         var latDelta = radiusKm / 111.0; // 1 degree latitude ≈ 111 km

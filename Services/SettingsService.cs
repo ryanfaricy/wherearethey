@@ -8,7 +8,8 @@ namespace WhereAreThey.Services;
 /// <inheritdoc />
 public class SettingsService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
-    IEventService eventService) : ISettingsService
+    IEventService eventService,
+    ILogger<SettingsService> logger) : ISettingsService
 {
     private readonly SemaphoreSlim _semaphore = new(1, 1);
     private SystemSettings? _cachedSettings;
@@ -31,6 +32,7 @@ public class SettingsService(
                 return _cachedSettings;
             }
 
+            logger.LogDebug("Fetching system settings from database");
             await using var context = await contextFactory.CreateDbContextAsync();
             _cachedSettings = await context.Settings
                 .AsNoTracking()
@@ -39,6 +41,7 @@ public class SettingsService(
             // Auto-generate VAPID keys if missing
             if (string.IsNullOrEmpty(_cachedSettings.VapidPublicKey) || string.IsNullOrEmpty(_cachedSettings.VapidPrivateKey))
             {
+                logger.LogInformation("VAPID keys missing, generating new keys");
                 var keys = WebPush.VapidHelper.GenerateVapidKeys();
                 _cachedSettings.VapidPublicKey = keys.PublicKey;
                 _cachedSettings.VapidPrivateKey = keys.PrivateKey;
@@ -66,6 +69,7 @@ public class SettingsService(
     /// <inheritdoc />
     public async Task<Result> UpdateSettingsAsync(SystemSettings settings)
     {
+        logger.LogInformation("Updating system settings");
         await _semaphore.WaitAsync();
         try
         {
@@ -74,10 +78,12 @@ public class SettingsService(
             
             if (existing == null)
             {
+                logger.LogInformation("No existing settings found, adding new ones");
                 context.Settings.Add(settings);
             }
             else
             {
+                logger.LogDebug("Updating existing system settings");
                 existing.ReportExpiryHours = settings.ReportExpiryHours;
                 existing.ReportCooldownMinutes = settings.ReportCooldownMinutes;
                 existing.AlertLimitCount = settings.AlertLimitCount;
@@ -93,10 +99,12 @@ public class SettingsService(
             _cachedSettings = settings;
             _lastUpdate = DateTime.UtcNow;
             eventService.NotifySettingsChanged(settings);
+            logger.LogInformation("System settings updated successfully");
             return Result.Success();
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Error updating system settings");
             return Result.Failure(ex.Message);
         }
         finally

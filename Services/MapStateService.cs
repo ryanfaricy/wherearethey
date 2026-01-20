@@ -15,6 +15,7 @@ public class MapStateService : IMapStateService
     private readonly IEventService _eventService;
     private readonly IMapService _mapService;
     private readonly ISettingsService _settingsService;
+    private readonly ILogger<MapStateService> _logger;
     private readonly Timer? _pruneTimer;
     private readonly Lock _lock = new();
     private string? _userIdentifier;
@@ -40,6 +41,7 @@ public class MapStateService : IMapStateService
                 return;
             }
 
+            _logger.LogInformation("Map initialization state changed to {MapInitialized}", value);
             _mapInitialized = value;
             if (!_mapInitialized)
             {
@@ -69,6 +71,7 @@ public class MapStateService : IMapStateService
                 return;
             }
 
+            _logger.LogInformation("ShowDeleted setting changed to {ShowDeleted}", value);
             _showDeleted = value;
             if (_isAdmin)
             {
@@ -96,13 +99,15 @@ public class MapStateService : IMapStateService
         IAlertService alertService,
         IEventService eventService,
         IMapService mapService,
-        ISettingsService settingsService)
+        ISettingsService settingsService,
+        ILogger<MapStateService> logger)
     {
         _reportService = reportService;
         _alertService = alertService;
         _eventService = eventService;
         _mapService = mapService;
         _settingsService = settingsService;
+        _logger = logger;
 
         _eventService.OnEntityChanged += HandleEntityChanged;
         _eventService.OnEntityBatchChanged += HandleEntityBatchChanged;
@@ -114,6 +119,7 @@ public class MapStateService : IMapStateService
 
     private void HandleSettingsChanged(SystemSettings settings)
     {
+        _logger.LogDebug("Settings changed, updating cached expiry hours to {Hours}", settings.ReportExpiryHours);
         _cachedExpiryHours = settings.ReportExpiryHours;
     }
 
@@ -123,9 +129,11 @@ public class MapStateService : IMapStateService
         {
             var settings = await _settingsService.GetSettingsAsync();
             _cachedExpiryHours = settings.ReportExpiryHours;
+            _logger.LogDebug("Initialized MapStateService settings (expiry: {Hours}h)", _cachedExpiryHours);
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Failed to initialize MapStateService settings, using defaults");
             // Fallback to default
         }
     }
@@ -183,6 +191,7 @@ public class MapStateService : IMapStateService
                 return;
             }
 
+            _logger.LogInformation("Pruning {Count} old reports from state", toRemove.Count);
             foreach (var report in toRemove)
             {
                 Reports.Remove(report);
@@ -203,6 +212,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task InitializeAsync(string? userIdentifier, bool isAdmin = false)
     {
+        _logger.LogInformation("Initializing MapStateService (userIdentifier: {UserIdentifier}, isAdmin: {IsAdmin})", userIdentifier, isAdmin);
         _userIdentifier = userIdentifier;
         _isAdmin = isAdmin;
         if (!_isAdmin)
@@ -215,6 +225,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadReportsAsync(int? hours = null, Guid? includeExternalId = null)
     {
+        _logger.LogInformation("Loading reports (hours: {Hours}, includeExternalId: {IncludeExternalId})", hours, includeExternalId);
         _lastLoadedHours = hours;
         _isAllLoaded = false;
         
@@ -226,6 +237,7 @@ public class MapStateService : IMapStateService
             Reports = allReports.Where(r => r.ExternalId == includeExternalId || ShouldShowReport(r)).ToList();
         }
         
+        _logger.LogDebug("State updated with {Count} reports", Reports.Count);
         if (MapInitialized)
         {
             await _mapService.UpdateHeatMapAsync(Reports);
@@ -236,6 +248,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAllReportsAsync()
     {
+        _logger.LogInformation("Loading ALL reports (admin mode)");
         _lastLoadedHours = null;
         _isAllLoaded = true;
         
@@ -245,6 +258,7 @@ public class MapStateService : IMapStateService
             Reports = allReports.Where(ShouldShowReport).ToList();
         }
         
+        _logger.LogDebug("State updated with {Count} reports", Reports.Count);
         if (MapInitialized)
         {
             await _mapService.UpdateHeatMapAsync(Reports);
@@ -255,6 +269,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public async Task LoadAlertsAsync()
     {
+        _logger.LogInformation("Loading alerts for user {UserIdentifier}", _userIdentifier);
         List<Alert> loadedAlerts = [];
         
         // Only load alerts if we have a user identifier (User heatmap).
@@ -273,6 +288,7 @@ public class MapStateService : IMapStateService
             Alerts = loadedAlerts.Where(ShouldShowAlert).ToList();
         }
 
+        _logger.LogDebug("State updated with {Count} alerts", Alerts.Count);
         if (MapInitialized)
         {
             await _mapService.UpdateAlertsAsync(Alerts);
@@ -300,6 +316,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public void AddReportToState(Report report)
     {
+        _logger.LogDebug("Adding report {ReportId} directly to state", report.Id);
         lock (_lock)
         {
             if (Reports.Any(r => r.Id == report.Id))
@@ -325,6 +342,7 @@ public class MapStateService : IMapStateService
 
     private void HandleEntityBatchChanged(Type entityType)
     {
+        _logger.LogInformation("Batch change detected for {EntityType}, reloading", entityType.Name);
         if (entityType == typeof(Report))
         {
             _ = LoadReportsAsync();
@@ -337,6 +355,7 @@ public class MapStateService : IMapStateService
 
     private void HandleReportChange(Report report, EntityChangeType type)
     {
+        _logger.LogDebug("Handling report change: {ReportId} ({Type})", report.Id, type);
         var changed = false;
         var shouldShow = type != EntityChangeType.Deleted && ShouldShowReport(report);
         var callRemoveOnMap = false;
@@ -406,6 +425,7 @@ public class MapStateService : IMapStateService
 
     private void HandleAlertChange(Alert alert, EntityChangeType type)
     {
+        _logger.LogDebug("Handling alert change: {AlertId} ({Type})", alert.Id, type);
         var changed = false;
         var shouldShow = type != EntityChangeType.Deleted && ShouldShowAlert(alert);
 
@@ -447,6 +467,7 @@ public class MapStateService : IMapStateService
     /// <inheritdoc />
     public void Dispose()
     {
+        _logger.LogInformation("Disposing MapStateService");
         GC.SuppressFinalize(this);
         _pruneTimer?.Dispose();
         _eventService.OnEntityChanged -= HandleEntityChanged;

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
@@ -33,7 +34,8 @@ public class MapStateServiceTests : IDisposable
             _alertServiceMock.Object,
             _eventServiceMock.Object,
             _mapServiceMock.Object,
-            settingsServiceMock.Object);
+            settingsServiceMock.Object,
+            NullLogger<MapStateService>.Instance);
     }
 
     [Fact]

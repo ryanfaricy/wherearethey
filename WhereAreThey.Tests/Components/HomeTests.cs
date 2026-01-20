@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Radzen;
 using WhereAreThey.Components.Pages;
@@ -70,7 +71,8 @@ public class HomeTests : ComponentTestBase
             _alertServiceMock.Object,
             _eventServiceMock.Object,
             _mapServiceMock.Object,
-            _settingsServiceMock.Object);
+            _settingsServiceMock.Object,
+            NullLogger<MapStateService>.Instance);
         
         Services.AddSingleton<IMapStateService>(_mapStateService);
     }

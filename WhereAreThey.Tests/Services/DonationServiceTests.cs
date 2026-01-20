@@ -1,5 +1,6 @@
 using FluentValidation;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using WhereAreThey.Data;
@@ -47,7 +48,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        IDonationService service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
+        IDonationService service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), NullLogger<DonationService>.Instance, _validator);
         var donation = new Donation
         {
             Amount = 25.00m,
@@ -77,7 +78,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), NullLogger<DonationService>.Instance, _validator);
         var piId = "pi_123";
 
         await using (var context = new ApplicationDbContext(options))
@@ -110,7 +111,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), NullLogger<DonationService>.Instance, _validator);
 
         // Act
         var result = await service.UpdateDonationStatusAsync("non_existent", "completed");
@@ -126,7 +127,7 @@ public class DonationServiceTests
         var options = CreateOptions();
         var factory = CreateFactory(options);
         var eventServiceMock = new Mock<IEventService>();
-        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), _validator);
+        var service = new DonationService(factory, eventServiceMock.Object, CreateOptionsWrapper(), NullLogger<DonationService>.Instance, _validator);
 
         Donation initial;
         await using (var context = new ApplicationDbContext(options))

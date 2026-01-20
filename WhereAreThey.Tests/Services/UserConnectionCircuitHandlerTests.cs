@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
@@ -13,7 +14,7 @@ public class UserConnectionCircuitHandlerTests
     public UserConnectionCircuitHandlerTests()
     {
         _eventServiceMock = new Mock<IEventService>();
-        _connectionService = new UserConnectionService(_eventServiceMock.Object);
+        _connectionService = new UserConnectionService(_eventServiceMock.Object, NullLogger<UserConnectionService>.Instance);
         _handler = new UserConnectionCircuitHandler(_connectionService);
     }
 

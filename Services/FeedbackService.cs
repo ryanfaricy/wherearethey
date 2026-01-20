@@ -10,16 +10,19 @@ namespace WhereAreThey.Services;
 public class FeedbackService(
     IDbContextFactory<ApplicationDbContext> contextFactory,
     IEventService eventService,
-    IValidator<Feedback> validator) : BaseService<Feedback>(contextFactory, eventService, validator), IFeedbackService
+    ILogger<FeedbackService> logger,
+    IValidator<Feedback> validator) : BaseService<Feedback>(contextFactory, eventService, logger, validator), IFeedbackService
 {
     /// <inheritdoc />
     public async Task<Result<Feedback>> CreateFeedbackAsync(Feedback feedback)
     {
+        Logger.LogInformation("Creating new feedback from user {UserIdentifier}", feedback.UserIdentifier);
         try
         {
             var validationResult = await Validator!.ValidateAsync(feedback);
             if (!validationResult.IsValid)
             {
+                Logger.LogWarning("Feedback validation failed: {Errors}", string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage)));
                 return Result<Feedback>.Failure(validationResult);
             }
 
@@ -27,11 +30,13 @@ public class FeedbackService(
             context.Feedbacks.Add(feedback);
             await context.SaveChangesAsync();
 
+            Logger.LogInformation("Feedback {FeedbackId} created successfully", feedback.Id);
             EventService.NotifyEntityChanged(feedback, EntityChangeType.Added);
             return Result<Feedback>.Success(feedback);
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error creating feedback");
             return Result<Feedback>.Failure($"An error occurred while creating feedback: {ex.Message}");
         }
     }
