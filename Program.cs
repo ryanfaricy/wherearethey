@@ -166,13 +166,14 @@ builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
 builder.Services.AddScoped<IValidationService, ValidationService>();
 builder.Services.AddScoped<IFido2>(sp =>
 {
-    var appOptions = sp.GetRequiredService<IOptions<AppOptions>>().Value;
-    var uri = new Uri(appOptions.BaseUrl);
+    var baseUrlProvider = sp.GetRequiredService<IBaseUrlProvider>();
+    var baseUrl = baseUrlProvider.GetBaseUrl();
+    var uri = new Uri(baseUrl);
     return new Fido2(new Fido2Configuration
     {
         ServerDomain = builder.Configuration["Fido2:ServerDomain"] ?? uri.Host,
         ServerName = "WhereAreThey Admin",
-        Origins = new HashSet<string> { appOptions.BaseUrl.TrimEnd('/') },
+        Origins = new HashSet<string> { baseUrl },
     });
 });
 builder.Services.AddScoped<UserTimeZoneService>();
