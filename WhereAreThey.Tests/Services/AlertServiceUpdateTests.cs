@@ -210,7 +210,7 @@ public class AlertServiceUpdateTests
     }
 
     [Fact]
-    public async Task UpdateAlert_ShouldMarkAsVerified_WhenUsePushIsTrue()
+    public async Task UpdateAlert_ShouldNotMarkAsVerified_WhenUsePushIsTrue()
     {
         // Arrange
         var options = CreateOptions();
@@ -255,7 +255,7 @@ public class AlertServiceUpdateTests
         await using (var context = new ApplicationDbContext(options))
         {
             var savedAlert = await context.Alerts.FirstAsync(a => a.Id == alert.Id);
-            Assert.True(savedAlert.IsVerified);
+            Assert.False(savedAlert.IsVerified, "Alert should not be auto-verified when enabling push.");
         }
     }
 }

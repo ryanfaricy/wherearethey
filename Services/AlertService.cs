@@ -63,13 +63,8 @@ public class AlertService(
                 alert.EmailHash = null;
             }
 
-            // Push-based alerts are automatically verified
-            if (alert.UsePush)
-            {
-                logger.LogDebug("Alert uses push notifications, auto-verifying");
-                isVerified = true;
-            }
-
+            // Email hash is already set above
+            
             alert.ExternalId = Guid.NewGuid();
             alert.IsVerified = isVerified;
             alert.CreatedAt = DateTime.UtcNow;
@@ -270,7 +265,7 @@ public class AlertService(
         await using var context = await ContextFactory.CreateDbContextAsync();
         var candidateAlerts = await context.Alerts
             .AsNoTracking()
-            .Where(a => a.DeletedAt == null && a.IsVerified)
+            .Where(a => a.DeletedAt == null && (a.IsVerified || a.UsePush))
             .Where(a => a.Latitude >= minLat && a.Latitude <= maxLat &&
                        a.Longitude >= minLon && a.Longitude <= maxLon)
             .ToListAsync();
@@ -354,12 +349,6 @@ public class AlertService(
                 var isVerified = await context.EmailVerifications
                     .AnyAsync(v => v.EmailHash == emailHash && v.VerifiedAt != null);
 
-                if (alert.UsePush)
-                {
-                    logger.LogDebug("Alert updated to use push, auto-verifying");
-                    isVerified = true;
-                }
-
                 alert.IsVerified = isVerified;
 
                 if (isVerified)
@@ -372,12 +361,6 @@ public class AlertService(
                 var baseUrl = baseUrlProvider.GetBaseUrl();
                 backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
-            else if (alert.UsePush)
-            {
-                logger.LogDebug("Alert update: UsePush enabled, auto-verifying");
-                alert.IsVerified = true;
-            }
-
             return await UpdateInternalAsync(alert);
         }
         catch (Exception ex)

@@ -52,7 +52,7 @@ public class ReportProcessingService(
                 logger.LogDebug("Processing email notifications for {Count} alerts", matchingAlerts.Count);
                 foreach (var alert in matchingAlerts)
                 {
-                    if (!alert.UseEmail)
+                    if (!alert.UseEmail || !alert.IsVerified)
                     {
                         continue;
                     }

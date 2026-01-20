@@ -104,6 +104,37 @@ public class AlertServiceTests
     }
 
     [Fact]
+    public async Task CreateAlert_WithPush_ShouldNotAutoVerifyEmail()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var email = "test@example.com";
+        var alert = new Alert
+        {
+            Latitude = 40.7128,
+            Longitude = -74.0060,
+            RadiusKm = 5.0,
+            UserIdentifier = "test-user",
+            UsePush = true,
+            UseEmail = true
+        };
+
+        // Act
+        var result = await service.CreateAlertAsync(alert, email);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.False(result.Value!.IsVerified, "IsVerified should be false even if UsePush is true, as the email is not verified.");
+        
+        // Should still enqueue verification email because UseEmail is true and it's not verified
+        _backgroundJobClientMock.Verify(x => x.Create(
+            It.Is<Job>(job => job.Method.Name == nameof(IAlertService.SendVerificationEmailAsync) && (string)job.Args[0] == email),
+            It.IsAny<EnqueuedState>()), Times.Once);
+    }
+
+    [Fact]
     public async Task CreateAlert_ShouldHaveDefaultNotificationSettings()
     {
         // Arrange
@@ -461,7 +492,7 @@ public class AlertServiceTests
             context.Alerts.Add(new Alert
             {
                 Latitude = 40.0, Longitude = -74.0, RadiusKm = 10.0,
-                IsVerified = false,
+                IsVerified = false, UsePush = false,
                 CreatedAt = DateTime.UtcNow, EncryptedEmail = "enc",
             });
             await context.SaveChangesAsync();

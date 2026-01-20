@@ -40,7 +40,7 @@ public class ReportProcessingServiceTests
         // Arrange
         var service = CreateService();
         var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
-        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg" };
+        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg", IsVerified = true };
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
         _alertServiceMock.Setup(a => a.GetMatchingAlertsAsync(report.Latitude, report.Longitude))
@@ -115,7 +115,7 @@ public class ReportProcessingServiceTests
         // Arrange
         var service = CreateService();
         var report = new Report { Latitude = 40.0, Longitude = -74.0, ExternalId = Guid.NewGuid() };
-        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg" };
+        var alert = new Alert { Id = 1, EncryptedEmail = "enc-email", Message = "Alert msg", IsVerified = true };
         var customBaseUrl = "https://custom.com";
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings());
