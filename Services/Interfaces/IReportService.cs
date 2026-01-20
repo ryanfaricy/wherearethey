@@ -33,8 +33,9 @@ public interface IReportService
     /// </summary>
     /// <param name="hours">The number of hours back to look. If null, uses the system default.</param>
     /// <param name="includeDeleted">Whether to include soft-deleted reports.</param>
+    /// <param name="includeExternalId">Optional specific report External ID to include even if it doesn't meet other criteria (e.g. is soft-deleted or expired).</param>
     /// <returns>A list of recent reports.</returns>
-    Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false);
+    Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false, Guid? includeExternalId = null);
 
     /// <summary>
     /// Gets the most recent reports regardless of time frame.

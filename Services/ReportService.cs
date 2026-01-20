@@ -63,6 +63,7 @@ public class ReportService(
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var report = await context.Reports
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.ExternalId == externalId);
 
@@ -74,6 +75,7 @@ public class ReportService(
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var report = await context.Reports
+            .IgnoreQueryFilters()
             .AsNoTracking()
             .FirstOrDefaultAsync(r => r.Id == id);
 
@@ -81,7 +83,7 @@ public class ReportService(
     }
 
     /// <inheritdoc />
-    public async Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false)
+    public async Task<List<Report>> GetRecentReportsAsync(int? hours = null, bool includeDeleted = false, Guid? includeExternalId = null)
     {
         await using var context = await ContextFactory.CreateDbContextAsync();
         var settings = await settingsService.GetSettingsAsync();
@@ -90,19 +92,22 @@ public class ReportService(
         var actualHours = hours ?? settings.ReportExpiryHours;
         var cutoff = DateTime.UtcNow.AddHours(-actualHours);
         
-        var query = context.Reports.AsNoTracking();
+        var query = context.Reports.AsNoTracking().IgnoreQueryFilters();
 
-        if (includeDeleted)
+        if (includeExternalId.HasValue)
         {
-            query = query.IgnoreQueryFilters();
+            // If we have a specific ID, we include it even if it's old or soft-deleted.
+            // Other reports must still be recent and not soft-deleted (unless includeDeleted is true).
+            query = query.Where(r => r.ExternalId == includeExternalId.Value || 
+                                     (r.CreatedAt >= cutoff && (includeDeleted || r.DeletedAt == null)));
         }
-        
-        query = query.Where(r => r.CreatedAt >= cutoff);
-
-        if (!includeDeleted)
+        else
         {
-            // Redundant due to global filter but keeping for explicit clarity if filter is removed
-            query = query.Where(r => r.DeletedAt == null);
+            query = query.Where(r => r.CreatedAt >= cutoff);
+            if (!includeDeleted)
+            {
+                query = query.Where(r => r.DeletedAt == null);
+            }
         }
 
         return await query

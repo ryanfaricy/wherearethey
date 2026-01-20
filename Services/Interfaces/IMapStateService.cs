@@ -41,7 +41,9 @@ public interface IMapStateService : IDisposable
     /// <summary>
     /// Loads reports for the specified time window.
     /// </summary>
-    Task LoadReportsAsync(int? hours = null);
+    /// <param name="hours">The time window in hours.</param>
+    /// <param name="includeExternalId">Optional specific report to include even if it doesn't meet visibility criteria.</param>
+    Task LoadReportsAsync(int? hours = null, Guid? includeExternalId = null);
 
     /// <summary>
     /// Loads all reports regardless of time window (Admin only).

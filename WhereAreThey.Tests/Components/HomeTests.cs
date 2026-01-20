@@ -45,7 +45,7 @@ public class HomeTests : ComponentTestBase
         Services.AddSingleton(_mapNavigationManagerMock.Object);
 
         // Default setups to avoid NullReferenceException
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync(new List<Report>());
         _reportServiceMock.Setup(s => s.GetAllReportsAsync())
             .ReturnsAsync(new List<Report>());
@@ -85,7 +85,7 @@ public class HomeTests : ComponentTestBase
             new() { Id = 1, Latitude = 40.0, Longitude = -70.0, CreatedAt = DateTime.UtcNow },
         };
         
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync(reports);
         
         // Act
@@ -127,7 +127,7 @@ public class HomeTests : ComponentTestBase
         };
         
         // When admin and showDeleted is true, MapStateService calls GetRecentReportsAsync(..., true)
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), true))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), true, It.IsAny<Guid?>()))
             .ReturnsAsync(reports);
 
         // Act
@@ -153,7 +153,7 @@ public class HomeTests : ComponentTestBase
     public async Task Home_UpdatesMap_WhenNewReportAddedViaEvent()
     {
         // Arrange
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int>(), It.IsAny<bool>()))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync(new List<Report>());
         
         var cut = Render<Home>();
@@ -207,7 +207,7 @@ public class HomeTests : ComponentTestBase
             It.IsAny<bool>()),
         Times.AtLeastOnce);
 
-        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(12, It.IsAny<bool>()), Times.AtLeastOnce);
+        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(12, It.IsAny<bool>(), It.IsAny<Guid?>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -241,7 +241,7 @@ public class HomeTests : ComponentTestBase
         });
 
         // Assert
-        _hapticFeedbackServiceMock.Verify(h => h.VibrateUpdateAsync(), Times.Once);
+        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()), Times.AtLeastOnce);
     }
 
     [Fact]

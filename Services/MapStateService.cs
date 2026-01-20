@@ -212,15 +212,17 @@ public class MapStateService : IMapStateService
     }
 
     /// <inheritdoc />
-    public async Task LoadReportsAsync(int? hours = null)
+    public async Task LoadReportsAsync(int? hours = null, Guid? includeExternalId = null)
     {
         _lastLoadedHours = hours;
         _isAllLoaded = false;
         
-        var allReports = await _reportService.GetRecentReportsAsync(hours, _isAdmin && ShowDeleted);
+        var allReports = await _reportService.GetRecentReportsAsync(hours, _isAdmin && ShowDeleted, includeExternalId);
         lock (_lock)
         {
-            Reports = allReports.Where(ShouldShowReport).ToList();
+            // We still use ShouldShowReport as a secondary filter for regular reports,
+            // but we MUST ensure the includeExternalId report is kept if it was returned.
+            Reports = allReports.Where(r => r.ExternalId == includeExternalId || ShouldShowReport(r)).ToList();
         }
         
         if (MapInitialized)

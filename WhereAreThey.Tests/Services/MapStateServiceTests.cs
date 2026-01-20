@@ -25,7 +25,7 @@ public class MapStateServiceTests : IDisposable
         _alertServiceMock.Setup(s => s.GetAllAlertsAsync()).ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetActiveAlertsAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<bool>())).ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>())).ReturnsAsync([]);
         settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
         
         _service = new MapStateService(
@@ -73,7 +73,7 @@ public class MapStateServiceTests : IDisposable
             new() { Id = 1, DeletedAt = null, CreatedAt = DateTime.UtcNow },
             new() { Id = 2, DeletedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow },
         };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), true)).ReturnsAsync(reports);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), true, It.IsAny<Guid?>())).ReturnsAsync(reports);
         await _service.InitializeAsync("test-admin", isAdmin: true);
         _service.ShowDeleted = true;
 
@@ -107,7 +107,7 @@ public class MapStateServiceTests : IDisposable
     {
         // Arrange
         var reports = new List<Report> { new() { Id = 1, Latitude = 10, Longitude = 10, CreatedAt = DateTime.UtcNow } };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync(reports);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>())).ReturnsAsync(reports);
         _service.MapInitialized = true;
 
         // Act
@@ -156,7 +156,7 @@ public class MapStateServiceTests : IDisposable
     {
         // Arrange
         var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync([report]);
         
         await _service.InitializeAsync("test-admin", isAdmin: true);
@@ -236,7 +236,7 @@ public class MapStateServiceTests : IDisposable
         
         // Setup report mocks
         _reportServiceMock.Setup(s => s.GetAllReportsAsync()).ReturnsAsync([]);
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>())).ReturnsAsync([]);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>())).ReturnsAsync([]);
         
         // 1. Test Admin Mode
         await _service.InitializeAsync("test-admin", isAdmin: true);
@@ -247,7 +247,7 @@ public class MapStateServiceTests : IDisposable
         // 2. Switch to User Mode
         await _service.InitializeAsync("test-user", isAdmin: false);
         await _service.LoadReportsAsync(6);
-        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6, false), Times.Once);
+        _reportServiceMock.Verify(s => s.GetRecentReportsAsync(6, false, It.IsAny<Guid?>()), Times.Once);
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public class MapStateServiceTests : IDisposable
             new() { Id = 1, DeletedAt = null, CreatedAt = DateTime.UtcNow },
             new() { Id = 2, DeletedAt = DateTime.UtcNow, CreatedAt = DateTime.UtcNow },
         };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), false)).ReturnsAsync(reports);
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), false, It.IsAny<Guid?>())).ReturnsAsync(reports);
         await _service.InitializeAsync("test-admin", isAdmin: true);
 
         // Act
@@ -276,7 +276,7 @@ public class MapStateServiceTests : IDisposable
         // Arrange
         // Current report is recent
         var report = new Report { Id = 1, Latitude = 0, Longitude = 0, CreatedAt = DateTime.UtcNow };
-        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>()))
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
             .ReturnsAsync([report]);
             
         await _service.LoadReportsAsync(24); // Set window to 24h
@@ -339,6 +339,32 @@ public class MapStateServiceTests : IDisposable
 
         // Assert
         Assert.False(_service.ShowDeleted);
+    }
+
+    [Fact]
+    public async Task LoadReportsAsync_IncludesSpecificReportEvenIfDeleted()
+    {
+        // Arrange
+        var externalId = Guid.NewGuid();
+        var deletedReport = new Report 
+        { 
+            Id = 1, 
+            ExternalId = externalId, 
+            DeletedAt = DateTime.UtcNow, 
+            CreatedAt = DateTime.UtcNow 
+        };
+        
+        _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), false, externalId))
+            .ReturnsAsync([deletedReport]);
+            
+        await _service.InitializeAsync("test-user", isAdmin: false);
+
+        // Act
+        await _service.LoadReportsAsync(includeExternalId: externalId);
+
+        // Assert
+        Assert.Single(_service.Reports);
+        Assert.Equal(externalId, _service.Reports[0].ExternalId);
     }
 
     [Fact]

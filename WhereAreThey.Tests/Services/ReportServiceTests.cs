@@ -547,4 +547,123 @@ public class ReportServiceTests : IDisposable
         // Assert
         Assert.Single(results);
     }
+
+    [Fact]
+    public async Task GetReportById_ShouldReturnReport_EvenIfSoftDeleted()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new Report 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            CreatedAt = DateTime.UtcNow, 
+            ExternalId = Guid.NewGuid(),
+            DeletedAt = DateTime.UtcNow 
+        };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetReportByIdAsync(report.Id);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.DeletedAt);
+    }
+
+    [Fact]
+    public async Task GetReportByExternalId_ShouldReturnReport_EvenIfSoftDeleted()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var report = new Report 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            CreatedAt = DateTime.UtcNow, 
+            ExternalId = Guid.NewGuid(),
+            DeletedAt = DateTime.UtcNow 
+        };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(report);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var result = await service.GetReportByExternalIdAsync(report.ExternalId);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value!.DeletedAt);
+    }
+
+    [Fact]
+    public async Task GetRecentReportsAsync_ShouldIncludeSpecificallyRequestedSoftDeletedReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var externalId = Guid.NewGuid();
+        var deletedReport = new Report 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            CreatedAt = DateTime.UtcNow, 
+            ExternalId = externalId,
+            DeletedAt = DateTime.UtcNow 
+        };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(deletedReport);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var results = await service.GetRecentReportsAsync(hours: 24, includeDeleted: false, includeExternalId: externalId);
+
+        // Assert
+        Assert.Contains(results, r => r.ExternalId == externalId);
+    }
+
+    [Fact]
+    public async Task GetRecentReportsAsync_ShouldIncludeSpecificallyRequestedExpiredReport()
+    {
+        // Arrange
+        var options = CreateOptions();
+        var factory = CreateFactory(options);
+        var service = CreateService(factory);
+        var externalId = Guid.NewGuid();
+        var expiredReport = new Report 
+        { 
+            Latitude = 40.0, 
+            Longitude = -74.0, 
+            CreatedAt = DateTime.UtcNow.AddDays(-10), 
+            ExternalId = externalId
+        };
+
+        await using (var context = await factory.CreateDbContextAsync())
+        {
+            context.Reports.Add(expiredReport);
+            await context.SaveChangesAsync();
+        }
+
+        // Act
+        var results = await service.GetRecentReportsAsync(hours: 24, includeDeleted: false, includeExternalId: externalId);
+
+        // Assert
+        Assert.Contains(results, r => r.ExternalId == externalId);
+    }
 }
