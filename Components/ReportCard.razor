@@ -15,9 +15,9 @@
                 {
                     <RadzenBadge Text="EMERGENCY" BadgeStyle="BadgeStyle.Danger" Size="BadgeSize.ExtraSmall" />
                 }
-                @if (IsAdmin && Report.DeletedAt != null)
+                @if (Report.DeletedAt != null)
                 {
-                    <RadzenBadge Text="DELETED" BadgeStyle="BadgeStyle.Secondary" Size="BadgeSize.ExtraSmall" />
+                    <RadzenBadge Text="@L["DELETED"]" BadgeStyle="BadgeStyle.Secondary" Size="BadgeSize.ExtraSmall" />
                 }
             </RadzenStack>
 
@@ -125,6 +125,11 @@
                 "app-card",
                 Report.IsEmergency ? "app-card-report-emergency" : "app-card-report",
             };
+
+            if (Report.DeletedAt != null)
+            {
+                classes.Add("app-card-deleted");
+            }
 
             if (IsSelected)
             {

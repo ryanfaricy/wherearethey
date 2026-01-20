@@ -132,6 +132,15 @@ h1:focus {
     border-left: 4px solid var(--rz-success) !important;
 }
 
+.app-card-deleted {
+    opacity: 0.6;
+    background-color: rgba(0,0,0,0.03) !important;
+}
+
+[data-theme="dark"] .app-card-deleted {
+    background-color: rgba(255,255,255,0.05) !important;
+}
+
 @media (max-width: 768px) {
     .responsive-button-text .rz-button-text {
         display: none;

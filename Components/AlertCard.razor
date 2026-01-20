@@ -16,9 +16,9 @@
                 {
                     <RadzenBadge Text="@L["Pending_Verification"]" BadgeStyle="BadgeStyle.Warning" IsPill="true" />
                 }
-                @if (IsAdmin && Alert.DeletedAt != null)
+                @if (Alert.DeletedAt != null)
                 {
-                    <RadzenBadge Text="DELETED" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
+                    <RadzenBadge Text="@L["DELETED"]" BadgeStyle="BadgeStyle.Secondary" IsPill="true" />
                 }
                 @if (Alert.UseEmail)
                 {
@@ -112,6 +112,11 @@
             if (ShowOrangeBorder)
             {
                 classes.Add("app-card-warning");
+            }
+
+            if (Alert.DeletedAt != null)
+            {
+                classes.Add("app-card-deleted");
             }
 
             if (IsSelected)

@@ -23,7 +23,7 @@
                                          Text="@(report.IsEmergency ? "EMERGENCY" : "NORMAL")" />
                             @if (report.DeletedAt != null)
                             {
-                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                                <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@L["DELETED"]" />
                             }
                         </RadzenStack>
                         
@@ -82,11 +82,11 @@ else
                 <Template Context="report">
                     @if (report.DeletedAt != null)
                     {
-                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="DELETED" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Secondary" Text="@L["DELETED"]" />
                     }
                     else
                     {
-                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="ACTIVE" />
+                        <RadzenBadge BadgeStyle="BadgeStyle.Success" Text="@L["ACTIVE"]" />
                     }
                 </Template>
             </RadzenDataGridColumn>

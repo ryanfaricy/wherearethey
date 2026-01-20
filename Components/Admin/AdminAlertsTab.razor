@@ -32,7 +32,7 @@
                                 @if (alert.UsePush) { <RadzenBadge BadgeStyle="BadgeStyle.Info" Text="PUSH" /> }
                                 <RadzenText TextStyle="TextStyle.Caption" Class="rz-ml-2"><b>Status:</b></RadzenText>
                                 <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                                             Text="@(alert.DeletedAt == null ? "ACTIVE" : "DELETED")" />
+                                             Text="@(alert.DeletedAt == null ? L["ACTIVE"] : L["DELETED"])" />
                             </RadzenStack>
                         </RadzenStack>
 
@@ -90,7 +90,7 @@ else
             <RadzenDataGridColumn TItem="Alert" Property="DeletedAt" Title="Status">
                 <Template Context="alert">
                     <RadzenBadge BadgeStyle="@(alert.DeletedAt == null ? BadgeStyle.Info : BadgeStyle.Secondary)" 
-                                 Text="@(alert.DeletedAt == null ? "ACTIVE" : "DELETED")" />
+                                 Text="@(alert.DeletedAt == null ? L["ACTIVE"] : L["DELETED"])" />
                 </Template>
             </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Alert" Property="RadiusKm" Title="Radius (km)" />
