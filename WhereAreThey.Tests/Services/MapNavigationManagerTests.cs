@@ -131,4 +131,20 @@ public class MapNavigationManagerTests
         Assert.Null(result.InitialLng);
         Assert.Null(result.InitialRadius);
     }
+    [Fact]
+    public async Task GetNavigationStateAsync_WithMissingReportGuid_SetsReportNotFound()
+    {
+        // Arrange
+        var guid = Guid.NewGuid();
+        _reportServiceMock.Setup(s => s.GetReportByExternalIdAsync(guid))
+            .ReturnsAsync(Result<Report>.Failure("Not found"));
+        _navManager.SetUri($"http://localhost/?reportId={guid}");
+
+        // Act
+        var result = await _service.GetNavigationStateAsync();
+
+        // Assert
+        Assert.Null(result.FocusReportId);
+        Assert.True(result.ReportNotFound);
+    }
 }

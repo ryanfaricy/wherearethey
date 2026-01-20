@@ -21,6 +21,7 @@ public class MapNavigationManager(
         double? initialLat = null;
         double? initialLng = null;
         double? initialRadius = null;
+        bool reportNotFound = false;
 
         if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
         {
@@ -38,6 +39,10 @@ public class MapNavigationManager(
                     focusReportId = report.Id;
                     initialLat = report.Latitude;
                     initialLng = report.Longitude;
+                }
+                else
+                {
+                    reportNotFound = true;
                 }
             }
             else if (int.TryParse(reportIdStr, out var rId))
@@ -78,6 +83,7 @@ public class MapNavigationManager(
             InitialLat = initialLat,
             InitialLng = initialLng,
             InitialRadius = initialRadius,
+            ReportNotFound = reportNotFound,
         };
     }
 }

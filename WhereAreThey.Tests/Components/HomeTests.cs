@@ -2,6 +2,7 @@ using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Radzen;
 using WhereAreThey.Components.Pages;
 using WhereAreThey.Components.Home;
 using WhereAreThey.Models;
@@ -278,5 +279,42 @@ public class HomeTests : ComponentTestBase
         // Assert: SetMapViewAsync should NOT have been called for NY location 
         // because we are focusing a report.
         _mapServiceMock.Verify(m => m.SetMapViewAsync(40.7128, -74.0060, It.IsAny<double?>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task Home_ShowsNotification_WhenReportNotFoundInNavState()
+    {
+        // Arrange
+        var notificationService = Services.GetRequiredService<NotificationService>();
+
+        _mapNavigationManagerMock.Setup(m => m.GetNavigationStateAsync())
+            .ReturnsAsync(new MapNavigationState { ReportNotFound = true });
+
+        // Act
+        var cut = Render<Home>();
+        await cut.InvokeAsync(() => Task.Delay(100));
+
+        // Assert
+        Assert.Contains(notificationService.Messages, m => m.Summary == "Report_Removed");
+    }
+
+    [Fact]
+    public async Task Home_ShowsNotification_WhenIntReportIdNotFound()
+    {
+        // Arrange
+        var notificationService = Services.GetRequiredService<NotificationService>();
+
+        _mapNavigationManagerMock.Setup(m => m.GetNavigationStateAsync())
+            .ReturnsAsync(new MapNavigationState { FocusReportId = 999 });
+
+        _reportServiceMock.Setup(s => s.GetReportByIdAsync(999))
+            .ReturnsAsync(Result<Report>.Failure("Not found"));
+
+        // Act
+        var cut = Render<Home>();
+        await cut.InvokeAsync(() => Task.Delay(100));
+
+        // Assert
+        Assert.Contains(notificationService.Messages, m => m.Summary == "Report_Removed");
     }
 }

@@ -631,4 +631,10 @@
   <data name="LIST_MORE" xml:space="preserve">
     <value>VER MÁS</value>
   </data>
+  <data name="Report_Removed" xml:space="preserve">
+    <value>Reporte Eliminado</value>
+  </data>
+  <data name="Report_Removed_Detail" xml:space="preserve">
+    <value>Este reporte ha sido eliminado del sistema.</value>
+  </data>
 </root>

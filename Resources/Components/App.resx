@@ -655,4 +655,10 @@
   <data name="LIST_MORE" xml:space="preserve">
     <value>LIST MORE</value>
   </data>
+  <data name="Report_Removed" xml:space="preserve">
+    <value>Report Removed</value>
+  </data>
+  <data name="Report_Removed_Detail" xml:space="preserve">
+    <value>This report has been removed from the system.</value>
+  </data>
 </root>

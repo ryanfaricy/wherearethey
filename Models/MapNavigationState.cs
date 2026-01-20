@@ -7,4 +7,5 @@ public record MapNavigationState
     public double? InitialLat { get; init; }
     public double? InitialLng { get; init; }
     public double? InitialRadius { get; init; }
+    public bool ReportNotFound { get; init; }
 }
