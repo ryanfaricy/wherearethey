@@ -120,15 +120,13 @@ else
         
         if (confirm == true)
         {
-            var result = await FeedbackService.DeleteFeedbackAsync(id, MapState.ShowDeleted);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Feedback deleted");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
-            }
+            await ValidationService.ExecuteAsync(
+                () => FeedbackService.DeleteFeedbackAsync(id, MapState.ShowDeleted),
+                successMessage: "Feedback deleted",
+                errorTitle: "Delete failed",
+                showHapticFeedback: false,
+                logContext: $"AdminFeedbackTab.DeleteFeedback {id}"
+            );
         }
     }
 }

@@ -148,15 +148,13 @@ else
         
         if (confirm == true)
         {
-            var result = await ReportService.DeleteReportAsync(id, MapState.ShowDeleted);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Report deleted");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
-            }
+            await ValidationService.ExecuteAsync(
+                () => ReportService.DeleteReportAsync(id, MapState.ShowDeleted),
+                successMessage: "Report deleted",
+                errorTitle: "Delete failed",
+                showHapticFeedback: false,
+                logContext: $"AdminReportsTab.DeleteReport {id}"
+            );
         }
     }
 

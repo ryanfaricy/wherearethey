@@ -2,6 +2,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
 @inject IAlertService AlertService
+@inject IValidationService ValidationService
 @inject IGeocodingService GeocodingService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
@@ -189,68 +190,38 @@
 
     private async Task CreateAlert()
     {
-        if (_isSubmitting)
-        {
-            return;
-        }
+        if (_isSubmitting) return;
 
         _isSubmitting = true;
-        try
-        {
-            _newAlert.UserIdentifier = _userIdentifier;
-            var result = await AlertService.CreateAlertAsync(_newAlert, _email);
-            if (result.IsSuccess)
+        _newAlert.UserIdentifier = _userIdentifier;
+
+        await ValidationService.ExecuteAsync(
+            async () => await AlertService.CreateAlertAsync(_newAlert, _email),
+            successMessage: "Alert created successfully",
+            errorTitle: "Failed to create alert",
+            onSuccess: async (alert) =>
             {
                 await StorageService.SetItemAsync("last-alert-email", _email);
-                await HapticFeedbackService.VibrateSuccessAsync();
-                NotificationService.Notify(NotificationSeverity.Success, "Alert created successfully");
-                
                 _newAlert = new Alert { RadiusKm = 5.0, UserIdentifier = _userIdentifier };
                 _email = "";
                 await LoadAlerts();
                 DialogService.Close(true);
-            }
-            else
-            {
-                await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", result.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to create alert for email {Email}", _email);
-            await HapticFeedbackService.VibrateErrorAsync();
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to create alert", ex.Message);
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
+            },
+            logContext: $"CreateAlert for email {_email}"
+        );
+
+        _isSubmitting = false;
     }
 
     private async Task DeactivateAlert(int id)
     {
-        try
-        {
-            var result = await AlertService.DeleteAlertAsync(id);
-            if (result.IsSuccess)
-            {
-                await HapticFeedbackService.VibrateWarningAsync();
-                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
-                await LoadAlerts();
-            }
-            else
-            {
-                await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, "Failed to delete alert", result.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to delete alert {AlertId}", id);
-            await HapticFeedbackService.VibrateErrorAsync();
-            NotificationService.Notify(NotificationSeverity.Error, "Failed to delete alert", ex.Message);
-        }
+        await ValidationService.ExecuteAsync(
+            () => AlertService.DeleteAlertAsync(id),
+            successMessage: "Alert deleted",
+            errorTitle: "Failed to delete alert",
+            onSuccess: async () => await LoadAlerts(),
+            logContext: $"DeactivateAlert {id}"
+        );
     }
 
     private void ShowOnMap(Alert alert)

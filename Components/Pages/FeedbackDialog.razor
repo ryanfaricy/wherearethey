@@ -5,6 +5,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IHapticFeedbackService HapticFeedbackService
+@inject IValidationService ValidationService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JsRuntime
 @inject ILogger<FeedbackDialog> Logger
@@ -68,45 +69,27 @@
 
     private async Task SubmitFeedback()
     {
-        if (_isSubmitting)
+        if (_isSubmitting) return;
+
+        // Easter egg to get to admin login screen
+        if (_feedback.Type == L["Feature"] && _feedback.Message?.Trim().Equals("let me into cp", StringComparison.OrdinalIgnoreCase) == true)
         {
+            DialogService.Close(true);
+            NavigationManager.NavigateTo("/cp");
             return;
         }
 
         _isSubmitting = true;
-        try
-        {
-            // Easter egg to get to admin login screen
-            if (_feedback.Type == L["Feature"] && _feedback.Message?.Trim().Equals("let me into cp", StringComparison.OrdinalIgnoreCase) == true)
-            {
-                DialogService.Close(true);
-                NavigationManager.NavigateTo("/cp");
-                return;
-            }
+        _feedback.UserIdentifier = _userIdentifier;
 
-            _feedback.UserIdentifier = _userIdentifier;
-            var result = await FeedbackService.CreateFeedbackAsync(_feedback);
-            if (result.IsSuccess)
-            {
-                await HapticFeedbackService.VibrateSuccessAsync();
-                NotificationService.Notify(NotificationSeverity.Success, L["Feedback_Success"]);
-                DialogService.Close(true);
-            }
-            else
-            {
-                await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], result.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to submit feedback");
-            await HapticFeedbackService.VibrateErrorAsync();
-            NotificationService.Notify(NotificationSeverity.Error, L["Feedback_Fail"], ex.Message);
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
+        await ValidationService.ExecuteAsync(
+            async () => await FeedbackService.CreateFeedbackAsync(_feedback),
+            successMessage: L["Feedback_Success"],
+            errorTitle: L["Feedback_Fail"],
+            onSuccess: async () => DialogService.Close(true),
+            logContext: "SubmitFeedback"
+        );
+
+        _isSubmitting = false;
     }
 }

@@ -6,6 +6,7 @@
 @inject DialogService DialogService
 @inject NotificationService NotificationService
 @inject IMapService MapService
+@inject IValidationService ValidationService
 @inject IClientStorageService StorageService
 @inject ILogger<Home> Logger
 @inject IStringLocalizer<App> L
@@ -556,9 +557,13 @@
 
         if (confirmed == true)
         {
-            await AlertService.DeleteAlertAsync(alertId);
-            NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
-            await MapState.LoadAlertsAsync();
+            await ValidationService.ExecuteAsync(
+                () => AlertService.DeleteAlertAsync(alertId),
+                successMessage: "Alert deleted",
+                errorTitle: "Delete failed",
+                onSuccess: async () => await MapState.LoadAlertsAsync(),
+                logContext: $"Home.OnAlertDeleteClick {alertId}"
+            );
         }
     }
 

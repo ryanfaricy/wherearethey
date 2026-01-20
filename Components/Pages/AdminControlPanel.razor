@@ -3,6 +3,7 @@
 @inject IAdminService AdminService
 @inject IMapStateService MapState
 @inject IAdminPasskeyService PasskeyService
+@inject IValidationService ValidationService
 @inject ProtectedSessionStorage SessionStorage
 @inject ProtectedLocalStorage LocalStorage
 @inject NotificationService NotificationService
@@ -151,68 +152,54 @@
 
     private async Task Login()
     {
-        try
-        {
-            var result = await AdminService.LoginAsync(_passwordInput, _clientIp);
-            if (result.IsSuccess)
+        await ValidationService.ExecuteAsync(
+            () => AdminService.LoginAsync(_passwordInput, _clientIp),
+            successMessage: "Login successful",
+            errorTitle: "Login failed",
+            onSuccess: async () =>
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
                 await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
                 AdminService.NotifyAdminLogin();
-                NotificationService.Notify(NotificationSeverity.Success, "Login successful");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Login failed", result.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Admin login failed for IP {ClientIp}", _clientIp);
-            NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
-        }
+            },
+            showHapticFeedback: false,
+            logContext: $"Admin login attempt from IP {_clientIp}"
+        );
     }
 
     private async Task LoginWithPasskey()
     {
-        if (_module == null)
-        {
-            return;
-        }
+        if (_module == null) return;
 
-        try
-        {
-            var options = await PasskeyService.GetAssertionOptionsAsync();
-            var jsonOptions = options.ToJson();
-
-            var responseJson = await _module.InvokeAsync<string>("loginWithPasskey", jsonOptions);
-            var assertionRawResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(responseJson);
-
-            if (assertionRawResponse == null)
+        await ValidationService.ExecuteAsync(
+            async () =>
             {
-                throw new Exception("Failed to parse authenticator response");
-            }
+                var options = await PasskeyService.GetAssertionOptionsAsync();
+                var jsonOptions = options.ToJson();
 
-            var result = await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp);
-            if (result.IsSuccess)
+                var responseJson = await _module.InvokeAsync<string>("loginWithPasskey", jsonOptions);
+                var assertionRawResponse = JsonSerializer.Deserialize<AuthenticatorAssertionRawResponse>(responseJson);
+
+                if (assertionRawResponse == null)
+                {
+                    return Result.Failure("Failed to parse authenticator response");
+                }
+
+                return await PasskeyService.CompleteAssertionAsync(assertionRawResponse, options, _clientIp);
+            },
+            successMessage: "Login successful",
+            errorTitle: "Login failed",
+            onSuccess: async () =>
             {
                 _isAuthenticated = true;
                 await SessionStorage.SetAsync("isAdmin", true);
                 await LocalStorage.SetAsync("lastAdminLogin", DateTime.UtcNow);
                 AdminService.NotifyAdminLogin();
-                NotificationService.Notify(NotificationSeverity.Success, "Login successful");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Login failed", result.Error);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Admin passkey login failed for IP {ClientIp}", _clientIp);
-            NotificationService.Notify(NotificationSeverity.Error, "Login failed", ex.Message);
-        }
+            },
+            showHapticFeedback: false,
+            logContext: $"Admin passkey login attempt from IP {_clientIp}"
+        );
     }
 
     private async Task Logout()

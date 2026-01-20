@@ -46,7 +46,7 @@ public class SettingsService(
     }
 
     /// <inheritdoc />
-    public async Task UpdateSettingsAsync(SystemSettings settings)
+    public async Task<Result> UpdateSettingsAsync(SystemSettings settings)
     {
         await _semaphore.WaitAsync();
         try
@@ -73,6 +73,11 @@ public class SettingsService(
             _cachedSettings = settings;
             _lastUpdate = DateTime.UtcNow;
             eventService.NotifySettingsChanged(settings);
+            return Result.Success();
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure(ex.Message);
         }
         finally
         {

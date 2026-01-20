@@ -17,5 +17,6 @@ public interface ISettingsService
     /// Updates the system settings.
     /// </summary>
     /// <param name="settings">The new settings to apply.</param>
-    Task UpdateSettingsAsync(SystemSettings settings);
+    /// <returns>A result indicating success or failure.</returns>
+    Task<Result> UpdateSettingsAsync(SystemSettings settings);
 }

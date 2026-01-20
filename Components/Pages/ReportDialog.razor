@@ -7,6 +7,7 @@
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 @inject IMapService MapService
+@inject IValidationService ValidationService
 @inject IClientStorageService StorageService
 @inject IHapticFeedbackService HapticFeedbackService
 @inject ILogger<ReportDialog> Logger
@@ -154,44 +155,23 @@
 
     private async Task SubmitReport()
     {
-        if (_isSubmitting)
-        {
-            return;
-        }
+        if (_isSubmitting) return;
 
         _isSubmitting = true;
-        try
-        {
-            var addResult = await ReportService.CreateReportAsync(Report);
-            if (addResult.IsSuccess)
+
+        await ValidationService.ExecuteAsync(
+            async () => await ReportService.CreateReportAsync(Report),
+            successMessage: L["Report_Success"],
+            errorTitle: L["Report_Fail"],
+            onSuccess: async () =>
             {
                 await ClearDraft();
-                if (Report.IsEmergency)
-                {
-                    await HapticFeedbackService.VibrateEmergencyAsync();
-                }
-                else
-                {
-                    await HapticFeedbackService.VibrateSuccessAsync();
-                }
-                NotificationService.Notify(NotificationSeverity.Success, L["Report_Success"]);
+                if (Report.IsEmergency) await HapticFeedbackService.VibrateEmergencyAsync();
                 DialogService.Close(true);
-            }
-            else
-            {
-                await HapticFeedbackService.VibrateErrorAsync();
-                NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], addResult.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            await HapticFeedbackService.VibrateErrorAsync();
-            Logger.LogError(ex, "Failed to submit report at {Lat}, {Lng}", Report.Latitude, Report.Longitude);
-            NotificationService.Notify(NotificationSeverity.Error, L["Report_Fail"], ex.Message);
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
+            },
+            logContext: $"SubmitReport at {Report.Latitude}, {Report.Longitude}"
+        );
+
+        _isSubmitting = false;
     }
 }

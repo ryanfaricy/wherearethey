@@ -129,15 +129,13 @@ else
         
         if (confirm == true)
         {
-            var result = await DonationService.DeleteDonationAsync(id, MapState.ShowDeleted);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Donation deleted");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
-            }
+            await ValidationService.ExecuteAsync(
+                () => DonationService.DeleteDonationAsync(id, MapState.ShowDeleted),
+                successMessage: "Donation deleted",
+                errorTitle: "Delete failed",
+                showHapticFeedback: false,
+                logContext: $"AdminDonationsTab.DeleteDonation {id}"
+            );
         }
     }
 }

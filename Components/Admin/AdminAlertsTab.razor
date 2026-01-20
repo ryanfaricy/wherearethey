@@ -112,15 +112,13 @@ else
 
         if (confirm == true)
         {
-            var result = await AlertService.DeleteAlertAsync(id, MapState.ShowDeleted);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Alert deleted");
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Delete failed", result.Error ?? "Unknown error");
-            }
+            await ValidationService.ExecuteAsync(
+                () => AlertService.DeleteAlertAsync(id, MapState.ShowDeleted),
+                successMessage: "Alert deleted",
+                errorTitle: "Delete failed",
+                showHapticFeedback: false,
+                logContext: $"AdminAlertsTab.DeleteAlert {id}"
+            );
         }
     }
 

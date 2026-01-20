@@ -161,6 +161,7 @@ builder.Services.AddScoped<IHapticFeedbackService, HapticFeedbackService>();
 builder.Services.AddScoped<IMapNavigationManager, MapNavigationManager>();
 builder.Services.AddScoped<IAdminPasskeyService, AdminPasskeyService>();
 builder.Services.AddScoped<IBaseUrlProvider, BaseUrlProvider>();
+builder.Services.AddScoped<IValidationService, ValidationService>();
 builder.Services.AddScoped<IFido2>(sp =>
 {
     var appOptions = sp.GetRequiredService<IOptions<AppOptions>>().Value;

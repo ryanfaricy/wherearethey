@@ -2,6 +2,7 @@
 @using WhereAreThey.Services.Interfaces
 @inject IAlertService AlertService
 @inject IGeocodingService GeocodingService
+@inject IValidationService ValidationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 
@@ -145,29 +146,19 @@
     private async Task Save()
     {
         _isSubmitting = true;
-        try
-        {
-            var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
-            var newEmail = _email != originalEmail ? _email : null;
 
-            var result = await AlertService.UpdateAlertAsync(_alert, newEmail);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Alert updated successfully");
-                DialogService.Close(true);
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
+        var originalEmail = AlertService.DecryptEmail(Alert.EncryptedEmail);
+        var newEmail = _email != originalEmail ? _email : null;
+
+        await ValidationService.ExecuteAsync(
+            async () => await AlertService.UpdateAlertAsync(_alert, newEmail),
+            successMessage: "Alert updated successfully",
+            errorTitle: "Update failed",
+            onSuccess: async () => DialogService.Close(true),
+            showHapticFeedback: false,
+            logContext: "AdminEditAlertDialog.Save"
+        );
+
+        _isSubmitting = false;
     }
 }

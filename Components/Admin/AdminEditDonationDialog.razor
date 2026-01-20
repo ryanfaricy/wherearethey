@@ -1,6 +1,7 @@
 @using WhereAreThey.Models
 @using WhereAreThey.Services.Interfaces
 @inject IDonationService DonationService
+@inject IValidationService ValidationService
 @inject NotificationService NotificationService
 @inject DialogService DialogService
 
@@ -80,26 +81,16 @@
     private async Task Save()
     {
         _isSubmitting = true;
-        try
-        {
-            var result = await DonationService.UpdateDonationAsync(_donation);
-            if (result.IsSuccess)
-            {
-                NotificationService.Notify(NotificationSeverity.Success, "Donation updated successfully");
-                DialogService.Close(true);
-            }
-            else
-            {
-                NotificationService.Notify(NotificationSeverity.Error, "Update failed", result.Error ?? "Unknown error");
-            }
-        }
-        catch (Exception ex)
-        {
-            NotificationService.Notify(NotificationSeverity.Error, "Update failed", ex.Message);
-        }
-        finally
-        {
-            _isSubmitting = false;
-        }
+
+        await ValidationService.ExecuteAsync(
+            async () => await DonationService.UpdateDonationAsync(_donation),
+            successMessage: "Donation updated successfully",
+            errorTitle: "Update failed",
+            onSuccess: async () => DialogService.Close(true),
+            showHapticFeedback: false,
+            logContext: "AdminEditDonationDialog.Save"
+        );
+
+        _isSubmitting = false;
     }
 }

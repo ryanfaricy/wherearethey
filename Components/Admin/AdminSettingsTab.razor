@@ -5,8 +5,9 @@
 @using WhereAreThey.Services.Interfaces
 @inject ISettingsService SettingsService
 @inject IAdminPasskeyService PasskeyService
-@inject IJSRuntime JsRuntime
+@inject IValidationService ValidationService
 @inject NotificationService NotificationService
+@inject IJSRuntime JsRuntime
 @inject ILogger<AdminSettingsTab> Logger
 
 <RadzenStack Gap="1.5rem">
@@ -144,63 +145,56 @@
 
     private async Task SaveSettings()
     {
-        try
-        {
-            await SettingsService.UpdateSettingsAsync(_systemSettings);
-            NotificationService.Notify(NotificationSeverity.Success, "Settings saved successfully");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to save settings");
-            NotificationService.Notify(NotificationSeverity.Error, "Save failed", ex.Message);
-        }
+        await ValidationService.ExecuteAsync(
+            () => SettingsService.UpdateSettingsAsync(_systemSettings),
+            successMessage: "Settings saved successfully",
+            errorTitle: "Save failed",
+            showHapticFeedback: false,
+            logContext: "AdminSettingsTab.SaveSettings"
+        );
     }
 
     private async Task RegisterPasskey()
     {
-        if (_module == null)
-        {
-            return;
-        }
+        if (_module == null) return;
 
-        try
-        {
-            var options = await PasskeyService.GetRegistrationOptionsAsync("admin@aretheyhere.com");
-            var jsonOptions = options.ToJson();
-            
-            var responseJson = await _module.InvokeAsync<string>("registerPasskey", jsonOptions);
-            var attestationRawResponse = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(responseJson);
-
-            if (attestationRawResponse == null)
+        await ValidationService.ExecuteAsync(
+            async () =>
             {
-                throw new Exception("Failed to parse authenticator response");
-            }
+                var options = await PasskeyService.GetRegistrationOptionsAsync("admin@aretheyhere.com");
+                var jsonOptions = options.ToJson();
 
-            await PasskeyService.CompleteRegistrationAsync(attestationRawResponse, options, _newKeyName);
-            
-            _newKeyName = "";
-            _passkeys = await PasskeyService.GetPasskeysAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Passkey registered successfully");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to register passkey");
-            NotificationService.Notify(NotificationSeverity.Error, "Registration failed", ex.Message);
-        }
+                var responseJson = await _module.InvokeAsync<string>("registerPasskey", jsonOptions);
+                var attestationRawResponse = JsonSerializer.Deserialize<AuthenticatorAttestationRawResponse>(responseJson);
+
+                if (attestationRawResponse == null)
+                {
+                    return Result.Failure("Failed to parse authenticator response");
+                }
+
+                return await PasskeyService.CompleteRegistrationAsync(attestationRawResponse, options, _newKeyName);
+            },
+            successMessage: "Passkey registered successfully",
+            errorTitle: "Registration failed",
+            onSuccess: async () =>
+            {
+                _newKeyName = "";
+                _passkeys = await PasskeyService.GetPasskeysAsync();
+            },
+            showHapticFeedback: false,
+            logContext: "AdminSettingsTab.RegisterPasskey"
+        );
     }
 
     private async Task DeletePasskey(int id)
     {
-        try
-        {
-            await PasskeyService.DeletePasskeyAsync(id);
-            _passkeys = await PasskeyService.GetPasskeysAsync();
-            NotificationService.Notify(NotificationSeverity.Success, "Passkey deleted");
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to delete passkey");
-            NotificationService.Notify(NotificationSeverity.Error, "Delete failed", ex.Message);
-        }
+        await ValidationService.ExecuteAsync(
+            () => PasskeyService.DeletePasskeyAsync(id),
+            successMessage: "Passkey deleted",
+            errorTitle: "Delete failed",
+            onSuccess: async () => _passkeys = await PasskeyService.GetPasskeysAsync(),
+            showHapticFeedback: false,
+            logContext: $"AdminSettingsTab.DeletePasskey {id}"
+        );
     }
 }
