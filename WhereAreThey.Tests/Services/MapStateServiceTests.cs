@@ -351,7 +351,7 @@ public class MapStateServiceTests : IDisposable
             Id = 1, 
             ExternalId = externalId, 
             DeletedAt = DateTime.UtcNow, 
-            CreatedAt = DateTime.UtcNow 
+            CreatedAt = DateTime.UtcNow,
         };
         
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), false, externalId))

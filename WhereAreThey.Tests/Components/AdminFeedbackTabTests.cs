@@ -57,7 +57,7 @@ public class AdminFeedbackTabTests : ComponentTestBase
     public async Task AdminFeedbackTab_ShouldUpdateWhenEntityAdded()
     {
         // Arrange
-        _feedbackServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync(new List<Feedback>());
+        _feedbackServiceMock.Setup(s => s.GetAllAsync(true)).ReturnsAsync([]);
         var cut = Render<AdminFeedbackTab>();
 
         var newFeedback = new Feedback { Id = 3, Message = "New Feedback", Type = "Bug", CreatedAt = DateTime.UtcNow };

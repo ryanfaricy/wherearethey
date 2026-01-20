@@ -42,8 +42,6 @@
     <!-- Map Container -->
     <MapContainer @ref="_mapContainer"
                  ElementId="heatmap"
-                 InitialLat="@_initialLat"
-                 InitialLng="@_initialLng"
                  IsAdmin="@_isAdmin"
                  AlertCreationMode="@_alertCreationMode"
                  OnMapClick="@OnHeatMapClick"
@@ -83,8 +81,6 @@
     private bool _followMe;
     private int _selectedHours = 24;
     private string? _searchAddress;
-    private double _initialLat;
-    private double _initialLng;
     private bool _alertCreationMode;
     private int? _lastHandledFocusReportId;
     private bool _hasExplicitInitialView;
@@ -237,7 +233,7 @@
                     Severity = NotificationSeverity.Warning,
                     Summary = L["Report_Removed"],
                     Detail = L["Report_Removed_Detail"],
-                    Duration = 6000
+                    Duration = 6000,
                 });
             }
 
@@ -366,7 +362,7 @@
                 Severity = NotificationSeverity.Warning,
                 Summary = L["Report_Removed"],
                 Detail = L["Report_Removed_Detail"],
-                Duration = 6000
+                Duration = 6000,
             });
         }
     }

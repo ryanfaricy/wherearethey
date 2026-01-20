@@ -561,7 +561,7 @@ public class ReportServiceTests : IDisposable
             Longitude = -74.0, 
             CreatedAt = DateTime.UtcNow, 
             ExternalId = Guid.NewGuid(),
-            DeletedAt = DateTime.UtcNow 
+            DeletedAt = DateTime.UtcNow,
         };
 
         await using (var context = await factory.CreateDbContextAsync())
@@ -591,7 +591,7 @@ public class ReportServiceTests : IDisposable
             Longitude = -74.0, 
             CreatedAt = DateTime.UtcNow, 
             ExternalId = Guid.NewGuid(),
-            DeletedAt = DateTime.UtcNow 
+            DeletedAt = DateTime.UtcNow,
         };
 
         await using (var context = await factory.CreateDbContextAsync())
@@ -622,7 +622,7 @@ public class ReportServiceTests : IDisposable
             Longitude = -74.0, 
             CreatedAt = DateTime.UtcNow, 
             ExternalId = externalId,
-            DeletedAt = DateTime.UtcNow 
+            DeletedAt = DateTime.UtcNow,
         };
 
         await using (var context = await factory.CreateDbContextAsync())
@@ -651,7 +651,7 @@ public class ReportServiceTests : IDisposable
             Latitude = 40.0, 
             Longitude = -74.0, 
             CreatedAt = DateTime.UtcNow.AddDays(-10), 
-            ExternalId = externalId
+            ExternalId = externalId,
         };
 
         await using (var context = await factory.CreateDbContextAsync())

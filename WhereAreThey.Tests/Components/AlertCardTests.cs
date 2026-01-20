@@ -26,7 +26,7 @@ public class AlertCardTests : ComponentTestBase
             Id = 1,
             DeletedAt = DateTime.UtcNow,
             Message = "Test alert",
-            EncryptedEmail = "encrypted"
+            EncryptedEmail = "encrypted",
         };
 
         // Act
@@ -51,7 +51,7 @@ public class AlertCardTests : ComponentTestBase
             Id = 1,
             DeletedAt = DateTime.UtcNow,
             Message = "Test alert",
-            EncryptedEmail = "encrypted"
+            EncryptedEmail = "encrypted",
         };
 
         // Act

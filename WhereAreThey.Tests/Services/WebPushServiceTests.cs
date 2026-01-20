@@ -24,7 +24,7 @@ public class WebPushServiceTests
             .ReturnsAsync(new SystemSettings 
             { 
                 VapidPublicKey = "test-public-key", 
-                VapidPrivateKey = "test-private-key" 
+                VapidPrivateKey = "test-private-key",
             });
 
         _emailOptionsMock.Setup(o => o.Value)
@@ -51,7 +51,7 @@ public class WebPushServiceTests
 
         var subscriptions = new List<WebPushSubscription>
         {
-            new WebPushSubscription { Id = 1, Endpoint = "https://endpoint.com", P256DH = "p256dh", Auth = "auth" }
+            new() { Id = 1, Endpoint = "https://endpoint.com", P256DH = "p256dh", Auth = "auth" },
         };
 
         // Act & Assert
@@ -91,7 +91,7 @@ public class WebPushServiceTests
 
         var subscriptions = new List<WebPushSubscription>
         {
-            new WebPushSubscription { Id = 1, Endpoint = "https://endpoint.com", P256DH = "p256dh", Auth = "auth" }
+            new() { Id = 1, Endpoint = "https://endpoint.com", P256DH = "p256dh", Auth = "auth" },
         };
 
         // Act

@@ -21,24 +21,23 @@ public class BulkDeleteOptimizationTests : IDisposable
     private readonly Mock<IValidator<Report>> _validatorMock = new();
     private readonly Mock<ILogger<ReportService>> _loggerMock = new();
     private readonly SqliteConnection _connection;
-    private readonly DbContextOptions<ApplicationDbContext> _options;
 
     public BulkDeleteOptimizationTests()
     {
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        _options = new DbContextOptionsBuilder<ApplicationDbContext>()
+        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseSqlite(_connection)
             .Options;
 
-        using (var context = new ApplicationDbContext(_options))
+        using (var context = new ApplicationDbContext(options))
         {
             context.Database.EnsureCreated();
         }
 
         _contextFactoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None))
-            .ReturnsAsync(() => new ApplicationDbContext(_options));
+            .ReturnsAsync(() => new ApplicationDbContext(options));
     }
 
     public void Dispose()
@@ -123,7 +122,7 @@ public class BulkDeleteOptimizationTests : IDisposable
 
         settingsServiceMock.Setup(s => s.GetSettingsAsync()).ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
         reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
-            .ReturnsAsync(new List<Report>());
+            .ReturnsAsync([]);
 
         using var mapStateService = new MapStateService(
             reportServiceMock.Object,

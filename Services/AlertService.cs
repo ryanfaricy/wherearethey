@@ -325,11 +325,13 @@ public class AlertService(
 
                 alert.IsVerified = isVerified;
 
-                if (!isVerified)
+                if (isVerified)
                 {
-                    var baseUrl = baseUrlProvider.GetBaseUrl();
-                    backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
+                    return await UpdateInternalAsync(alert);
                 }
+
+                var baseUrl = baseUrlProvider.GetBaseUrl();
+                backgroundJobClient.Enqueue<IAlertService>(service => service.SendVerificationEmailAsync(email, emailHash, baseUrl));
             }
             else if (alert.UsePush)
             {

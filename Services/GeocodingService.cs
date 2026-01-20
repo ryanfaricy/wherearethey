@@ -35,7 +35,7 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
             {
                 logger.LogWarning("Mapbox ReverseGeocodeAsync failed or returned no result. Falling back to Nominatim.");
                 return default;
-            }
+            },
         })
         .Build();
 
@@ -56,7 +56,7 @@ public class GeocodingService(HttpClient httpClient, ISettingsService settingsSe
             {
                 logger.LogWarning("Mapbox SearchAsync failed or returned no results. Falling back to Nominatim.");
                 return default;
-            }
+            },
         })
         .Build();
 

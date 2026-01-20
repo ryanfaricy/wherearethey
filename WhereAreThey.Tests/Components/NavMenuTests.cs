@@ -26,7 +26,7 @@ public class NavMenuTests : ComponentTestBase
         var clientLocationServiceMock = new Mock<IClientLocationService>();
         var eventServiceMock = new Mock<IEventService>();
         
-        mapStateServiceMock.Setup(m => m.Reports).Returns(new List<Report>());
+        mapStateServiceMock.Setup(m => m.Reports).Returns([]);
         
         // Use real ProtectedLocalStorage with mocked dependencies
         var localStorage = new ProtectedLocalStorage(

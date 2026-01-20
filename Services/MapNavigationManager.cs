@@ -21,7 +21,7 @@ public class MapNavigationManager(
         double? initialLat = null;
         double? initialLng = null;
         double? initialRadius = null;
-        bool reportNotFound = false;
+        var reportNotFound = false;
 
         if (query.TryGetValue("hours", out var hoursStr) && int.TryParse(hoursStr, out var h))
         {

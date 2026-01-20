@@ -98,15 +98,17 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
                 
                 if (!VisibilityPolicy.ShouldShow(typedEntity, true, MapState.ShowDeleted))
                 {
-                    if (index != -1)
+                    if (index == -1)
                     {
-                        Items.RemoveAt(index);
-                        if (Grid != null)
-                        {
-                            await Grid.Reload();
-                        }
-                        StateHasChanged();
+                        return;
                     }
+
+                    Items.RemoveAt(index);
+                    if (Grid != null)
+                    {
+                        await Grid.Reload();
+                    }
+                    StateHasChanged();
                     return;
                 }
                 
@@ -182,7 +184,10 @@ public abstract class AdminTabBase<TEntity> : LayoutComponentBase, IDisposable
     /// </summary>
     protected virtual async Task DeleteSelected()
     {
-        if (SelectedItems == null || !SelectedItems.Any()) return;
+        if (SelectedItems == null || !SelectedItems.Any())
+        {
+            return;
+        }
 
         var entityName = typeof(TEntity).Name;
         var count = SelectedItems.Count;

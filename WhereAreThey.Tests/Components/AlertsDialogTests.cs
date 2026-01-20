@@ -133,7 +133,7 @@ public class AlertsDialogTests : ComponentTestBase
         await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
 
         // Assert
-        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Permission_Dismissed" && m.Severity == NotificationSeverity.Info);
+        Assert.Contains(notificationService.Messages, m => m is { Detail: "Push_Permission_Dismissed", Severity: NotificationSeverity.Info });
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class AlertsDialogTests : ComponentTestBase
         await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
 
         // Assert
-        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Server_Not_Configured" && m.Severity == NotificationSeverity.Warning);
+        Assert.Contains(notificationService.Messages, m => m is { Detail: "Push_Server_Not_Configured", Severity: NotificationSeverity.Warning });
     }
 
     [Fact]
@@ -174,6 +174,6 @@ public class AlertsDialogTests : ComponentTestBase
         await cut.InvokeAsync(() => enableButton.Instance.Click.InvokeAsync());
 
         // Assert
-        Assert.Contains(notificationService.Messages, m => m.Detail == "Push_Subscription_Failed" && m.Severity == NotificationSeverity.Error);
+        Assert.Contains(notificationService.Messages, m => m is { Detail: "Push_Subscription_Failed", Severity: NotificationSeverity.Error });
     }
 }

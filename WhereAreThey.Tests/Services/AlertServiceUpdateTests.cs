@@ -12,14 +12,12 @@ using WhereAreThey.Services;
 using WhereAreThey.Services.Interfaces;
 using WhereAreThey.Validators;
 using WhereAreThey.Components;
-using Xunit;
 
 namespace WhereAreThey.Tests.Services;
 
 public class AlertServiceUpdateTests
 {
     private readonly Mock<IDataProtectionProvider> _dataProtectionProviderMock;
-    private readonly Mock<IDataProtector> _dataProtectorMock;
     private readonly Mock<IBackgroundJobClient> _backgroundJobClientMock;
     private readonly Mock<IEventService> _eventServiceMock;
     private readonly Mock<IBaseUrlProvider> _baseUrlProviderMock;
@@ -31,7 +29,7 @@ public class AlertServiceUpdateTests
     public AlertServiceUpdateTests()
     {
         _dataProtectionProviderMock = new Mock<IDataProtectionProvider>();
-        _dataProtectorMock = new Mock<IDataProtector>();
+        var dataProtectorMock = new Mock<IDataProtector>();
         _backgroundJobClientMock = new Mock<IBackgroundJobClient>();
         _eventServiceMock = new Mock<IEventService>();
         _baseUrlProviderMock = new Mock<IBaseUrlProvider>();
@@ -45,26 +43,26 @@ public class AlertServiceUpdateTests
 
         _dataProtectionProviderMock
             .Setup(p => p.CreateProtector(It.IsAny<string>()))
-            .Returns(_dataProtectorMock.Object);
+            .Returns(dataProtectorMock.Object);
         
-        _dataProtectorMock
+        dataProtectorMock
             .Setup(p => p.Protect(It.IsAny<byte[]>()))
             .Returns<byte[]>(b => b);
-        _dataProtectorMock
+        dataProtectorMock
             .Setup(p => p.Unprotect(It.IsAny<byte[]>()))
             .Returns<byte[]>(b => b);
 
         _baseUrlProviderMock.Setup(p => p.GetBaseUrl()).Returns("https://test.com");
     }
 
-    private DbContextOptions<ApplicationDbContext> CreateOptions()
+    private static DbContextOptions<ApplicationDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
     }
 
-    private IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
+    private static IDbContextFactory<ApplicationDbContext> CreateFactory(DbContextOptions<ApplicationDbContext> options)
     {
         var factoryMock = new Mock<IDbContextFactory<ApplicationDbContext>>();
         factoryMock.Setup(f => f.CreateDbContextAsync(CancellationToken.None)).ReturnsAsync(() => new ApplicationDbContext(options));
@@ -107,7 +105,7 @@ public class AlertServiceUpdateTests
             UseEmail = true,
             UsePush = false,
             EncryptedEmail = "old-email-protected",
-            EmailHash = HashUtils.ComputeHash("old@test.com")
+            EmailHash = HashUtils.ComputeHash("old@test.com"),
         };
 
         await using (var context = new ApplicationDbContext(options))
@@ -125,7 +123,7 @@ public class AlertServiceUpdateTests
             UserIdentifier = "user1",
             IsVerified = true, // Still true in the object being passed
             UseEmail = true,
-            UsePush = false
+            UsePush = false,
         };
 
         // Act
@@ -162,7 +160,7 @@ public class AlertServiceUpdateTests
             {
                 EmailHash = verifiedEmailHash,
                 VerifiedAt = DateTime.UtcNow,
-                Token = "token"
+                Token = "token",
             });
             await context.SaveChangesAsync();
         }
@@ -174,7 +172,7 @@ public class AlertServiceUpdateTests
             RadiusKm = 5,
             UserIdentifier = "user1",
             IsVerified = true,
-            UseEmail = true
+            UseEmail = true,
         };
 
         await using (var context = new ApplicationDbContext(options))
@@ -191,7 +189,7 @@ public class AlertServiceUpdateTests
             RadiusKm = 5,
             UserIdentifier = "user1",
             IsVerified = true,
-            UseEmail = true
+            UseEmail = true,
         };
 
         // Act
@@ -227,7 +225,7 @@ public class AlertServiceUpdateTests
             UserIdentifier = "user1",
             IsVerified = false,
             UseEmail = true,
-            UsePush = false
+            UsePush = false,
         };
 
         await using (var context = new ApplicationDbContext(options))
@@ -245,7 +243,7 @@ public class AlertServiceUpdateTests
             UserIdentifier = "user1",
             IsVerified = false,
             UseEmail = true,
-            UsePush = true // Changed to true
+            UsePush = true, // Changed to true
         };
 
         // Act

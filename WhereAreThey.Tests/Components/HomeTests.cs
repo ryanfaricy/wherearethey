@@ -47,11 +47,11 @@ public class HomeTests : ComponentTestBase
 
         // Default setups to avoid NullReferenceException
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
-            .ReturnsAsync(new List<Report>());
+            .ReturnsAsync([]);
         _reportServiceMock.Setup(s => s.GetAllAsync(true))
-            .ReturnsAsync(new List<Report>());
+            .ReturnsAsync([]);
         _alertServiceMock.Setup(s => s.GetAllAsync(true))
-            .ReturnsAsync(new List<Alert>());
+            .ReturnsAsync([]);
 
         _settingsServiceMock.Setup(s => s.GetSettingsAsync())
             .ReturnsAsync(new SystemSettings { ReportExpiryHours = 24 });
@@ -153,7 +153,7 @@ public class HomeTests : ComponentTestBase
     {
         // Arrange
         _reportServiceMock.Setup(s => s.GetRecentReportsAsync(It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<Guid?>()))
-            .ReturnsAsync(new List<Report>());
+            .ReturnsAsync([]);
         
         var cut = Render<Home>();
         await cut.InvokeAsync(() => Task.Delay(100));
@@ -254,7 +254,7 @@ public class HomeTests : ComponentTestBase
         {
             FocusReportId = 123,
             InitialLat = 51.5074,
-            InitialLng = -0.1278
+            InitialLng = -0.1278,
         };
         _mapNavigationManagerMock.Setup(m => m.GetNavigationStateAsync()).ReturnsAsync(navState);
         
@@ -267,7 +267,7 @@ public class HomeTests : ComponentTestBase
         // Act: Simulate location update (New York)
         var nyLocation = new GeolocationPosition 
         { 
-            Coords = new GeolocationCoordinates { Latitude = 40.7128, Longitude = -74.0060 } 
+            Coords = new GeolocationCoordinates { Latitude = 40.7128, Longitude = -74.0060 },
         };
         
         // Trigger OnLocationUpdated via HeatMap's JSInvokable method

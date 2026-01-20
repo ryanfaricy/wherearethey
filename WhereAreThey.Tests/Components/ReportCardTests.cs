@@ -1,11 +1,8 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Localization;
-using Moq;
 using WhereAreThey.Components;
 using WhereAreThey.Models;
 using WhereAreThey.Services;
-using WhereAreThey.Services.Interfaces;
 
 namespace WhereAreThey.Tests.Components;
 
@@ -25,7 +22,7 @@ public class ReportCardTests : ComponentTestBase
             Id = 1,
             CreatedAt = DateTime.UtcNow,
             DeletedAt = DateTime.UtcNow,
-            Message = "Test report"
+            Message = "Test report",
         };
 
         // Act
@@ -50,7 +47,7 @@ public class ReportCardTests : ComponentTestBase
             Id = 1,
             CreatedAt = DateTime.UtcNow,
             DeletedAt = null,
-            Message = "Test report"
+            Message = "Test report",
         };
 
         // Act
@@ -75,7 +72,7 @@ public class ReportCardTests : ComponentTestBase
             Id = 1,
             CreatedAt = DateTime.UtcNow,
             DeletedAt = DateTime.UtcNow,
-            Message = "Test report"
+            Message = "Test report",
         };
 
         // Act

@@ -432,14 +432,16 @@ public class MapStateService : IMapStateService
             }
         }
 
-        if (changed)
+        if (!changed)
         {
-            if (MapInitialized)
-            {
-                _ = _mapService.UpdateAlertsAsync(Alerts);
-            }
-            OnStateChanged?.Invoke();
+            return;
         }
+
+        if (MapInitialized)
+        {
+            _ = _mapService.UpdateAlertsAsync(Alerts);
+        }
+        OnStateChanged?.Invoke();
     }
 
     /// <inheritdoc />

@@ -105,7 +105,7 @@ public class GeocodingServiceTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.InternalServerError
+                StatusCode = HttpStatusCode.InternalServerError,
             });
 
         var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
@@ -129,7 +129,7 @@ public class GeocodingServiceTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage
             {
-                StatusCode = HttpStatusCode.TooManyRequests
+                StatusCode = HttpStatusCode.TooManyRequests,
             });
 
         var nominatimResponse = new { display_name = "Nominatim Address" };
@@ -173,7 +173,7 @@ public class GeocodingServiceTests
 
         var nominatimResponse = new[]
         {
-            new { display_name = "Nominatim 1", lat = "40.0", lon = "-74.0" }
+            new { display_name = "Nominatim 1", lat = "40.0", lon = "-74.0" },
         };
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>(
